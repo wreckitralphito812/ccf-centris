@@ -58,8 +58,27 @@ test("Chronicle keeps every series and strips the tracking query", () => {
   assert.deepEqual([...series], [
     "Ordinary People, Extraordinary God",
     "Live Your Purpose; Go Beyond",
+    "The LORD is my Shepherd",
   ]);
   assert.doesNotMatch(result.records[0].downloadUrl, /tmstv/);
+});
+
+test("Chronicle parses older issues that have no date prefix", () => {
+  const result = parseChroniclePage(
+    fixture("chronicle.html"),
+    source("https://www.ccf.org.ph/chronicle/"),
+    OBSERVED_AT,
+  );
+  const undated = result.records.find((r) => r.downloadId === "30542");
+  assert.ok(undated);
+  assert.equal(undated?.title, "The LORD is my Shepherd");
+  assert.equal(undated?.serviceDateLabel, null);
+  assert.equal(undated?.displayedDownloadCount, 30542);
+
+  const noCount = result.records.find((r) => r.downloadId === "30475");
+  assert.equal(noCount?.title, "Practice Contentment");
+  assert.equal(noCount?.displayedDownloadCount, null);
+  assert.equal(result.warnings.length, 0);
 });
 
 test("Scripture Memory parses the current week and year", () => {

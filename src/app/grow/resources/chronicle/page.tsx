@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/page-header";
 import { Container, EmptyState, Pill, Section } from "@/components/ui";
 import { fmtDate } from "@/lib/format";
-import { getChronicleGroups } from "@/lib/queries";
+import { getChronicleGroups, getSyncMeta } from "@/lib/queries";
+import { SyncedNote } from "@/components/synced-note";
 
 /** Synced from ccf.org.ph/chronicle every content-sync run. */
 export const revalidate = 3600;
@@ -14,7 +15,10 @@ export const metadata: Metadata = {
 };
 
 export default async function ChroniclePage() {
-  const groups = await getChronicleGroups();
+  const [groups, sync] = await Promise.all([
+    getChronicleGroups(),
+    getSyncMeta("chronicleIssues"),
+  ]);
 
   return (
     <>
@@ -70,6 +74,7 @@ export default async function ChroniclePage() {
               ))}
             </div>
           )}
+          <SyncedNote lastRunAt={sync.lastRunAt} source="ccf.org.ph/chronicle" />
         </Container>
       </Section>
     </>

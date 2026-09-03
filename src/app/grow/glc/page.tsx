@@ -7,8 +7,14 @@ import {
   Section,
   SectionHead,
 } from "@/components/ui";
-import { getGlcCatalogueGroups, getGlcClasses, getGlcPrograms } from "@/lib/queries";
+import {
+  getGlcCatalogueGroups,
+  getGlcClasses,
+  getGlcPrograms,
+  getSyncMeta,
+} from "@/lib/queries";
 import { fmtDate } from "@/lib/format";
+import { SyncedNote } from "@/components/synced-note";
 
 /** The library catalogue is synced from glc.ccf.org.ph each content-sync run. */
 export const revalidate = 3600;
@@ -20,10 +26,11 @@ export const metadata: Metadata = {
 };
 
 export default async function GlcPage() {
-  const [programs, classes, libraryGroups] = await Promise.all([
+  const [programs, classes, libraryGroups, sync] = await Promise.all([
     getGlcPrograms(),
     getGlcClasses(),
     getGlcCatalogueGroups(),
+    getSyncMeta("glcClasses"),
   ]);
 
   return (
@@ -181,6 +188,7 @@ export default async function GlcPage() {
                 </div>
               ))}
             </div>
+            <SyncedNote lastRunAt={sync.lastRunAt} source="glc.ccf.org.ph" />
           </Container>
         </Section>
       ) : null}

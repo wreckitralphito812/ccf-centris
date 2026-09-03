@@ -92,7 +92,15 @@ function normalizeDateRange(label: string): { start: string | null; end: string 
 // --- Chronicle --------------------------------------------------------------
 
 const DOWNLOAD_ID_RE = /\/download\/(\d+)\//;
-const CHRONICLE_LINE_RE = /^(.+?):\s*(.*?)(?:\s*\((\d[\d,]*)\s*downloads?\))?\s*$/i;
+/**
+ * A Chronicle line is either "Mon DD and DD: Title (N downloads)" (recent
+ * issues) or just "Title (N downloads)" (older issues). The date prefix and
+ * the download counter are both optional.
+ */
+const CHRONICLE_DATED_RE =
+  /^([A-Za-z]+\.?\s+\d{1,2}(?:\s*(?:and|&|-|–|to)\s*\d{1,2})?)\s*:\s*(.+?)(?:\s*\((\d[\d,]*)\s*downloads?\))?\s*$/i;
+const CHRONICLE_PLAIN_RE =
+  /^(.+?)(?:\s*\((\d[\d,]*)\s*downloads?\))?\s*$/i;
 
 /**
  * "Aug 29 and 30" (or "Jul 18 & 19", "April 25 and 26") -> the later date in
@@ -141,8 +149,12 @@ export function parseChroniclePage(
     if (!idMatch) return;
 
     const raw = text(node);
-    const line = raw.match(CHRONICLE_LINE_RE);
-    if (!line) {
+    const dated = raw.match(CHRONICLE_DATED_RE);
+    const plain = dated ? null : raw.match(CHRONICLE_PLAIN_RE);
+    const dateLabel = dated ? dated[1].trim() : null;
+    const title = (dated ? dated[2] : plain?.[1] ?? "").trim();
+    const countStr = dated ? dated[3] : plain?.[2];
+    if (!title) {
       warnings.push(`Unparseable Chronicle line: ${raw}`);
       return;
     }
@@ -154,15 +166,15 @@ export function parseChroniclePage(
     records.push({
       kind: "chronicle",
       downloadId: idMatch[1],
-      title: line[2].trim(),
+      title,
       seriesTitle,
-      serviceDateLabel: line[1].trim() || null,
-      serviceDate: line[1].trim()
-        ? normalizeServiceWeekend(line[1].trim(), runYear, observedAt)
+      serviceDateLabel: dateLabel,
+      serviceDate: dateLabel
+        ? normalizeServiceWeekend(dateLabel, runYear, observedAt)
         : null,
       downloadUrl,
-      displayedDownloadCount: line[3] ? Number(line[3].replace(/,/g, "")) : null,
-      downloadCountObservedAt: line[3] ? observedAt : null,
+      displayedDownloadCount: countStr ? Number(countStr.replace(/,/g, "")) : null,
+      downloadCountObservedAt: countStr ? observedAt : null,
       source: src,
     });
   });

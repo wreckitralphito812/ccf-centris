@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, EmptyState, Pill, Section } from "@/components/ui";
-import { getCurrentIntercede } from "@/lib/queries";
+import { getCurrentIntercede, getSyncMeta } from "@/lib/queries";
+import { SyncedNote } from "@/components/synced-note";
 
 /** Synced from ccf.org.ph/intercede every content-sync run. */
 export const revalidate = 3600;
@@ -22,7 +23,10 @@ function fmtRange(start: string | null, end: string | null): string | null {
 }
 
 export default async function IntercedePage() {
-  const view = await getCurrentIntercede();
+  const [view, sync] = await Promise.all([
+    getCurrentIntercede(),
+    getSyncMeta("intercede"),
+  ]);
 
   if (!view) {
     return (
@@ -112,6 +116,7 @@ export default async function IntercedePage() {
               Full details on ccf.org.ph ↗
             </a>
           </div>
+          <SyncedNote lastRunAt={sync.lastRunAt} source="ccf.org.ph/intercede" />
         </Container>
       </Section>
     </>

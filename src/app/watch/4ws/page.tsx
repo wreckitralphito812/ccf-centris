@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Eyebrow, Pill, Section } from "@/components/ui";
-import { getCurrentFourWs, getFourWsWeeks } from "@/lib/queries";
+import { getCurrentFourWs, getFourWsWeeks, getSyncMeta } from "@/lib/queries";
+import { SyncedNote } from "@/components/synced-note";
 
 /** Synced from ccf.org.ph/4ws every content-sync run. */
 export const revalidate = 3600;
@@ -14,9 +15,10 @@ export const metadata: Metadata = {
 };
 
 export default async function FourWsPage() {
-  const [current, weeks] = await Promise.all([
+  const [current, weeks, sync] = await Promise.all([
     getCurrentFourWs(),
     getFourWsWeeks(),
+    getSyncMeta("fourWsWeeks"),
   ]);
 
   return (
@@ -122,6 +124,7 @@ export default async function FourWsPage() {
               </li>
             ))}
           </ul>
+          <SyncedNote lastRunAt={sync.lastRunAt} source="ccf.org.ph/4ws" />
         </Container>
       </Section>
     </>

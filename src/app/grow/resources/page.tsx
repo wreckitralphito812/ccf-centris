@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, EmptyState, Pill, Section } from "@/components/ui";
-import { findResources, getResourceFacets } from "@/lib/queries";
+import { findResources, getResourceFacets, getSyncMeta } from "@/lib/queries";
+import { SyncedNote } from "@/components/synced-note";
 
 /** Synced from ccf.org.ph/resources every content-sync run. */
 export const revalidate = 3600;
@@ -28,9 +29,10 @@ export default async function ResourcesPage({
     format: one(sp.format),
     language: one(sp.language),
   };
-  const [resources, facets] = await Promise.all([
+  const [resources, facets, sync] = await Promise.all([
     findResources(filters),
     getResourceFacets(),
+    getSyncMeta("resources"),
   ]);
 
   return (
@@ -148,6 +150,7 @@ export default async function ResourcesPage({
               ))}
             </ul>
           )}
+          <SyncedNote lastRunAt={sync.lastRunAt} source="ccf.org.ph/resources" />
         </Container>
       </Section>
 

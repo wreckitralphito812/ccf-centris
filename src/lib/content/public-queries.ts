@@ -9,7 +9,7 @@
  */
 
 import { manilaDateKey } from "../format";
-import { readSnapshot } from "./snapshot";
+import { readSnapshot, type SnapshotSection } from "./snapshot";
 import type {
   ChronicleIssueRecord,
   FourWsGuideRecord,
@@ -229,4 +229,21 @@ export async function getCurrentFourWsGuide(): Promise<FourWsCurrent | null> {
   if (!week) return null;
   const guide = await getFourWsGuide(week.slug);
   return { week, guide };
+}
+
+// --- Sync provenance ------------------------------------------------
+
+export interface SyncMeta {
+  /** ISO timestamp of the section's last successful sync, or null. */
+  lastRunAt: string | null;
+  warningCount: number;
+}
+
+/** When a synced section was last refreshed from ccf.org.ph. */
+export function getSyncMeta(section: SnapshotSection): Promise<SyncMeta> {
+  const meta = readSnapshot().meta[section];
+  return Promise.resolve({
+    lastRunAt: meta?.lastRunAt ?? null,
+    warningCount: meta?.warnings.length ?? 0,
+  });
 }

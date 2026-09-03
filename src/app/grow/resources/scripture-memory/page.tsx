@@ -3,7 +3,8 @@ import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { Container, EmptyState, Pill, Section } from "@/components/ui";
 import { fmtDate } from "@/lib/format";
-import { getScriptureMemory, getScriptureYears } from "@/lib/queries";
+import { getScriptureMemory, getScriptureYears, getSyncMeta } from "@/lib/queries";
+import { SyncedNote } from "@/components/synced-note";
 
 /** Synced from ccf.org.ph/52-week-scripture every content-sync run. */
 export const revalidate = 3600;
@@ -23,7 +24,10 @@ export default async function ScriptureMemoryPage({
 }) {
   const sp = await searchParams;
   const yearParam = Array.isArray(sp.year) ? sp.year[0] : sp.year;
-  const years = await getScriptureYears();
+  const [years, sync] = await Promise.all([
+    getScriptureYears(),
+    getSyncMeta("scriptureMemory"),
+  ]);
   const year = yearParam && years.includes(Number(yearParam)) ? Number(yearParam) : undefined;
   const weeks = await getScriptureMemory(year);
   const current = !year ? weeks[0] : null;
@@ -137,6 +141,10 @@ export default async function ScriptureMemoryPage({
               ))}
             </ul>
           )}
+          <SyncedNote
+            lastRunAt={sync.lastRunAt}
+            source="ccf.org.ph/52-week-scripture"
+          />
         </Container>
       </Section>
     </>

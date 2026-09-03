@@ -444,6 +444,7 @@ export {
   getCurrentFourWs,
   getFourWsGuide,
   getCurrentFourWsGuide,
+  getSyncMeta,
 } from "@/lib/content/public-queries";
 export type {
   ResourceFilters,
@@ -452,6 +453,7 @@ export type {
   GlcCategoryGroup,
   FourWsWeekView,
   FourWsCurrent,
+  SyncMeta,
 } from "@/lib/content/public-queries";
 
 // --- Global search ----------------------------------------------------------
