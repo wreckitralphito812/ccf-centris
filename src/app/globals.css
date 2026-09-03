@@ -1,0 +1,250 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   CCF Centris design system
+
+   Warm paper grounds, heavy editorial display type against tight grotesk,
+   a script accent for human moments, and printed-matter texture. Light only:
+   the whole system is built on paper, and a dark inversion would fight it.
+   --------------------------------------------------------------------------- */
+
+:root {
+  color-scheme: light;
+
+  /* Grounds */
+  --paper: #f4efe6;
+  --paper-deep: #ebe3d5;
+  --paper-bright: #fbf8f2;
+  --ink: #17150f;
+  --ink-soft: #4a453a;
+  --ink-mute: #837b6b;
+  --hairline: #d9d0be;
+
+  /* Accents.
+     Teal is CCF's real brand colour, lifted from the ccf.org.ph logo mark
+     (#00a6b6) and its primary buttons. Maroon (#72042c) is CCF's existing
+     secondary.
+
+     Brand teal is a LARGE-SURFACE colour only: at 2.57:1 on paper it fails
+     WCAG AA for text, and white on it fails at 2.95:1. So --clay is the
+     accessible working teal (4.69:1 on paper, 5.37:1 under white) used for
+     type, buttons and icons, while --brand-teal stays exact for logo fills,
+     big flat panels and graphic shapes where contrast rules don't apply. */
+  --brand-teal: #00a6b6;    /* exact CCF mark. Graphics only, never text */
+  --clay: #007682;          /* accessible teal for type and controls */
+  --clay-deep: #005f68;     /* hover */
+  --sky: #72042c;           /* CCF maroon, secondary accent */
+  --moss: #4a5d3a;
+  --bone: #e8dcc6;
+  --night: #10262b;         /* deep teal-black, not a neutral charcoal */
+
+  --focus: var(--clay);
+
+  /* Motion. Restrained, never decorative. */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-deep: var(--paper-deep);
+  --color-paper-bright: var(--paper-bright);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-mute: var(--ink-mute);
+  --color-hairline: var(--hairline);
+  --color-brand-teal: var(--brand-teal);
+  --color-clay: var(--clay);
+  --color-clay-deep: var(--clay-deep);
+  --color-sky: var(--sky);
+  --color-moss: var(--moss);
+  --color-bone: var(--bone);
+  --color-night: var(--night);
+
+  /* CCF's brand face is Proxima Nova (--ccf-font on ccf.org.ph), which is
+     Adobe-licensed and cannot ship here. Montserrat is the closest free
+     geometric humanist sans and already appears in CCF's own font stack,
+     so body copy stays recognisably CCF. Fraunces carries the editorial
+     display voice the Gen Z direction asks for; Caveat is the handwritten
+     accent. Swap --font-sans for Proxima Nova once CCF provides the licence. */
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-sans: "proxima-nova", var(--font-montserrat), "Helvetica Neue", Arial, sans-serif;
+  --font-script: var(--font-caveat), "Segoe Script", cursive;
+}
+
+* {
+  border-color: var(--hairline);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-synthesis-weight: none;
+}
+
+/* Grain. One tiny inline SVG, fixed, never repainted on scroll. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.22'/%3E%3C/svg%3E");
+}
+
+::selection {
+  background: var(--clay);
+  color: var(--paper-bright);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+   Type
+   --------------------------------------------------------------------------- */
+
+.font-display {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+}
+
+.font-script {
+  font-family: var(--font-script);
+}
+
+/* Oversized editorial heading that may crop at the viewport edge. */
+.display-xl {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(3.25rem, 11vw, 9.5rem);
+  line-height: 0.86;
+  letter-spacing: -0.035em;
+}
+
+.display-lg {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2.5rem, 6.5vw, 5rem);
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+}
+
+.display-md {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.85rem, 3.6vw, 3rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+/* Small caps label. Used for eyebrows and section markers. */
+.label {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.stencil {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------------------------
+   Printed-matter devices
+   --------------------------------------------------------------------------- */
+
+/* Halftone dot field, for photo edges and empty panels. */
+.halftone {
+  background-image: radial-gradient(var(--ink) 1px, transparent 1.1px);
+  background-size: 6px 6px;
+}
+
+/* A strip of masking tape holding an element to the page. */
+.taped {
+  position: relative;
+}
+
+.taped::after {
+  content: "";
+  position: absolute;
+  top: -0.6rem;
+  left: 50%;
+  width: 5.5rem;
+  height: 1.5rem;
+  transform: translateX(-50%) rotate(-2.5deg);
+  background: rgba(232, 220, 198, 0.82);
+  border-left: 1px dashed rgba(23, 21, 15, 0.14);
+  border-right: 1px dashed rgba(23, 21, 15, 0.14);
+  pointer-events: none;
+}
+
+/* Hand-drawn underline under a word or phrase. */
+.underlined {
+  background-image: linear-gradient(var(--clay), var(--clay));
+  background-repeat: no-repeat;
+  background-position: 0 92%;
+  background-size: 100% 0.16em;
+  padding-bottom: 0.06em;
+}
+
+/* Marquee rail used for the running ticker. */
+@keyframes rail {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+
+.rail {
+  animation: rail 38s linear infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.45; transform: scale(0.82); }
+}
+
+.live-dot {
+  animation: pulse-dot 1.6s var(--ease) infinite;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+
+.rise {
+  animation: rise 0.7s var(--ease) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Hide scrollbars on horizontal rails without losing keyboard scroll. */
+.no-bar {
+  scrollbar-width: none;
+}
+
+.no-bar::-webkit-scrollbar {
+  display: none;
+}
