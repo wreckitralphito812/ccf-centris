@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Complete docs/superpowers/plans/2026-09-03-content-sync-foundation-resources.md first.
-- Do not crawl or mirror CCF Beyond, Spotify, Facebook, YouTube, GLC, events, school, or IDC properties.
+- Do not crawl or mirror CCF Beyond, Spotify, Facebook, YouTube, events, school, or IDC properties. (The GLC catalogue is synced separately in the foundation plan's Task 8; this plan does not touch GLC.)
 - Sanitize article HTML and never render upstream scripts, forms, arbitrary styles, or unknown iframes.
 - Preserve the four-door navigation; add only compact contextual destinations.
 - Preserve all unrelated dirty work and stage only files owned by the active task.

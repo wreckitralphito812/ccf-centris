@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the scheduled, cached CCF content pipeline and ship working Resources, Scripture Memory, Chronicle, and Intercede pages.
+**Goal:** Build the scheduled, cached CCF content pipeline and ship working Resources, Scripture Memory, Chronicle, Intercede, and GLC catalogue pages.
 
 **Architecture:** A server-only TypeScript synchronizer reads approved CCF sitemaps and public HTML, parses and sanitizes typed records, and atomically upserts them into Supabase. Public queries use Supabase when configured and a normalized bundled snapshot otherwise; visitor requests never scrape upstream.
 
@@ -13,6 +13,7 @@
 ## Global Constraints
 
 - Do not access /wp-json/, /?rest_route=, authenticated pages, forms, or restricted resources.
+- Network fetching is limited to www.ccf.org.ph, ccf.org.ph, and glc.ccf.org.ph. The GLC host is fetched only for its published library index and the class pages linked from it; never GLC ordering, cart, checkout, account, or /wp-json/ routes.
 - Do not import test, sandbox, UAT, old-version, payment-response, login, restricted, or attachment-shell routes.
 - Do not copy media binaries, payment workflows, or donation account metadata.
 - A failed sync must retain the last successfully published records.
@@ -28,6 +29,7 @@
 - src/lib/content/source-policy.ts: approved hosts, excluded paths, and safe URL decisions.
 - src/lib/content/html.ts: HTML sanitization and shared DOM helpers.
 - src/lib/content/parsers/resources.ts: Resource, Scripture Memory, Chronicle, and Intercede parsers.
+- src/lib/content/parsers/glc.ts: GLC library index and class-page parser.
 - src/lib/content/fetch-source.ts: bounded HTTP client with conditional requests.
 - src/lib/content/store.ts: Supabase/fallback storage interface.
 - src/lib/content/sync.ts: incremental orchestration, staging, and publication.
@@ -41,6 +43,7 @@
 - src/app/grow/resources/scripture-memory/page.tsx: Scripture archive.
 - src/app/grow/resources/chronicle/page.tsx: Chronicle archive.
 - src/app/intercede/page.tsx: prayer-and-fasting hub.
+- src/app/grow/glc/page.tsx: live GLC class catalogue grouped by library category.
 
 ### Task 1: Establish tests, contracts, and source policy
 
@@ -106,7 +109,8 @@ export type ContentKind =
   | "resource"
   | "scripture_memory"
   | "chronicle"
-  | "intercede";
+  | "intercede"
+  | "glc_class";
 
 export interface SourceRecord {
   sourceUrl: string;
@@ -123,7 +127,7 @@ export type SourceDecision =
   | { allowed: false; reason: "host" | "rest" | "protected" | "staging" | "transaction" | "attachment" };
 ~~~
 
-Permit network fetching only from www.ccf.org.ph and ccf.org.ph. Known CCF sibling hosts may be retained as outbound links but are never enqueued.
+Permit network fetching from www.ccf.org.ph, ccf.org.ph, and glc.ccf.org.ph. For glc.ccf.org.ph, allow only the published library index and class pages; reject ordering, cart, checkout, account, and /wp-json/ paths with reason "protected" or "transaction". Other known CCF sibling hosts may be retained as outbound links but are never enqueued. Add a policy test asserting `classifySourceUrl(new URL("https://glc.ccf.org.ph/glc-library/"))` is allowed and `https://glc.ccf.org.ph/my-account/` is rejected.
 
 - [ ] **Step 5: Validate and commit**
 
@@ -354,7 +358,7 @@ Expected: FAIL because sync and route exports are absent.
 
 - [ ] **Step 3: Implement orchestration**
 
-Add public and teaching scopes, a store-backed advisory lock, conditional metadata, maximum concurrency of three, complete staged batches, atomic publication, per-source outcomes, and revalidateTag("ccf-public-content", "max") after successful publication.
+Add public and teaching scopes, a store-backed advisory lock, conditional metadata, maximum concurrency of three, complete staged batches, atomic publication, per-source outcomes, and revalidateTag("ccf-public-content", "max") after successful publication. The public scope covers resources, Scripture Memory, Chronicle, Intercede, and the GLC catalogue.
 
 Use a POST Route Handler with the Node runtime. Compare Authorization: Bearer CONTENT_SYNC_SECRET using a timing-safe comparison. Accept only public, teaching, or all scopes and never return exception stacks.
 
@@ -479,4 +483,80 @@ Start one dev or production server, run node src/app/grow/resources/resources.e2
 ~~~powershell
 git add src/app/grow/resources/resources.e2e.test.mjs docs/content-sync.md .env.example
 git commit -m "test: verify synchronized resource collections"
+~~~
+
+### Task 8: Parse and publish the GLC class catalogue
+
+**Files:**
+- Create: src/lib/content/parsers/glc.ts
+- Create: src/lib/content/parsers/glc.test.ts
+- Create: src/lib/content/__fixtures__/glc-library.html
+- Create: src/lib/content/__fixtures__/glc-class.html
+- Modify: src/lib/content/types.ts
+- Modify: src/lib/content/sync.ts
+- Modify: src/lib/content/store.ts
+- Modify: src/lib/content/fallback.ts
+- Modify: scripts/build-content-fallback.ts
+- Modify: src/data/generated/public-content.json
+- Modify: supabase/migrations/0003_public_content_sync.sql
+- Modify: src/lib/queries.ts
+- Modify: src/lib/types.ts
+- Modify: src/app/grow/glc/page.tsx
+- Test: src/lib/content/glc-queries.test.ts
+
+**Interfaces:**
+- Produces: GlcClassRecord, parseGlcLibrary(html, source, observedAt), parseGlcClassPage(html, source, observedAt), and getGlcClasses(category?): Promise<GlcClassRecord[]>.
+
+- [ ] **Step 1: Extract minimal fixtures from glc.ccf.org.ph**
+
+From the published GLC library index keep only the category headings (GLC 1 EDIFY, GLC 2 EQUIP, GLC 3 EMPOW, Apologetics, Biblical Foundations, Book Studies, Discipleship, Engage, Evangelism, Leadership, Theology and Bible) and one class link each. From one class page keep the title, description paragraph, delivery-format labels, and any workbook/materials download anchor. Exclude global navigation, cart, forms, and scripts.
+
+- [ ] **Step 2: Write failing parser and query tests**
+
+~~~ts
+test("groups classes under their GLC library category", () => {
+  const result = parseGlcLibrary(input("glc-library.html"));
+  const edify = result.records.filter((r) => r.category === "GLC 1 EDIFY");
+  assert.ok(edify.length > 0);
+  assert.match(edify[0].sourceUrl, /^https:\/\/glc\.ccf\.org\.ph\//);
+  assert.ok(edify[0].trackKey.length > 0);
+});
+
+test("class page keeps description and delivery formats without guessing", () => {
+  const result = parseGlcClassPage(input("glc-class.html"));
+  assert.ok(result.record.description);
+  assert.deepEqual(
+    [...result.record.formats].sort(),
+    ["e-learning", "face-to-face"],
+  );
+});
+
+test("getGlcClasses filters by category", async () => {
+  const rows = await getGlcClasses("Theology and Bible");
+  assert.ok(rows.every((r) => r.category === "Theology and Bible"));
+});
+~~~
+
+- [ ] **Step 3: Run and confirm failure**
+
+Run: npm run test:content -- src/lib/content/parsers/glc.test.ts src/lib/content/glc-queries.test.ts
+
+Expected: FAIL because the GLC parser, store methods, and query are absent.
+
+- [ ] **Step 4: Implement the parser, storage, sync scope, and query**
+
+Add GlcClassRecord to types with required provenance. Add a glc_classes table to migration 0003 (or a follow-up 0003b if 0003 is already applied) with stable track_key unique key, category, title, description, formats text[], workbook_url, source_url, sort_order, active, generation, and published-row read policy plus no browser write. Add glc_class staging/publish/list methods to the store and the fallback reader. Add the GLC library index URL to the public sync scope so it refreshes every six hours, using lastmod/checksum skips and concurrency of three. Resolve class and workbook links against https://glc.ccf.org.ph/. Emit warnings, never guesses, for missing category, title, or formats. Regenerate the fallback with `--include glc`.
+
+- [ ] **Step 5: Build the /grow/glc catalogue page**
+
+Replace the placeholder with a server-rendered catalogue grouped by category in the fixed order above, using existing PageHeader, Section, Container, Pill, and EmptyState primitives. Each class shows title, description, format Pills, a real anchor to its glc.ccf.org.ph page (labeled as an external CCF property), and a workbook download anchor when present. Show EmptyState per category when a category has no published classes.
+
+- [ ] **Step 6: Validate and commit**
+
+~~~powershell
+npm run test:content -- src/lib/content/parsers/glc.test.ts src/lib/content/glc-queries.test.ts
+npm run lint -- src/app/grow/glc src/lib/content src/lib/queries.ts
+npm run typecheck
+git add src/lib/content/parsers/glc.ts src/lib/content/parsers/glc.test.ts src/lib/content/__fixtures__/glc-library.html src/lib/content/__fixtures__/glc-class.html src/lib/content/types.ts src/lib/content/sync.ts src/lib/content/store.ts src/lib/content/fallback.ts scripts/build-content-fallback.ts src/data/generated/public-content.json supabase/migrations src/lib/queries.ts src/lib/types.ts src/app/grow/glc/page.tsx src/lib/content/glc-queries.test.ts
+git commit -m "feat: publish the GLC class catalogue"
 ~~~

@@ -23,7 +23,8 @@ This project includes:
 2. Scripture Memory, Chronicle, and Intercede collections.
 3. The historical message and 4Ws catalogues.
 4. Articles, podcasts, broadcast channels, and a fuller missions page.
-5. A repeatable scheduled synchronization system with monitoring and a bundled
+5. The GLC class catalogue, synchronized from `glc.ccf.org.ph`.
+6. A repeatable scheduled synchronization system with monitoring and a bundled
    last-known-good fallback.
 
 Authenticated Dmember and Dleader resources are explicitly deferred. No
@@ -77,7 +78,8 @@ coupling the content parser to that provider.
 ### Cadence
 
 - Every six hours: resources, Scripture Memory, Chronicle, Intercede, articles,
-  podcast listings, broadcast-channel information, and missions links.
+  podcast listings, broadcast-channel information, missions links, and the GLC
+  class catalogue.
 - Daily: sermon sitemaps, message records, speakers, series/categories, and 4Ws.
 - Manual full refresh: available through the local command for recovery or a
   deliberate re-import.
@@ -127,6 +129,9 @@ New public-content tables:
   modification dates, hero image, source URL, and publication state.
 - `media_channels`: channel kind, label, description, destination URL, schedule
   text, platform, sort order, and active state.
+- `glc_classes`: stable track key, title, GLC library category, description,
+  delivery-format labels (face-to-face, Zoom, e-learning, Dgroup), workbook or
+  materials download URL, source URL, sort order, and active state.
 - `content_sync_sources`: provenance, conditional-request metadata, checksums,
   parser version, status, warnings, and timestamps.
 - `content_sync_runs`: start/end times, trigger, per-content counts, warnings,
@@ -144,6 +149,12 @@ small normalized snapshot generated from the completed authorized crawl.
 
 The parser operates on public HTML and sitemaps. It does not access `/wp-json/`,
 `/?rest_route=`, authenticated pages, forms, or restricted resources.
+
+Network fetching is permitted from `www.ccf.org.ph`, `ccf.org.ph`, and
+`glc.ccf.org.ph`. The GLC host is fetched only for its published library index
+and the class pages linked from it; GLC ordering, checkout, cart, account, and
+`/wp-json/` routes are never requested. Other CCF sibling hosts remain
+outbound-only links and are never enqueued.
 
 HTML retained for article and resource bodies is sanitized against a narrow
 allowlist: headings, paragraphs, lists, emphasis, block quotes, links, and
@@ -200,6 +211,13 @@ metadata, AM/PM and format labels, companion Runthrough/Fast Track relationships
 and links to audio, notes, transcripts, and 4Ws when those fields are explicitly
 available.
 
+The homepage "Take it further" rail and every message-detail `#four-ws` section
+render the current week's actual 4Ws from the synced record — the welcome
+question, the passage, the Word questions, and the works step — with "Get the
+guide" linking to CCF's official 4Ws PDF for that week. No hardcoded placeholder
+description of the four movements remains in page source; generic copy is shown
+only as a fallback when no guide has been published for the latest message yet.
+
 The importer deduplicates canonical content while preserving distinct editions.
 It never guesses a speaker, Scripture passage, or relationship solely from a
 similar title. Heuristic matches may be stored as warnings but are not published
@@ -225,6 +243,17 @@ video-on-demand options with their service schedule text and last-checked time.
 Pray, Connect, Give, Go, and Stories pathways. Cross-property CCF Beyond links
 remain outbound and visibly identified. This phase does not mirror the external
 CCF Beyond website or missionary donation records.
+
+### GLC classes
+
+`/grow/glc` becomes a live catalogue rather than a placeholder. Classes are
+grouped by GLC library category (GLC 1 EDIFY, GLC 2 EQUIP, GLC 3 EMPOW,
+Apologetics, Biblical Foundations, Book Studies, Discipleship, Engage,
+Evangelism, Leadership, Theology and Bible). Each entry shows its title,
+description, delivery-format labels, and links out to its page on
+`glc.ccf.org.ph`; workbook links point to the official GLC download when
+supplied. The existing "GLC classes" navigation entry is unchanged. GLC
+ordering and account flows are not reproduced.
 
 ### Navigation and search
 
@@ -282,9 +311,11 @@ does not automatically trigger a destructive cleanup.
 1. Add provenance, sync-run storage, repository fallback, and parser tests.
 2. Make existing resource downloads functional.
 3. Add Scripture Memory, Chronicle, and Intercede.
-4. Import and expose historical messages and 4Ws.
-5. Add articles, podcasts, broadcast channels, expanded missions, and search.
-6. Add scheduler documentation and complete browser verification.
+4. Add the GLC class catalogue.
+5. Import and expose historical messages and 4Ws, and make the homepage and
+   message-detail 4Ws blocks render the live current-week guide.
+6. Add articles, podcasts, broadcast channels, expanded missions, and search.
+7. Add scheduler documentation and complete browser verification.
 
 Each step leaves the application in a usable state and can ship independently.
 
@@ -295,5 +326,7 @@ Each step leaves the application in a usable state and can ship independently.
 - WordPress REST API access.
 - Mirroring CCF media binaries, payment workflows, or donation account data.
 - Importing every sitemap record indiscriminately.
-- Scraping the external CCF Beyond, GLC, events, school, or IDC websites.
+- Deep-crawling `glc.ccf.org.ph` beyond its published library index and the
+  class pages linked from it; GLC e-commerce, ordering, cart, and account flows.
+- Scraping the external CCF Beyond, events, school, or IDC websites.
 - Replacing the current Centris facilities, booking, community, or care flows.

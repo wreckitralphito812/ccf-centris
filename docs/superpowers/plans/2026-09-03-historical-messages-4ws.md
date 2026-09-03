@@ -32,6 +32,7 @@
 - src/app/watch/messages/page.tsx: historical filters and pagination.
 - src/app/watch/messages/[slug]/page.tsx: companion and source details.
 - src/app/watch/4ws/page.tsx: working guides and PDFs.
+- src/app/page.tsx: homepage "Take it further" rail rendering the live 4Ws.
 
 ### Task 1: Model provenance, editions, and relations
 
@@ -265,11 +266,13 @@ git commit -m "refactor: read teaching from synchronized content"
 - Modify: src/app/watch/messages/filters.tsx
 - Modify: src/app/watch/messages/[slug]/page.tsx
 - Modify: src/app/watch/4ws/page.tsx
+- Modify: src/app/page.tsx
 - Create: src/app/watch/4ws/links.test.ts
+- Create: src/app/four-ws-live.test.ts
 - Create: src/app/watch/messages/messages.e2e.test.mjs
 
 **Interfaces:**
-- Produces: URL-backed edition and language filters, semantic pagination, explicit companion links, and working 4Ws PDFs.
+- Produces: URL-backed edition and language filters, semantic pagination, explicit companion links, working 4Ws PDFs, and the homepage plus message-detail 4Ws blocks rendering the live current-week guide.
 
 - [ ] **Step 1: Add the failing PDF-link regression test**
 
@@ -281,30 +284,48 @@ test("4Ws uses an anchor for an available PDF", () => {
 });
 ~~~
 
-- [ ] **Step 2: Run and confirm failure**
+- [ ] **Step 2: Add the failing live-4Ws test**
 
-Run: npm run test:content -- src/app/watch/4ws/links.test.ts
+~~~ts
+test("homepage 4Ws rail has no hardcoded movement descriptions", () => {
+  const source = readFileSync("src/app/page.tsx", "utf8");
+  assert.doesNotMatch(source, /An opening question that gets everyone talking/);
+  assert.doesNotMatch(source, /const FOUR_WS = \[/);
+});
 
-Expected: FAIL against the current inert PDF button.
+test("message detail renders the synced 4Ws guide body and official PDF", () => {
+  const source = readFileSync("src/app/watch/messages/[slug]/page.tsx", "utf8");
+  assert.match(source, /four_ws/);
+  assert.match(source, /pdf_url|guideUrl/);
+});
+~~~
 
-- [ ] **Step 3: Implement archive UI changes**
+- [ ] **Step 3: Run and confirm failure**
+
+Run: npm run test:content -- src/app/watch/4ws/links.test.ts src/app/four-ws-live.test.ts
+
+Expected: FAIL against the current inert PDF button and the hardcoded FOUR_WS array.
+
+- [ ] **Step 4: Implement archive UI changes and the live 4Ws blocks**
 
 Add format, service, language, and year query parameters; total count and real pagination; unobtrusive source and update details; explicit companion links only; and accessible PDF, audio, and video anchors.
 
-- [ ] **Step 4: Run focused and browser checks**
+Replace the hardcoded `FOUR_WS` array in `src/app/page.tsx` and the `#four-ws` section of `src/app/watch/messages/[slug]/page.tsx` with the synced guide for the latest message: render the actual welcome question, the passage, the Word questions, and the works step from `latest.four_ws` (sanitized HTML sections), and point "Get the guide" / "Get the 4Ws guide" at the record's official CCF PDF URL. When the latest message has no published guide yet, fall back to a single short generic sentence — not a four-line breakdown — and keep the button pointing at `/watch/messages/[slug]#four-ws`.
+
+- [ ] **Step 5: Run focused and browser checks**
 
 ~~~powershell
 npm run test:content
-npm run lint -- src/app/watch src/lib/queries.ts src/lib/content
+npm run lint -- src/app/watch src/app/page.tsx src/lib/queries.ts src/lib/content
 npm run typecheck
 node src/app/watch/messages/messages.e2e.test.mjs
 ~~~
 
-The browser flow covers mobile and desktop filters, pagination, message detail, companion links, one 4Ws guide/PDF destination, and zero console errors.
+The browser flow covers mobile and desktop filters, pagination, message detail, companion links, one 4Ws guide/PDF destination, the homepage rail showing the live current-week guide, and zero console errors.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ~~~powershell
-git add src/app/watch/messages src/app/watch/4ws
-git commit -m "feat: publish historical messages and 4Ws"
+git add src/app/watch/messages src/app/watch/4ws src/app/page.tsx src/app/four-ws-live.test.ts
+git commit -m "feat: publish historical messages and live 4Ws"
 ~~~
