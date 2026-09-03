@@ -211,11 +211,17 @@ and links to audio, notes, transcripts, and 4Ws when those fields are explicitly
 available.
 
 The homepage "Take it further" rail and every message-detail `#four-ws` section
-render the current week's actual 4Ws from the synced record — the welcome
-question, the passage, the Word questions, and the works step — with "Get the
-guide" linking to CCF's official 4Ws PDF for that week. No hardcoded placeholder
+render the current week's actual 4Ws from the synced record — the date it is
+for, the welcome question, the passage and Word content, and the works step —
+with "Get the guide" linking to the full guide at `/watch/4ws/[slug]`, which
+mirrors CCF's 4Ws page (Worship, Welcome, Word, Works, Weekly Prayer Points,
+Memory Verse) and links back to the source. No hardcoded placeholder
 description of the four movements remains in page source; generic copy is shown
 only as a fallback when no guide has been published for the latest message yet.
+
+Every card that represents a dated item — a 4Ws week, a Chronicle issue, a
+Scripture memory week — shows that date (service weekend or week date) so a
+visitor knows which Sunday it belongs to without opening it.
 
 The importer deduplicates canonical content while preserving distinct editions.
 It never guesses a speaker, Scripture passage, or relationship solely from a

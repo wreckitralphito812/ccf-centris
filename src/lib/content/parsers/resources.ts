@@ -94,6 +94,30 @@ function normalizeDateRange(label: string): { start: string | null; end: string 
 const DOWNLOAD_ID_RE = /\/download\/(\d+)\//;
 const CHRONICLE_LINE_RE = /^(.+?):\s*(.*?)(?:\s*\((\d[\d,]*)\s*downloads?\))?\s*$/i;
 
+/**
+ * "Aug 29 and 30" (or "Jul 18 & 19", "April 25 and 26") -> the later date in
+ * ISO form. The year is not in the label; take it from `contextYear` (the sync
+ * run's year), then roll back a year if that would place the date in the
+ * future relative to the run.
+ */
+function normalizeServiceWeekend(
+  label: string,
+  contextYear: number,
+  runIso: string,
+): string | null {
+  const m = label.match(/([A-Za-z]+)\s+(\d{1,2})\s*(?:and|&|-)\s*(\d{1,2})/i)
+    ?? label.match(/([A-Za-z]+)\s+(\d{1,2})/);
+  if (!m) return null;
+  const month = MONTHS[m[1].toLowerCase()];
+  if (!month) return null;
+  const day = Number(m[3] ?? m[2]);
+  let iso = `${contextYear}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  if (iso > runIso.slice(0, 10)) {
+    iso = `${contextYear - 1}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  }
+  return iso;
+}
+
 export function parseChroniclePage(
   html: string,
   src: SourceRecord,
@@ -103,6 +127,7 @@ export function parseChroniclePage(
   const root = mainContent($);
   const records: ChronicleIssueRecord[] = [];
   const warnings: string[] = [];
+  const runYear = Number(observedAt.slice(0, 4)) || new Date().getUTCFullYear();
 
   let seriesTitle: string | null = null;
   root.find("h2, a").each((_i, el) => {
@@ -132,7 +157,9 @@ export function parseChroniclePage(
       title: line[2].trim(),
       seriesTitle,
       serviceDateLabel: line[1].trim() || null,
-      serviceDate: null,
+      serviceDate: line[1].trim()
+        ? normalizeServiceWeekend(line[1].trim(), runYear, observedAt)
+        : null,
       downloadUrl,
       displayedDownloadCount: line[3] ? Number(line[3].replace(/,/g, "")) : null,
       downloadCountObservedAt: line[3] ? observedAt : null,
@@ -145,6 +172,48 @@ export function parseChroniclePage(
 
 // --- 52-Week Scripture ----------------------------------------------------
 
+/**
+ * Pull `{ week, verse, content }` entries out of the page's verseList script.
+ * The list is not keyed by year, so `week` alone is ambiguous across years;
+ * key the lookup by `week|reference`, which is unique per row, and fall back
+ * to `week` only when the reference did not match.
+ */
+interface VerseIndex {
+  byWeekAndRef: Map<string, string>;
+  byWeek: Map<number, string[]>;
+}
+
+function readVerseList(html: string): VerseIndex {
+  const byWeekAndRef = new Map<string, string>();
+  const byWeek = new Map<number, string[]>();
+  const block = html.match(/verseList\s*=\s*\[([\s\S]*?)\];/);
+  if (!block) return { byWeekAndRef, byWeek };
+  const entryRe =
+    /\{\s*week:\s*(\d+)\s*,\s*verse:\s*"((?:[^"\\]|\\.)*)"\s*,\s*content:\s*"((?:[^"\\]|\\.)*)"/g;
+  let m: RegExpExecArray | null;
+  while ((m = entryRe.exec(block[1]))) {
+    const week = Number(m[1]);
+    const ref = m[2].replace(/\\"/g, '"').trim();
+    const content = m[3].replace(/\\"/g, '"').trim();
+    byWeekAndRef.set(`${week}|${ref}`, content);
+    const list = byWeek.get(week) ?? [];
+    list.push(content);
+    byWeek.set(week, list);
+  }
+  return { byWeekAndRef, byWeek };
+}
+
+function verseFor(
+  index: VerseIndex,
+  week: number,
+  reference: string,
+): string | null {
+  const exact = index.byWeekAndRef.get(`${week}|${reference}`);
+  if (exact) return exact;
+  const byWeek = index.byWeek.get(week);
+  return byWeek && byWeek.length === 1 ? byWeek[0] : null;
+}
+
 export function parseScriptureMemoryPage(
   html: string,
   src: SourceRecord,
@@ -154,39 +223,44 @@ export function parseScriptureMemoryPage(
   const root = mainContent($);
   const records: ScriptureMemoryRecord[] = [];
   const warnings: string[] = [];
+  const verseIndex = readVerseList(html);
 
+  // Weeks render as .vc_row.vc_inner rows; the year comes from the most recent
+  // preceding heading. Walk the page in document order and track both.
   let year: number | null = null;
-  root.children().each((_i, el) => walk($(el)));
 
-  function walk(node: ReturnType<Loaded>) {
-    const el = node.get(0);
-    if (!el || !("tagName" in el)) return;
+  root.find("h2, .vc_row.vc_inner").each((_i, el) => {
+    const node = $(el);
     if (el.tagName === "h2") {
       const y = Number(text(node));
       if (Number.isInteger(y) && y > 2000) year = y;
       return;
     }
-    if (node.hasClass("memory-verse")) {
-      readVerse(node);
-      return;
-    }
-    node.children().each((_j, child) => walk($(child)));
-  }
+    if (node.find('a[href*="/download/"]').length === 0) return;
 
-  function readVerse(node: ReturnType<Loaded>) {
-    const weekLabel = text(node.find(".week"));
-    const weekMatch = weekLabel.match(/(\d+)/);
-    const reference = text(node.find(".reference"));
+    const weekLabel = text(node.find("p:contains('Week')").first());
+    const weekMatch = weekLabel.match(/Week\s+(\d+)/i);
+    // The reference is the bold <p> that is not the "Week N" one and not a date.
+    const pTexts = node
+      .find("p")
+      .toArray()
+      .map((p) => text($(p)))
+      .filter(Boolean);
+    const reference = pTexts.find(
+      (t) => !/^Week\s+\d+/i.test(t) && !/\d{4}$/.test(t),
+    );
+    const dateLabel = pTexts.find((t) => /[A-Za-z]+\s+\d{1,2},\s*\d{4}/.test(t)) ?? null;
+
     if (!weekMatch || !reference) {
-      warnings.push(`Scripture week missing week/reference: ${weekLabel} ${reference}`);
+      warnings.push(`Scripture row missing week/reference: "${weekLabel}"`);
       return;
     }
     if (year === null) {
-      warnings.push(`Scripture week ${weekLabel} has no preceding year heading`);
+      warnings.push(`Scripture week ${weekMatch[1]} has no preceding year heading`);
       return;
     }
-    const verseRaw = text(node.find(".verse-text"));
-    const dateLabel = text(node.find(".date")) || null;
+
+    const week = Number(weekMatch[1]);
     const links = node
       .find("a")
       .toArray()
@@ -194,24 +268,32 @@ export function parseScriptureMemoryPage(
         label: text($(a)).toLowerCase(),
         href: absoluteCcfUrl($(a).attr("href") ?? "", src.resolvedUrl),
       }));
+
     records.push({
       kind: "scripture_memory",
       year,
-      week: Number(weekMatch[1]),
+      week,
       reference,
-      verseText: verseRaw || null,
+      verseText: verseFor(verseIndex, week, reference),
       dateLabel,
       date: dateLabel ? normalizeLongDate(dateLabel) : null,
-      viewUrl: links.find((l) => l.label.includes("view"))?.href ?? null,
+      viewUrl: links.find((l) => l.label.includes("view") && l.href)?.href ?? null,
       downloadUrl: links.find((l) => l.label.includes("download"))?.href ?? null,
       source: src,
     });
-  }
+  });
 
   return { records, warnings };
 }
 
 // --- Resources ------------------------------------------------------------
+
+/** "Handout (English)" -> { format: "Handout", language: "English" }. */
+function splitActionLabel(label: string): { format: string; language: string | null } {
+  const m = label.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+  if (m) return { format: m[1].trim(), language: m[2].trim() };
+  return { format: label.trim(), language: null };
+}
 
 export function parseResourcesPage(
   html: string,
@@ -219,38 +301,86 @@ export function parseResourcesPage(
   _observedAt: string,
 ): ParseResult<ResourceRecord> {
   const $ = load(html);
-  const root = mainContent($);
   const records: ResourceRecord[] = [];
   const warnings: string[] = [];
   const seen = new Set<string>();
 
-  root.find(".resource-card").each((_i, el) => {
-    const card = $(el);
-    const group = card.closest(".resource-group");
-    const audience = group.attr("data-audience") ?? null;
-    const title = text(card.find(".resource-title"));
-    if (!title) {
-      warnings.push("Resource card with no title");
-      return;
-    }
+  // Each resource is a `.section_inner_margin.clearfix` block: an image column,
+  // an H3 question/title, a short <p> description, and one or more action links
+  // labelled "Handout (English)", "Video", "Booklet", etc. The audience is the
+  // most recent <h2> before the block.
+  $(".section_inner_margin.clearfix").each((_i, el) => {
+    const block = $(el);
+    const title = text(block.find("h3").first());
+    if (!title) return; // spacer / non-resource block
+
     let slug = slugify(title);
     if (seen.has(slug)) slug = `${slug}-${records.length}`;
     seen.add(slug);
 
-    const href = card.find(".resource-link").attr("href") ?? "";
-    const url = absoluteCcfUrl(href, src.resolvedUrl);
+    const audience =
+      text(
+        block
+          .prevAll()
+          .find("h2")
+          .first(),
+      ) ||
+      text(block.prevAll("h2").first()) ||
+      null;
 
-    records.push({
-      kind: "resource",
-      slug,
-      title,
-      description: text(card.find(".resource-desc")) || null,
-      url,
-      format: text(card.find(".resource-action")) || null,
-      language: text(card.find(".resource-language")) || null,
-      audience,
-      external: url ? !isWwwCcfHost(url) : false,
-      source: src,
+    const description =
+      block
+        .find("p")
+        .toArray()
+        .map((p) => text($(p)))
+        .find((t) => t.length > 0) ?? null;
+
+    const actions = block
+      .find("a[href]")
+      .toArray()
+      .map((a) => ({
+        label: text($(a)),
+        url: absoluteCcfUrl($(a).attr("href") ?? "", src.resolvedUrl),
+      }))
+      .filter((a) => a.url && !/^#/.test(a.label));
+
+    if (actions.length === 0) {
+      records.push({
+        kind: "resource",
+        slug,
+        title,
+        description,
+        url: null,
+        format: null,
+        language: null,
+        audience,
+        external: false,
+        source: src,
+      });
+      return;
+    }
+
+    // One record per action link so language variants stay distinct.
+    actions.forEach((action, idx) => {
+      const { format, language } = splitActionLabel(action.label);
+      const variantSlug =
+        actions.length > 1 && language
+          ? `${slug}-${slugify(language)}`
+          : idx === 0
+            ? slug
+            : `${slug}-${idx}`;
+      records.push({
+        kind: "resource",
+        slug: variantSlug,
+        title,
+        description,
+        url: action.url,
+        format: format || null,
+        language,
+        audience,
+        external: action.url ? !isWwwCcfHost(action.url) : false,
+        source: src,
+      });
     });
   });
 

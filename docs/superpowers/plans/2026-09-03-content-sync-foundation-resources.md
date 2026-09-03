@@ -422,7 +422,9 @@ Expected: FAIL because the new queries and functional link markup are absent.
 
 - [ ] **Step 3: Implement queries and accessible pages**
 
-`src/lib/queries.ts` reads the committed snapshot via `readSnapshot()`; when a section is empty it falls back to the existing hand-authored seed data. Pages import only these query functions, never the snapshot JSON. Use server-rendered URL filters, real anchor elements for downloads, visible file/language/external labels, semantic pagination, and existing PageHeader, Section, Container, Pill, and EmptyState components. Intercede shows an archived label when its end date precedes the current Manila date.
+`src/lib/queries.ts` reads the committed snapshot via `readSnapshot()`; when a section is empty it falls back to the existing hand-authored seed data. Pages import only these query functions, never the snapshot JSON. Use server-rendered URL filters, real anchor elements for downloads, visible file/language/external labels, semantic pagination, and existing PageHeader, Section, Container, Pill, and EmptyState components.
+
+Each Chronicle card shows its service-date label (e.g. "Aug 29 and 30") and its series; each Scripture card shows its week number and date (e.g. "Week 35 · Aug 30, 2026"). Intercede shows its campaign date range and an archived label when its end date precedes the current Manila date.
 
 - [ ] **Step 4: Validate**
 

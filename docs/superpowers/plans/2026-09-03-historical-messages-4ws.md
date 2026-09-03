@@ -104,14 +104,17 @@ git commit -m "feat: model historical teaching editions"
 - Create: src/lib/content/__fixtures__/sermon-runthrough.html
 - Create: src/lib/content/__fixtures__/speaker-archive.html
 - Create: src/lib/content/__fixtures__/series-archive.html
+- Create: src/lib/content/__fixtures__/four-ws-index.html
 - Create: src/lib/content/__fixtures__/four-ws.html
 
 **Interfaces:**
-- Produces: parseSermonPage, parseSpeakerArchive, parseSeriesArchive, and parseFourWsPage.
+- Produces: parseSermonPage, parseSpeakerArchive, parseSeriesArchive, parseFourWsIndex, and parseFourWsPage.
 
-- [ ] **Step 1: Create minimal fixtures from the authorized corpus**
+- [ ] **Step 1: Create minimal fixtures from live pages**
 
-Include lazy-loaded embed data-src, exact title, date, author or speaker link, categories, tags, Other Resources links, and one structured 4Ws sequence. Keep only DOM needed by the assertions.
+Include lazy-loaded embed data-src, exact title, date, author or speaker link, categories, tags, Other Resources links, one 4Ws *index* fragment (year + series headings, standard/GoViral link pairs to `/4ws-{slug}/`), and one full 4Ws *detail* fragment (`four-ws.html`) taken from
+`https://www.ccf.org.ph/4ws-our-extraordinary-god-is-our-shepherd-follow-him-goviral-edition/`:
+the message title, the `AUG 30, 2026` date line, and the Worship / Welcome / Word / Works sections plus Weekly Prayer Points and the Memory Verse. Keep only the DOM the assertions need.
 
 - [ ] **Step 2: Write failing parser tests**
 
@@ -123,12 +126,27 @@ test("reads the real lazy-loaded video URL", () => {
   assert.equal(parsed.message.serviceEdition, "PM");
 });
 
-test("preserves all four 4Ws sections", () => {
-  const parsed = parseFourWsPage(fixture("four-ws.html"));
-  assert.ok(parsed.guide.welcomeHtml);
-  assert.ok(parsed.guide.worshipHtml);
-  assert.ok(parsed.guide.wordHtml);
-  assert.ok(parsed.guide.worksHtml);
+test("4Ws index pairs a standard and GoViral edition per week with its date", () => {
+  const parsed = parseFourWsIndex(fixture("four-ws-index.html"), src, OBSERVED_AT);
+  const wk = parsed.records[0];
+  assert.equal(wk.slug, "4ws-our-extraordinary-god-is-our-shepherd-follow-him");
+  assert.equal(wk.serviceDateLabel, "Aug 29 and 30");
+  assert.equal(wk.goViralUrl, "https://www.ccf.org.ph/4ws-our-extraordinary-god-is-our-shepherd-follow-him-goviral-edition/");
+});
+
+test("4Ws detail keeps every section, the date, and the memory verse", () => {
+  const parsed = parseFourWsPage(fixture("four-ws.html"), src, OBSERVED_AT);
+  const g = parsed.record;
+  assert.equal(g.title, "Our Extraordinary God Is Our Shepherd: Follow Him!");
+  assert.equal(g.dateLabel, "Aug 30, 2026");
+  assert.equal(g.date, "2026-08-30");
+  assert.match(g.worshipHtml ?? "", /How Great Thou Art/);
+  assert.match(g.welcomeHtml ?? "", /someone you trust to guide you/);
+  assert.match(g.wordHtml ?? "", /POINT IT OUT/);
+  assert.match(g.worksHtml ?? "", /APPLY IT/);
+  assert.match(g.prayerPointsHtml ?? "", /Thanksgiving/);
+  assert.equal(g.memoryVerseReference, "Psalm 23:1");
+  assert.match(g.memoryVerseText ?? "", /my shepherd/);
 });
 ~~~
 
@@ -140,7 +158,9 @@ Expected: FAIL because the parser modules are absent.
 
 - [ ] **Step 4: Implement parsers**
 
-Read data-src before placeholder src; preserve exact titles and raw dates; normalize AM, PM, and format only from explicit tokens; collect labeled Other Resources; sanitize body sections; and return warnings rather than guesses for absent metadata.
+Read data-src before placeholder src; preserve exact titles and raw dates; normalize AM, PM, and format only from explicit tokens; collect labeled Other Resources; sanitize body sections; return warnings rather than guesses for absent metadata.
+
+`parseFourWsIndex` yields one `FourWsWeek` per week: `slug` (the standard-edition slug), `title`, `seriesTitle`, `serviceDateLabel` + normalized `serviceDate`, `standardUrl`, `goViralUrl`. `parseFourWsPage` yields a `FourWsGuide`: `slug`, `title`, `dateLabel` + `date`, sanitized `worshipHtml` / `welcomeHtml` / `wordHtml` / `worksHtml` / `prayerPointsHtml`, `memoryVerseReference`, `memoryVerseText`, and `source`. Section boundaries come from the visible headings (Worship, Welcome, Word, Works, Weekly Prayer Points, Memory verse); text between a heading and the next is that section's HTML.
 
 - [ ] **Step 5: Test and commit**
 
@@ -266,13 +286,14 @@ git commit -m "refactor: read teaching from synchronized content"
 - Modify: src/app/watch/messages/filters.tsx
 - Modify: src/app/watch/messages/[slug]/page.tsx
 - Modify: src/app/watch/4ws/page.tsx
+- Create: src/app/watch/4ws/[slug]/page.tsx
 - Modify: src/app/page.tsx
 - Create: src/app/watch/4ws/links.test.ts
 - Create: src/app/four-ws-live.test.ts
 - Create: src/app/watch/messages/messages.e2e.test.mjs
 
 **Interfaces:**
-- Produces: URL-backed edition and language filters, semantic pagination, explicit companion links, working 4Ws PDFs, and the homepage plus message-detail 4Ws blocks rendering the live current-week guide.
+- Produces: URL-backed edition and language filters, semantic pagination, explicit companion links, a full `/watch/4ws/[slug]` guide route, and the homepage plus message-detail 4Ws blocks rendering the live current-week guide with its date.
 
 - [ ] **Step 1: Add the failing PDF-link regression test**
 
@@ -293,10 +314,14 @@ test("homepage 4Ws rail has no hardcoded movement descriptions", () => {
   assert.doesNotMatch(source, /const FOUR_WS = \[/);
 });
 
-test("message detail renders the synced 4Ws guide body and official PDF", () => {
+test("message detail renders the synced 4Ws guide body and its date", () => {
   const source = readFileSync("src/app/watch/messages/[slug]/page.tsx", "utf8");
-  assert.match(source, /four_ws/);
-  assert.match(source, /pdf_url|guideUrl/);
+  assert.match(source, /getFourWsGuide|fourWsGuide/);
+  assert.match(source, /dateLabel|guide\.date/);
+});
+
+test("the 4Ws index and guide route exist", () => {
+  assert.ok(readFileSync("src/app/watch/4ws/[slug]/page.tsx", "utf8").includes("getFourWsGuide"));
 });
 ~~~
 
@@ -310,7 +335,11 @@ Expected: FAIL against the current inert PDF button and the hardcoded FOUR_WS ar
 
 Add format, service, language, and year query parameters; total count and real pagination; unobtrusive source and update details; explicit companion links only; and accessible PDF, audio, and video anchors.
 
-Replace the hardcoded `FOUR_WS` array in `src/app/page.tsx` and the `#four-ws` section of `src/app/watch/messages/[slug]/page.tsx` with the synced guide for the latest message: render the actual welcome question, the passage, the Word questions, and the works step from `latest.four_ws` (sanitized HTML sections), and point "Get the guide" / "Get the 4Ws guide" at the record's official CCF PDF URL. When the latest message has no published guide yet, fall back to a single short generic sentence — not a four-line breakdown — and keep the button pointing at `/watch/messages/[slug]#four-ws`.
+`/watch/4ws` lists weeks from `getFourWsWeeks()` — each row shows the series, the **service date label**, and links to the standard and GoViral editions. `/watch/4ws/[slug]` renders a `FourWsGuide` from `getFourWsGuide(slug)`: the title, the **date** (e.g. "Aug 30, 2026"), then the Worship, Welcome, Word, Works, Weekly Prayer Points, and Memory Verse sections as sanitized HTML, with a link back to the source page on ccf.org.ph. `generateStaticParams` covers the published slugs.
+
+Replace the hardcoded `FOUR_WS` array in `src/app/page.tsx` and the `#four-ws` section of `src/app/watch/messages/[slug]/page.tsx` with the synced guide for the latest message: show the **date line**, then the actual Welcome question, the passage/Word content, and the Works step from the guide (sanitized HTML), and point "Get the guide" / "Get the 4Ws guide" at `/watch/4ws/[slug]` (not a raw PDF). When the latest message has no published guide yet, fall back to a single short generic sentence — not a four-line breakdown — and link to `/watch/4ws`.
+
+Every 4Ws surface that shows a guide or week also shows its date so a reader knows which Sunday it belongs to. Chronicle and Scripture cards likewise show their service/week date.
 
 - [ ] **Step 5: Run focused and browser checks**
 

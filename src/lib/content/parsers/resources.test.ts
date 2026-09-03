@@ -38,6 +38,7 @@ test("Chronicle identity is the download id, not the download counter", () => {
   assert.equal(first.downloadId, "41950");
   assert.equal(first.seriesTitle, "Ordinary People, Extraordinary God");
   assert.equal(first.serviceDateLabel, "Aug 29 and 30");
+  assert.equal(first.serviceDate, "2026-08-30"); // year from run, later day
   assert.equal(
     first.title,
     "Our Extraordinary God Is Our Shepherd, Follow Him",
@@ -71,7 +72,7 @@ test("Scripture Memory parses the current week and year", () => {
   assert.equal(first.year, 2026);
   assert.equal(first.week, 35);
   assert.equal(first.reference, "Psalm 23:1");
-  assert.equal(first.verseText, "1 The Lord is my shepherd, I shall not want.");
+  assert.equal(first.verseText, "23 The Lord is my shepherd, I shall not want.");
   assert.equal(first.dateLabel, "August 30, 2026");
   assert.equal(first.date, "2026-08-30");
   assert.equal(first.downloadUrl, "https://www.ccf.org.ph/download/41918");
@@ -88,23 +89,32 @@ test("Scripture Memory carries year down from the heading to later weeks", () =>
   assert.equal(w52?.year, 2025);
 
   const w34 = result.records.find((r) => r.week === 34);
-  assert.equal(w34?.verseText, null); // empty <p class="verse-text"></p> -> null, not ""
+  assert.equal(w34?.year, 2026);
+  assert.match(w34?.verseText ?? "", /reward your work/); // pulled from verseList
 });
 
-test("Resources become links, and cards without a URL are marked unavailable", () => {
+test("Resources split language variants and mark cards without a URL unavailable", () => {
   const result = parseResourcesPage(
     fixture("resources.html"),
     source("https://www.ccf.org.ph/resources/"),
     OBSERVED_AT,
   );
-  const en = result.records.find((r) => r.slug === "the-best-decision-english");
+  const en = result.records.find(
+    (r) => r.title.includes("best decision") && r.language === "English",
+  );
   assert.ok(en);
-  assert.equal(en?.language, "English");
   assert.equal(en?.format, "Handout");
   assert.equal(en?.external, true); // glc.ccf.org.ph is outside www host
   assert.match(en?.url ?? "", /glc\.ccf\.org\.ph/);
+  assert.equal(en?.audience, "How can I know more about God?");
 
-  const soon = result.records.find((r) => r.slug === "coming-soon-marriage-primer");
+  const fil = result.records.find(
+    (r) => r.title.includes("best decision") && r.language === "Filipino",
+  );
+  assert.ok(fil);
+  assert.notEqual(fil?.slug, en?.slug);
+
+  const soon = result.records.find((r) => r.title.startsWith("Coming soon"));
   assert.ok(soon);
   assert.equal(soon?.url, null);
 });

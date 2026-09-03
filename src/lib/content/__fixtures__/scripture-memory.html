@@ -1,31 +1,64 @@
-<!-- Minimal fragment of https://www.ccf.org.ph/52-week-scripture/ : year <h2>
-     headings, then a card per week with the week number, reference, verse text,
-     a human date, and View / Download links. -->
+<!-- Minimal fragment of https://www.ccf.org.ph/52-week-scripture/ .
+     One .wpb_wrapper holds a .wpb_text_column with the year <h2>, then one
+     .vc_row.vc_inner per week: [Week N] [View / Download buttons] [Reference]
+     [human date]. Verse text is NOT in the row — it lives in a `verseList`
+     JS array in a <script>, keyed by week number. -->
 <main>
-  <div class="entry-content">
-    <h2>2026</h2>
-    <div class="memory-verse">
-      <span class="week">Week 35</span>
-      <span class="reference">Psalm 23:1</span>
-      <p class="verse-text">1 The Lord is my shepherd, I shall not want.</p>
-      <span class="date">August 30, 2026</span>
-      <a href="https://www.ccf.org.ph/52-week-scripture/week-35/">View</a>
-      <a href="https://www.ccf.org.ph/download/41918">Download</a>
+  <div class="wpb_wrapper">
+    <div class="wpb_text_column"><div class="wpb_wrapper"><h2>2026</h2></div></div>
+
+    <div class="vc_row wpb_row section vc_row-fluid vc_inner">
+      <div class="wpb_column vc_col-sm-2"><div class="wpb_wrapper">
+        <div class="wpb_text_column"><div class="wpb_wrapper"><p><strong>Week 35</strong></p></div></div>
+      </div></div>
+      <div class="wpb_column vc_col-sm-4"><div class="wpb_wrapper">
+        <a class="qbutton default preview-verse" href="">View</a>
+        <a class="qbutton default" href="https://www.ccf.org.ph/download/41918">Download</a>
+      </div></div>
+      <div class="wpb_column vc_col-sm-3"><div class="wpb_wrapper">
+        <div class="wpb_text_column"><div class="wpb_wrapper"><p><strong>Psalm 23:1</strong></p></div></div>
+      </div></div>
+      <div class="wpb_column vc_col-sm-3"><div class="wpb_wrapper">
+        <div class="wpb_text_column"><div class="wpb_wrapper"><p>August 30, 2026</p></div></div>
+      </div></div>
     </div>
-    <div class="memory-verse">
-      <span class="week">Week 34</span>
-      <span class="reference">Ruth 2:12</span>
-      <p class="verse-text"></p>
-      <span class="date">August 23, 2026</span>
-      <a href="https://www.ccf.org.ph/download/41839">Download</a>
+
+    <div class="vc_row wpb_row section vc_row-fluid vc_inner">
+      <div class="wpb_column vc_col-sm-2"><div class="wpb_wrapper">
+        <div class="wpb_text_column"><div class="wpb_wrapper"><p><strong>Week 34</strong></p></div></div>
+      </div></div>
+      <div class="wpb_column vc_col-sm-4"><div class="wpb_wrapper">
+        <a class="qbutton default" href="https://www.ccf.org.ph/download/41839">Download</a>
+      </div></div>
+      <div class="wpb_column vc_col-sm-3"><div class="wpb_wrapper">
+        <div class="wpb_text_column"><div class="wpb_wrapper"><p><strong>Ruth 2:12</strong></p></div></div>
+      </div></div>
+      <div class="wpb_column vc_col-sm-3"><div class="wpb_wrapper">
+        <div class="wpb_text_column"><div class="wpb_wrapper"><p>August 23, 2026</p></div></div>
+      </div></div>
     </div>
-    <h2>2025</h2>
-    <div class="memory-verse">
-      <span class="week">Week 52</span>
-      <span class="reference">Revelation 22:20</span>
-      <p class="verse-text">He who testifies to these things says, "Surely I am coming quickly."</p>
-      <span class="date">December 28, 2025</span>
-      <a href="https://www.ccf.org.ph/download/40012">Download</a>
+
+    <div class="wpb_text_column"><div class="wpb_wrapper"><h2>2025</h2></div></div>
+
+    <div class="vc_row wpb_row section vc_row-fluid vc_inner">
+      <div class="wpb_column vc_col-sm-2"><div class="wpb_wrapper">
+        <div class="wpb_text_column"><div class="wpb_wrapper"><p><strong>Week 52</strong></p></div></div>
+      </div></div>
+      <div class="wpb_column vc_col-sm-4"><div class="wpb_wrapper">
+        <a class="qbutton default" href="https://www.ccf.org.ph/download/40012">Download</a>
+      </div></div>
+      <div class="wpb_column vc_col-sm-3"><div class="wpb_wrapper">
+        <div class="wpb_text_column"><div class="wpb_wrapper"><p><strong>Revelation 22:20</strong></p></div></div>
+      </div></div>
+      <div class="wpb_column vc_col-sm-3"><div class="wpb_wrapper">
+        <div class="wpb_text_column"><div class="wpb_wrapper"><p>December 28, 2025</p></div></div>
+      </div></div>
     </div>
   </div>
+
+  <script id="sgpb-custom-script-24629">
+    jQuery(document).ready(function(){
+      const verseList = [{ week: 35, verse: "Psalm 23:1", content: "23 The Lord is my shepherd, I shall not want.", }, { week: 34, verse: "Ruth 2:12", content: "12 May the Lord reward your work.", }, { week: 52, verse: "Revelation 22:20", content: "20 He who testifies to these things says, “Surely I am coming quickly.”", }];
+    });
+  </script>
 </main>
