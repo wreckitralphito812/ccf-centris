@@ -37,6 +37,12 @@ export const metadata: Metadata = {
     locale: "en_PH",
     url: SITE.url,
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "CCF Centris",
+    description:
+      "A satellite center of Christ's Commission Fellowship at Eton Centris. Worship with us, find a Dgroup, use the center.",
+  },
   robots: { index: true, follow: true },
 };
 
