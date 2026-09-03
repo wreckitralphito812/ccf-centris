@@ -425,6 +425,26 @@ export async function getResources() {
   return resources;
 }
 
+// --- Synchronized CCF public content --------------------------------------
+// Backed by src/data/generated/public-content.json, refreshed by
+// `npm run content:sync`. See src/lib/content/public-queries.ts.
+
+export {
+  findResources,
+  getResourceFacets,
+  getChronicleIssues,
+  getChronicleGroups,
+  getScriptureMemory,
+  getScriptureYears,
+  getCurrentScriptureMemory,
+  getCurrentIntercede,
+} from "@/lib/content/public-queries";
+export type {
+  ResourceFilters,
+  ChronicleGroup,
+  IntercedeView,
+} from "@/lib/content/public-queries";
+
 // --- Global search ----------------------------------------------------------
 
 export interface SearchHit {
