@@ -3,7 +3,6 @@ import { Fraunces, Montserrat, Caveat } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { DemoNotice } from "@/components/demo-notice";
 import { ChromeOffset } from "@/components/chrome-offset";
 import { MobileActionBar } from "@/components/mobile-action-bar";
 import { SITE } from "@/lib/site";
@@ -27,7 +26,7 @@ const caveat = Caveat({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: {
-    default: "CCF Centris — Worship. Grow. Connect. Serve.",
+    default: "CCF Centris",
     template: "%s — CCF Centris",
   },
   description:
@@ -54,7 +53,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to content
         </a>
-        <DemoNotice />
         <SiteHeader />
         <ChromeOffset />
         <main id="main" className="flex flex-1 flex-col">
