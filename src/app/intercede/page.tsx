@@ -44,8 +44,21 @@ export default async function IntercedePage() {
     );
   }
 
-  const { campaign, archived } = view;
+  const { campaign, archived, active, startsInDays, daysLeft } = view;
   const range = fmtRange(campaign.startDate, campaign.endDate);
+
+  const countdown =
+    startsInDays != null
+      ? startsInDays === 0
+        ? "Starts today"
+        : startsInDays === 1
+          ? "Starts tomorrow"
+          : `Starts in ${startsInDays} days`
+      : daysLeft != null
+        ? daysLeft === 0
+          ? "Last day"
+          : `${daysLeft} ${daysLeft === 1 ? "day" : "days"} left`
+        : null;
 
   return (
     <>
@@ -56,7 +69,9 @@ export default async function IntercedePage() {
           range
             ? archived
               ? `Held ${range}. Kept here as a guide until the next season.`
-              : `${range} — come expectant, come surrendered.`
+              : active
+                ? `${range} — happening now. Come expectant, come surrendered.`
+                : `${range} — come expectant, come surrendered.`
             : undefined
         }
         actions={
@@ -77,11 +92,13 @@ export default async function IntercedePage() {
 
       <Section>
         <Container>
-          {archived ? (
-            <div className="mb-8">
+          <div className="mb-8 flex flex-wrap gap-2">
+            {archived ? (
               <Pill tone="muted">Archived — most recent guide</Pill>
-            </div>
-          ) : null}
+            ) : null}
+            {active ? <Pill tone="live">Happening now</Pill> : null}
+            {countdown ? <Pill tone="clay">{countdown}</Pill> : null}
+          </div>
 
           {campaign.bodyHtml ? (
             <article

@@ -112,14 +112,39 @@ export async function getCurrentScriptureMemory(): Promise<ScriptureMemoryRecord
 
 export interface IntercedeView {
   campaign: IntercedeRecord;
+  /** true when the campaign's end date is in the past. */
   archived: boolean;
+  /** true when today falls within the campaign window. */
+  active: boolean;
+  /** Whole days until the campaign starts, when it is still upcoming. */
+  startsInDays: number | null;
+  /** Whole days remaining, when the campaign is running. */
+  daysLeft: number | null;
+}
+
+function daysBetween(fromIso: string, toIso: string): number {
+  const a = new Date(`${fromIso}T00:00:00+08:00`).getTime();
+  const b = new Date(`${toIso}T00:00:00+08:00`).getTime();
+  return Math.round((b - a) / 864e5);
 }
 
 export function getCurrentIntercede(today = manilaDateKey()): Promise<IntercedeView | null> {
   const campaign = readSnapshot().intercede[0];
   if (!campaign) return Promise.resolve(null);
-  const archived = campaign.endDate ? campaign.endDate < today : false;
-  return Promise.resolve({ campaign, archived });
+
+  const start = campaign.startDate;
+  const end = campaign.endDate;
+  const archived = end ? end < today : false;
+  const upcoming = start ? start > today : false;
+  const active = !archived && !upcoming && Boolean(start);
+
+  return Promise.resolve({
+    campaign,
+    archived,
+    active,
+    startsInDays: upcoming && start ? daysBetween(today, start) : null,
+    daysLeft: active && end ? Math.max(0, daysBetween(today, end)) : null,
+  });
 }
 
 // --- GLC catalogue ------------------------------------------------

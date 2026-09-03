@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getTeaching } from "@/lib/teaching-live";
+import { getCurrentIntercede } from "@/lib/content/public-queries";
 import { addons, communities, facilities } from "@/data/center";
 import {
   announcements,
@@ -17,6 +18,7 @@ import type {
   CcfEvent,
   Dgroup,
   Facility,
+  Announcement,
   Message,
   Reservation,
   Service,
@@ -405,7 +407,36 @@ export async function getMyReservations(): Promise<Reservation[]> {
 
 // --- Site content -----------------------------------------------------------
 
-export async function getActiveAnnouncement() {
+/**
+ * The one site-wide banner. A live signal from synced content wins over the
+ * seed list: an Intercede Prayer & Fasting week that is running (or starts
+ * within a week) is the most time-sensitive thing a visitor should see.
+ */
+export async function getActiveAnnouncement(): Promise<Announcement | null> {
+  const intercede = await getCurrentIntercede();
+  if (intercede && (intercede.active || (intercede.startsInDays ?? 99) <= 7)) {
+    const when = intercede.active
+      ? "is happening now"
+      : intercede.startsInDays === 0
+        ? "starts today"
+        : intercede.startsInDays === 1
+          ? "starts tomorrow"
+          : `starts in ${intercede.startsInDays} days`;
+    return {
+      id: "intercede-live",
+      title: `${intercede.campaign.campaignTitle} ${when}`,
+      body: null,
+      level: "info",
+      is_sitewide: true,
+      starts_at: new Date().toISOString(),
+      ends_at: intercede.campaign.endDate
+        ? `${intercede.campaign.endDate}T23:59:59+08:00`
+        : null,
+      link_href: "/intercede",
+      link_label: "How to join",
+    };
+  }
+
   const t = Date.now();
   return (
     announcements.find(

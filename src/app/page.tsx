@@ -8,7 +8,7 @@ import {
   getVolunteerRoles,
 } from "@/lib/queries";
 import { findDgroups, getCurrentFourWsGuide } from "@/lib/queries";
-import { manilaDateKey, fmtDayLong, fmtTime } from "@/lib/format";
+import { manilaDateKey, fmtDayLong, fmtTime, fmtUntil } from "@/lib/format";
 import { SITE, MAPS_LINK } from "@/lib/site";
 import {
   ButtonLink,
@@ -451,9 +451,10 @@ function NextServiceCard({
       <p className="mt-1.5 text-[0.95rem] font-semibold text-ink tabular">
         {fmtDayLong(next.starts_at)} · {fmtTime(next.starts_at)}
       </p>
-      {next.venue?.name ? (
-        <p className="mt-0.5 text-[0.82rem] text-ink-mute">{next.venue.name}</p>
-      ) : null}
+      <p className="mt-0.5 text-[0.82rem] text-ink-mute">
+        {fmtUntil(next.starts_at)}
+        {next.venue?.name ? ` · ${next.venue.name}` : ""}
+      </p>
     </CardEntrance>
   );
 }
