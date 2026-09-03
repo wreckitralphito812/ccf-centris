@@ -13,11 +13,14 @@ export interface NavGroup {
 /**
  * The full navigation. Every href here resolves to a real page.
  *
- * Four doors, chosen for a first-time visitor: Visit (come in person),
- * Watch (join online), Get Involved (everything after your first Sunday —
- * Dgroups, communities, growing, serving), and Centris (this building and
- * what happens in it). Communities, Serve, and Events used to be top-level
- * and are now grouped where a newcomer would actually look for them.
+ * Five doors, chosen for a first-time visitor: Visit (come in person),
+ * Watch (join online), Connect (find your people — Dgroups, the life-stage
+ * communities, serving), Grow (growing in the Word — the journey, classes,
+ * resources, prayer), and Centris (this building and what happens in it).
+ *
+ * Connect and Grow were one "Get Involved" menu of 17 links, which was too
+ * long to scan and overran the viewport. Splitting them keeps each panel to
+ * a single short, two-column list.
  */
 export const NAV: NavGroup[] = [
   {
@@ -42,8 +45,8 @@ export const NAV: NavGroup[] = [
     ],
   },
   {
-    label: "Get Involved",
-    href: "/grow",
+    label: "Connect",
+    href: "/communities",
     items: [
       { label: "Find a Dgroup", href: "/grow/find-a-dgroup", blurb: "Search by day and life stage" },
       { label: "How Dgroups work", href: "/grow/join-a-dgroup", blurb: "What a group involves" },
@@ -53,15 +56,21 @@ export const NAV: NavGroup[] = [
       { label: "Women", href: "/communities/women", blurb: "Women of every season" },
       { label: "Men", href: "/communities/men", blurb: "Men growing together" },
       { label: "Sports", href: "/communities/sports", blurb: "Recreation and fellowship" },
+      { label: "Serve & volunteer", href: "/serve", blurb: "Join a ministry team" },
+      { label: "Missions", href: "/serve/missions", blurb: "Outreach beyond Quezon City" },
+    ],
+  },
+  {
+    label: "Grow",
+    href: "/grow",
+    items: [
       { label: "Discipleship journey", href: "/grow/journey", blurb: "Steps toward maturity" },
+      { label: "GLC classes", href: "/grow/glc", blurb: "Deeper study of the Word" },
       { label: "Resources", href: "/grow/resources", blurb: "CCF's growth materials" },
       { label: "52-Week Scripture", href: "/grow/resources/scripture-memory", blurb: "This week's memory verse" },
       { label: "Chronicle", href: "/grow/resources/chronicle", blurb: "The weekly message digest" },
       { label: "Intercede", href: "/intercede", blurb: "Prayer & Fasting weeks" },
-      { label: "GLC classes", href: "/grow/glc", blurb: "Deeper study of the Word" },
       { label: "Know Jesus", href: "/know-jesus", blurb: "Beginning to follow Him" },
-      { label: "Serve & volunteer", href: "/serve", blurb: "Join a ministry team" },
-      { label: "Missions", href: "/serve/missions", blurb: "Outreach beyond Quezon City" },
     ],
   },
   {

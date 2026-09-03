@@ -213,13 +213,14 @@ export function ServiceRow({ s, highlight }: { s: Service; highlight?: boolean }
 
 /* --- Community -------------------------------------------------------------- */
 
-// These panels carry white text, so they use the accessible teal rather
-// than the exact brand teal: white on #00a6b6 is only 2.95:1.
+// These panels carry white text, so they use deep, high-contrast fills:
+// white on the exact brand teal is only 2.95:1. Two brand families only —
+// teal and maroon — plus the warm dark ground. No off-brand olive.
 const ACCENT: Record<string, string> = {
-  clay: "#007682",
-  sky: "#72042c",
-  moss: "#41522f",
-  night: "#10262b",
+  clay: "#00636d", // deep brand teal, 5.6:1 under white
+  sky: "#6c112f", // CCF maroon
+  moss: "#00636d", // legacy value: fold olive back into teal
+  night: "#16292a", // warm dark ground
 };
 
 export function CommunityCard({ c }: { c: Community }) {
@@ -227,30 +228,128 @@ export function CommunityCard({ c }: { c: Community }) {
   return (
     <Link
       href={`/communities/${c.slug}`}
-      className="group relative flex min-h-[16rem] flex-col justify-end overflow-hidden border border-hairline p-6"
+      className="group relative flex min-h-60 flex-col overflow-hidden border border-hairline p-6 transition-transform duration-200 hover:-translate-y-0.5"
       style={{ background: accent }}
     >
       <div
         aria-hidden
-        className="absolute inset-0 opacity-25"
+        className="absolute inset-0 opacity-20 transition-opacity duration-200 group-hover:opacity-30"
         style={{
           backgroundImage: "radial-gradient(#f4efe6 1px, transparent 1.2px)",
           backgroundSize: "8px 8px",
         }}
       />
-      <div className="relative">
-        <h3 className="font-display text-4xl leading-none text-paper-bright">{c.name}</h3>
+
+      {/* Icon chip — a fixed visual anchor at the top of every card. */}
+      <div className="relative grid h-11 w-11 place-items-center rounded-full border border-paper-bright/30 bg-paper-bright/10 text-paper-bright">
+        <CommunityIcon slug={c.slug} />
+      </div>
+
+      <div className="relative mt-5">
+        <h3 className="font-display text-3xl leading-none text-paper-bright">
+          {c.name}
+        </h3>
         {c.tagline ? (
-          <p className="mt-3 text-[0.9rem] leading-snug text-paper-bright/80">
+          <p className="mt-2.5 text-[0.9rem] leading-snug text-paper-bright">
             {c.tagline}
           </p>
         ) : null}
-        {c.meeting_note ? (
-          <p className="label mt-4 text-paper-bright/60">{c.meeting_note}</p>
-        ) : null}
       </div>
+
+      {c.meeting_note ? (
+        <p className="label relative mt-auto border-t border-paper-bright/25 pt-4 text-paper-bright/90">
+          {c.meeting_note}
+        </p>
+      ) : null}
     </Link>
   );
+}
+
+/**
+ * One line icon per community, keyed by slug so the mapping survives a name
+ * change. Falls back to a people glyph for anything unmapped.
+ */
+function CommunityIcon({ slug }: { slug: string }) {
+  const common = {
+    width: 22,
+    height: 22,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.7,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+  };
+  switch (slug) {
+    case "nxtgen": // kite — children
+      return (
+        <svg {...common}>
+          <path d="M12 3 4 11l8 8 8-8-8-8Z" />
+          <path d="M12 3v16M4 11h16" />
+          <path d="M12 19v3" />
+        </svg>
+      );
+    case "elevate": // upward chevrons — students
+      return (
+        <svg {...common}>
+          <path d="m6 15 6-6 6 6" />
+          <path d="m6 9 6-6 6 6" />
+        </svg>
+      );
+    case "b1g": // compass — purpose
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="m15.5 8.5-2 5-5 2 2-5 5-2Z" />
+        </svg>
+      );
+    case "families": // house with heart — family discipleship
+      return (
+        <svg {...common}>
+          <path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-8Z" />
+          <path d="M12 17.5c-1.6-1.2-3-2.3-3-3.7a1.6 1.6 0 0 1 3-.8 1.6 1.6 0 0 1 3 .8c0 1.4-1.4 2.5-3 3.7Z" />
+        </svg>
+      );
+    case "women": // sprout — transforming love
+      return (
+        <svg {...common}>
+          <path d="M12 21v-8" />
+          <path d="M12 13c0-3-2-5-6-5 0 3 2 6 6 5Z" />
+          <path d="M12 11c0-3 2-5 6-5 0 3-2 6-6 5Z" />
+        </svg>
+      );
+    case "men": // anvil / shield — biblical manhood
+      return (
+        <svg {...common}>
+          <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3Z" />
+        </svg>
+      );
+    case "ignite": // briefcase — business
+      return (
+        <svg {...common}>
+          <rect x="3" y="7" width="18" height="13" rx="1.5" />
+          <path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+          <path d="M3 12h18" />
+        </svg>
+      );
+    case "sports": // ball in motion
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="8" />
+          <path d="M12 4a8 8 0 0 0 0 16M4 12a8 8 0 0 0 16 0" />
+        </svg>
+      );
+    default: // people
+      return (
+        <svg {...common}>
+          <circle cx="9" cy="8" r="3" />
+          <circle cx="17" cy="10" r="2.4" />
+          <path d="M3.5 19c.6-3 2.8-4.5 5.5-4.5S13.9 16 14.5 19" />
+          <path d="M15 14.6c2 .2 3.6 1.5 4 4" />
+        </svg>
+      );
+  }
 }
 
 /* --- Dgroup ----------------------------------------------------------------- */

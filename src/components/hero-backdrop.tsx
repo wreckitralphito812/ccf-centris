@@ -22,26 +22,16 @@ export function HeroBackdrop({
       <img
         src={poster}
         alt=""
-        className="absolute inset-0 h-full w-full scale-105 object-cover"
+        className="absolute inset-0 h-full w-full object-cover"
         style={{ objectPosition: focal }}
         loading="eager"
         decoding="async"
       />
 
-      {/* Wash. Light enough that the cover photo reads as the photograph it
-         is: a whisper of all-over dim for the paper feel, and a left-heavy
-         gradient that only has to carry the copy card, fading out well before
-         the right half of the frame. */}
-      <div className="absolute inset-0 bg-paper-deep/20" />
-      <div className="absolute inset-0 bg-gradient-to-r from-paper-deep/85 via-paper-deep/40 to-transparent" />
-      <div className="absolute inset-0 bg-gradient-to-t from-paper-deep/35 to-transparent" />
-      <div
-        className="absolute inset-0 opacity-[0.10]"
-        style={{
-          backgroundImage: "radial-gradient(#17150f 1px, transparent 1.2px)",
-          backgroundSize: "8px 8px",
-        }}
-      />
+      {/* No cover: the photograph carries the hero. Only a soft left-edge
+         gradient remains, and just enough of it to seat the copy card —
+         it fades out well before the middle of the frame. */}
+      <div className="absolute inset-0 bg-gradient-to-r from-paper-deep/55 via-paper-deep/10 to-transparent sm:via-transparent" />
     </div>
   );
 }

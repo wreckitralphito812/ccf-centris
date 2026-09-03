@@ -72,7 +72,10 @@ export function SiteHeader() {
           <Wordmark />
         </Link>
 
-        <nav aria-label="Main" className="ml-4 hidden items-center gap-1 lg:flex">
+        <nav
+          aria-label="Main"
+          className="ml-3 hidden items-center gap-0.5 lg:flex xl:ml-4 xl:gap-1"
+        >
           {NAV.map((group) => (
             <div key={group.label} onMouseEnter={() => hoverOpen(group.label)}>
               <Link
@@ -80,7 +83,7 @@ export function SiteHeader() {
                 aria-expanded={open === group.label}
                 onFocus={() => hoverOpen(group.label)}
                 className={cx(
-                  "label px-3 py-2 transition-colors",
+                  "label px-2.5 py-2 transition-colors xl:px-3",
                   isActive(group.href) ? "text-clay" : "text-ink hover:text-clay",
                 )}
               >
@@ -129,27 +132,30 @@ export function SiteHeader() {
           onMouseEnter={() => hoverOpen(open)}
           onMouseLeave={hoverClose}
         >
-          <div className="mx-auto max-w-[110rem] px-8 py-8">
+          <div className="mx-auto max-w-[110rem] px-8 py-6">
             {NAV.filter((g) => g.label === open).map((group) => (
-              <div key={group.label} className="grid gap-8 md:grid-cols-[16rem_1fr]">
+              <div
+                key={group.label}
+                className="grid max-w-4xl gap-x-10 gap-y-4 md:grid-cols-[12rem_1fr]"
+              >
                 <div>
                   <p className="label text-clay">{group.label}</p>
-                  <p className="font-display mt-3 text-3xl leading-tight">
+                  <p className="font-display mt-2 text-lg leading-snug text-ink-soft">
                     {MENU_BLURB[group.label]}
                   </p>
                 </div>
-                <ul className="grid gap-x-8 gap-y-1 sm:grid-cols-2 xl:grid-cols-3">
+                <ul className="grid gap-x-8 gap-y-0 sm:grid-cols-2">
                   {group.items.map((item) => (
                     <li key={item.href}>
                       <Link
                         href={item.href}
-                        className="group flex flex-col border-b border-hairline py-3 transition-colors hover:border-ink"
+                        className="group flex flex-col border-b border-hairline py-1.5 transition-colors hover:border-ink"
                       >
-                        <span className="text-[0.95rem] font-semibold text-ink transition-colors group-hover:text-clay">
+                        <span className="text-[0.9rem] font-semibold text-ink transition-colors group-hover:text-clay">
                           {item.label}
                         </span>
                         {item.blurb ? (
-                          <span className="mt-0.5 text-[0.82rem] text-ink-mute">
+                          <span className="mt-0.5 text-[0.78rem] leading-snug text-ink-mute">
                             {item.blurb}
                           </span>
                         ) : null}
@@ -220,10 +226,11 @@ export function SiteHeader() {
 }
 
 const MENU_BLURB: Record<string, string> = {
-  Visit: "Everything you need for your first Sunday with us.",
-  Watch: "Join the service live, or catch up when it suits you.",
-  "Get Involved": "Dgroups, community, growing in the Word, and serving — the life of the church beyond Sunday.",
-  Centris: "A look around the center and what happens in it.",
+  Visit: "Everything you need for your first Sunday.",
+  Watch: "Join the service live, or watch on your own time.",
+  Connect: "Find your people — Dgroups, communities, and a team to serve on.",
+  Grow: "Grow in the Word — the journey, classes, and resources.",
+  Centris: "The center and the life that fills it.",
 };
 
 /* --- Icons. Inline so nothing blocks first paint. --- */

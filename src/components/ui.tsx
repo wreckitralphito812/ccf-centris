@@ -52,7 +52,7 @@ const TONE: Record<ButtonTone, string> = {
 const SIZE: Record<ButtonSize, string> = {
   sm: "px-3.5 py-1.5 text-[0.78rem]",
   md: "px-5 py-2.5 text-[0.86rem]",
-  lg: "px-7 py-3.5 text-[0.95rem]",
+  lg: "px-5 py-3 text-[0.9rem] sm:px-7 sm:py-3.5 sm:text-[0.95rem]",
 };
 
 function buttonClass(tone: ButtonTone, size: ButtonSize, full?: boolean) {
@@ -135,7 +135,7 @@ export function Section({
     ink: "bg-night text-paper-bright",
   } as const;
   return (
-    <section id={id} className={cx("py-16 sm:py-24", tones[tone], className)}>
+    <section id={id} className={cx("py-12 sm:py-24", tones[tone], className)}>
       {children}
     </section>
   );
@@ -188,7 +188,7 @@ export function SectionHead({
   return (
     <div
       className={cx(
-        "flex flex-col gap-5 md:flex-row md:items-end md:justify-between",
+        "flex flex-col gap-4 md:flex-row md:items-end md:justify-between md:gap-6",
         className,
       )}
     >
@@ -198,7 +198,7 @@ export function SectionHead({
         {lead ? (
           <p
             className={cx(
-              "mt-4 text-[1.02rem] leading-relaxed",
+              "mt-3 text-[0.98rem] leading-relaxed sm:mt-4 sm:text-[1.02rem]",
               tone === "paper" ? "text-paper-bright/70" : "text-ink-soft",
             )}
           >

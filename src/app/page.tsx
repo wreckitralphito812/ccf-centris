@@ -33,12 +33,20 @@ import {
   Stagger,
 } from "@/components/motion";
 import { CcfMark } from "@/components/wordmark";
+import { SectionIcon } from "@/components/icons";
 import { YouTubeThumb } from "@/components/youtube-thumb";
 import { YouTubeEmbed } from "@/components/youtube-embed";
 import { WelcomeVideo } from "@/components/welcome-video";
 import { getSundayServices, type SundayServices } from "@/lib/services";
-import { getFeaturedSeries, getFastTracks } from "@/lib/channel";
-import type { SeriesGroup, CatalogPlaylist } from "@/lib/channel";
+import {
+  getFeaturedSeriesWithVideos,
+  getFastTracksWithVideos,
+} from "@/lib/channel";
+import type {
+  PlaylistWithVideos,
+  SeriesGroupWithVideos,
+} from "@/lib/channel";
+import { SeriesPlayerCard } from "@/components/series-player-card";
 
 /**
  * Revalidate hourly. The YouTube-backed sections (next Sunday service, most
@@ -73,8 +81,8 @@ export default async function HomePage() {
   // Live from CCF's YouTube channel, revalidated on an interval.
   const [sunday, featuredSeries, fastTracks] = await Promise.all([
     getSundayServices(),
-    getFeaturedSeries(3),
-    getFastTracks(4),
+    getFeaturedSeriesWithVideos(3),
+    getFastTracksWithVideos(4),
   ]);
 
   const today = manilaDateKey();
@@ -258,12 +266,13 @@ function SundayMessage({
       })
     : [];
   return (
-    <Section tone="bright" className="py-12! sm:py-16!">
+    <Section tone="bright" className="pt-10! pb-12! sm:pt-12! sm:pb-16!">
       <Container>
         <RevealHead
           eyebrow="Sunday's message"
-          title="Pick up where Sunday left off"
-          lead="Missed a week, or want to sit with the message again? Every teaching is here to watch, with a 4Ws guide for your Dgroup."
+          icon="message"
+          title="The message, whenever you need it"
+          lead="Missed Sunday, or want to sit with it again? Every teaching is here to watch, with a 4Ws discussion guide for your Dgroup."
           action={
             <ButtonLink href="/watch/messages" tone="primary">
               All messages
@@ -465,8 +474,8 @@ function WatchWithCcf({
 }: {
   sunday: SundayServices;
   nextService: Awaited<ReturnType<typeof getServiceWindow>>["next"];
-  series: SeriesGroup[];
-  fastTracks: CatalogPlaylist[];
+  series: SeriesGroupWithVideos[];
+  fastTracks: PlaylistWithVideos[];
 }) {
   const next = sunday.next;
   const latestArchived = sunday.archive[0] ?? null;
@@ -476,7 +485,7 @@ function WatchWithCcf({
     return null;
 
   return (
-    <Section tone="paper">
+    <Section tone="paper" className="pb-12! sm:pb-16!">
       <Container>
         {/* Intro film leads the section — for anyone landing here who doesn't
             know CCF yet. The Sunday-stream header comes after it, with the
@@ -485,6 +494,7 @@ function WatchWithCcf({
           className="mx-auto max-w-2xl"
           align="center"
           eyebrow="Watch with CCF"
+          icon="sparkle"
           title="A brief introduction to CCF"
           lead="If this is your first time here, this short film introduces Christ's Commission Fellowship — what we believe, how we worship, and what a Sunday looks like."
         />
@@ -498,6 +508,7 @@ function WatchWithCcf({
         <div className="mt-16 border-t border-hairline pt-16">
           <RevealHead
             eyebrow="The Sunday stream"
+            icon="play"
             title="Sunday services, live and on demand"
             lead="CCF Centris carries the CCF-wide stream. Watch the service live, or catch any past message here — the listing updates automatically as services air and new teaching is published."
             action={
@@ -572,17 +583,15 @@ function WatchWithCcf({
         </Reveal>
 
         {earlierServices.length ? (
-          <Reveal as="div" className="mt-10">
-            <div className="flex flex-wrap items-baseline justify-between gap-3">
-              <p className="label text-ink-mute">Earlier services</p>
-              <Link
-                href="/watch/archive"
-                className="link label text-clay underline underline-offset-4"
-              >
-                All Sunday services →
-              </Link>
-            </div>
-            <Stagger className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <Reveal as="div" className="mt-16 border-t border-hairline pt-12">
+            <BlockHead
+              title="Earlier Sunday services"
+              blurb="Every recent Sunday, ready to watch here without leaving the page."
+              linkHref="/watch/archive"
+              linkLabel="All Sunday services"
+              icon="play"
+            />
+            <Stagger className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {earlierServices.map((s) => (
                 <article
                   key={s.videoId}
@@ -620,56 +629,32 @@ function WatchWithCcf({
         ) : null}
 
         {fastTracks.length ? (
-          <Reveal as="div" className="mt-10">
-            <div className="flex flex-wrap items-baseline justify-between gap-3">
-              <p className="label text-ink-mute">Sunday Fast Tracks</p>
-              <Link
-                href="/watch/series"
-                className="link label text-clay underline underline-offset-4"
-              >
-                All series &amp; Fast Tracks →
-              </Link>
-            </div>
-            <p className="mt-2 max-w-2xl text-[0.9rem] text-ink-soft">
-              Every teaching series has a Fast Track — a condensed version of the
-              Sunday message for those with limited time.
-            </p>
-            <Stagger className="mt-5 grid gap-5 sm:grid-cols-2">
+          <Reveal as="div" className="mt-16 border-t border-hairline pt-12">
+            <BlockHead
+              title="Sunday Fast Tracks"
+              blurb="Short on time? Each teaching series has a Fast Track — the Sunday message condensed to its essentials. Press play, or pick any part from the list."
+              linkHref="/watch/series"
+              linkLabel="All series & Fast Tracks"
+              icon="message"
+            />
+            <Stagger className="mt-6 grid gap-6 sm:grid-cols-2">
               {fastTracks.map((p) => {
                 const coverId = p.thumbnail.match(/\/vi\/([^/]+)\//)?.[1];
                 return (
-                  <Link
+                  <SeriesPlayerCard
                     key={p.id}
-                    href={p.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="group flex border border-hairline bg-paper-bright"
-                  >
-                    <div className="relative aspect-video w-28 shrink-0 overflow-hidden border-r border-hairline min-[420px]:w-36 sm:w-48">
-                      {p.thumbnail ? (
-                        <YouTubeThumb
-                          src={p.thumbnail}
-                          fallbackSrc={
-                            coverId
-                              ? `https://i.ytimg.com/vi/${coverId}/hqdefault.jpg`
-                              : p.thumbnail
-                          }
-                          alt={p.series}
-                        />
-                      ) : (
-                        <span className="halftone block h-full w-full bg-paper-deep" />
-                      )}
-                    </div>
-                    <div className="flex flex-1 flex-col p-4">
-                      <p className="label text-clay">Fast Track</p>
-                      <p className="font-display mt-1 text-[1.02rem] leading-tight group-hover:text-clay">
-                        {p.series}
-                      </p>
-                      <p className="label mt-auto pt-3 text-ink-mute">
-                        Watch on YouTube →
-                      </p>
-                    </div>
-                  </Link>
+                    kindLabel="Fast Track"
+                    series={p.series}
+                    playlistId={p.id}
+                    playlistHref={p.href}
+                    cover={p.thumbnail}
+                    coverFallback={
+                      coverId
+                        ? `https://i.ytimg.com/vi/${coverId}/hqdefault.jpg`
+                        : p.thumbnail
+                    }
+                    videos={p.videos}
+                  />
                 );
               })}
             </Stagger>
@@ -677,49 +662,37 @@ function WatchWithCcf({
         ) : null}
 
         {series.length ? (
-          <Reveal as="div" className="mt-10">
-            <div className="flex flex-wrap items-baseline justify-between gap-3">
-              <p className="label text-ink-mute">Teaching series</p>
-              <Link
-                href="/watch/series"
-                className="link label text-clay underline underline-offset-4"
-              >
-                Browse all series →
-              </Link>
-            </div>
-            <Stagger className="mt-5 grid gap-5 sm:grid-cols-3">
+          <Reveal as="div" className="mt-16 border-t border-hairline pt-12">
+            <BlockHead
+              title="Teaching series"
+              blurb="Longer journeys through a book or a theme — press play, or pick any message in the series to watch it here."
+              linkHref="/watch/series"
+              linkLabel="Browse all series"
+              icon="sparkle"
+            />
+            <Stagger className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {series.map((g) => {
                 const coverId = g.cover.match(/\/vi\/([^/]+)\//)?.[1];
+                const playlistId = g.main?.id ?? g.companions[0]?.id ?? null;
+                if (!playlistId) return null;
                 return (
-                  <Link
+                  <SeriesPlayerCard
                     key={g.slug}
-                    href="/watch/series"
-                    className="group flex flex-col border border-hairline bg-paper-bright"
-                  >
-                    <div className="relative aspect-video overflow-hidden border-b border-hairline">
-                      {g.cover ? (
-                        <YouTubeThumb
-                          src={g.cover}
-                          fallbackSrc={
-                            coverId
-                              ? `https://i.ytimg.com/vi/${coverId}/hqdefault.jpg`
-                              : g.cover
-                          }
-                          alt={g.series}
-                        />
-                      ) : (
-                        <span className="halftone block h-full w-full bg-paper-deep" />
-                      )}
-                    </div>
-                    <div className="flex flex-1 flex-col p-4">
-                      <p className="font-display text-[1.02rem] leading-tight group-hover:text-clay">
-                        {g.series}
-                      </p>
-                      <p className="label mt-auto pt-3 text-ink-mute tabular">
-                        {g.main?.itemCount ?? g.totalVideos} videos
-                      </p>
-                    </div>
-                  </Link>
+                    kindLabel="Teaching series"
+                    series={g.series}
+                    playlistId={playlistId}
+                    playlistHref={
+                      g.main?.href ??
+                      `https://www.youtube.com/playlist?list=${playlistId}`
+                    }
+                    cover={g.cover}
+                    coverFallback={
+                      coverId
+                        ? `https://i.ytimg.com/vi/${coverId}/hqdefault.jpg`
+                        : g.cover
+                    }
+                    videos={g.videos}
+                  />
                 );
               })}
             </Stagger>
@@ -727,6 +700,47 @@ function WatchWithCcf({
         ) : null}
       </Container>
     </Section>
+  );
+}
+
+/**
+ * A titled sub-section header used inside the Watch section: a heading, a
+ * short black-text blurb, and a "see all" link, on a rule. Keeps each shelf
+ * from reading as an afterthought squeezed under the one above.
+ */
+function BlockHead({
+  title,
+  blurb,
+  linkHref,
+  linkLabel,
+  icon,
+}: {
+  title: string;
+  blurb: string;
+  linkHref: string;
+  linkLabel: string;
+  icon: import("@/components/icons").IconName;
+}) {
+  return (
+    <div>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+        <h3 className="font-display flex items-center gap-2.5 text-2xl leading-tight">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-hairline text-clay">
+            <SectionIcon name={icon} className="h-4 w-4" />
+          </span>
+          {title}
+        </h3>
+        <Link
+          href={linkHref}
+          className="link label text-clay underline underline-offset-4"
+        >
+          {linkLabel} →
+        </Link>
+      </div>
+      <p className="mt-2 max-w-2xl text-[0.92rem] leading-relaxed text-ink">
+        {blurb}
+      </p>
+    </div>
   );
 }
 
@@ -767,8 +781,10 @@ function FindYourPeople({
       <Container className="relative">
         <div className="grid gap-x-12 gap-y-10 lg:grid-cols-[minmax(0,34rem)_1fr] lg:items-end">
           <div>
-            <RevealItem as="p" className="label flex items-center gap-3 text-paper-bright/60">
-              <span aria-hidden className="h-px w-8 bg-current opacity-50" />
+            <RevealItem as="p" className="label flex items-center gap-2.5 text-paper-bright/60">
+              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-paper-bright/25">
+                <SectionIcon name="people" className="h-3.5 w-3.5" />
+              </span>
               Dgroups &amp; communities
             </RevealItem>
             <RevealItem as="h2" className="display-lg mt-5">
@@ -980,6 +996,7 @@ function TheCenter({
       <Container>
         <RevealHead
           eyebrow="Around CCF Centris"
+          icon="building"
           title="Room to gather, to learn, and to play"
           lead="A worship hall that seats 1,300, a sports hall for 800, four flexible halls for classes and events, and a lounge made for Dgroups — and the sports hall is open to the neighborhood, not only to CCF."
           action={
@@ -1044,8 +1061,10 @@ function Serve({
       <Container>
         <div className="grid gap-12 lg:grid-cols-[1fr_1.1fr] lg:items-center">
           <div className="relative border-l-2 border-clay pl-6 sm:pl-8">
-            <RevealItem as="p" className="label flex items-center gap-3 text-ink-mute">
-              <span aria-hidden className="h-px w-8 bg-current opacity-50" />
+            <RevealItem as="p" className="label flex items-center gap-2.5 text-ink-mute">
+              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-current/25">
+                <SectionIcon name="hands" className="h-3.5 w-3.5" />
+              </span>
               Serve
             </RevealItem>
             <RevealItem as="h2" className="display-md mt-5">
@@ -1096,8 +1115,10 @@ function WhereWeAre() {
       <Container>
         <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
           <div>
-            <RevealItem as="p" className="label flex items-center gap-3 text-ink-mute">
-              <span aria-hidden className="h-px w-8 bg-current opacity-50" />
+            <RevealItem as="p" className="label flex items-center gap-2.5 text-ink-mute">
+              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-current/25">
+                <SectionIcon name="pin" className="h-3.5 w-3.5" />
+              </span>
               Where we are
             </RevealItem>
             <RevealItem as="h2" className="display-md mt-5">

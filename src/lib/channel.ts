@@ -238,6 +238,84 @@ export async function getSeriesArchive(): Promise<SeriesGroup[]> {
   });
 }
 
+/**
+ * The per-series "Sunday Fast Track" playlists — CCF's condensed cut of each
+ * Sunday message, one playlist per teaching series. Newest series first. Seed
+ * data always carries a couple of these, so the homepage shelf is never empty.
+ */
+export async function getFastTracks(n = 6): Promise<CatalogPlaylist[]> {
+  const catalog = await getCatalog();
+  const seen = new Set<string>();
+  return catalog
+    .filter((p) => p.kind === "fast_track" && p.series)
+    // One per series — CCF only ships one Fast Track playlist per series, but
+    // guard against a stray duplicate slipping in from the live API.
+    .filter((p) => {
+      if (seen.has(p.series)) return false;
+      seen.add(p.series);
+      return true;
+    })
+    .slice(0, n);
+}
+
+/** A playlist plus a trimmed list of its videos, for the homepage picker. */
+export interface PlaylistVideo {
+  id: string;
+  title: string;
+  publishedAt: string;
+}
+
+export interface PlaylistWithVideos extends CatalogPlaylist {
+  videos: PlaylistVideo[];
+}
+
+function trimVideo(v: ApiVideo): PlaylistVideo {
+  return { id: v.id, title: v.title, publishedAt: v.publishedAt };
+}
+
+/**
+ * Fast Track playlists with their videos loaded, so the homepage card can list
+ * every part and let a visitor pick one. Degrades to `videos: []` when the API
+ * is unavailable — the card then falls back to a plain playlist embed.
+ */
+export async function getFastTracksWithVideos(
+  n = 4,
+): Promise<PlaylistWithVideos[]> {
+  const tracks = await getFastTracks(n);
+  if (!hasYouTubeApi) return tracks.map((p) => ({ ...p, videos: [] }));
+  const lists = await Promise.all(
+    tracks.map((p) => getPlaylistVideos(p.id, 30)),
+  );
+  return tracks.map((p, i) => ({
+    ...p,
+    videos: (lists[i] ?? []).map(trimVideo),
+  }));
+}
+
+export interface SeriesGroupWithVideos extends SeriesGroup {
+  videos: PlaylistVideo[];
+}
+
+/**
+ * Featured teaching series with their main playlist's videos loaded, for the
+ * homepage picker. Same degradation as {@link getFastTracksWithVideos}.
+ */
+export async function getFeaturedSeriesWithVideos(
+  n = 3,
+): Promise<SeriesGroupWithVideos[]> {
+  const groups = await getFeaturedSeries(n);
+  if (!hasYouTubeApi) return groups.map((g) => ({ ...g, videos: [] }));
+  const lists = await Promise.all(
+    groups.map((g) =>
+      g.main ? getSeriesVideos(g.main.id, 30) : Promise.resolve([]),
+    ),
+  );
+  return groups.map((g, i) => ({
+    ...g,
+    videos: (lists[i] ?? []).map(trimVideo),
+  }));
+}
+
 /** CCF's long-running collections: Snippets, Fast Track, Testimonies and so on. */
 export async function getCollections(): Promise<CatalogPlaylist[]> {
   const catalog = await getCatalog();

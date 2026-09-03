@@ -25,14 +25,15 @@
 
   /* Grounds.
      Warm side of neutral throughout: the paper grounds carry a little more
-     red and yellow than a true beige, and the inks are warm browns rather
-     than black, so text sits on the page instead of punching through it. */
+     red and yellow than a true beige. The inks keep that warmth in their
+     hue but are pulled close to black for contrast — body and secondary
+     copy should read as strongly as the headings, not sit back as grey. */
   --paper: #f6f0e4;
   --paper-deep: #eee4d2;
   --paper-bright: #fdfaf4;
   --ink: #201a12;
-  --ink-soft: #544c3e;
-  --ink-mute: #8b8171;
+  --ink-soft: #2e2820; /* body copy — near-black, warm */
+  --ink-mute: #5f574a; /* labels, dates, counts — still a step down, but dark */
   --hairline: #ded4c0;
 
   /* Accents.
@@ -219,8 +220,10 @@ a.link,
 .display-xl {
   font-family: var(--font-display);
   font-weight: 700;
-  /* Bounded by both axes so two lines clear the fold on short viewports. */
-  font-size: clamp(3.25rem, min(10vw, 15vh), 8rem);
+  /* Bounded by both axes so two lines clear the fold on short viewports. The
+     floor is kept modest so a two-word line fits a ~340px phone with the
+     hero card's padding subtracted. */
+  font-size: clamp(2.7rem, min(11vw, 15vh), 8rem);
   line-height: 0.86;
   letter-spacing: -0.035em;
 }
@@ -228,7 +231,7 @@ a.link,
 .display-lg {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: clamp(2.5rem, 6.5vw, 5rem);
+  font-size: clamp(2.15rem, 6.5vw, 5rem);
   line-height: 0.92;
   letter-spacing: -0.03em;
 }
@@ -236,8 +239,19 @@ a.link,
 .display-md {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: clamp(1.85rem, 3.6vw, 3rem);
-  line-height: 1;
+  font-size: clamp(1.7rem, 3.6vw, 3rem);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+}
+
+/* Set a display heading in CCF's brand face (Proxima Nova, then Montserrat)
+   instead of the editorial serif. The geometric sans needs a heavier weight
+   and slightly looser tracking than the serif to read as a title, and a hair
+   more line-height so the two lines don't collide. */
+.brand-face {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  line-height: 0.94;
   letter-spacing: -0.02em;
 }
 
@@ -309,16 +323,6 @@ a.link,
   background-position: 0 92%;
   background-size: 100% 0.16em;
   padding-bottom: 0.06em;
-}
-
-/* Marquee rail used for the running ticker. */
-@keyframes rail {
-  from { transform: translate3d(0, 0, 0); }
-  to   { transform: translate3d(-50%, 0, 0); }
-}
-
-.rail {
-  animation: rail 38s linear infinite;
 }
 
 @keyframes pulse-dot {

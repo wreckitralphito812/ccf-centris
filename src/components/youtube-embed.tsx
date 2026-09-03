@@ -19,13 +19,17 @@ import { cx } from "./ui";
  */
 export function YouTubeEmbed({
   videoId,
+  playlistId,
   title,
   thumbnail,
   thumbnailFallback,
   className,
   loading = "lazy",
 }: {
-  videoId: string;
+  /** A single video. Omit when embedding a whole playlist. */
+  videoId?: string;
+  /** A playlist — plays in sequence, starting at the first item. */
+  playlistId?: string;
   title: string;
   thumbnail?: string;
   thumbnailFallback?: string;
@@ -34,12 +38,16 @@ export function YouTubeEmbed({
 }) {
   const [playing, setPlaying] = useState(false);
 
+  const src = playlistId
+    ? `https://www.youtube-nocookie.com/embed/videoseries?list=${playlistId}&autoplay=1&rel=0`
+    : `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`;
+
   if (playing) {
     return (
       <div className={cx("relative aspect-video overflow-hidden bg-black", className)}>
         <iframe
           title={title}
-          src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`}
+          src={src}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
           className="absolute inset-0 h-full w-full border-0"
