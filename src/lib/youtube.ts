@@ -14,7 +14,10 @@ export interface ChannelVideo {
   id: string;
   title: string;
   published: string;
+  /** Max-resolution thumbnail (1280x720). */
   thumbnail: string;
+  /** Always-present fallback (480x360) if `thumbnail` 404s. */
+  thumbnailFallback: string;
   href: string;
   /** Sunday service uploads follow CCF's "Sunday Service" naming. */
   isSundayService: boolean;
@@ -69,8 +72,10 @@ export async function getChannelVideos(limit = 12): Promise<ChannelVideo[]> {
       id,
       title,
       published,
-      // i.ytimg.com serves thumbnails without an API key.
-      thumbnail: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+      // i.ytimg.com serves thumbnails without an API key. Max resolution
+      // first (1280x720); consumers fall back to hqdefault if it 404s.
+      thumbnail: `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`,
+      thumbnailFallback: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
       href: `https://www.youtube.com/watch?v=${id}`,
       isSundayService: /sunday service|worship with us live/i.test(title),
     });

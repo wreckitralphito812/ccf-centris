@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   getLiveBroadcast,
+  getUpcomingBroadcasts,
   hqThumb,
   maxResThumb,
   searchChannel,
@@ -151,9 +152,12 @@ export async function getSundayServices(
 ): Promise<SundayServices> {
   const { checkLive = false } = opts;
 
-  const [live, streams] = await Promise.all([
+  const [live, streams, scheduled] = await Promise.all([
     checkLive ? getLiveBroadcast() : Promise.resolve(null),
     searchChannel(SERVICE_QUERY, 45),
+    // The @CCFmainTV "Streams" tab, ordered by date — real scheduledStartTime,
+    // no reliance on parsing a date out of the title.
+    getUpcomingBroadcasts(6),
   ]);
 
   // Keep only the Sunday-service livestreams, each with a parseable date.
@@ -180,8 +184,28 @@ export async function getSundayServices(
       watchUrl: `https://www.youtube.com/watch?v=${s.videoId}`,
     }));
 
-  let next: UpcomingService | null = futureAll[0] ?? null;
-  const upcoming = futureAll.slice(1);
+  // Prefer real scheduled broadcasts from the Streams tab (they carry an exact
+  // scheduledStartTime). Fall back to title-date parsing, then to a computed
+  // next Sunday.
+  const scheduledServices: UpcomingService[] = scheduled
+    .filter(
+      (b) =>
+        (SERVICE_TITLE.test(b.title) || b.title.trim() === "") &&
+        b.scheduledFor &&
+        Date.parse(b.scheduledFor) > cutoff,
+    )
+    .map((b) => ({
+      videoId: b.videoId,
+      title: SERVICE_TITLE.test(b.title) ? b.title : "Sunday Worship Service",
+      scheduledFor: b.scheduledFor!,
+      thumbnail: b.thumbnail || maxResThumb(b.videoId),
+      thumbnailFallback: hqThumb(b.videoId),
+      watchUrl: `https://www.youtube.com/watch?v=${b.videoId}`,
+    }));
+
+  const queue = scheduledServices.length > 0 ? scheduledServices : futureAll;
+  let next: UpcomingService | null = queue[0] ?? null;
+  const upcoming = queue.slice(1);
 
   if (!next) {
     // Nothing scheduled we can see — compute the next Sunday.

@@ -325,11 +325,11 @@ export default async function WatchLivePage() {
                   className="group w-[17rem] shrink-0 sm:w-auto"
                 >
                   <div className="relative aspect-video overflow-hidden border border-hairline">
-                    <img
+                    <YouTubeThumb
                       src={v.thumbnail}
+                      fallbackSrc={v.thumbnailFallback}
                       alt=""
-                      loading="lazy"
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                      className="transition-transform duration-500 group-hover:scale-[1.04]"
                     />
                   </div>
                   <p className="font-display mt-3 text-lg leading-tight transition-colors group-hover:text-clay">

@@ -521,33 +521,66 @@ function WatchWithCcf({
         <Reveal as="div" delay={0.05} className="mt-10 grid gap-8 lg:grid-cols-2">
           {next ? (
             <div className="flex flex-col border border-hairline bg-paper-bright">
-              <div className="relative border-b border-hairline">
-                {next.videoId ? (
-                  <YouTubeEmbed
-                    videoId={next.videoId}
-                    title={next.title}
-                    thumbnail={next.thumbnail ?? undefined}
-                    thumbnailFallback={next.thumbnailFallback ?? undefined}
-                  />
-                ) : (
-                  <div className="halftone aspect-video w-full bg-paper-deep" />
-                )}
-                <span className="label pointer-events-none absolute left-2 top-2 bg-night/85 px-2 py-1 text-paper-bright">
-                  Upcoming service
-                </span>
-              </div>
-              <div className="flex flex-1 flex-col p-5">
-                <p className="label text-clay">Upcoming service</p>
-                <p className="font-display mt-1.5 text-xl leading-tight">
-                  {next.title}
-                </p>
-                <p className="mt-1.5 text-[0.9rem] text-ink-soft tabular">
-                  {fmtDayLong(next.scheduledFor)} · {fmtTime(next.scheduledFor)}
-                </p>
-                <p className="mt-auto pt-5 text-[0.85rem] text-ink-mute">
-                  Playback begins here when the service starts.
-                </p>
-              </div>
+              {next.videoId ? (
+                <>
+                  <div className="relative border-b border-hairline">
+                    <YouTubeEmbed
+                      videoId={next.videoId}
+                      title={next.title}
+                      thumbnail={next.thumbnail ?? undefined}
+                      thumbnailFallback={next.thumbnailFallback ?? undefined}
+                    />
+                    <span className="label pointer-events-none absolute left-2 top-2 bg-night/85 px-2 py-1 text-paper-bright">
+                      Upcoming service
+                    </span>
+                  </div>
+                  <div className="flex flex-1 flex-col p-5">
+                    <p className="label text-clay">Upcoming service</p>
+                    <p className="font-display mt-1.5 text-xl leading-tight">
+                      {next.title}
+                    </p>
+                    <p className="mt-1.5 text-[0.9rem] text-ink-soft tabular">
+                      {fmtDayLong(next.scheduledFor)} · {fmtTime(next.scheduledFor)}
+                    </p>
+                    <p className="mt-auto pt-5 text-[0.85rem] text-ink-mute">
+                      Playback begins here when the service starts.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                /* No stream scheduled yet — still tell the visitor when to come
+                   back, rather than an empty box. */
+                <div className="relative flex aspect-video w-full flex-col items-center justify-center border-b border-hairline bg-paper-deep p-6 text-center">
+                  <div className="halftone pointer-events-none absolute inset-0 opacity-40" />
+                  <p className="label relative text-clay">Upcoming service</p>
+                  <p className="font-display relative mt-2 text-2xl leading-tight text-ink">
+                    {fmtDayLong(next.scheduledFor)}
+                  </p>
+                  <p className="relative mt-1 text-[0.95rem] text-ink-soft tabular">
+                    {fmtTime(next.scheduledFor)} · {fmtUntil(next.scheduledFor)}
+                  </p>
+                </div>
+              )}
+              {!next.videoId ? (
+                <div className="flex flex-1 flex-col p-5">
+                  <p className="font-display text-xl leading-tight">
+                    {next.title}
+                  </p>
+                  <p className="mt-1.5 text-[0.9rem] leading-relaxed text-ink-soft">
+                    The livestream appears here a day or two before the service.
+                    Until then, watch last Sunday below or join the live stream
+                    when it starts.
+                  </p>
+                  <div className="mt-auto flex flex-wrap gap-3 pt-5">
+                    <ButtonLink href="/watch/live" size="sm">
+                      Watch live
+                    </ButtonLink>
+                    <ButtonLink href="/visit/service-times" tone="outline" size="sm">
+                      Service times
+                    </ButtonLink>
+                  </div>
+                </div>
+              ) : null}
             </div>
           ) : null}
 
@@ -654,6 +687,7 @@ function WatchWithCcf({
                         ? `https://i.ytimg.com/vi/${coverId}/hqdefault.jpg`
                         : p.thumbnail
                     }
+                    partCount={p.itemCount}
                     videos={p.videos}
                   />
                 );
@@ -692,6 +726,7 @@ function WatchWithCcf({
                         ? `https://i.ytimg.com/vi/${coverId}/hqdefault.jpg`
                         : g.cover
                     }
+                    partCount={g.main?.itemCount || g.totalVideos}
                     videos={g.videos}
                   />
                 );
