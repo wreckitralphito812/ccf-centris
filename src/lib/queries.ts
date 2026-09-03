@@ -440,12 +440,18 @@ export {
   getCurrentIntercede,
   getGlcCatalogue,
   getGlcCatalogueGroups,
+  getFourWsWeeks,
+  getCurrentFourWs,
+  getFourWsGuide,
+  getCurrentFourWsGuide,
 } from "@/lib/content/public-queries";
 export type {
   ResourceFilters,
   ChronicleGroup,
   IntercedeView,
   GlcCategoryGroup,
+  FourWsWeekView,
+  FourWsCurrent,
 } from "@/lib/content/public-queries";
 
 // --- Global search ----------------------------------------------------------

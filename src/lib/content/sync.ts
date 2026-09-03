@@ -12,6 +12,7 @@
 import { createHash } from "node:crypto";
 
 import { fetchSource, type FetchImpl } from "./fetch-source";
+import { parseFourWsGuide, parseFourWsIndex } from "./parsers/four-ws";
 import { parseGlcLibrary } from "./parsers/glc";
 import {
   parseChroniclePage,
@@ -52,7 +53,9 @@ interface SectionSpec {
   parse: (html: string, src: SourceRecord, observedAt: string) => ParseResult<unknown>;
 }
 
-const SECTION_SPECS: Record<SnapshotSection, SectionSpec> = {
+// Sections fetched from a single page. `fourWsGuides` is not here — it is
+// synced separately below because it needs one fetch per week.
+const SECTION_SPECS: Record<Exclude<SnapshotSection, "fourWsGuides">, SectionSpec> = {
   resources: {
     url: "https://www.ccf.org.ph/resources/",
     parse: parseResourcesPage as SectionSpec["parse"],
@@ -73,9 +76,19 @@ const SECTION_SPECS: Record<SnapshotSection, SectionSpec> = {
     url: "https://glc.ccf.org.ph/",
     parse: parseGlcLibrary as SectionSpec["parse"],
   },
+  fourWsWeeks: {
+    url: "https://www.ccf.org.ph/4ws/",
+    parse: parseFourWsIndex as SectionSpec["parse"],
+  },
 };
 
-export const DEFAULT_SECTIONS = Object.keys(SECTION_SPECS) as SnapshotSection[];
+/** How many 4Ws guide pages to fetch per run (the newest weeks first). */
+const FOUR_WS_GUIDE_BUDGET = 8;
+
+export const DEFAULT_SECTIONS = [
+  ...(Object.keys(SECTION_SPECS) as SnapshotSection[]),
+  "fourWsGuides" as SnapshotSection,
+];
 
 const CONCURRENCY = 3;
 
@@ -95,7 +108,7 @@ function emptyOutcome(): SectionOutcome {
 }
 
 async function syncSection(
-  key: SnapshotSection,
+  key: Exclude<SnapshotSection, "fourWsGuides">,
   snapshot: ContentSnapshot,
   opts: Required<Pick<RunContentSyncOptions, "now">> & { fetchImpl?: FetchImpl },
 ): Promise<{ outcome: SectionOutcome; next?: { records: unknown[]; meta: SectionMeta } }> {
@@ -190,14 +203,104 @@ async function mapWithConcurrency<T, R>(
   return results;
 }
 
+/**
+ * Fetch and parse individual 4Ws guide pages for the newest weeks in the
+ * index that do not yet have a stored guide (bounded per run). Uses the
+ * GoViral edition when present — its layout is the one the parser handles.
+ */
+async function syncFourWsGuides(
+  snapshot: ContentSnapshot,
+  opts: Required<Pick<RunContentSyncOptions, "now">> & { fetchImpl?: FetchImpl },
+): Promise<{ outcome: SectionOutcome; next?: { records: unknown[]; meta: SectionMeta } }> {
+  const observedAt = opts.now();
+  const outcome = emptyOutcome();
+
+  const haveSlugs = new Set(snapshot.fourWsGuides.map((g) => g.slug));
+  const weeks = [...snapshot.fourWsWeeks];
+  // Newest first (the index is already newest-first; keep that order).
+  const targets = weeks
+    .filter((w) => {
+      const url = w.goViralUrl ?? w.standardUrl;
+      return url && !haveSlugs.has(slugFromWeek(w));
+    })
+    .slice(0, FOUR_WS_GUIDE_BUDGET);
+
+  if (targets.length === 0 && snapshot.fourWsGuides.length > 0) {
+    outcome.skipped = 1;
+    return { outcome };
+  }
+  if (targets.length === 0) {
+    outcome.dropped = 1;
+    return { outcome };
+  }
+
+  const fetched = await mapWithConcurrency(targets, CONCURRENCY, async (week) => {
+    const url = week.goViralUrl ?? week.standardUrl;
+    const res = await fetchSource({ url: new URL(url), fetchImpl: opts.fetchImpl });
+    if (res.kind !== "ok") return null;
+    const src: SourceRecord = {
+      sourceUrl: url,
+      canonicalUrl: url,
+      resolvedUrl: res.resolvedUrl,
+      sourceModifiedAt: res.lastModified,
+      fetchedAt: observedAt,
+      checksum: checksum(res.body),
+      parserVersion: PARSER_VERSION,
+    };
+    try {
+      const { record } = parseFourWsGuide(res.body, src, observedAt);
+      // Key the guide by the week's standard slug so pages can look it up.
+      return { ...record, slug: slugFromWeek(week) };
+    } catch {
+      return null;
+    }
+  });
+
+  const newGuides = fetched.filter((g): g is NonNullable<typeof g> => g != null);
+  if (newGuides.length === 0) {
+    outcome.dropped = 1;
+    return { outcome };
+  }
+
+  const merged = [
+    ...snapshot.fourWsGuides.filter((g) => !newGuides.some((n) => n.slug === g.slug)),
+    ...newGuides,
+  ];
+  const validation = validateSection("fourWsGuides", merged);
+  if (!validation.ok) {
+    outcome.error = `validate fourWsGuides: ${validation.errors.join("; ")}`;
+    return { outcome };
+  }
+
+  outcome.inserted = newGuides.length;
+  return {
+    outcome,
+    next: {
+      records: merged,
+      meta: {
+        lastRunAt: observedAt,
+        checksum: checksum(merged),
+        parserVersion: PARSER_VERSION,
+        warnings: [],
+      },
+    },
+  };
+}
+
+function slugFromWeek(week: { slug: string }): string {
+  return week.slug;
+}
+
 export async function runContentSync(
   options: RunContentSyncOptions = {},
 ): Promise<SyncSummary> {
   const snapshotPath = options.snapshotPath ?? SNAPSHOT_PATH;
   const now = options.now ?? (() => new Date().toISOString());
-  const requested = (options.sections ?? DEFAULT_SECTIONS).filter(
-    (s): s is SnapshotSection => s in SECTION_SPECS,
+  const requestedAll = options.sections ?? DEFAULT_SECTIONS;
+  const requested = requestedAll.filter(
+    (s): s is Exclude<SnapshotSection, "fourWsGuides"> => s in SECTION_SPECS,
   );
+  const wantGuides = requestedAll.includes("fourWsGuides");
 
   let snapshot = readSnapshotFrom(snapshotPath);
   const sections: SyncSummary["sections"] = {};
@@ -213,6 +316,16 @@ export async function runContentSync(
     sections[key] = outcome;
     if (next) {
       snapshot = replaceSection(snapshot, key, next.records as never, next.meta);
+      changed = true;
+    }
+  }
+
+  // 4Ws guides depend on the freshly-synced index, so run them after.
+  if (wantGuides) {
+    const g = await syncFourWsGuides(snapshot, { now, fetchImpl: options.fetchImpl });
+    sections.fourWsGuides = g.outcome;
+    if (g.next) {
+      snapshot = replaceSection(snapshot, "fourWsGuides", g.next.records as never, g.next.meta);
       changed = true;
     }
   }

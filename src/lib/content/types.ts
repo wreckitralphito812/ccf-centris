@@ -125,12 +125,47 @@ export interface GlcClassRecord {
   source: SourceRecord;
 }
 
+/** One week on the 4Ws index — a standard edition and, usually, a GoViral one. */
+export interface FourWsWeekRecord {
+  kind: "four_ws_week";
+  /** Stable slug of the standard edition, e.g. "4ws-...-follow-him". */
+  slug: string;
+  title: string;
+  seriesTitle: string | null;
+  year: number | null;
+  serviceDateLabel: string | null;
+  serviceDate: string | null;
+  standardUrl: string;
+  goViralUrl: string | null;
+  source: SourceRecord;
+}
+
+/** The full parsed content of one 4Ws guide page. */
+export interface FourWsGuideRecord {
+  kind: "four_ws_guide";
+  slug: string;
+  title: string;
+  dateLabel: string | null;
+  date: string | null;
+  /** Sanitized HTML per section; null when the page omits it. */
+  worshipHtml: string | null;
+  welcomeHtml: string | null;
+  wordHtml: string | null;
+  worksHtml: string | null;
+  prayerPointsHtml: string | null;
+  memoryVerseReference: string | null;
+  memoryVerseText: string | null;
+  source: SourceRecord;
+}
+
 export type ContentRecord =
   | ResourceRecord
   | ScriptureMemoryRecord
   | ChronicleIssueRecord
   | IntercedeRecord
-  | GlcClassRecord;
+  | GlcClassRecord
+  | FourWsWeekRecord
+  | FourWsGuideRecord;
 
 /** A parser's output: typed records plus non-fatal observations. */
 export interface ParseResult<T> {

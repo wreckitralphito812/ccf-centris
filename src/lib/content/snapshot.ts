@@ -12,6 +12,8 @@ import { dirname, join } from "node:path";
 
 import type {
   ChronicleIssueRecord,
+  FourWsGuideRecord,
+  FourWsWeekRecord,
   GlcClassRecord,
   IntercedeRecord,
   ResourceRecord,
@@ -39,6 +41,8 @@ export interface ContentSnapshot {
   chronicleIssues: ChronicleIssueRecord[];
   intercede: IntercedeRecord[];
   glcClasses: GlcClassRecord[];
+  fourWsWeeks: FourWsWeekRecord[];
+  fourWsGuides: FourWsGuideRecord[];
   meta: Partial<Record<SnapshotSection, SectionMeta>>;
 }
 
@@ -50,6 +54,8 @@ export const SNAPSHOT_SECTIONS: SnapshotSection[] = [
   "chronicleIssues",
   "intercede",
   "glcClasses",
+  "fourWsWeeks",
+  "fourWsGuides",
 ];
 
 export function emptySnapshot(): ContentSnapshot {
@@ -59,6 +65,8 @@ export function emptySnapshot(): ContentSnapshot {
     chronicleIssues: [],
     intercede: [],
     glcClasses: [],
+    fourWsWeeks: [],
+    fourWsGuides: [],
     meta: {},
   };
 }
@@ -182,6 +190,24 @@ const VALIDATORS: Record<SnapshotSection, (records: unknown[]) => string[]> = {
       if (!KNOWN_GLC_CATEGORIES.has(rec.category)) {
         errs.push(`glcClasses[${i}] has unknown category "${rec.category}"`);
       }
+      return errs;
+    }),
+  fourWsWeeks: (records) =>
+    records.flatMap((r, i) => {
+      const rec = r as FourWsWeekRecord;
+      const errs: string[] = [];
+      if (!rec.slug) errs.push(`fourWsWeeks[${i}] has no slug identity`);
+      if (!/^https:\/\/www\.ccf\.org\.ph\/4ws-/.test(rec.standardUrl ?? "")) {
+        errs.push(`fourWsWeeks[${i}] standardUrl is not a /4ws-… URL`);
+      }
+      return errs;
+    }),
+  fourWsGuides: (records) =>
+    records.flatMap((r, i) => {
+      const rec = r as FourWsGuideRecord;
+      const errs: string[] = [];
+      if (!rec.slug) errs.push(`fourWsGuides[${i}] has no slug identity`);
+      if (!rec.title) errs.push(`fourWsGuides[${i}] has no title`);
       return errs;
     }),
 };

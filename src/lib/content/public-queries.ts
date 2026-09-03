@@ -12,6 +12,8 @@ import { manilaDateKey } from "../format";
 import { readSnapshot } from "./snapshot";
 import type {
   ChronicleIssueRecord,
+  FourWsGuideRecord,
+  FourWsWeekRecord,
   GlcCategory,
   GlcClassRecord,
   IntercedeRecord,
@@ -146,4 +148,85 @@ export async function getGlcCatalogueGroups(): Promise<GlcCategoryGroup[]> {
     byCategory.get(cls.category)!.push(cls);
   }
   return order.map((category) => ({ category, classes: byCategory.get(category)! }));
+}
+
+// --- 4Ws --------------------------------------------------------------
+
+/** ISO 8601 week number for a "YYYY-MM-DD" date. */
+function isoWeek(dateIso: string): number | null {
+  const d = new Date(`${dateIso}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return null;
+  const day = (d.getUTCDay() + 6) % 7; // Mon=0
+  d.setUTCDate(d.getUTCDate() - day + 3); // nearest Thursday
+  const firstThursday = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+  const firstDay = (firstThursday.getUTCDay() + 6) % 7;
+  firstThursday.setUTCDate(firstThursday.getUTCDate() - firstDay + 3);
+  return 1 + Math.round((d.getTime() - firstThursday.getTime()) / (7 * 864e5));
+}
+
+/** "2026-08-29" + label "Aug 29 and 30" -> "Aug 29–30, 2026". */
+function spanLabel(week: FourWsWeekRecord): string | null {
+  if (!week.serviceDate) return week.serviceDateLabel;
+  const year = week.serviceDate.slice(0, 4);
+  if (week.serviceDateLabel) {
+    // "Aug 29 and 30" -> "Aug 29–30"
+    const tidy = week.serviceDateLabel
+      .replace(/\s*&\s*|\s+and\s+/i, "–")
+      .replace(/\s*-\s*/, "–");
+    return `${tidy}, ${year}`;
+  }
+  return new Date(`${week.serviceDate}T00:00:00+08:00`).toLocaleDateString("en-PH", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+export interface FourWsWeekView extends FourWsWeekRecord {
+  weekNumber: number | null;
+  /** Human span, e.g. "Aug 29–30, 2026". */
+  dateSpan: string | null;
+  hasGuide: boolean;
+}
+
+function decorateWeek(
+  week: FourWsWeekRecord,
+  guideSlugs: Set<string>,
+): FourWsWeekView {
+  return {
+    ...week,
+    weekNumber: week.serviceDate ? isoWeek(week.serviceDate) : null,
+    dateSpan: spanLabel(week),
+    hasGuide: guideSlugs.has(week.slug),
+  };
+}
+
+export function getFourWsWeeks(): Promise<FourWsWeekView[]> {
+  const snap = readSnapshot();
+  const guideSlugs = new Set(snap.fourWsGuides.map((g) => g.slug));
+  return Promise.resolve(snap.fourWsWeeks.map((w) => decorateWeek(w, guideSlugs)));
+}
+
+/** The most recent 4Ws week — the "this week" slot. */
+export async function getCurrentFourWs(): Promise<FourWsWeekView | null> {
+  const weeks = await getFourWsWeeks();
+  return weeks[0] ?? null;
+}
+
+export function getFourWsGuide(slug: string): Promise<FourWsGuideRecord | null> {
+  const guide = readSnapshot().fourWsGuides.find((g) => g.slug === slug);
+  return Promise.resolve(guide ?? null);
+}
+
+export interface FourWsCurrent {
+  week: FourWsWeekView;
+  guide: FourWsGuideRecord | null;
+}
+
+/** The current week paired with its full guide, for the homepage rail. */
+export async function getCurrentFourWsGuide(): Promise<FourWsCurrent | null> {
+  const week = await getCurrentFourWs();
+  if (!week) return null;
+  const guide = await getFourWsGuide(week.slug);
+  return { week, guide };
 }

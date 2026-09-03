@@ -7,35 +7,38 @@ import {
   getSportsToday,
   getVolunteerRoles,
 } from "@/lib/queries";
-import { findDgroups } from "@/lib/queries";
+import { findDgroups, getCurrentFourWsGuide } from "@/lib/queries";
 import { manilaDateKey, fmtDayLong, fmtTime } from "@/lib/format";
 import { SITE, MAPS_LINK } from "@/lib/site";
 import {
   ButtonLink,
   Container,
+  cx,
   Eyebrow,
   LiveDot,
   Pill,
   Section,
-  SectionHead,
 } from "@/components/ui";
 import { CommunityCard, MessageArt } from "@/components/cards";
 import { HeroBackdrop } from "@/components/hero-backdrop";
 import {
+  CardEntrance,
   CountUp,
   HeroStage,
   HoverLift,
+  PulseDot,
   Reveal,
+  RevealHead,
+  RevealItem,
   Stagger,
 } from "@/components/motion";
-import { CcfPhoto } from "@/components/ccf-photo";
 import { CcfMark } from "@/components/wordmark";
 import { YouTubeThumb } from "@/components/youtube-thumb";
 import { YouTubeEmbed } from "@/components/youtube-embed";
-import { CCF_STILLS, ytThumb } from "@/lib/ccf-stills";
+import { WelcomeVideo } from "@/components/welcome-video";
 import { getSundayServices, type SundayServices } from "@/lib/services";
-import { getFeaturedSeries } from "@/lib/channel";
-import type { SeriesGroup } from "@/lib/channel";
+import { getFeaturedSeries, getFastTracks } from "@/lib/channel";
+import type { SeriesGroup, CatalogPlaylist } from "@/lib/channel";
 
 /**
  * Revalidate hourly. The YouTube-backed sections (next Sunday service, most
@@ -68,28 +71,35 @@ export default async function HomePage() {
     ]);
 
   // Live from CCF's YouTube channel, revalidated on an interval.
-  const [sunday, featuredSeries] = await Promise.all([
+  const [sunday, featuredSeries, fastTracks] = await Promise.all([
     getSundayServices(),
     getFeaturedSeries(3),
+    getFastTracks(4),
   ]);
 
   const today = manilaDateKey();
   const courts = await getSportsToday(today);
   const dgroups = await findDgroups({});
+  const fourWs = await getCurrentFourWsGuide();
 
   const isLive = window.current !== null;
 
   return (
     <>
-      <Welcome
-        live={isLive}
-        next={window.next}
-        current={window.current}
+      <Welcome live={isLive} current={window.current} />
+
+      <WatchWithCcf
+        sunday={sunday}
+        nextService={window.next}
+        series={featuredSeries}
+        fastTracks={fastTracks}
       />
 
-      <WatchWithCcf sunday={sunday} series={featuredSeries} />
-
-      <SundayMessage latest={latest} dgroupCount={dgroups.length} />
+      <SundayMessage
+        latest={latest}
+        dgroupCount={dgroups.length}
+        fourWs={fourWs}
+      />
 
       <FindYourPeople count={dgroups.length} communities={communities} />
 
@@ -110,21 +120,19 @@ export default async function HomePage() {
 
 function Welcome({
   live,
-  next,
   current,
 }: {
   live: boolean;
-  next: Awaited<ReturnType<typeof getServiceWindow>>["next"];
   current: Awaited<ReturnType<typeof getServiceWindow>>["current"];
 }) {
   return (
-    <section className="relative flex min-h-[calc(100svh-var(--chrome,4rem))] items-center overflow-hidden bg-paper-deep sm:h-[calc(100svh-var(--chrome,4rem))]">
+    <section className="relative flex min-h-[calc(100svh-var(--chrome,4rem))] items-center overflow-x-hidden bg-paper-deep">
       {/* Full-bleed CCF worship photo behind the whole hero. */}
       <HeroBackdrop poster="/photos/hero-welcome.jpg" />
-      <Container wide className="relative w-full py-8">
+      <Container wide className="relative w-full py-8 sm:py-8">
         {/* Copy sits on its own paper card so it holds against the photo. Its
             lines arrive top-to-bottom on load via HeroStage. */}
-        <HeroStage className="relative max-w-xl border border-hairline bg-paper-bright/95 p-6 shadow-[0_30px_80px_-40px_rgba(23,21,15,0.6)] backdrop-blur-sm sm:max-w-2xl sm:p-8">
+        <HeroStage className="relative max-w-xl border border-hairline bg-paper-bright/95 p-4 shadow-[0_30px_80px_-40px_rgba(23,21,15,0.6)] backdrop-blur-sm sm:max-w-2xl sm:p-7">
             {live ? (
               <Link
                 href="/watch/live"
@@ -144,18 +152,20 @@ function Welcome({
               </div>
             )}
 
-            <h1 className="display-xl mt-5">
+            {/* Set in CCF's own brand face (--font-sans: Proxima Nova, then
+                Montserrat) rather than the editorial display serif, per CCF. */}
+            <h1 className="display-xl brand-face mt-3 sm:mt-4">
               Welcome to
               <br />
-              <span className="italic text-clay">CCF Centris</span>
+              <span className="text-clay">CCF Centris</span>
             </h1>
 
-            <p className="font-script mt-3 text-3xl text-ink-soft sm:text-4xl">
+            <p className="font-script mt-2.5 text-2xl text-ink-soft sm:text-3xl">
               worship, grow, connect, serve
             </p>
 
             {/* CCF's own welcome line, quoted verbatim from ccf.org.ph. */}
-            <p className="mt-5 max-w-xl text-[1.02rem] leading-relaxed text-ink-soft">
+            <p className="mt-3.5 max-w-xl text-[0.98rem] leading-relaxed text-ink-soft sm:text-[1.02rem]">
               Regardless of who you are or where life has taken you, you are more
               than welcome here. We&rsquo;d love to meet you this Sunday at our
               new center on the second floor of Centris Station, right off the
@@ -163,62 +173,34 @@ function Welcome({
             </p>
 
             {/* Worshipping with us — online first — is the one clear primary.
-                Service times is the strong secondary; Dgroups is a quiet text
-                link so the pair of buttons reads at a glance. */}
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              <ButtonLink href="/watch/live" size="lg">
+                Service times is the strong secondary. Full-width and stacked
+                on a phone so the pair never wraps to a ragged half-row. */}
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+              <ButtonLink href="/watch/live" size="lg" full className="sm:w-auto">
                 {live ? "Join the live service" : "Worship with us online"}
               </ButtonLink>
-              <ButtonLink href="/visit/service-times" tone="outline" size="lg">
+              <ButtonLink
+                href="/visit/service-times"
+                tone="outline"
+                size="lg"
+                full
+                className="sm:w-auto"
+              >
                 See service times
               </ButtonLink>
-              <Link
-                href="/grow/find-a-dgroup"
-                className="link label ml-1 text-clay underline underline-offset-4 hover:text-clay-deep"
-              >
-                Find a Dgroup &rarr;
-              </Link>
             </div>
 
-            <ServiceLine live={live} next={next} current={current} />
+            {live && current ? (
+              <p className="mt-4 border-t border-hairline pt-3 text-[0.95rem] text-ink-soft sm:mt-5 sm:pt-4">
+                <span className="label mr-2 text-clay">On now</span>
+                {current.title}
+                {current.speaker ? ` with ${current.speaker.name}` : ""} &middot;{" "}
+                {current.venue?.name}
+              </p>
+            ) : null}
           </HeroStage>
       </Container>
     </section>
-  );
-}
-
-/** One quiet line under the hero buttons: live now, or the next service. */
-function ServiceLine({
-  live,
-  next,
-  current,
-}: {
-  live: boolean;
-  next: Awaited<ReturnType<typeof getServiceWindow>>["next"];
-  current: Awaited<ReturnType<typeof getServiceWindow>>["current"];
-}) {
-  if (live && current) {
-    return (
-      <p className="mt-5 border-t border-hairline pt-4 text-[0.95rem] text-ink-soft">
-        <span className="label mr-2 text-clay">On now</span>
-        {current.title}
-        {current.speaker ? ` with ${current.speaker.name}` : ""} &middot;{" "}
-        {current.venue?.name}
-      </p>
-    );
-  }
-
-  if (!next) return null;
-
-  return (
-    <p className="mt-5 border-t border-hairline pt-4 text-[0.95rem] text-ink-soft">
-      <span className="label mr-2 text-clay">Next service</span>
-      <span className="font-semibold text-ink">
-        {fmtDayLong(next.starts_at)}, {fmtTime(next.starts_at)}
-      </span>{" "}
-      &middot; {next.venue?.name}
-      {next.nxtgen_available ? " · NXTGEN meets alongside" : ""}
-    </p>
   );
 }
 
@@ -244,31 +226,55 @@ const FOUR_WS = [
 function SundayMessage({
   latest,
   dgroupCount,
+  fourWs,
 }: {
   latest: Awaited<ReturnType<typeof getLatestMessage>>;
   dgroupCount: number;
+  fourWs: Awaited<ReturnType<typeof getCurrentFourWsGuide>>;
 }) {
   if (!latest) return null;
+
+  const guideHref = fourWs?.week.hasGuide
+    ? `/watch/4ws/${fourWs.week.slug}`
+    : "/watch/4ws";
+  // One-line preview per movement, from the synced guide when we have it.
+  const preview = (html: string | null | undefined): string | null => {
+    if (!html) return null;
+    const t = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    return t.length > 96 ? `${t.slice(0, 95)}…` : t || null;
+  };
+  const GENERIC: Record<string, string> = Object.fromEntries(FOUR_WS);
+  const movements: [string, string][] = fourWs?.guide
+    ? (["Welcome", "Worship", "Word", "Works"] as const).map((name) => {
+        const html =
+          name === "Welcome"
+            ? fourWs.guide!.welcomeHtml
+            : name === "Worship"
+              ? fourWs.guide!.worshipHtml
+              : name === "Word"
+                ? fourWs.guide!.wordHtml
+                : fourWs.guide!.worksHtml;
+        return [name, preview(html) ?? GENERIC[name]];
+      })
+    : [];
   return (
-    <Section tone="bright">
+    <Section tone="bright" className="py-12! sm:py-16!">
       <Container>
-        <Reveal>
-          <SectionHead
-            eyebrow="Sunday's message"
-            title="Pick up where Sunday left off"
-            lead="Missed a week, or want to sit with the message again? Every teaching is here to watch, with a 4Ws guide for your Dgroup."
-            action={
-              <ButtonLink href="/watch/messages" tone="outline">
-                All messages
-              </ButtonLink>
-            }
-          />
-        </Reveal>
+        <RevealHead
+          eyebrow="Sunday's message"
+          title="Pick up where Sunday left off"
+          lead="Missed a week, or want to sit with the message again? Every teaching is here to watch, with a 4Ws guide for your Dgroup."
+          action={
+            <ButtonLink href="/watch/messages" tone="primary">
+              All messages
+            </ButtonLink>
+          }
+        />
 
         <Reveal
           as="div"
           delay={0.05}
-          className="mt-10 grid gap-10 lg:grid-cols-[1.3fr_1fr]"
+          className="mt-8 grid gap-8 lg:grid-cols-[1.3fr_1fr]"
         >
           <article>
             <Link
@@ -311,56 +317,83 @@ function SundayMessage({
                   {latest.description}
                 </p>
               ) : null}
-              <div className="mt-6 flex flex-wrap gap-3">
-                <ButtonLink href={`/watch/messages/${latest.slug}`}>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <ButtonLink
+                  href={`/watch/messages/${latest.slug}`}
+                  full
+                  className="sm:w-auto"
+                >
                   Watch the message
                 </ButtonLink>
                 <ButtonLink
-                  href={`/watch/messages/${latest.slug}#four-ws`}
+                  href={guideHref}
                   tone="outline"
+                  full
+                  className="sm:w-auto"
                 >
                   Get the 4Ws guide
                 </ButtonLink>
-                <ButtonLink href="/grow/find-a-dgroup" tone="ghost">
-                  Talk it through in a Dgroup →
-                </ButtonLink>
               </div>
+              <Link
+                href="/grow/find-a-dgroup"
+                className="link label mt-4 inline-block text-clay underline underline-offset-4 hover:text-clay-deep"
+              >
+                Talk it through in a Dgroup &rarr;
+              </Link>
             </div>
           </article>
 
           <div>
             <p className="label text-ink-mute">Take it further</p>
             <Stagger className="mt-4 space-y-5">
-              <div className="border border-hairline bg-paper p-6">
+              <div className="border border-hairline bg-paper p-5 sm:p-6">
                 <p className="font-display text-2xl leading-tight">
                   The 4Ws for this week
                 </p>
+                {fourWs ? (
+                  <p className="label mt-2 text-clay">
+                    {fourWs.week.weekNumber
+                      ? `Week ${fourWs.week.weekNumber} · `
+                      : ""}
+                    {fourWs.week.dateSpan ?? fourWs.week.serviceDateLabel}
+                  </p>
+                ) : null}
                 <p className="mt-2 text-[0.95rem] leading-relaxed text-ink-soft">
-                  {latest.four_ws
-                    ? "A ready-made discussion guide for this message — four movements to walk your group through."
+                  {fourWs?.guide
+                    ? `A ready-made discussion guide for “${fourWs.week.title}” — four movements to walk your group through.`
                     : "Every message comes with a guide for your group: four movements that turn Sunday into a conversation."}
                 </p>
-                <ul className="mt-5 space-y-2.5">
-                  {FOUR_WS.map(([name, what]) => (
-                    <li key={name} className="flex gap-3 text-[0.9rem]">
-                      <span className="label w-[4.5rem] shrink-0 pt-0.5 text-clay">
-                        {name}
-                      </span>
-                      <span className="text-ink-soft">{what}</span>
-                    </li>
-                  ))}
-                </ul>
+                {movements.length > 0 ? (
+                  <ul className="mt-5 space-y-2.5">
+                    {movements.map(([name, what]) => (
+                      <li key={name} className="flex gap-3 text-[0.9rem]">
+                        <span className="label w-[4.5rem] shrink-0 pt-0.5 text-clay">
+                          {name}
+                        </span>
+                        <span className="text-ink-soft">{what}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <ul className="mt-5 space-y-2.5">
+                    {FOUR_WS.map(([name, what]) => (
+                      <li key={name} className="flex gap-3 text-[0.9rem]">
+                        <span className="label w-[4.5rem] shrink-0 pt-0.5 text-clay">
+                          {name}
+                        </span>
+                        <span className="text-ink-soft">{what}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <div className="mt-6">
-                  <ButtonLink
-                    href={`/watch/messages/${latest.slug}#four-ws`}
-                    tone="outline"
-                  >
+                  <ButtonLink href={guideHref} tone="outline">
                     Get the guide
                   </ButtonLink>
                 </div>
               </div>
 
-              <div className="border border-hairline bg-paper-deep p-6">
+              <div className="border border-hairline bg-paper-deep p-5 sm:p-6">
                 <p className="font-display text-2xl leading-tight">
                   Don&rsquo;t process it alone
                 </p>
@@ -390,34 +423,88 @@ function SundayMessage({
   );
 }
 
+/**
+ * The next Sunday service, as a compact card. Moved here from the hero so the
+ * hero card stays short above the fold; this section has the room for it and
+ * "watch, live or any time" is where a visitor looks for the next stream.
+ */
+function NextServiceCard({
+  next,
+}: {
+  next: NonNullable<Awaited<ReturnType<typeof getServiceWindow>>["next"]>;
+}) {
+  return (
+    <CardEntrance className="w-full border border-hairline bg-paper-bright px-4 py-3 shadow-[0_18px_40px_-32px_rgba(23,21,15,0.5)] sm:min-w-72 md:max-w-xs">
+      <p className="label flex items-center gap-2 text-clay">
+        <PulseDot />
+        Next service
+      </p>
+      <p className="mt-1.5 text-[0.95rem] font-semibold text-ink tabular">
+        {fmtDayLong(next.starts_at)} · {fmtTime(next.starts_at)}
+      </p>
+      {next.venue?.name ? (
+        <p className="mt-0.5 text-[0.82rem] text-ink-mute">{next.venue.name}</p>
+      ) : null}
+    </CardEntrance>
+  );
+}
+
 /* --- 3. Watch with CCF -----------------------------------------------------------
 
    Real YouTube data: the one next Sunday service, the most recent finished
-   service (embeddable), and two or three teaching series. Self-updating —
-   when Sunday's stream ends it moves from "next" to the archive here.
+   service (embeddable), the Sunday Fast Tracks, and two or three teaching
+   series. Self-updating — when Sunday's stream ends it moves from "next" to
+   the archive here.
 --------------------------------------------------------------------------- */
 
 function WatchWithCcf({
   sunday,
+  nextService,
   series,
+  fastTracks,
 }: {
   sunday: SundayServices;
+  nextService: Awaited<ReturnType<typeof getServiceWindow>>["next"];
   series: SeriesGroup[];
+  fastTracks: CatalogPlaylist[];
 }) {
   const next = sunday.next;
   const latestArchived = sunday.archive[0] ?? null;
-  if (!next && !latestArchived && !series.length) return null;
+  // The rest of the archive, past the one shown as an embed above.
+  const earlierServices = sunday.archive.slice(1, 7);
+  if (!next && !latestArchived && !series.length && !fastTracks.length)
+    return null;
 
   return (
     <Section tone="paper">
       <Container>
-        <Reveal>
-          <SectionHead
-            eyebrow="Watch with CCF"
-            title="Sunday, live or any time"
-            lead="CCF Centris shares the CCF-wide stream. Play any service right here — this updates on its own as services air and new teaching is published."
-          />
+        {/* Intro film leads the section — for anyone landing here who doesn't
+            know CCF yet. The Sunday-stream header comes after it, with the
+            service cards it actually describes. */}
+        <RevealHead
+          className="mx-auto max-w-2xl"
+          align="center"
+          eyebrow="Watch with CCF"
+          title="A brief introduction to CCF"
+          lead="If this is your first time here, this short film introduces Christ's Commission Fellowship — what we believe, how we worship, and what a Sunday looks like."
+        />
+
+        <Reveal as="div" delay={0.05} className="mt-8">
+          <div className="mx-auto max-w-4xl overflow-hidden border border-hairline bg-night shadow-[0_24px_60px_-45px_rgba(23,21,15,0.5)]">
+            <WelcomeVideo />
+          </div>
         </Reveal>
+
+        <div className="mt-16 border-t border-hairline pt-16">
+          <RevealHead
+            eyebrow="The Sunday stream"
+            title="Sunday services, live and on demand"
+            lead="CCF Centris carries the CCF-wide stream. Watch the service live, or catch any past message here — the listing updates automatically as services air and new teaching is published."
+            action={
+              nextService ? <NextServiceCard next={nextService} /> : undefined
+            }
+          />
+        </div>
 
         <Reveal as="div" delay={0.05} className="mt-10 grid gap-8 lg:grid-cols-2">
           {next ? (
@@ -434,18 +521,19 @@ function WatchWithCcf({
                   <div className="halftone aspect-video w-full bg-paper-deep" />
                 )}
                 <span className="label pointer-events-none absolute left-2 top-2 bg-night/85 px-2 py-1 text-paper-bright">
-                  Next service
+                  Upcoming service
                 </span>
               </div>
               <div className="flex flex-1 flex-col p-5">
-                <p className="font-display text-xl leading-tight">
+                <p className="label text-clay">Upcoming service</p>
+                <p className="font-display mt-1.5 text-xl leading-tight">
                   {next.title}
                 </p>
                 <p className="mt-1.5 text-[0.9rem] text-ink-soft tabular">
                   {fmtDayLong(next.scheduledFor)} · {fmtTime(next.scheduledFor)}
                 </p>
                 <p className="mt-auto pt-5 text-[0.85rem] text-ink-mute">
-                  The stream starts here when the service begins.
+                  Playback begins here when the service starts.
                 </p>
               </div>
             </div>
@@ -462,8 +550,7 @@ function WatchWithCcf({
                 />
               </div>
               <div className="flex flex-1 flex-col p-5">
-                <p className="label text-clay">Most recent service</p>
-                <p className="font-display mt-1.5 text-xl leading-tight">
+                <p className="font-display text-xl leading-tight">
                   {latestArchived.title}
                 </p>
                 {latestArchived.servedOn ? (
@@ -473,10 +560,10 @@ function WatchWithCcf({
                 ) : null}
                 <div className="mt-auto pt-5">
                   <Link
-                    href="/watch/archive"
+                    href={`/watch/archive/${latestArchived.videoId}`}
                     className="link label text-clay underline underline-offset-4"
                   >
-                    All Sunday services →
+                    Watch this service →
                   </Link>
                 </div>
               </div>
@@ -484,8 +571,113 @@ function WatchWithCcf({
           ) : null}
         </Reveal>
 
+        {earlierServices.length ? (
+          <Reveal as="div" className="mt-10">
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <p className="label text-ink-mute">Earlier services</p>
+              <Link
+                href="/watch/archive"
+                className="link label text-clay underline underline-offset-4"
+              >
+                All Sunday services →
+              </Link>
+            </div>
+            <Stagger className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {earlierServices.map((s) => (
+                <article
+                  key={s.videoId}
+                  className="group flex flex-col border border-hairline bg-paper-bright"
+                >
+                  <Link
+                    href={`/watch/archive/${s.videoId}`}
+                    className="relative block aspect-video overflow-hidden border-b border-hairline"
+                  >
+                    <YouTubeThumb
+                      src={s.thumbnail}
+                      fallbackSrc={s.thumbnailFallback}
+                      alt={s.title}
+                    />
+                    <span className="pointer-events-none absolute inset-0 grid place-items-center">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-clay text-lg text-paper-bright">
+                        ▶
+                      </span>
+                    </span>
+                  </Link>
+                  <div className="flex flex-1 flex-col p-4">
+                    <h3 className="font-display text-[1.05rem] leading-tight group-hover:text-clay">
+                      <Link href={`/watch/archive/${s.videoId}`}>{s.title}</Link>
+                    </h3>
+                    {s.servedOn ? (
+                      <p className="label mt-auto pt-3 text-ink-mute tabular">
+                        {fmtDayLong(s.servedOn)}
+                      </p>
+                    ) : null}
+                  </div>
+                </article>
+              ))}
+            </Stagger>
+          </Reveal>
+        ) : null}
+
+        {fastTracks.length ? (
+          <Reveal as="div" className="mt-10">
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <p className="label text-ink-mute">Sunday Fast Tracks</p>
+              <Link
+                href="/watch/series"
+                className="link label text-clay underline underline-offset-4"
+              >
+                All series &amp; Fast Tracks →
+              </Link>
+            </div>
+            <p className="mt-2 max-w-2xl text-[0.9rem] text-ink-soft">
+              Every teaching series has a Fast Track — a condensed version of the
+              Sunday message for those with limited time.
+            </p>
+            <Stagger className="mt-5 grid gap-5 sm:grid-cols-2">
+              {fastTracks.map((p) => {
+                const coverId = p.thumbnail.match(/\/vi\/([^/]+)\//)?.[1];
+                return (
+                  <Link
+                    key={p.id}
+                    href={p.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group flex border border-hairline bg-paper-bright"
+                  >
+                    <div className="relative aspect-video w-28 shrink-0 overflow-hidden border-r border-hairline min-[420px]:w-36 sm:w-48">
+                      {p.thumbnail ? (
+                        <YouTubeThumb
+                          src={p.thumbnail}
+                          fallbackSrc={
+                            coverId
+                              ? `https://i.ytimg.com/vi/${coverId}/hqdefault.jpg`
+                              : p.thumbnail
+                          }
+                          alt={p.series}
+                        />
+                      ) : (
+                        <span className="halftone block h-full w-full bg-paper-deep" />
+                      )}
+                    </div>
+                    <div className="flex flex-1 flex-col p-4">
+                      <p className="label text-clay">Fast Track</p>
+                      <p className="font-display mt-1 text-[1.02rem] leading-tight group-hover:text-clay">
+                        {p.series}
+                      </p>
+                      <p className="label mt-auto pt-3 text-ink-mute">
+                        Watch on YouTube →
+                      </p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </Stagger>
+          </Reveal>
+        ) : null}
+
         {series.length ? (
-          <Reveal as="div" className="mt-12">
+          <Reveal as="div" className="mt-10">
             <div className="flex flex-wrap items-baseline justify-between gap-3">
               <p className="label text-ink-mute">Teaching series</p>
               <Link
@@ -553,57 +745,83 @@ function FindYourPeople({
 }) {
   return (
     <Section tone="ink" className="relative overflow-hidden">
+      {/* Vibrant backdrop: two brand glows over the dark ground, then a fine
+          dot grid on top to keep it editorial rather than gradient-y. */}
       <div
         aria-hidden
-        className="absolute inset-0 opacity-[0.08]"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(60rem 40rem at 12% -10%, rgba(0,166,182,0.28), transparent 60%), radial-gradient(52rem 38rem at 108% 120%, rgba(124,18,53,0.32), transparent 55%)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.07]"
         style={{
           backgroundImage: "radial-gradient(#f4efe6 1px, transparent 1.2px)",
           backgroundSize: "9px 9px",
         }}
       />
+
       <Container className="relative">
-        <Reveal className="max-w-2xl">
-          <Eyebrow tone="paper">Dgroups & communities</Eyebrow>
-          <h2 className="display-lg mt-5">
-            We were never meant to
-            <br />
-            <span className="italic text-clay-lift">walk this road alone</span>.
-          </h2>
-          <p className="mt-6 text-[1.05rem] leading-relaxed text-paper-bright/70">
-            A Dgroup is a small group that meets each week to open the Bible
-            together, talk honestly about life, and pray for one another.
-            It&rsquo;s the heart of how we grow at CCF — real friendships with
-            people committed to following Christ.
-          </p>
-          <p className="mt-4 text-[1.05rem] leading-relaxed text-paper-bright/70">
-            There are{" "}
+        <div className="grid gap-x-12 gap-y-10 lg:grid-cols-[minmax(0,34rem)_1fr] lg:items-end">
+          <div>
+            <RevealItem as="p" className="label flex items-center gap-3 text-paper-bright/60">
+              <span aria-hidden className="h-px w-8 bg-current opacity-50" />
+              Dgroups &amp; communities
+            </RevealItem>
+            <RevealItem as="h2" className="display-lg mt-5">
+              We were never meant to
+              <br />
+              <span className="italic text-clay-lift">
+                walk this road alone
+              </span>
+              .
+            </RevealItem>
+            <RevealItem as="p" className="mt-6 max-w-xl text-[1.05rem] leading-relaxed text-paper-bright/80">
+              A Dgroup is a small group that meets each week to open the Bible
+              together, talk honestly about life, and pray for one another —
+              the heart of how we grow at CCF.
+            </RevealItem>
+            <RevealItem className="mt-9 flex flex-wrap gap-3">
+              <ButtonLink href="/grow/find-a-dgroup" size="lg" tone="on-dark">
+                Find a Dgroup
+              </ButtonLink>
+              <ButtonLink
+                href="/grow/join-a-dgroup"
+                tone="ghost-on-dark"
+                size="lg"
+              >
+                How Dgroups work →
+              </ButtonLink>
+            </RevealItem>
+          </div>
+
+          {/* Count, promoted to an elegant stat block on the brand keyline. */}
+          <Reveal className="border-l-2 border-clay-lift/60 pl-6 lg:pb-2">
             <CountUp
               value={count}
-              className="font-display text-clay-lift"
-              suffix=" groups"
-            />{" "}
-            meeting around Centris right now, on every day of the week and in
-            every season of life. There&rsquo;s room for you in one of them.
-          </p>
-          <div className="mt-9 flex flex-wrap gap-3">
-            <ButtonLink href="/grow/find-a-dgroup" size="lg" tone="on-dark">
-              Find a Dgroup
-            </ButtonLink>
-            <ButtonLink
-              href="/grow/join-a-dgroup"
-              tone="ghost-on-dark"
-              size="lg"
-            >
-              How Dgroups work →
-            </ButtonLink>
-          </div>
-        </Reveal>
+              className="font-display block text-6xl leading-none text-clay-lift sm:text-7xl"
+            />
+            <p className="mt-3 max-w-sm text-[0.95rem] leading-relaxed text-paper-bright/75">
+              groups meeting around Centris right now — every day of the week,
+              every season of life. There&rsquo;s room for you in one of them.
+            </p>
+          </Reveal>
+        </div>
 
-        <div className="mt-14">
-          <p className="label text-paper-bright/60">
-            Communities for every season
-          </p>
-          <Stagger className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-16">
+          <div className="flex items-center gap-4">
+            <p className="label whitespace-nowrap text-paper-bright/70">
+              Communities for every season
+            </p>
+            <span
+              aria-hidden
+              className="h-px flex-1 bg-paper-bright/15"
+            />
+          </div>
+          <Stagger className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {communities.map((c) => (
               <CommunityCard key={c.id} c={c} />
             ))}
@@ -611,6 +829,126 @@ function FindYourPeople({
         </div>
       </Container>
     </Section>
+  );
+}
+
+/* --- Court availability board ------------------------------------------------
+
+   Today's picture for the Sports Hall courts, styled as a real booking board:
+   each court is a row with a live status pill and an hour-by-hour timeline of
+   the day, so a visitor can see at a glance when to turn up or reserve.
+---------------------------------------------------------------------------- */
+
+type CourtToday = Awaited<ReturnType<typeof getSportsToday>>[number];
+
+const SLOT_STYLE: Record<string, string> = {
+  available: "bg-clay/85",
+  reserved: "bg-ink/15",
+  pending: "bg-ink/10",
+  unavailable: "bg-hairline/60",
+};
+
+function CourtRow({ court, slots, nextFree, busyUntil }: CourtToday) {
+  const openNow = nextFree != null && busyUntil == null;
+  const status = !nextFree
+    ? { text: "Booked today", cls: "border-ink/15 text-ink-mute" }
+    : openNow
+      ? { text: "Open now", cls: "border-clay/40 bg-clay/10 text-clay" }
+      : { text: `Opens ${fmtTime(nextFree.start)}`, cls: "border-ink/20 text-ink-soft" };
+
+  return (
+    <Link
+      href="/centris/reserve"
+      className="group grid items-center gap-x-5 gap-y-3 bg-paper-bright p-5 transition-colors hover:bg-bone sm:grid-cols-[13rem_1fr_auto]"
+    >
+      <div className="min-w-0">
+        <p className="label text-ink-mute">{court.sport}</p>
+        <h3 className="font-display mt-1 text-xl leading-tight">{court.name}</h3>
+      </div>
+
+      {/* Hour-by-hour timeline of the day. */}
+      <div>
+        <div className="flex gap-0.5">
+          {slots.map((s) => (
+            <span
+              key={s.start}
+              title={`${fmtTime(s.start)} · ${s.state}`}
+              className={cx(
+                "h-6 flex-1 rounded-xs first:rounded-l-md last:rounded-r-md",
+                SLOT_STYLE[s.state] ?? "bg-hairline",
+              )}
+            />
+          ))}
+        </div>
+        <div className="mt-1.5 flex justify-between text-[0.7rem] text-ink-mute tabular">
+          <span>{slots.length ? fmtTime(slots[0].start) : ""}</span>
+          <span>{slots.length ? fmtTime(slots[slots.length - 1].end) : ""}</span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-4 sm:flex-col sm:items-end sm:gap-2">
+        <span
+          className={cx(
+            "label whitespace-nowrap border px-2.5 py-1",
+            status.cls,
+          )}
+        >
+          {status.text}
+        </span>
+        <span className="label text-clay opacity-0 transition-opacity group-hover:opacity-100">
+          Reserve →
+        </span>
+      </div>
+    </Link>
+  );
+}
+
+function CourtBoard({ courts }: { courts: CourtToday[] }) {
+  const openCount = courts.filter(
+    (c) => c.nextFree != null && c.busyUntil == null,
+  ).length;
+
+  return (
+    <div className="border border-hairline bg-paper-bright shadow-[0_24px_60px_-45px_rgba(23,21,15,0.5)]">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-hairline p-5">
+        <div>
+          <p className="label flex items-center gap-2 text-clay">
+            <PulseDot />
+            Play at Centris today
+          </p>
+          <p className="mt-1.5 text-[0.9rem] text-ink-soft">
+            {openCount > 0
+              ? `${openCount} of ${courts.length} courts open right now.`
+              : "Every court is booked for now — reserve a later slot."}{" "}
+            Basketball, badminton, and pickleball.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <ButtonLink href="/centris/availability" tone="outline">
+            Check availability
+          </ButtonLink>
+          <ButtonLink href="/centris/reserve">Reserve a court</ButtonLink>
+        </div>
+      </div>
+
+      <div className="grid gap-px bg-hairline">
+        {courts.map((c) => (
+          <CourtRow key={c.court.id} {...c} />
+        ))}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-hairline px-5 py-3 text-[0.72rem] text-ink-mute">
+        <span className="flex items-center gap-1.5">
+          <span className="h-3 w-3 rounded-xs bg-clay/85" /> Open
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-3 w-3 rounded-xs bg-ink/15" /> Reserved
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-3 w-3 rounded-xs bg-hairline/60" /> Past / closed
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -637,29 +975,19 @@ function TheCenter({
   );
   const shownCourts = courts.slice(0, 4);
 
-  // A CCF still for each featured space, keyed by slug.
-  const facilityStill: Record<string, string> = {
-    "main-worship-hall": CCF_STILLS.shepherd,
-    "sports-hall": CCF_STILLS.care,
-    "multipurpose-hall-1": CCF_STILLS.grow,
-    "dgroup-lounge": CCF_STILLS.faithfulness,
-  };
-
   return (
     <Section tone="bright">
       <Container>
-        <Reveal>
-          <SectionHead
-            eyebrow="Around CCF Centris"
-            title="Room to gather, to learn, and to play"
-            lead="A worship hall that seats 1,300, a sports hall for 800, four flexible halls for classes and events, and a lounge made for Dgroups — and the sports hall is open to the neighborhood, not only to CCF."
-            action={
-              <ButtonLink href="/centris" tone="outline">
-                Take a look around
-              </ButtonLink>
-            }
-          />
-        </Reveal>
+        <RevealHead
+          eyebrow="Around CCF Centris"
+          title="Room to gather, to learn, and to play"
+          lead="A worship hall that seats 1,300, a sports hall for 800, four flexible halls for classes and events, and a lounge made for Dgroups — and the sports hall is open to the neighborhood, not only to CCF."
+          action={
+            <ButtonLink href="/centris" tone="outline">
+              Take a look around
+            </ButtonLink>
+          }
+        />
 
         <Stagger className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {featured.map((f) => (
@@ -668,12 +996,13 @@ function TheCenter({
                 href={`/centris/facilities/${f.slug}`}
                 className="group block border border-hairline bg-paper transition-colors hover:border-ink"
               >
+                {/* Placeholder art until CCF supplies real photos of each
+                    space — the YouTube stills used before weren't of the
+                    venues. */}
                 <div className="aspect-[4/3] overflow-hidden">
-                  <CcfPhoto
-                    src={ytThumb(facilityStill[f.slug] ?? CCF_STILLS.shepherd)}
+                  <MessageArt
                     seed={f.slug}
                     label={f.name}
-                    alt={f.name}
                     className="h-full w-full"
                   />
                 </div>
@@ -694,50 +1023,8 @@ function TheCenter({
         </Stagger>
 
         {shownCourts.length ? (
-          <Reveal
-            as="div"
-            className="mt-12 border border-hairline bg-paper-bright"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-hairline p-5">
-              <div>
-                <p className="label text-clay">Play at Centris today</p>
-                <p className="mt-1 text-[0.9rem] text-ink-soft">
-                  Basketball, badminton, and pickleball. Reserve a court, or drop
-                  in on an open night.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <ButtonLink href="/centris/availability" tone="outline">
-                  Check availability
-                </ButtonLink>
-                <ButtonLink href="/centris/reserve">Reserve a court</ButtonLink>
-              </div>
-            </div>
-            <div className="grid gap-px bg-hairline sm:grid-cols-2 lg:grid-cols-4">
-              {shownCourts.map(({ court, nextFree, busyUntil }) => (
-                <div key={court.id} className="bg-paper-bright p-5">
-                  <p className="label text-ink-mute">{court.sport}</p>
-                  <h3 className="font-display mt-1.5 text-xl">{court.name}</h3>
-                  {nextFree ? (
-                    <>
-                      <p className="mt-4 text-[0.82rem] text-ink-mute">
-                        {busyUntil ? "Next open" : "Open now"}
-                      </p>
-                      <p className="font-display text-2xl text-moss tabular">
-                        {fmtTime(nextFree.start)}
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="mt-4 text-[0.82rem] text-ink-mute">Today</p>
-                      <p className="font-display text-2xl text-ink-mute">
-                        Fully booked
-                      </p>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
+          <Reveal as="div" className="mt-12">
+            <CourtBoard courts={shownCourts} />
           </Reveal>
         ) : null}
       </Container>
@@ -756,18 +1043,21 @@ function Serve({
     <Section tone="deep">
       <Container>
         <div className="grid gap-12 lg:grid-cols-[1fr_1.1fr] lg:items-center">
-          <Reveal className="relative border-l-2 border-clay pl-6 sm:pl-8">
-            <Eyebrow>Serve</Eyebrow>
-            <h2 className="display-md mt-5">
+          <div className="relative border-l-2 border-clay pl-6 sm:pl-8">
+            <RevealItem as="p" className="label flex items-center gap-3 text-ink-mute">
+              <span aria-hidden className="h-px w-8 bg-current opacity-50" />
+              Serve
+            </RevealItem>
+            <RevealItem as="h2" className="display-md mt-5">
               There&rsquo;s a place for you on a team.
-            </h2>
-            <p className="mt-5 max-w-lg leading-relaxed text-ink-soft">
+            </RevealItem>
+            <RevealItem as="p" className="mt-5 max-w-lg leading-relaxed text-ink-soft">
               Every Sunday is carried by people who serve — welcoming guests at
               the door, caring for children in NXTGEN, running production, leading
               on the courts, praying with those who stay. Most people start by
               trying one team for a season and seeing where they fit.
-            </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            </RevealItem>
+            <RevealItem className="mt-8 flex flex-wrap items-center gap-3">
               <ButtonLink href="/serve">Find a place to serve</ButtonLink>
               <Link
                 href="/serve/at-centris"
@@ -775,10 +1065,10 @@ function Serve({
               >
                 Teams at Centris &rarr;
               </Link>
-            </div>
-          </Reveal>
+            </RevealItem>
+          </div>
 
-          <Stagger className="grid grid-cols-2 gap-px border border-hairline bg-hairline shadow-[0_24px_60px_-45px_rgba(23,21,15,0.5)]">
+          <Stagger className="grid grid-cols-1 gap-px border border-hairline bg-hairline shadow-[0_24px_60px_-45px_rgba(23,21,15,0.5)] min-[440px]:grid-cols-2">
             {roles.slice(0, 8).map((r) => (
               <Link
                 key={r.id}
@@ -805,25 +1095,30 @@ function WhereWeAre() {
     <Section tone="paper">
       <Container>
         <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
-          <Reveal>
-            <Eyebrow>Where we are</Eyebrow>
-            <h2 className="display-md mt-5">
+          <div>
+            <RevealItem as="p" className="label flex items-center gap-3 text-ink-mute">
+              <span aria-hidden className="h-px w-8 bg-current opacity-50" />
+              Where we are
+            </RevealItem>
+            <RevealItem as="h2" className="display-md mt-5">
               Right off the MRT at Quezon Avenue.
-            </h2>
-            <address className="font-display mt-6 text-2xl not-italic leading-snug sm:text-3xl">
-              {SITE.addressLines.map((l) => (
-                <span key={l} className="block">
-                  {l}
-                </span>
-              ))}
-            </address>
-            <p className="mt-5 max-w-md leading-relaxed text-ink-soft">
+            </RevealItem>
+            <RevealItem as="div">
+              <address className="font-display mt-6 text-2xl not-italic leading-snug sm:text-3xl">
+                {SITE.addressLines.map((l) => (
+                  <span key={l} className="block">
+                    {l}
+                  </span>
+                ))}
+              </address>
+            </RevealItem>
+            <RevealItem as="p" className="mt-5 max-w-md leading-relaxed text-ink-soft">
               Centris Station connects directly to MRT-3 Quezon Avenue. Walk
               through the concourse into Eton Centris and take the escalator to
               the second floor. Parking is available on site if you&rsquo;re
               driving.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            </RevealItem>
+            <RevealItem className="mt-8 flex flex-wrap gap-3">
               <ButtonLink href="/visit/directions">Full directions</ButtonLink>
               <a
                 href={MAPS_LINK}
@@ -833,8 +1128,8 @@ function WhereWeAre() {
               >
                 Open in maps
               </a>
-            </div>
-          </Reveal>
+            </RevealItem>
+          </div>
 
           <Reveal as="div" delay={0.08} className="border border-hairline bg-paper">
             <iframe

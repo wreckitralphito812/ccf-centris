@@ -10,7 +10,12 @@ import {
   SectionHead,
 } from "@/components/ui";
 import { MessageArt, MessageCard } from "@/components/cards";
-import { getMessage, getMessages, getRelatedMessages } from "@/lib/queries";
+import {
+  getFourWsWeeks,
+  getMessage,
+  getMessages,
+  getRelatedMessages,
+} from "@/lib/queries";
 import { fmtDate, fmtDuration } from "@/lib/format";
 import { SaveButton, ShareButton } from "./actions";
 
@@ -51,6 +56,17 @@ export default async function MessagePage({
 
   const related = await getRelatedMessages(m);
   const w = m.four_ws;
+
+  // Match this message to a synced 4Ws week by title so "the guide" points at
+  // the real, auto-updating page rather than a placeholder.
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const fourWsWeek = (await getFourWsWeeks()).find(
+    (wk) => norm(wk.title) === norm(m.title),
+  );
+  const fourWsHref =
+    fourWsWeek && fourWsWeek.hasGuide
+      ? `/watch/4ws/${fourWsWeek.slug}`
+      : "/watch/4ws";
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -225,12 +241,7 @@ export default async function MessagePage({
                   <ButtonLink href="/grow/find-a-dgroup" tone="outline">
                     Find a Dgroup
                   </ButtonLink>
-                  <button
-                    type="button"
-                    className="label inline-flex items-center border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
-                  >
-                    Download PDF
-                  </button>
+                  <ButtonLink href={fourWsHref}>Open the full 4Ws</ButtonLink>
                 </div>
               }
             />
