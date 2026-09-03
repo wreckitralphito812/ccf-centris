@@ -26,6 +26,8 @@ interface Props {
   playlistHref: string;
   cover: string;
   coverFallback: string;
+  /** YouTube's own count for the playlist — the fallback when `videos` is empty. */
+  partCount?: number;
   videos: CardVideo[];
 }
 
@@ -39,17 +41,28 @@ interface Props {
  * API key, or quota spent) the card falls back to the inline playlist embed.
  */
 export function SeriesPlayerCard(props: Props) {
-  const { kindLabel, series, playlistId, playlistHref, cover, coverFallback, videos } =
-    props;
+  const {
+    kindLabel,
+    series,
+    playlistId,
+    playlistHref,
+    cover,
+    coverFallback,
+    partCount,
+    videos,
+  } = props;
   const [open, setOpen] = useState(false);
 
+  const count = videos.length || partCount || 0;
   const footer = (
     <div className="flex flex-1 flex-col p-5">
       <p className="label text-clay">{kindLabel}</p>
       <p className="font-display mt-1.5 text-lg leading-tight">{series}</p>
-      <p className="mt-1.5 text-[0.82rem] text-ink-soft tabular">
-        {videos.length || "—"} {videos.length === 1 ? "part" : "parts"}
-      </p>
+      {count > 0 ? (
+        <p className="mt-1.5 text-[0.82rem] text-ink-soft tabular">
+          {count} {count === 1 ? "part" : "parts"}
+        </p>
+      ) : null}
     </div>
   );
 

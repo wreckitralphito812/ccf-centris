@@ -105,7 +105,6 @@ export default async function HomePage() {
 
       <SundayMessage
         latest={latest}
-        dgroupCount={dgroups.length}
         fourWs={fourWs}
       />
 
@@ -233,11 +232,9 @@ const FOUR_WS = [
 
 function SundayMessage({
   latest,
-  dgroupCount,
   fourWs,
 }: {
   latest: Awaited<ReturnType<typeof getLatestMessage>>;
-  dgroupCount: number;
   fourWs: Awaited<ReturnType<typeof getCurrentFourWsGuide>>;
 }) {
   if (!latest) return null;
@@ -354,77 +351,44 @@ function SundayMessage({
 
           <div>
             <p className="label text-ink-mute">Take it further</p>
-            <Stagger className="mt-4 space-y-5">
-              <div className="border border-hairline bg-paper p-5 sm:p-6">
-                <p className="font-display text-2xl leading-tight">
-                  The 4Ws for this week
+            <div className="mt-4 border border-hairline bg-paper p-5 sm:p-6">
+              <p className="font-display text-2xl leading-tight">
+                The 4Ws for this week
+              </p>
+              {fourWs ? (
+                <p className="label mt-2 text-clay">
+                  {fourWs.week.weekNumber
+                    ? `Week ${fourWs.week.weekNumber} · `
+                    : ""}
+                  {fourWs.week.dateSpan ?? fourWs.week.serviceDateLabel}
                 </p>
-                {fourWs ? (
-                  <p className="label mt-2 text-clay">
-                    {fourWs.week.weekNumber
-                      ? `Week ${fourWs.week.weekNumber} · `
-                      : ""}
-                    {fourWs.week.dateSpan ?? fourWs.week.serviceDateLabel}
-                  </p>
-                ) : null}
-                <p className="mt-2 text-[0.95rem] leading-relaxed text-ink-soft">
-                  {fourWs?.guide
-                    ? `A ready-made discussion guide for “${fourWs.week.title}” — four movements to walk your group through.`
-                    : "Every message comes with a guide for your group: four movements that turn Sunday into a conversation."}
-                </p>
-                {movements.length > 0 ? (
-                  <ul className="mt-5 space-y-2.5">
-                    {movements.map(([name, what]) => (
-                      <li key={name} className="flex gap-3 text-[0.9rem]">
-                        <span className="label w-[4.5rem] shrink-0 pt-0.5 text-clay">
-                          {name}
-                        </span>
-                        <span className="text-ink-soft">{what}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <ul className="mt-5 space-y-2.5">
-                    {FOUR_WS.map(([name, what]) => (
-                      <li key={name} className="flex gap-3 text-[0.9rem]">
-                        <span className="label w-[4.5rem] shrink-0 pt-0.5 text-clay">
-                          {name}
-                        </span>
-                        <span className="text-ink-soft">{what}</span>
-                      </li>
-                    ))}
-                  </ul>
+              ) : null}
+              <p className="mt-2 text-[0.95rem] leading-relaxed text-ink-soft">
+                {fourWs?.guide
+                  ? `A ready-made discussion guide for “${fourWs.week.title}” — four movements to walk your group through.`
+                  : "Every message comes with a guide for your group: four movements that turn Sunday into a conversation."}
+              </p>
+              <ul className="mt-5 space-y-2.5">
+                {(movements.length > 0 ? movements : FOUR_WS).map(
+                  ([name, what]) => (
+                    <li key={name} className="flex gap-3 text-[0.9rem]">
+                      <span className="label w-[4.5rem] shrink-0 pt-0.5 text-clay">
+                        {name}
+                      </span>
+                      <span className="text-ink-soft">{what}</span>
+                    </li>
+                  ),
                 )}
-                <div className="mt-6">
-                  <ButtonLink href={guideHref} tone="outline">
-                    Get the guide
-                  </ButtonLink>
-                </div>
+              </ul>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <ButtonLink href={guideHref} tone="outline">
+                  Get the guide
+                </ButtonLink>
+                <ButtonLink href="/grow/find-a-dgroup">
+                  Find a Dgroup
+                </ButtonLink>
               </div>
-
-              <div className="border border-hairline bg-paper-deep p-5 sm:p-6">
-                <p className="font-display text-2xl leading-tight">
-                  Don&rsquo;t process it alone
-                </p>
-                <p className="mt-2 text-[0.95rem] leading-relaxed text-ink-soft">
-                  A Dgroup is a handful of people working through the same
-                  message together, week to week.
-                </p>
-                {dgroupCount > 0 ? (
-                  <p className="mt-4 text-[0.9rem] text-ink-mute">
-                    <span className="font-display text-3xl text-ink">
-                      {dgroupCount}
-                    </span>{" "}
-                    groups are open right now.
-                  </p>
-                ) : null}
-                <div className="mt-5">
-                  <ButtonLink href="/grow/find-a-dgroup">
-                    Find a Dgroup
-                  </ButtonLink>
-                </div>
-              </div>
-            </Stagger>
+            </div>
           </div>
         </Reveal>
       </Container>
@@ -794,86 +758,61 @@ function FindYourPeople({
   communities: Awaited<ReturnType<typeof getCommunities>>;
 }) {
   return (
-    <Section tone="ink" className="relative overflow-hidden">
-      {/* Vibrant backdrop: two brand glows over the dark ground, then a fine
-          dot grid on top to keep it editorial rather than gradient-y. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(60rem 40rem at 12% -10%, rgba(0,166,182,0.28), transparent 60%), radial-gradient(52rem 38rem at 108% 120%, rgba(124,18,53,0.32), transparent 55%)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.07]"
-        style={{
-          backgroundImage: "radial-gradient(#f4efe6 1px, transparent 1.2px)",
-          backgroundSize: "9px 9px",
-        }}
-      />
-
+    <Section tone="paper" className="relative overflow-hidden">
       <Container className="relative">
-        <div className="grid gap-x-12 gap-y-10 lg:grid-cols-[minmax(0,34rem)_1fr] lg:items-end">
+        {/* Intro: the pitch on the left, the live count as a clean inline
+            stat on the right. Light ground, high contrast, no texture. */}
+        <div className="grid gap-x-14 gap-y-10 lg:grid-cols-[minmax(0,32rem)_1fr] lg:items-end">
           <div>
-            <RevealItem as="p" className="label flex items-center gap-2.5 text-paper-bright/60">
-              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-paper-bright/25">
+            <RevealItem as="p" className="label flex items-center gap-2.5 text-clay">
+              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-clay/30">
                 <SectionIcon name="people" className="h-3.5 w-3.5" />
               </span>
               Dgroups &amp; communities
             </RevealItem>
-            <RevealItem as="h2" className="display-lg mt-5">
+            <RevealItem as="h2" className="display-lg mt-5 text-ink">
               We were never meant to
               <br />
-              <span className="italic text-clay-lift">
-                walk this road alone
-              </span>
-              .
+              <span className="italic text-clay">walk this road alone</span>.
             </RevealItem>
-            <RevealItem as="p" className="mt-6 max-w-xl text-[1.05rem] leading-relaxed text-paper-bright/80">
+            <RevealItem as="p" className="mt-6 max-w-xl text-[1.05rem] leading-relaxed text-ink-soft">
               A Dgroup is a small group that meets each week to open the Bible
               together, talk honestly about life, and pray for one another —
               the heart of how we grow at CCF.
             </RevealItem>
             <RevealItem className="mt-9 flex flex-wrap gap-3">
-              <ButtonLink href="/grow/find-a-dgroup" size="lg" tone="on-dark">
+              <ButtonLink href="/grow/find-a-dgroup" size="lg">
                 Find a Dgroup
               </ButtonLink>
-              <ButtonLink
-                href="/grow/join-a-dgroup"
-                tone="ghost-on-dark"
-                size="lg"
-              >
+              <ButtonLink href="/grow/join-a-dgroup" tone="outline" size="lg">
                 How Dgroups work →
               </ButtonLink>
             </RevealItem>
           </div>
 
-          {/* Count, promoted to an elegant stat block on the brand keyline. */}
-          <Reveal className="border-l-2 border-clay-lift/60 pl-6 lg:pb-2">
-            <CountUp
-              value={count}
-              className="font-display block text-6xl leading-none text-clay-lift sm:text-7xl"
-            />
-            <p className="mt-3 max-w-sm text-[0.95rem] leading-relaxed text-paper-bright/75">
-              groups meeting around Centris right now — every day of the week,
-              every season of life. There&rsquo;s room for you in one of them.
+          <Reveal className="lg:pb-1">
+            <div className="flex items-baseline gap-3">
+              <CountUp
+                value={count}
+                className="font-display block text-6xl leading-none text-clay sm:text-7xl"
+              />
+              <span className="label text-ink-mute">groups open now</span>
+            </div>
+            <p className="mt-3 max-w-sm text-[0.95rem] leading-relaxed text-ink-soft">
+              Meeting around Centris every day of the week, every season of
+              life. There&rsquo;s room for you in one of them.
             </p>
           </Reveal>
         </div>
 
-        <div className="mt-16">
+        <div className="mt-14">
           <div className="flex items-center gap-4">
-            <p className="label whitespace-nowrap text-paper-bright/70">
-              Communities for every season
+            <p className="label whitespace-nowrap text-ink-mute">
+              A community for every season
             </p>
-            <span
-              aria-hidden
-              className="h-px flex-1 bg-paper-bright/15"
-            />
+            <span aria-hidden className="h-px flex-1 bg-hairline" />
           </div>
-          <Stagger className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <Stagger className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {communities.map((c) => (
               <CommunityCard key={c.id} c={c} />
             ))}

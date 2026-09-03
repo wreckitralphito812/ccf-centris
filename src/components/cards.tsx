@@ -213,14 +213,16 @@ export function ServiceRow({ s, highlight }: { s: Service; highlight?: boolean }
 
 /* --- Community -------------------------------------------------------------- */
 
-// These panels carry white text, so they use deep, high-contrast fills:
-// white on the exact brand teal is only 2.95:1. Two brand families only —
-// teal and maroon — plus the warm dark ground. No off-brand olive.
-const ACCENT: Record<string, string> = {
-  clay: "#00636d", // deep brand teal, 5.6:1 under white
-  sky: "#6c112f", // CCF maroon
-  moss: "#00636d", // legacy value: fold olive back into teal
-  night: "#16292a", // warm dark ground
+/**
+ * Per-community accent. Two brand families only — teal and maroon — used as a
+ * thin top bar and the icon, not a full fill, so the card stays light and the
+ * eight cards read as one calm set rather than a patchwork of color blocks.
+ */
+const ACCENT: Record<string, { bar: string; ink: string; chip: string }> = {
+  clay: { bar: "#00a6b6", ink: "#005f68", chip: "#e0f3f4" },
+  sky: { bar: "#7d1235", ink: "#7d1235", chip: "#f7e6ec" },
+  moss: { bar: "#00a6b6", ink: "#005f68", chip: "#e0f3f4" }, // legacy → teal
+  night: { bar: "#00a6b6", ink: "#005f68", chip: "#e0f3f4" }, // legacy → teal
 };
 
 export function CommunityCard({ c }: { c: Community }) {
@@ -228,40 +230,75 @@ export function CommunityCard({ c }: { c: Community }) {
   return (
     <Link
       href={`/communities/${c.slug}`}
-      className="group relative flex min-h-60 flex-col overflow-hidden border border-hairline p-6 transition-transform duration-200 hover:-translate-y-0.5"
-      style={{ background: accent }}
+      className="group relative grid grid-rows-[auto_1fr_auto] overflow-hidden rounded-xl border border-hairline bg-paper-bright shadow-[0_1px_2px_rgba(32,26,18,0.04)] transition-[transform,box-shadow] duration-200 hover:-translate-y-1 hover:shadow-[0_16px_40px_-24px_rgba(32,26,18,0.35)]"
     >
-      <div
+      {/* Top accent bar — grows on hover. */}
+      <span
         aria-hidden
-        className="absolute inset-0 opacity-20 transition-opacity duration-200 group-hover:opacity-30"
-        style={{
-          backgroundImage: "radial-gradient(#f4efe6 1px, transparent 1.2px)",
-          backgroundSize: "8px 8px",
-        }}
+        className="absolute inset-x-0 top-0 h-[3px] origin-left transition-transform duration-200 group-hover:scale-y-[2]"
+        style={{ background: accent.bar }}
       />
 
-      {/* Icon chip — a fixed visual anchor at the top of every card. */}
-      <div className="relative grid h-11 w-11 place-items-center rounded-full border border-paper-bright/30 bg-paper-bright/10 text-paper-bright">
-        <CommunityIcon slug={c.slug} />
-      </div>
-
-      <div className="relative mt-5">
-        <h3 className="font-display text-3xl leading-none text-paper-bright">
-          {c.name}
-        </h3>
-        {c.tagline ? (
-          <p className="mt-2.5 text-[0.9rem] leading-snug text-paper-bright">
-            {c.tagline}
-          </p>
+      {/* Row 1 — icon + life-stage, fixed height so every card's title starts
+          on the same line. */}
+      <div className="flex items-start justify-between gap-3 px-5 pt-6">
+        <span
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-full"
+          style={{ background: accent.chip, color: accent.ink }}
+        >
+          <CommunityIcon slug={c.slug} />
+        </span>
+        {c.life_stage ? (
+          <span className="label mt-1 rounded-full bg-ink/5 px-2.5 py-1 text-ink-mute">
+            {c.life_stage}
+          </span>
         ) : null}
       </div>
 
-      {c.meeting_note ? (
-        <p className="label relative mt-auto border-t border-paper-bright/25 pt-4 text-paper-bright/90">
-          {c.meeting_note}
+      {/* Row 2 — name (1 line) + tagline (2-line box, always reserved). */}
+      <div className="px-5 pt-4">
+        <h3 className="font-display truncate text-2xl leading-tight text-ink">
+          {c.name}
+        </h3>
+        <p className="mt-2 line-clamp-2 min-h-[2.75em] text-[0.9rem] leading-snug text-ink-soft">
+          {c.tagline ?? ""}
         </p>
-      ) : null}
+      </div>
+
+      {/* Row 3 — schedule, pinned to a fixed-height footer so every card's
+          divider and note align across the grid. */}
+      <div className="mt-4 flex items-start gap-2.5 border-t border-hairline px-5 py-4">
+        <ClockGlyph className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ink-mute" />
+        <p className="line-clamp-2 min-h-[2.4em] text-[0.8rem] leading-snug text-ink-mute">
+          {c.meeting_note ?? "Schedule varies — see the community page"}
+        </p>
+        <span
+          aria-hidden
+          className="ml-auto translate-x-1 self-center text-lg opacity-0 transition-[opacity,transform] duration-200 group-hover:translate-x-0 group-hover:opacity-100"
+          style={{ color: accent.ink }}
+        >
+          →
+        </span>
+      </div>
     </Link>
+  );
+}
+
+function ClockGlyph({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className={className}
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
   );
 }
 
