@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test:content": "tsx --test \"src/**/*.test.ts\""
+    "test:content": "tsx --test \"src/**/*.test.ts\"",
+    "content:sync": "tsx scripts/sync-ccf-content.ts",
+    "content:seed": "tsx scripts/seed-content-snapshot.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",

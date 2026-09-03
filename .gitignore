@@ -43,3 +43,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# content sync working files
+.content-sync.lock
+.content-sync.dry-run.json
