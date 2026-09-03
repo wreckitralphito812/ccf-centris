@@ -49,6 +49,15 @@ export interface CatalogPlaylist {
   href: string;
 }
 
+/** URL-safe slug for a series name, e.g. "ordinary-people-extraordinary-god". */
+export function seriesSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/['’]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
 export const KIND_LABEL: Record<PlaylistKind, string> = {
   series: "Sunday series",
   run_through: "Run Through",
@@ -74,9 +83,14 @@ const MASTER_PLAYLISTS = new Set([
   "Truth Matters",
 ]);
 
+/** Playlists that look series-shaped but aren't a single teaching series. */
+const NOT_A_SERIES =
+  /chinese subtitle|with subtitle|afternoon message|midweek|prayer and fasting/i;
+
 function classify(title: string): PlaylistKind {
   const t = title.toLowerCase();
   if (MASTER_PLAYLISTS.has(title.trim())) return "other";
+  if (NOT_A_SERIES.test(title)) return "other";
   if (t.includes("run through")) return "run_through";
   if (t.includes("fast track")) return "fast_track";
   if (t.includes("snippet")) return "snippets";
@@ -86,6 +100,12 @@ function classify(title: string): PlaylistKind {
   if (/special|holy week|prayer and fasting|christmas|anniversary|weekend/.test(t))
     return "special";
   return "other";
+}
+
+/** A year in the playlist title, for newest-first sorting. 0 if none. */
+function titleYear(title: string): number {
+  const m = title.match(/\b(20\d{2})\b/);
+  return m ? Number(m[1]) : 0;
 }
 
 /** Strip CCF's naming scaffolding to get the underlying series name. */
@@ -139,12 +159,19 @@ export async function getCatalog(): Promise<CatalogPlaylist[]> {
 
 export interface SeriesGroup {
   series: string;
-  /** The main Sunday-message playlist, when CCF published one. */
+  slug: string;
+  /**
+   * The playlist to open when someone taps the series: its "Sunday Message"
+   * playlist if CCF published one, otherwise the trailer or the fullest
+   * companion. Always set for a group that made it into the archive.
+   */
   main: CatalogPlaylist | null;
-  /** Run Through, Fast Track, Snippets, trailer. */
+  /** Run Through, Fast Track, Snippets, trailer — whatever isn't `main`. */
   companions: CatalogPlaylist[];
   /** Largest item count across the group, for sorting by substance. */
   totalVideos: number;
+  /** Year from a playlist title, for newest-first ordering. */
+  year: number;
   cover: string;
 }
 
@@ -158,38 +185,55 @@ export interface SeriesGroup {
 export async function getSeriesArchive(): Promise<SeriesGroup[]> {
   const catalog = await getCatalog();
   const groups = new Map<string, CatalogPlaylist[]>();
+  // Catalog order is roughly newest-playlist-first (channel default), so the
+  // first time we see a series marks how recent it is.
+  const firstSeen = new Map<string, number>();
 
-  for (const p of catalog) {
-    if (p.kind === "other") continue;
-    if (!p.series) continue;
+  catalog.forEach((p, i) => {
+    if (p.kind === "other" || !p.series) return;
     groups.set(p.series, [...(groups.get(p.series) ?? []), p]);
-  }
+    if (!firstSeen.has(p.series)) firstSeen.set(p.series, i);
+  });
 
   const out: SeriesGroup[] = [];
 
   for (const [series, items] of groups) {
+    // Prefer the Sunday-message playlist; fall back to a special, the
+    // trailer, or the fullest companion so a brand-new series (which often
+    // has only "New Series: …" + Run Through / Snippets) still gets a `main`.
+    const byKind = (k: PlaylistKind) => items.find((i) => i.kind === k);
+    const fullest = [...items].sort((a, b) => b.itemCount - a.itemCount)[0];
     const main =
-      items.find((i) => i.kind === "series") ??
-      items.find((i) => i.kind === "special") ??
+      byKind("series") ??
+      byKind("special") ??
+      byKind("trailer") ??
+      fullest ??
       null;
     const companions = items.filter((i) => i !== main);
     const cover =
       main?.thumbnail ||
-      companions.find((c) => c.thumbnail)?.thumbnail ||
+      items.find((c) => c.thumbnail)?.thumbnail ||
       "";
+    const year = Math.max(0, ...items.map((i) => titleYear(i.title)));
 
     out.push({
       series,
+      slug: seriesSlug(series),
       main,
       companions,
       totalVideos: items.reduce((n, i) => n + i.itemCount, 0),
+      year,
       cover,
     });
   }
 
-  // A series with a real Sunday-message playlist outranks a lone trailer.
+  // Newest first: channel/catalog order, then any year in the title, then
+  // how much was published under the series.
   return out.sort((a, b) => {
-    if (!!a.main !== !!b.main) return a.main ? -1 : 1;
+    const fa = firstSeen.get(a.series) ?? Infinity;
+    const fb = firstSeen.get(b.series) ?? Infinity;
+    if (fa !== fb) return fa - fb;
+    if (a.year !== b.year) return b.year - a.year;
     return b.totalVideos - a.totalVideos;
   });
 }
@@ -209,6 +253,37 @@ export async function getSeriesVideos(
 ): Promise<ApiVideo[]> {
   if (!hasYouTubeApi) return [];
   return getPlaylistVideos(playlistId, limit);
+}
+
+/**
+ * The N most substantial teaching series with a real Sunday-message playlist,
+ * for the landing page and the section header. Falls back to the seed catalog.
+ */
+export async function getFeaturedSeries(n = 3): Promise<SeriesGroup[]> {
+  const archive = await getSeriesArchive();
+  return archive.filter((g) => g.main && g.cover).slice(0, n);
+}
+
+export interface SeriesDetail {
+  group: SeriesGroup;
+  /** Videos of the group's main playlist, in playlist order. */
+  videos: ApiVideo[];
+}
+
+/**
+ * One series by slug, with its main playlist's videos loaded — the payload
+ * the expand-in-place section needs. Returns null if the slug is unknown.
+ */
+export async function getSeriesGroupBySlug(
+  slug: string,
+): Promise<SeriesDetail | null> {
+  const archive = await getSeriesArchive();
+  const group = archive.find((g) => g.slug === slug);
+  if (!group) return null;
+
+  const playlistId = group.main?.id ?? group.companions[0]?.id;
+  const videos = playlistId ? await getSeriesVideos(playlistId, 50) : [];
+  return { group, videos };
 }
 
 export type { ApiVideo };

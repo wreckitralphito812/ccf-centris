@@ -8,17 +8,32 @@
    the whole system is built on paper, and a dark inversion would fight it.
    --------------------------------------------------------------------------- */
 
+/* Hover styling only applies on devices that actually hover. On touch, a
+   tapped element keeps its :hover state until the next repaint and reads as
+   "selected", so every `hover:` utility is gated here. `active:` is untouched
+   and still gives touch feedback. */
+@custom-variant hover {
+  @media (hover: hover) {
+    &:hover {
+      @slot;
+    }
+  }
+}
+
 :root {
   color-scheme: light;
 
-  /* Grounds */
-  --paper: #f4efe6;
-  --paper-deep: #ebe3d5;
-  --paper-bright: #fbf8f2;
-  --ink: #17150f;
-  --ink-soft: #4a453a;
-  --ink-mute: #837b6b;
-  --hairline: #d9d0be;
+  /* Grounds.
+     Warm side of neutral throughout: the paper grounds carry a little more
+     red and yellow than a true beige, and the inks are warm browns rather
+     than black, so text sits on the page instead of punching through it. */
+  --paper: #f6f0e4;
+  --paper-deep: #eee4d2;
+  --paper-bright: #fdfaf4;
+  --ink: #201a12;
+  --ink-soft: #544c3e;
+  --ink-mute: #8b8171;
+  --hairline: #ded4c0;
 
   /* Accents.
      Teal is CCF's real brand colour, lifted from the ccf.org.ph logo mark
@@ -31,12 +46,21 @@
      type, buttons and icons, while --brand-teal stays exact for logo fills,
      big flat panels and graphic shapes where contrast rules don't apply. */
   --brand-teal: #00a6b6;    /* exact CCF mark. Graphics only, never text */
-  --clay: #007682;          /* accessible teal for type and controls */
+  --clay: #007682;          /* accessible teal for type and controls ON PAPER */
   --clay-deep: #005f68;     /* hover */
-  --sky: #72042c;           /* CCF maroon, secondary accent */
-  --moss: #4a5d3a;
-  --bone: #e8dcc6;
-  --night: #10262b;         /* deep teal-black, not a neutral charcoal */
+  /* Teal for type on the dark ground. --clay is tuned against paper and only
+     reaches 2.8:1 on --night, so it fails there; this is the same hue lifted
+     until it passes (6.6:1), and is what dark sections use for accent type,
+     eyebrows and links. Paper sections keep --clay. */
+  --clay-lift: #3ec6d0;
+  --sky: #7d1235;           /* CCF maroon, warmed slightly off pure oxblood */
+  --moss: #55643f;
+  --bone: #ecdfc8;
+  /* Dark ground. The old #10262b was a cold slate-teal that read severe under
+     the display face. This keeps the same teal family but pulls it warm and
+     green, so a full-bleed dark section feels like deep pine rather than
+     wet stone, and cream type sits on it warmly. */
+  --night: #16292a;
 
   --focus: var(--clay);
 
@@ -55,6 +79,7 @@
   --color-brand-teal: var(--brand-teal);
   --color-clay: var(--clay);
   --color-clay-deep: var(--clay-deep);
+  --color-clay-lift: var(--clay-lift);
   --color-sky: var(--sky);
   --color-moss: var(--moss);
   --color-bone: var(--bone);
@@ -77,6 +102,9 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  /* Keep anchor targets clear of the sticky header. */
+  scroll-padding-top: 5rem;
 }
 
 body {
@@ -86,16 +114,33 @@ body {
   font-synthesis-weight: none;
 }
 
-/* Grain. One tiny inline SVG, fixed, never repainted on scroll. */
+/* Grain. One tiny inline SVG, fixed, never repainted on scroll.
+
+   `mix-blend-mode: multiply` darkens and desaturates whatever sits under it.
+   Over the page grounds that's the whole point; over a small saturated
+   control it hazes the fill until the button reads as a hollow outline.
+   So the grain is pinned just under the interactive layer — page content
+   and grounds still get textured, but the header (z-50) and every
+   button-styled element (`.btn-press`, given its own layer below) paint
+   clean above it. */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: 3;
   pointer-events: none;
-  opacity: 0.5;
+  opacity: 0.4;
   mix-blend-mode: multiply;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.22'/%3E%3C/svg%3E");
+}
+
+/* Lift button-styled elements clear of the grain's multiply pass so their
+   fills stay true. A local stacking context (position + z-index) is enough;
+   isolation keeps any blend modes inside the button from reaching through. */
+.btn-press {
+  position: relative;
+  z-index: 4;
+  isolation: isolate;
 }
 
 ::selection {
@@ -107,6 +152,54 @@ body::before {
   outline: 2px solid var(--focus);
   outline-offset: 3px;
   border-radius: 2px;
+}
+
+/* Form controls: keep a real, visible focus ring. Individual inputs used to
+   set `outline-none` and rely on a 1px border-colour shift, which is too weak
+   a signal and also fired on mouse click. */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Content images carry a faint 1px inset outline so they sit on the paper
+   rather than floating. Decorative images opt out with .no-frame. Light mode
+   only, matching the rest of the system. */
+img:not(.no-frame) {
+  outline: 1px solid rgba(23, 21, 15, 0.08);
+  outline-offset: -1px;
+}
+
+/* Real inline links: underline clears the descenders. */
+a.link,
+.prose-links a {
+  text-underline-position: from-font;
+  text-decoration-skip-ink: auto;
+}
+
+/* ---------------------------------------------------------------------------
+   Controls
+   --------------------------------------------------------------------------- */
+
+/* Every button and button-styled link dips slightly when pressed. Named
+   property, interruptible, and only for people who haven't asked to reduce
+   motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .btn-press {
+    transition: scale 200ms ease-out;
+  }
+
+  .btn-press:active {
+    scale: 0.97;
+  }
+}
+
+/* Values that change in place — timers, counters, prices, data columns —
+   keep column width stable. */
+.tabular {
+  font-variant-numeric: tabular-nums;
 }
 
 /* ---------------------------------------------------------------------------
@@ -126,7 +219,8 @@ body::before {
 .display-xl {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: clamp(3.25rem, 11vw, 9.5rem);
+  /* Bounded by both axes so two lines clear the fold on short viewports. */
+  font-size: clamp(3.25rem, min(10vw, 15vh), 8rem);
   line-height: 0.86;
   letter-spacing: -0.035em;
 }
@@ -171,6 +265,22 @@ body::before {
 .halftone {
   background-image: radial-gradient(var(--ink) 1px, transparent 1.1px);
   background-size: 6px 6px;
+}
+
+/* Accent teal on the dark ground.
+
+   --clay is tuned for contrast against paper and only reaches 2.8:1 on
+   --night, so teal type inside a dark section fails WCAG. Rather than make
+   every call site remember which ground it is on, the dark ground itself
+   redefines the token: anything using text-clay / border-clay inside a
+   .bg-night subtree picks up the lifted teal (7.4:1) automatically, and
+   paper sections are untouched.
+
+   Buttons are excluded — .btn-press carries its own solid fill, where the
+   darker clay is the correct, accessible choice against white type. */
+.bg-night :not(.btn-press):not(.btn-press *) {
+  --clay: var(--clay-lift);
+  --clay-deep: #7ad9e1;
 }
 
 /* A strip of masking tape holding an element to the page. */
@@ -230,6 +340,7 @@ body::before {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html,
   *,
   *::before,
   *::after {

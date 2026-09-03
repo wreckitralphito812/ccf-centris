@@ -140,7 +140,7 @@ export default async function JoinDgroupPage() {
             </div>
             <ButtonLink
               href="/grow/glc"
-              className="border-paper-bright bg-paper-bright text-night hover:bg-bone hover:border-bone"
+                tone="on-dark"
             >
               Leader training
             </ButtonLink>

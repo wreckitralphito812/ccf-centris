@@ -14,6 +14,12 @@ import { getMessage, getMessages, getRelatedMessages } from "@/lib/queries";
 import { fmtDate, fmtDuration } from "@/lib/format";
 import { SaveButton, ShareButton } from "./actions";
 
+/** Live from CCF's channel: refresh hourly so new messages appear
+ *  without a redeploy, and resolve slugs published since the last build. */
+export const revalidate = 3600;
+export const dynamicParams = true;
+
+
 export async function generateStaticParams() {
   const all = await getMessages();
   return all.map((m) => ({ slug: m.slug }));
@@ -79,36 +85,52 @@ export default async function MessagePage({
 
           <div className="grid gap-10 lg:grid-cols-[1.6fr_1fr]">
             <div>
-              <div className="aspect-video w-full overflow-hidden border border-white/15">
-                <MessageArt
-                  seed={m.slug}
-                  label={m.series?.title}
-                  className="h-full w-full"
-                />
+              <div className="aspect-video w-full overflow-hidden border border-white/15 bg-black">
+                {m.sermon_video_key ? (
+                  <iframe
+                    title={m.title}
+                    src={`https://www.youtube-nocookie.com/embed/${m.sermon_video_key}?rel=0`}
+                    allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="h-full w-full"
+                  />
+                ) : (
+                  <MessageArt
+                    seed={m.slug}
+                    label={m.series?.title}
+                    className="h-full w-full"
+                  />
+                )}
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  className="label border border-paper-bright bg-paper-bright px-4 py-2.5 text-night transition-colors hover:bg-bone"
-                >
-                  ▶ Watch full service
-                </button>
-                <button
-                  type="button"
-                  className="label border border-white/25 px-4 py-2.5 text-paper-bright transition-colors hover:bg-white/10"
-                >
-                  Message only
-                </button>
-                <button
-                  type="button"
-                  className="label border border-white/25 px-4 py-2.5 text-paper-bright transition-colors hover:bg-white/10"
-                >
-                  Listen
-                </button>
+                {m.series ? (
+                  <Link
+                    href={`/watch/series/${m.series.slug}`}
+                    className="btn-press label border border-white/25 px-4 py-2.5 text-paper-bright transition-colors hover:bg-white/10"
+                  >
+                    More from this series
+                  </Link>
+                ) : null}
               </div>
+              {m.also_preached_by?.length ? (
+                <p className="mt-3 text-[0.8rem] text-paper-bright/50">
+                  Also preached this Sunday by{" "}
+                  {m.also_preached_by.map((a, i) => (
+                    <span key={a.video_key}>
+                      {i > 0 ? ", " : ""}
+                      <Link
+                        href={`/watch/speakers/${a.speaker.slug}`}
+                        className="underline underline-offset-4 hover:text-paper-bright"
+                      >
+                        {a.speaker.name}
+                      </Link>
+                    </span>
+                  ))}
+                  .
+                </p>
+              ) : null}
               <p className="mt-3 text-[0.8rem] text-paper-bright/40">
-                Video and audio sources are attached to each message in the
-                admin. This preview shows the player layout.
+                Streamed from CCF&rsquo;s channel.
               </p>
             </div>
 

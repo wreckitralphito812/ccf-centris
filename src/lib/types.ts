@@ -102,6 +102,12 @@ export interface Message {
   series: Series | null;
   speaker: Speaker | null;
   four_ws: FourWs | null;
+  /**
+   * Other preachers who delivered this same message on the same Sunday. CCF
+   * runs multiple services with different speakers and uploads each one, so a
+   * message has one lead recording and sometimes a second.
+   */
+  also_preached_by?: { speaker: Speaker; video_key: string }[];
 }
 
 export interface Community {

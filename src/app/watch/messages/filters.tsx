@@ -54,11 +54,11 @@ export function MessageFilters({ facets, total }: { facets: Facets; total: numbe
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search by title, speaker, passage, or topic"
-          className="w-full border border-hairline bg-paper-bright px-4 py-3 text-[0.95rem] outline-none focus:border-ink"
+          className="w-full border border-hairline bg-paper-bright px-4 py-3 text-[0.95rem] focus:border-ink"
         />
         <button
           type="submit"
-          className="label shrink-0 border border-ink bg-ink px-5 text-paper-bright transition-colors hover:bg-night"
+          className="btn-press label shrink-0 border border-ink bg-ink px-5 text-paper-bright transition-colors hover:bg-night"
         >
           Search
         </button>
@@ -99,7 +99,8 @@ export function MessageFilters({ facets, total }: { facets: Facets; total: numbe
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-hairline pt-5">
         <p className="text-[0.88rem] text-ink-mute">
-          {total} {total === 1 ? "message" : "messages"}
+          <span className="tabular">{total}</span>{" "}
+          {total === 1 ? "message" : "messages"}
           {active.length ? " matching your filters" : ""}
         </p>
         <div className="flex items-center gap-4">
@@ -156,7 +157,7 @@ function Select({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={cx(
-          "border border-hairline bg-paper-bright px-3 py-2.5 text-[0.9rem] outline-none focus:border-ink",
+          "border border-hairline bg-paper-bright px-3 py-2.5 text-[0.9rem] focus:border-ink",
           compact ? "w-auto" : "w-full",
         )}
       >

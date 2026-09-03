@@ -182,7 +182,7 @@ export const events: CcfEvent[] = [
   {
     id: "ev-8", slug: "womens-morning-study", title: "Women's Morning Study",
     summary: "Weekly study through the book of Ruth. Childcare available.",
-    description: "Six weeks in Ruth, looking at loyalty, grief, and quiet providence. Come as you are, bring your coffee.",
+    description: "Six weeks in Ruth, looking at loyalty, grief, and quiet providence. Bring your coffee.",
     category: "Class", cover_image_url: null,
     starts_at: iso(6, 9, 30), ends_at: iso(6, 11, 30), location_note: "Dgroup Lounge, 2/F",
     organizer: "Women", capacity: 40, seats_taken: 27,
@@ -263,7 +263,7 @@ export const volunteerRoles: VolunteerRole[] = [
 export const faqs: Faq[] = [
   { id: "f-1", category: "visit", question: "What should I wear?", answer: "Whatever you are comfortable in. You will see people in shorts and people in barongs on the same Sunday. Nobody is checking." },
   { id: "f-2", category: "visit", question: "Do I need to register before coming?", answer: "No. Registration is optional and only exists so we can have someone ready to meet you. Walk in any Sunday without telling us first." },
-  { id: "f-3", category: "visit", question: "Can anyone attend?", answer: "Yes. You do not need to be a member, a Christian, or invited by anyone. Come as you are, and leave with as many questions as you arrived with if you like." },
+  { id: "f-3", category: "visit", question: "Can anyone attend?", answer: "Yes. You do not need to be a member, a Christian, or invited by anyone. You are welcome to leave with as many questions as you arrived with if you like." },
   { id: "f-4", category: "visit", question: "How long is a worship service?", answer: "About 90 minutes, including worship and the message." },
   { id: "f-5", category: "visit", question: "Can I bring my children?", answer: "Please do. NXTGEN runs alongside both Sunday services with age-appropriate rooms, or your kids are welcome to stay with you in the main hall." },
   { id: "f-6", category: "visit", question: "Where is NXTGEN?", answer: "On the same floor as the Main Worship Hall. Check-in opens 30 minutes before each service and the team at the Welcome Center will walk you there." },

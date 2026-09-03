@@ -1,8 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { Button, cx } from "@/components/ui";
+import {
+  Field,
+  FormSuccess,
+  controlClass,
+  focusFirstInvalid,
+} from "@/components/form";
 
 /**
  * Pastoral request. Routes by kind to the right team, and the copy is honest
@@ -38,6 +44,8 @@ const KINDS = [
   },
 ];
 
+type Errors = Partial<Record<"kind" | "name" | "email" | "mobile", string>>;
+
 export function TalkForm() {
   const [sent, setSent] = useState(false);
   const [kind, setKind] = useState<string>("");
@@ -48,11 +56,28 @@ export function TalkForm() {
     mobile: "",
     body: "",
   });
+  const [errors, setErrors] = useState<Errors>({});
+  const formRef = useRef<HTMLFormElement>(null);
+
+  function validate(): boolean {
+    const next: Errors = {};
+    if (!kind) next.kind = "Pick the one that fits best.";
+    if (!form.name.trim()) next.name = "Tell us your name.";
+    if (contactBy === "email") {
+      if (!form.email.trim()) next.email = "We need an email to reach you.";
+      else if (!/.+@.+\..+/.test(form.email))
+        next.email = "That does not look like an email address.";
+    }
+    if (contactBy === "phone" && !form.mobile.trim())
+      next.mobile = "We need a number to call you on.";
+    setErrors(next);
+    return focusFirstInvalid(next, formRef.current);
+  }
 
   if (sent) {
     const chosen = KINDS.find((k) => k.id === kind);
     return (
-      <div className="border border-clay bg-clay/8 p-8">
+      <FormSuccess className="p-8">
         <p className="label text-clay">Sent</p>
         <h2 className="display-md mt-3">Thank you for telling us.</h2>
         <p className="mt-4 leading-relaxed text-ink-soft">
@@ -83,20 +108,23 @@ export function TalkForm() {
           </Link>
           <Link
             href="/"
-            className="label border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
+            className="btn-press label border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
           >
             Back to home
           </Link>
         </div>
-      </div>
+      </FormSuccess>
     );
   }
 
   return (
     <form
+      ref={formRef}
       className="space-y-6"
+      noValidate
       onSubmit={(e) => {
         e.preventDefault();
+        if (!validate()) return;
         setSent(true);
       }}
     >
@@ -104,6 +132,12 @@ export function TalkForm() {
         <legend className="label text-ink-mute">
           What brings you here? <span className="text-clay">*</span>
         </legend>
+        {errors.kind ? (
+          <p className="mt-1.5 flex items-center gap-1.5 text-[0.8rem] font-semibold text-clay-deep">
+            <span aria-hidden>!</span>
+            {errors.kind}
+          </p>
+        ) : null}
         <div className="mt-3 space-y-px border border-hairline bg-hairline">
           {KINDS.map((k) => (
             <label
@@ -116,10 +150,9 @@ export function TalkForm() {
               <input
                 type="radio"
                 name="kind"
-                required
                 checked={kind === k.id}
                 onChange={() => setKind(k.id)}
-                className="mt-1 h-4 w-4 accent-[var(--clay)]"
+                className="mt-1 h-4 w-4 accent-clay"
               />
               <span>
                 <span className="font-display block text-lg leading-tight">
@@ -134,15 +167,17 @@ export function TalkForm() {
         </div>
       </fieldset>
 
-      <Field label="Your name" required>
-        <input
-          required
-          type="text"
-          autoComplete="name"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          className={input}
-        />
+      <Field label="Your name" name="name" required error={errors.name}>
+        {(p) => (
+          <input
+            {...p}
+            type="text"
+            autoComplete="name"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            className={controlClass}
+          />
+        )}
       </Field>
 
       <fieldset>
@@ -160,7 +195,7 @@ export function TalkForm() {
               aria-pressed={contactBy === v}
               onClick={() => setContactBy(v)}
               className={cx(
-                "label border px-3.5 py-2 transition-colors",
+                "btn-press label border px-3.5 py-2 transition-colors",
                 contactBy === v
                   ? "border-clay bg-clay text-paper-bright"
                   : "border-ink/25 text-ink hover:border-ink",
@@ -173,38 +208,58 @@ export function TalkForm() {
       </fieldset>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Email" required={contactBy === "email"}>
-          <input
-            required={contactBy === "email"}
-            type="email"
-            autoComplete="email"
-            value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-            className={input}
-          />
+        <Field
+          label="Email"
+          name="email"
+          required={contactBy === "email"}
+          error={errors.email}
+        >
+          {(p) => (
+            <input
+              {...p}
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              className={controlClass}
+            />
+          )}
         </Field>
-        <Field label="Mobile" required={contactBy === "phone"}>
-          <input
-            required={contactBy === "phone"}
-            type="tel"
-            autoComplete="tel"
-            value={form.mobile}
-            onChange={(e) => setForm({ ...form, mobile: e.target.value })}
-            className={input}
-          />
+        <Field
+          label="Mobile"
+          name="mobile"
+          required={contactBy === "phone"}
+          error={errors.mobile}
+        >
+          {(p) => (
+            <input
+              {...p}
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={form.mobile}
+              onChange={(e) => setForm({ ...form, mobile: e.target.value })}
+              className={controlClass}
+            />
+          )}
         </Field>
       </div>
 
       <Field
         label="Anything you'd like to say first"
+        name="body"
         hint="Optional. As much or as little as you want."
       >
-        <textarea
-          rows={6}
-          value={form.body}
-          onChange={(e) => setForm({ ...form, body: e.target.value })}
-          className={input}
-        />
+        {(p) => (
+          <textarea
+            {...p}
+            rows={6}
+            value={form.body}
+            onChange={(e) => setForm({ ...form, body: e.target.value })}
+            className={controlClass}
+          />
+        )}
       </Field>
 
       <p className="text-[0.82rem] leading-relaxed text-ink-mute">
@@ -217,33 +272,5 @@ export function TalkForm() {
         Send
       </Button>
     </form>
-  );
-}
-
-const input =
-  "w-full border border-hairline bg-paper-bright px-4 py-3 text-[0.95rem] outline-none focus:border-ink";
-
-function Field({
-  label,
-  hint,
-  required,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="label text-ink-mute">
-        {label}
-        {required ? <span className="text-clay"> *</span> : null}
-      </span>
-      {hint ? (
-        <span className="mt-1 block text-[0.8rem] text-ink-mute">{hint}</span>
-      ) : null}
-      <span className="mt-2 block">{children}</span>
-    </label>
   );
 }

@@ -4,6 +4,11 @@ import { PageHeader } from "@/components/page-header";
 import { Container, Section } from "@/components/ui";
 import { findMessages, getSpeakers } from "@/lib/queries";
 
+/** Live from CCF's channel: refresh hourly so new messages appear
+ *  without a redeploy. */
+export const revalidate = 3600;
+
+
 export const metadata: Metadata = {
   title: "Speakers",
   description: "The pastors and leaders who teach at CCF Centris.",

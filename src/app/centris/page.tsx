@@ -199,8 +199,8 @@ export default async function CentrisPage() {
             </div>
             <div className="flex flex-wrap gap-3">
               <ButtonLink href="/visit/directions">Directions</ButtonLink>
-              <ButtonLink href="/visit/plan" tone="outline">
-                Plan a visit
+              <ButtonLink href="/visit/service-times" tone="outline">
+                Service times
               </ButtonLink>
             </div>
           </div>

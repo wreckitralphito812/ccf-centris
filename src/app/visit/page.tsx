@@ -22,11 +22,11 @@ export default function VisitPage() {
             New to CCF? <span className="italic text-clay">We&rsquo;d love to meet you.</span>
           </>
         }
-        lead="Come as you are, any Sunday. No registration, no dress code, and nobody will ask you to stand up."
+        lead="Join us any Sunday. No registration, no dress code, and nobody will ask you to stand up."
         actions={
           <>
-            <ButtonLink href="/visit/plan" size="lg">
-              Plan your visit
+            <ButtonLink href="/visit/service-times" size="lg">
+              See service times
             </ButtonLink>
             <ButtonLink href="/visit/directions" tone="outline" size="lg">
               Get directions

@@ -16,7 +16,7 @@ export default function AccessibilityPage() {
         title="Getting in, and getting around."
         lead="What the center provides, what this website does, and how to tell us if something is not working for you."
         actions={
-          <ButtonLink href="/visit/plan" size="lg">
+          <ButtonLink href="/contact" size="lg">
             Tell us what you need
           </ButtonLink>
         }

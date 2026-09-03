@@ -11,11 +11,13 @@ import {
 } from "@/components/ui";
 import { MessageCard } from "@/components/cards";
 import { Countdown } from "@/components/service-status";
+import { YouTubeThumb } from "@/components/youtube-thumb";
 import { getLatestMessage, getMessages, getServiceWindow } from "@/lib/queries";
 import { fmtDayLong, fmtTime } from "@/lib/format";
 import { SITE, YOUTUBE, youtubeLiveEmbed } from "@/lib/site";
 import { getChannelVideos } from "@/lib/youtube";
-import { getLiveBroadcast, getUpcomingBroadcast } from "@/lib/youtube-api";
+import { getLiveBroadcast } from "@/lib/youtube-api";
+import { getSundayServices } from "@/lib/services";
 
 export const metadata: Metadata = {
   title: "Watch live",
@@ -27,22 +29,23 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function WatchLivePage() {
-  const [window, latest, messages, channel] = await Promise.all([
+  const [window, latest, messages, channel, sunday] = await Promise.all([
     getServiceWindow(),
     getLatestMessage(),
     getMessages(),
     // Live from CCF's channel, so this stays current between deploys.
     getChannelVideos(8),
+    // Sunday-service state: live / next scheduled / archive, self-correcting.
+    // This page is force-dynamic, so the 60s live check is fine here.
+    getSundayServices({ checkLive: true }),
   ]);
 
   // The API is the source of truth for whether a stream is actually running.
   // The local schedule is only a fallback when the API is unavailable.
-  const [broadcast, upcoming] = await Promise.all([
-    getLiveBroadcast(),
-    getUpcomingBroadcast(),
-  ]);
+  const broadcast = await getLiveBroadcast();
 
   const live = broadcast ? (window.current ?? window.next ?? null) : window.current;
+  const nextService = sunday.next;
 
   return (
     <>
@@ -124,14 +127,14 @@ export default async function WatchLivePage() {
                   <div className="mt-7 flex flex-wrap gap-3">
                     <ButtonLink
                       href="/care/prayer"
-                      className="border-paper-bright bg-paper-bright text-night hover:bg-bone hover:border-bone"
+                tone="on-dark"
                     >
                       Request prayer
                     </ButtonLink>
                     <ButtonLink
                       href="/grow/find-a-dgroup"
-                      tone="ghost"
-                      className="text-paper-bright hover:bg-white/10 hover:border-white/25"
+                      tone="ghost-on-dark"
+                      
                     >
                       Find a Dgroup →
                     </ButtonLink>
@@ -179,57 +182,111 @@ export default async function WatchLivePage() {
         />
       )}
 
-      {!live && upcoming?.scheduledFor ? (
+      {!live && nextService ? (
         <Section tone="bright" className="py-10">
           <Container>
-            <div className="flex flex-col gap-5 border border-hairline bg-paper-bright p-7 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="label text-clay">Scheduled on CCF&rsquo;s channel</p>
-                <p className="font-display mt-2 text-2xl leading-tight">
-                  {upcoming.title}
-                </p>
-                <p className="mt-1 text-[0.9rem] text-ink-mute">
-                  {fmtDayLong(upcoming.scheduledFor)}, {fmtTime(upcoming.scheduledFor)}
-                </p>
+            <p className="label text-clay">Next Sunday service</p>
+            <div className="mt-4 grid gap-6 border border-hairline bg-paper-bright p-5 sm:grid-cols-[20rem_1fr] sm:items-center sm:p-6">
+              <div className="relative aspect-video overflow-hidden border border-hairline">
+                {nextService.thumbnail && nextService.videoId ? (
+                  <YouTubeThumb
+                    videoId={nextService.videoId}
+                    src={nextService.thumbnail}
+                    alt={nextService.title}
+                  />
+                ) : (
+                  <div className="halftone h-full w-full bg-paper-deep" />
+                )}
+                <span className="label absolute left-2 top-2 bg-night/85 px-2 py-1 text-paper-bright">
+                  Upcoming
+                </span>
               </div>
-              <a
-                href={`https://www.youtube.com/watch?v=${upcoming.videoId}`}
-                target="_blank"
-                rel="noreferrer"
-                className="label inline-flex shrink-0 items-center border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
-              >
-                Set a reminder
-              </a>
+              <div>
+                <p className="font-display text-2xl leading-tight">
+                  {nextService.title}
+                </p>
+                <p className="mt-2 text-[0.95rem] text-ink-soft tabular">
+                  {fmtDayLong(nextService.scheduledFor)} ·{" "}
+                  {fmtTime(nextService.scheduledFor)}
+                </p>
+                <p className="mt-1 text-[0.85rem] text-ink-mute">
+                  Starts in{" "}
+                  <span className="tabular">
+                    <Countdown target={nextService.scheduledFor} />
+                  </span>
+                </p>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  {nextService.watchUrl ? (
+                    <a
+                      href={nextService.watchUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn-press label inline-flex items-center border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
+                    >
+                      Set a reminder on YouTube
+                    </a>
+                  ) : (
+                    <a
+                      href={`${YOUTUBE.channelUrl}/streams`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn-press label inline-flex items-center border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+                    >
+                      See the schedule on YouTube
+                    </a>
+                  )}
+                  <AddToCalendar
+                    title={`${nextService.title} — CCF`}
+                    start={nextService.scheduledFor}
+                    end={new Date(
+                      Date.parse(nextService.scheduledFor) + 2 * 60 * 60 * 1000,
+                    ).toISOString()}
+                  />
+                </div>
+                {!nextService.watchUrl ? (
+                  <p className="mt-3 text-[0.8rem] text-ink-mute">
+                    CCF hasn&rsquo;t created this stream yet. A reminder link
+                    appears here once it&rsquo;s scheduled on the channel.
+                  </p>
+                ) : null}
+              </div>
             </div>
+
+            {sunday.upcoming.length ? (
+              <div className="mt-6">
+                <p className="label text-ink-mute">Future Sundays</p>
+                <ul className="mt-3 divide-y divide-hairline border-y border-hairline">
+                  {sunday.upcoming.slice(0, 4).map((u) => (
+                    <li
+                      key={u.videoId ?? u.scheduledFor}
+                      className="flex flex-wrap items-center justify-between gap-3 py-3"
+                    >
+                      <span className="text-[0.92rem] tabular">
+                        {fmtDayLong(u.scheduledFor)} · {fmtTime(u.scheduledFor)}
+                      </span>
+                      {u.watchUrl ? (
+                        <a
+                          href={u.watchUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="link label text-clay underline underline-offset-4"
+                        >
+                          Remind me
+                        </a>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </Container>
         </Section>
       ) : null}
 
-      {!live && window.next ? (
-        <Section tone="deep" className="py-12">
+      {!live && nextService ? (
+        <Section tone="deep" className="py-10">
           <Container>
-            <div className="flex flex-col items-start gap-8 border border-hairline bg-paper-bright p-8 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="label text-ink-mute">Starts in</p>
-                <p className="mt-2 text-5xl text-clay">
-                  <Countdown target={window.next.starts_at} />
-                </p>
-              </div>
-              <dl className="grid gap-x-10 gap-y-3 sm:grid-cols-2">
-                {[
-                  ["When", `${fmtDayLong(window.next.starts_at)}, ${fmtTime(window.next.starts_at)}`],
-                  ["Where", window.next.venue?.name ?? "—"],
-                  ["Speaker", window.next.speaker?.name ?? "—"],
-                  ["Series", window.next.series?.title ?? "—"],
-                ].map(([k, v]) => (
-                  <div key={k}>
-                    <dt className="label text-ink-mute">{k}</dt>
-                    <dd className="mt-0.5 text-[0.95rem]">{v}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-            <p className="mt-4 text-[0.85rem] text-ink-mute">
+            <p className="text-[0.85rem] text-ink-mute">
               Can&rsquo;t make it online? Come in person at {SITE.addressLines[0]},{" "}
               {SITE.addressLines[1]}.{" "}
               <Link href="/visit/directions" className="text-clay underline underline-offset-4">

@@ -36,17 +36,16 @@ export default function AboutPage() {
         actions={
           <>
             <ButtonLink
-              href="/visit/plan"
+              href="/visit/service-times"
               size="lg"
-              className="border-paper-bright bg-paper-bright text-night hover:bg-bone hover:border-bone"
+                tone="on-dark"
             >
-              Plan a visit
+              See service times
             </ButtonLink>
             <ButtonLink
               href="/grow/find-a-dgroup"
-              tone="ghost"
+              tone="ghost-on-dark"
               size="lg"
-              className="text-paper-bright hover:bg-white/10 hover:border-white/25"
             >
               Find a Dgroup →
             </ButtonLink>

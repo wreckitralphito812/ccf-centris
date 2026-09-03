@@ -1,10 +1,54 @@
 import type { FourWs, Message, Series, Speaker } from "@/lib/types";
+import { CCF_STILLS } from "@/lib/ccf-stills";
 
 /**
  * Representative teaching content. Every record here is demo data standing in
  * for what CCF Centris staff will publish through the admin. Nothing in this
  * file should be read as a confirmed schedule or an actual message.
+ *
+ * Each message is backed by a real CCF video from @CCFmainTV so its card shows
+ * the actual YouTube thumbnail and links to a genuine message. The pairing is
+ * thematic, not exact — the seed titles are invented — and is replaced with
+ * real per-message ids once CCF publishes through the admin.
  */
+
+/** Real CCF video ids to draw message thumbnails from, keyed by seed series. */
+const SERIES_VIDEOS: Record<string, string[]> = {
+  "ordinary-people-extraordinary-god": [
+    CCF_STILLS.shepherd,
+    CCF_STILLS.anniversary,
+    CCF_STILLS.mission,
+    CCF_STILLS.fortyTwoYears,
+    CCF_STILLS.runThrough,
+  ],
+  "first-things": [
+    CCF_STILLS.grow,
+    CCF_STILLS.faithfulness,
+    CCF_STILLS.care,
+    CCF_STILLS.mission,
+  ],
+  "the-long-obedience": [
+    CCF_STILLS.faithfulness,
+    CCF_STILLS.grow,
+    CCF_STILLS.shepherd,
+    CCF_STILLS.care,
+  ],
+  household: [
+    CCF_STILLS.care,
+    CCF_STILLS.grow,
+    CCF_STILLS.faithfulness,
+    CCF_STILLS.anniversary,
+    CCF_STILLS.mission,
+  ],
+};
+
+const seriesIndex: Record<string, number> = {};
+function videoForSeries(seriesSlug: string): string {
+  const pool = SERIES_VIDEOS[seriesSlug] ?? Object.values(CCF_STILLS);
+  const n = seriesIndex[seriesSlug] ?? 0;
+  seriesIndex[seriesSlug] = n + 1;
+  return pool[n % pool.length];
+}
 
 export const speakers: Speaker[] = [
   {
@@ -372,6 +416,7 @@ function fourWsFor(m: RawMessage, id: string): FourWs {
 
 export const messages: Message[] = raw.map((m, i) => {
   const id = `msg-${i + 1}`;
+  const video = m.video ?? videoForSeries(m.series);
   return {
     id,
     slug: m.slug,
@@ -380,9 +425,9 @@ export const messages: Message[] = raw.map((m, i) => {
     scripture: m.scripture,
     preached_on: m.preached_on,
     duration_seconds: m.duration,
-    thumbnail_url: null,
-    full_video_key: m.video ?? null,
-    sermon_video_key: m.video ?? null,
+    thumbnail_url: `https://i.ytimg.com/vi/${video}/maxresdefault.jpg`,
+    full_video_key: video,
+    sermon_video_key: video,
     audio_url: null,
     transcript: null,
     notes_md: null,

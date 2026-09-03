@@ -11,7 +11,20 @@ export function cx(...parts: (string | false | null | undefined)[]) {
 
 /* --- Button ---------------------------------------------------------------- */
 
-type ButtonTone = "primary" | "ink" | "outline" | "ghost" | "sky";
+/* Tones ending in `-on-dark` are for sections sitting on --night or over
+   photography. They exist as real tones rather than as call-site className
+   overrides: an override of the same specificity loses to the tone it is
+   trying to replace depending on stylesheet order, which silently produced
+   cream-on-cream buttons across the site. */
+type ButtonTone =
+  | "primary"
+  | "ink"
+  | "outline"
+  | "ghost"
+  | "sky"
+  | "on-dark"
+  | "outline-on-dark"
+  | "ghost-on-dark";
 type ButtonSize = "sm" | "md" | "lg";
 
 const TONE: Record<ButtonTone, string> = {
@@ -23,6 +36,17 @@ const TONE: Record<ButtonTone, string> = {
   ghost:
     "bg-transparent text-ink border-transparent hover:border-ink/30 hover:bg-ink/5",
   sky: "bg-sky text-paper-bright border-sky hover:brightness-110",
+
+  /* Solid cream on a dark ground. The primary CTA wherever the section is
+     dark. Ink text on paper-bright is 15.8:1. */
+  "on-dark":
+    "bg-paper-bright text-night border-paper-bright hover:bg-bone hover:border-bone",
+  /* Outlined cream. Secondary action beside `on-dark`. */
+  "outline-on-dark":
+    "bg-transparent text-paper-bright border-paper-bright hover:bg-paper-bright hover:text-night",
+  /* Quiet cream. Tertiary action on a dark ground. */
+  "ghost-on-dark":
+    "bg-transparent text-paper-bright border-transparent hover:border-paper-bright/40 hover:bg-paper-bright/10",
 };
 
 const SIZE: Record<ButtonSize, string> = {
@@ -33,7 +57,7 @@ const SIZE: Record<ButtonSize, string> = {
 
 function buttonClass(tone: ButtonTone, size: ButtonSize, full?: boolean) {
   return cx(
-    "inline-flex items-center justify-center gap-2 border font-semibold uppercase tracking-[0.1em]",
+    "btn-press inline-flex items-center justify-center gap-2 border font-semibold uppercase tracking-[0.1em]",
     "transition-colors duration-200 disabled:opacity-40 disabled:pointer-events-none",
     TONE[tone],
     SIZE[size],
@@ -121,10 +145,14 @@ export function Section({
 export function Eyebrow({
   children,
   tone = "clay",
+  rule = true,
   className,
 }: {
   children: ReactNode;
   tone?: "clay" | "ink" | "paper";
+  /** The short leading rule. Drop it when something else already leads the
+   *  line — a logo mark, say — so the two do not read as competing marks. */
+  rule?: boolean;
   className?: string;
 }) {
   const c = {
@@ -133,8 +161,10 @@ export function Eyebrow({
     paper: "text-paper-bright/60",
   }[tone];
   return (
-    <p className={cx("label flex items-center gap-3", c, className)}>
-      <span aria-hidden className="h-px w-8 bg-current opacity-50" />
+    <p className={cx("label flex items-center", rule && "gap-3", c, className)}>
+      {rule ? (
+        <span aria-hidden className="h-px w-8 bg-current opacity-50" />
+      ) : null}
       {children}
     </p>
   );

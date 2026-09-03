@@ -1,8 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui";
+import { Button, cx } from "@/components/ui";
+import {
+  Field,
+  FormSuccess,
+  controlClass,
+  focusFirstInvalid,
+} from "@/components/form";
 
 /**
  * Volunteer application. Goes to the volunteer team for that ministry, and
@@ -10,6 +16,9 @@ import { Button } from "@/components/ui";
  * placing someone on a rota. The copy says so, because a volunteer who is
  * surprised by a background check is a volunteer who drops out.
  */
+
+type Errors = Partial<Record<"name" | "email", string>>;
+
 export function ApplyForm({
   roleTitle,
   screened,
@@ -25,10 +34,22 @@ export function ApplyForm({
     availability: "",
     message: "",
   });
+  const [errors, setErrors] = useState<Errors>({});
+  const formRef = useRef<HTMLFormElement>(null);
+
+  function validate(): boolean {
+    const next: Errors = {};
+    if (!form.name.trim()) next.name = "Tell us your name.";
+    if (!form.email.trim()) next.email = "We need an email to reply to.";
+    else if (!/.+@.+\..+/.test(form.email))
+      next.email = "That does not look like an email address.";
+    setErrors(next);
+    return focusFirstInvalid(next, formRef.current);
+  }
 
   if (sent) {
     return (
-      <div className="border border-clay bg-clay/8 p-7">
+      <FormSuccess>
         <p className="label text-clay">Application sent</p>
         <h2 className="font-display mt-3 text-2xl leading-tight">
           Someone will be in touch.
@@ -47,18 +68,18 @@ export function ApplyForm({
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
             href="/serve"
-            className="label border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
+            className="btn-press label border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
           >
             Other roles
           </Link>
           <Link
             href="/serve/at-centris"
-            className="label border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+            className="btn-press label border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
           >
             Teams at Centris
           </Link>
         </div>
-      </div>
+      </FormSuccess>
     );
   }
 
@@ -72,74 +93,94 @@ export function ApplyForm({
       </p>
 
       <form
+        ref={formRef}
         className="mt-6 space-y-5"
+        noValidate
         onSubmit={(e) => {
           e.preventDefault();
+          if (!validate()) return;
           setSent(true);
         }}
       >
-        <Field label="Your name" required>
-          <input
-            required
-            type="text"
-            autoComplete="name"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className={input}
-          />
+        <Field label="Your name" name="name" required error={errors.name}>
+          {(p) => (
+            <input
+              {...p}
+              type="text"
+              autoComplete="name"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className={controlClass}
+            />
+          )}
         </Field>
 
-        <Field label="Email" required>
-          <input
-            required
-            type="email"
-            autoComplete="email"
-            value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-            className={input}
-          />
+        <Field label="Email" name="email" required error={errors.email}>
+          {(p) => (
+            <input
+              {...p}
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              className={controlClass}
+            />
+          )}
         </Field>
 
-        <Field label="Mobile" hint="Optional">
-          <input
-            type="tel"
-            autoComplete="tel"
-            value={form.mobile}
-            onChange={(e) => setForm({ ...form, mobile: e.target.value })}
-            className={input}
-          />
+        <Field label="Mobile" name="mobile" hint="Optional">
+          {(p) => (
+            <input
+              {...p}
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={form.mobile}
+              onChange={(e) => setForm({ ...form, mobile: e.target.value })}
+              className={controlClass}
+            />
+          )}
         </Field>
 
-        <Field label="When are you usually free?">
-          <select
-            value={form.availability}
-            onChange={(e) => setForm({ ...form, availability: e.target.value })}
-            className={input}
-          >
-            <option value="">Choose one</option>
-            {[
-              "Saturday evening service",
-              "Sunday early service",
-              "Sunday later service",
-              "Weekday evenings",
-              "Weekends, flexible",
-              "Occasional events only",
-            ].map((o) => (
-              <option key={o} value={o}>
-                {o}
-              </option>
-            ))}
-          </select>
+        <Field label="When are you usually free?" name="availability">
+          {(p) => (
+            <select
+              {...p}
+              value={form.availability}
+              onChange={(e) =>
+                setForm({ ...form, availability: e.target.value })
+              }
+              className={cx(controlClass, "py-2.5")}
+            >
+              <option value="">Choose one</option>
+              {[
+                "Saturday evening service",
+                "Sunday early service",
+                "Sunday later service",
+                "Weekday evenings",
+                "Weekends, flexible",
+                "Occasional events only",
+              ].map((o) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
+            </select>
+          )}
         </Field>
 
-        <Field label="Anything we should know?" hint="Optional">
-          <textarea
-            rows={4}
-            value={form.message}
-            onChange={(e) => setForm({ ...form, message: e.target.value })}
-            className={input}
-            placeholder="Experience, questions, or constraints on your time."
-          />
+        <Field label="Anything we should know?" name="message" hint="Optional">
+          {(p) => (
+            <textarea
+              {...p}
+              rows={4}
+              value={form.message}
+              onChange={(e) => setForm({ ...form, message: e.target.value })}
+              className={controlClass}
+              placeholder="Experience, questions, or constraints on your time."
+            />
+          )}
         </Field>
 
         {screened ? (
@@ -159,33 +200,5 @@ export function ApplyForm({
         </p>
       </form>
     </div>
-  );
-}
-
-const input =
-  "w-full border border-hairline bg-paper px-4 py-3 text-[0.95rem] outline-none focus:border-ink";
-
-function Field({
-  label,
-  hint,
-  required,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="label text-ink-mute">
-        {label}
-        {required ? <span className="text-clay"> *</span> : null}
-      </span>
-      {hint ? (
-        <span className="mt-1 block text-[0.8rem] text-ink-mute">{hint}</span>
-      ) : null}
-      <span className="mt-2 block">{children}</span>
-    </label>
   );
 }

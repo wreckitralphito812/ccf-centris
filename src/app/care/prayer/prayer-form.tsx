@@ -1,8 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { Button, cx } from "@/components/ui";
+import {
+  Field,
+  FormSuccess,
+  controlClass,
+  focusFirstInvalid,
+} from "@/components/form";
 
 /**
  * Prayer request.
@@ -23,6 +29,8 @@ const CATEGORIES = [
   "Other",
 ];
 
+type Errors = Partial<Record<"body", string>>;
+
 export function PrayerForm() {
   const [sent, setSent] = useState(false);
   const [anonymous, setAnonymous] = useState(false);
@@ -34,10 +42,20 @@ export function PrayerForm() {
     mobile: "",
     body: "",
   });
+  const [errors, setErrors] = useState<Errors>({});
+  const formRef = useRef<HTMLFormElement>(null);
+
+  function validate(): boolean {
+    const next: Errors = {};
+    if (!form.body.trim())
+      next.body = "Add a few words about what to pray for.";
+    setErrors(next);
+    return focusFirstInvalid(next, formRef.current);
+  }
 
   if (sent) {
     return (
-      <div className="border border-clay bg-clay/8 p-8">
+      <FormSuccess className="p-8">
         <p className="label text-clay">Received</p>
         <h2 className="display-md mt-3">Someone is praying for this.</h2>
         <p className="mt-4 leading-relaxed text-ink-soft">
@@ -69,15 +87,18 @@ export function PrayerForm() {
             Back to home
           </Link>
         </div>
-      </div>
+      </FormSuccess>
     );
   }
 
   return (
     <form
+      ref={formRef}
       className="space-y-6"
+      noValidate
       onSubmit={(e) => {
         e.preventDefault();
+        if (!validate()) return;
         setSent(true);
       }}
     >
@@ -114,7 +135,7 @@ export function PrayerForm() {
                   setAnonymous(opt.value);
                   if (opt.value) setFollowUp(false);
                 }}
-                className="mt-1 h-4 w-4 accent-[var(--clay)]"
+                className="mt-1 h-4 w-4 accent-clay"
               />
               <span>
                 <span className="block font-semibold">{opt.title}</span>
@@ -129,33 +150,44 @@ export function PrayerForm() {
 
       {!anonymous ? (
         <div className="space-y-5">
-          <Field label="Your name">
-            <input
-              type="text"
-              autoComplete="name"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className={input}
-            />
+          <Field label="Your name" name="name">
+            {(p) => (
+              <input
+                {...p}
+                type="text"
+                autoComplete="name"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className={controlClass}
+              />
+            )}
           </Field>
           <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Email" hint="Only if you want a reply">
-              <input
-                type="email"
-                autoComplete="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className={input}
-              />
+            <Field label="Email" name="email" hint="Only if you want a reply">
+              {(p) => (
+                <input
+                  {...p}
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className={controlClass}
+                />
+              )}
             </Field>
-            <Field label="Mobile" hint="Optional">
-              <input
-                type="tel"
-                autoComplete="tel"
-                value={form.mobile}
-                onChange={(e) => setForm({ ...form, mobile: e.target.value })}
-                className={input}
-              />
+            <Field label="Mobile" name="mobile" hint="Optional">
+              {(p) => (
+                <input
+                  {...p}
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  value={form.mobile}
+                  onChange={(e) => setForm({ ...form, mobile: e.target.value })}
+                  className={controlClass}
+                />
+              )}
             </Field>
           </div>
         </div>
@@ -173,7 +205,7 @@ export function PrayerForm() {
               aria-pressed={category === c}
               onClick={() => setCategory(category === c ? "" : c)}
               className={cx(
-                "label border px-3.5 py-2 transition-colors",
+                "btn-press label border px-3.5 py-2 transition-colors",
                 category === c
                   ? "border-clay bg-clay text-paper-bright"
                   : "border-ink/25 text-ink hover:border-ink",
@@ -185,15 +217,22 @@ export function PrayerForm() {
         </div>
       </fieldset>
 
-      <Field label="What would you like us to pray for?" required>
-        <textarea
-          required
-          rows={7}
-          value={form.body}
-          onChange={(e) => setForm({ ...form, body: e.target.value })}
-          className={input}
-          placeholder="As much or as little as you want to say."
-        />
+      <Field
+        label="What would you like us to pray for?"
+        name="body"
+        required
+        error={errors.body}
+      >
+        {(p) => (
+          <textarea
+            {...p}
+            rows={7}
+            value={form.body}
+            onChange={(e) => setForm({ ...form, body: e.target.value })}
+            className={controlClass}
+            placeholder="As much or as little as you want to say."
+          />
+        )}
       </Field>
 
       {!anonymous ? (
@@ -202,7 +241,7 @@ export function PrayerForm() {
             type="checkbox"
             checked={followUp}
             onChange={(e) => setFollowUp(e.target.checked)}
-            className="mt-1 h-4 w-4 accent-[var(--clay)]"
+            className="mt-1 h-4 w-4 accent-clay"
           />
           <span className="text-[0.92rem] leading-relaxed text-ink-soft">
             I would like someone from the pastoral team to contact me about this.
@@ -224,33 +263,5 @@ export function PrayerForm() {
         Send my request
       </Button>
     </form>
-  );
-}
-
-const input =
-  "w-full border border-hairline bg-paper-bright px-4 py-3 text-[0.95rem] outline-none focus:border-ink";
-
-function Field({
-  label,
-  hint,
-  required,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="label text-ink-mute">
-        {label}
-        {required ? <span className="text-clay"> *</span> : null}
-      </span>
-      {hint ? (
-        <span className="mt-1 block text-[0.8rem] text-ink-mute">{hint}</span>
-      ) : null}
-      <span className="mt-2 block">{children}</span>
-    </label>
   );
 }

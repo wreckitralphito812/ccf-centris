@@ -130,7 +130,7 @@ export default async function ServeAtCentrisPage() {
             </div>
             <ButtonLink
               href="/serve"
-              className="border-paper-bright bg-paper-bright text-night hover:bg-bone hover:border-bone"
+                tone="on-dark"
             >
               Find your place
             </ButtonLink>

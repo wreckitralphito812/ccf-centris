@@ -6,6 +6,11 @@ import { MessageCard } from "@/components/cards";
 import { findMessages, getMessageFacets } from "@/lib/queries";
 import { MessageFilters } from "./filters";
 
+/** Live from CCF's channel: refresh hourly so new messages appear
+ *  without a redeploy. */
+export const revalidate = 3600;
+
+
 export const metadata: Metadata = {
   title: "Messages",
   description:

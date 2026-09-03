@@ -61,11 +61,11 @@ export default async function SearchPage({
               defaultValue={q}
               autoFocus
               placeholder="Try a topic, a passage, a room, or a question"
-              className="w-full border border-hairline bg-paper-bright px-5 py-4 text-[1.05rem] outline-none focus:border-ink"
+              className="w-full border border-hairline bg-paper-bright px-5 py-4 text-[1.05rem] focus:border-ink"
             />
             <button
               type="submit"
-              className="label shrink-0 border border-ink bg-ink px-6 text-paper-bright transition-colors hover:bg-night"
+              className="btn-press label shrink-0 border border-ink bg-ink px-6 text-paper-bright transition-colors hover:bg-night"
             >
               Search
             </button>
@@ -79,7 +79,7 @@ export default async function SearchPage({
                   <Link
                     key={s}
                     href={`/search?q=${encodeURIComponent(s)}`}
-                    className="label border border-ink/25 px-3.5 py-2 text-ink transition-colors hover:border-ink"
+                    className="btn-press label border border-ink/25 px-3.5 py-2 text-ink transition-colors hover:border-ink"
                   >
                     {s}
                   </Link>
@@ -96,8 +96,8 @@ export default async function SearchPage({
           ) : hits.length ? (
             <>
               <p className="mt-8 border-t border-hairline pt-5 text-[0.9rem] text-ink-mute">
-                {hits.length} {hits.length === 1 ? "result" : "results"} for
-                &ldquo;{q}&rdquo;
+                <span className="tabular">{hits.length}</span>{" "}
+                {hits.length === 1 ? "result" : "results"} for &ldquo;{q}&rdquo;
               </p>
 
               <div className="mt-8 space-y-12">
@@ -114,10 +114,10 @@ export default async function SearchPage({
                         <li key={`${h.href}-${i}`}>
                           <Link
                             href={h.href}
-                            className="group flex flex-col gap-1 py-5 transition-colors"
+                            className="group flex flex-col gap-1 py-5"
                           >
                             <span className="flex flex-wrap items-center gap-3">
-                              <span className="font-display text-xl leading-snug transition-colors group-hover:text-clay">
+                              <span className="font-display text-xl leading-snug group-hover:text-clay">
                                 {h.title}
                               </span>
                               <Pill tone="muted">{h.kind}</Pill>

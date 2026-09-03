@@ -169,7 +169,7 @@ export default function GivingPage() {
             </div>
             <ButtonLink
               href="/serve"
-              className="border-paper-bright bg-paper-bright text-night hover:bg-bone hover:border-bone"
+                tone="on-dark"
             >
               Find a ministry
             </ButtonLink>

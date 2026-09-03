@@ -5,11 +5,13 @@ import {
   ButtonLink,
   Container,
   EmptyState,
-  Pill,
   Section,
   SectionHead,
 } from "@/components/ui";
+import { YouTubeThumb } from "@/components/youtube-thumb";
 import { getCollections, getSeriesArchive, KIND_LABEL } from "@/lib/channel";
+import { getSundayServices } from "@/lib/services";
+import { fmtDayLong } from "@/lib/format";
 import { YOUTUBE } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -18,13 +20,18 @@ export const metadata: Metadata = {
     "Every CCF Sunday teaching series, with its Run Through, Fast Track, and Snippets. Years of Sunday messages in one archive.",
 };
 
-/** Playlist data revalidates on its own schedule inside the API client. */
-export const revalidate = 21600;
+/**
+ * Revalidate hourly so a service that finished on Sunday appears in the
+ * archive within the hour. Playlist data has its own longer cache inside the
+ * API client, so this does not re-fetch playlists every hour.
+ */
+export const revalidate = 3600;
 
 export default async function ArchivePage() {
-  const [series, collections] = await Promise.all([
+  const [series, collections, sunday] = await Promise.all([
     getSeriesArchive(),
     getCollections(),
+    getSundayServices(),
   ]);
 
   const withMain = series.filter((s) => s.main);
@@ -53,7 +60,68 @@ export default async function ArchivePage() {
         }
       />
 
-      {series.length === 0 ? (
+      {sunday.archive.length ? (
+        <Section>
+          <Container>
+            <SectionHead
+              eyebrow="Sunday services"
+              title="Watch a past service"
+              lead="Finished livestreams from CCF's channel. A new one is added here automatically once Sunday's service ends."
+              action={
+                <a
+                  href={`${YOUTUBE.channelUrl}/streams`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="label inline-flex items-center border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+                >
+                  All streams on YouTube
+                </a>
+              }
+            />
+            <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              {sunday.archive.map((s) => (
+                <article
+                  key={s.videoId}
+                  className="group flex flex-col border border-hairline bg-paper-bright"
+                >
+                  <Link
+                    href={`/watch/archive/${s.videoId}`}
+                    className="relative block aspect-video overflow-hidden border-b border-hairline"
+                  >
+                    <YouTubeThumb
+                      src={s.thumbnail}
+                      fallbackSrc={s.thumbnailFallback}
+                      alt={s.title}
+                    />
+                    <span className="pointer-events-none absolute inset-0 grid place-items-center">
+                      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-clay text-xl text-paper-bright">
+                        ▶
+                      </span>
+                    </span>
+                  </Link>
+                  <div className="flex flex-1 flex-col p-5">
+                    <h3 className="font-display text-lg leading-tight">
+                      <Link
+                        href={`/watch/archive/${s.videoId}`}
+                        className="group-hover:text-clay"
+                      >
+                        {s.title}
+                      </Link>
+                    </h3>
+                    {s.servedOn ? (
+                      <p className="label mt-auto pt-4 text-ink-mute tabular">
+                        {fmtDayLong(s.servedOn)}
+                      </p>
+                    ) : null}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </Container>
+        </Section>
+      ) : null}
+
+      {series.length === 0 && sunday.archive.length === 0 ? (
         <Section>
           <Container>
             <EmptyState

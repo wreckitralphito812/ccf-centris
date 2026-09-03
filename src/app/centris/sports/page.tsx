@@ -52,15 +52,14 @@ export default async function SportsPage() {
             <ButtonLink
               href="/centris/reserve?facility=sports-hall"
               size="lg"
-              className="border-paper-bright bg-paper-bright text-night hover:bg-bone hover:border-bone"
+                tone="on-dark"
             >
               Reserve a court
             </ButtonLink>
             <ButtonLink
               href="/communities/sports"
-              tone="ghost"
+              tone="ghost-on-dark"
               size="lg"
-              className="text-paper-bright hover:bg-white/10 hover:border-white/25"
             >
               Join sports ministry →
             </ButtonLink>

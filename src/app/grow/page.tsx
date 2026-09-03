@@ -95,7 +95,7 @@ export default async function GrowPage() {
             action={
               <ButtonLink
                 href="/grow/glc"
-                className="border-paper-bright bg-paper-bright text-night hover:bg-bone hover:border-bone"
+                tone="on-dark"
               >
                 All GLC classes
               </ButtonLink>

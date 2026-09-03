@@ -72,8 +72,8 @@ export default function DirectionsPage() {
             >
               Open in maps
             </a>
-            <ButtonLink href="/visit/plan" tone="outline" size="lg">
-              Plan your visit
+            <ButtonLink href="/visit/service-times" tone="outline" size="lg">
+              Service times
             </ButtonLink>
           </>
         }
@@ -163,10 +163,10 @@ export default function DirectionsPage() {
               <Eyebrow>Accessibility</Eyebrow>
               <h2 className="display-md mt-5">Getting in without stairs.</h2>
               <p className="mt-5 leading-relaxed text-ink-soft">
-                If something here does not cover what you need, tell us when you
-                plan your visit and someone will meet you at the drop-off.
+                If something here does not cover what you need, get in touch
+                ahead of time and someone will meet you at the drop-off.
               </p>
-              <ButtonLink href="/visit/plan" className="mt-7">
+              <ButtonLink href="/contact" className="mt-7">
                 Tell us what you need
               </ButtonLink>
             </div>

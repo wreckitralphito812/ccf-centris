@@ -1,0 +1,111 @@
+{
+  "authorization_basis": "User confirmed authorization to create a site for CCF on 2026-09-03.",
+  "source": "https://www.ccf.org.ph/sitemap_index.xml",
+  "robots_url": "https://www.ccf.org.ph/robots.txt",
+  "robots_text": "# START YOAST BLOCK\n# ---------------------------\nUser-agent: *\nDisallow: /wp-json/\nDisallow: /?rest_route=\n\nUser-agent: AdsBot\nDisallow: /\n\nSitemap: https://www.ccf.org.ph/sitemap_index.xml\n# ---------------------------\n# END YOAST BLOCK",
+  "started_at": "2026-09-03T09:43:33+00:00",
+  "completed_at": "2026-09-03T09:54:51+00:00",
+  "inventory_url_count": 5359,
+  "crawl_url_count": 2648,
+  "sitemap_crawl_url_count": 2238,
+  "link_discovered_url_count": 410,
+  "successful_html_count": 2641,
+  "error_count": 7,
+  "attachment_inventory_count": 3121,
+  "attachment_pages_requested": false,
+  "discovery_rounds_requested": 4,
+  "discovery_limit_reached": false,
+  "sitemaps": [
+    {
+      "name": "post-sitemap",
+      "url": "https://www.ccf.org.ph/post-sitemap.xml",
+      "last_modified": "2026-05-23T09:17:06+00:00",
+      "url_count": 28
+    },
+    {
+      "name": "page-sitemap",
+      "url": "https://www.ccf.org.ph/page-sitemap.xml",
+      "last_modified": "2026-09-02T08:39:42+00:00",
+      "url_count": 434
+    },
+    {
+      "name": "attachment-sitemap",
+      "url": "https://www.ccf.org.ph/attachment-sitemap.xml",
+      "last_modified": "2026-09-03T02:06:56+00:00",
+      "url_count": 1000
+    },
+    {
+      "name": "attachment-sitemap2",
+      "url": "https://www.ccf.org.ph/attachment-sitemap2.xml",
+      "last_modified": "2019-08-20T03:29:02+00:00",
+      "url_count": 1000
+    },
+    {
+      "name": "attachment-sitemap3",
+      "url": "https://www.ccf.org.ph/attachment-sitemap3.xml",
+      "last_modified": "2020-08-06T07:15:33+00:00",
+      "url_count": 1000
+    },
+    {
+      "name": "attachment-sitemap4",
+      "url": "https://www.ccf.org.ph/attachment-sitemap4.xml",
+      "last_modified": "2026-09-03T02:06:56+00:00",
+      "url_count": 121
+    },
+    {
+      "name": "location-sitemap",
+      "url": "https://www.ccf.org.ph/location-sitemap.xml",
+      "last_modified": "2026-08-29T06:28:37+00:00",
+      "url_count": 221
+    },
+    {
+      "name": "sermon-sitemap",
+      "url": "https://www.ccf.org.ph/sermon-sitemap.xml",
+      "last_modified": "2026-09-03T02:03:59+00:00",
+      "url_count": 1000
+    },
+    {
+      "name": "sermon-sitemap2",
+      "url": "https://www.ccf.org.ph/sermon-sitemap2.xml",
+      "last_modified": "2026-09-03T02:03:59+00:00",
+      "url_count": 382
+    },
+    {
+      "name": "category-sitemap",
+      "url": "https://www.ccf.org.ph/category-sitemap.xml",
+      "last_modified": "2026-05-23T09:17:06+00:00",
+      "url_count": 1
+    },
+    {
+      "name": "location-categories-sitemap",
+      "url": "https://www.ccf.org.ph/location-categories-sitemap.xml",
+      "last_modified": "2026-08-29T06:27:18+00:00",
+      "url_count": 24
+    },
+    {
+      "name": "sermon_category-sitemap",
+      "url": "https://www.ccf.org.ph/sermon_category-sitemap.xml",
+      "last_modified": "2026-09-03T02:03:59+00:00",
+      "url_count": 101
+    },
+    {
+      "name": "sermon_speaker-sitemap",
+      "url": "https://www.ccf.org.ph/sermon_speaker-sitemap.xml",
+      "last_modified": "2026-09-03T02:03:59+00:00",
+      "url_count": 46
+    },
+    {
+      "name": "author-sitemap",
+      "url": "https://www.ccf.org.ph/author-sitemap.xml",
+      "last_modified": "2025-07-29T07:59:30+00:00",
+      "url_count": 1
+    }
+  ],
+  "limitations": [
+    "Only public URLs advertised by the official sitemap are guaranteed in the inventory.",
+    "WordPress REST endpoints disallowed by robots.txt were not accessed.",
+    "Authenticated content and form submissions were not accessed.",
+    "Client-rendered text may not exist in fetched server HTML.",
+    "Media binaries were not downloaded."
+  ]
+}

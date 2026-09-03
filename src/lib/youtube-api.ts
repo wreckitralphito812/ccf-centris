@@ -46,15 +46,31 @@ interface ThumbSet {
   maxres?: Thumb;
 }
 
-/** Best available thumbnail, largest first. */
+/** Max-resolution thumbnail URL for a video. Keyless and hotlinkable. Not
+ *  every video has a 1280x720 render, so callers should fall back on error. */
+export function maxResThumb(videoId: string): string {
+  return `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
+}
+
+/** High-quality thumbnail that always exists (480x360). The safe fallback. */
+export function hqThumb(videoId: string): string {
+  return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+}
+
+/**
+ * Best available thumbnail, largest first. Prefers the API's own maxres URL;
+ * when the API only returns smaller renders but we have the id, we still ask
+ * for maxresdefault.jpg directly since it usually exists for real uploads.
+ */
 function pickThumb(t: ThumbSet | undefined, videoId?: string): string {
   return (
     t?.maxres?.url ??
+    (videoId ? maxResThumb(videoId) : undefined) ??
     t?.standard?.url ??
     t?.high?.url ??
     t?.medium?.url ??
     t?.default?.url ??
-    (videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : "")
+    (videoId ? hqThumb(videoId) : "")
   );
 }
 
@@ -128,6 +144,53 @@ interface VideosResponse {
   }[];
 }
 
+export interface StreamSearchItem {
+  videoId: string;
+  title: string;
+  description: string;
+  thumbnail: string;
+  publishedAt: string;
+}
+
+/**
+ * Search the channel for videos matching a phrase, newest first.
+ *
+ * CCF titles every Sunday livestream "Worship with us live! | Sunday Service
+ * (<Month Day, Year>)" — past and future alike — so one search over that
+ * phrase returns the whole Sunday-service set, and the date in the title says
+ * which are done and which are still to come. 100 units, cached 30 min.
+ */
+export async function searchChannel(
+  query: string,
+  max = 40,
+): Promise<StreamSearchItem[]> {
+  const res = await call<SearchResponse>(
+    "search",
+    {
+      part: "snippet",
+      channelId: CHANNEL_ID,
+      type: "video",
+      q: query,
+      maxResults: String(Math.min(max, 50)),
+      order: "date",
+    },
+    1_800,
+  );
+
+  return (res?.items ?? [])
+    .filter((it) => it.id?.videoId)
+    .map((it) => {
+      const videoId = it.id!.videoId!;
+      return {
+        videoId,
+        title: it.snippet?.title ?? "",
+        description: it.snippet?.description ?? "",
+        thumbnail: pickThumb(it.snippet?.thumbnails, videoId),
+        publishedAt: it.snippet?.publishedAt ?? "",
+      } satisfies StreamSearchItem;
+    });
+}
+
 /**
  * The channel's current live broadcast, or null.
  *
@@ -172,16 +235,25 @@ export async function getLiveBroadcast(): Promise<LiveBroadcast | null> {
   };
 }
 
-/**
- * The next scheduled broadcast, if CCF has one queued.
- * Also 100 units, cached for 10 minutes since a schedule rarely changes.
- */
-export async function getUpcomingBroadcast(): Promise<{
+export interface ScheduledBroadcast {
   videoId: string;
   title: string;
+  description: string;
   thumbnail: string;
   scheduledFor: string | null;
-} | null> {
+}
+
+/**
+ * Every scheduled-but-not-started broadcast CCF has queued, soonest first.
+ *
+ * CCF publishes its Sunday services weeks ahead, so this returns the whole
+ * queue: callers take [0] as "the next one" and the tail as "future Sundays".
+ * 100 units for the search plus 1 for the details batch, cached 10 minutes
+ * since a schedule barely moves.
+ */
+export async function getUpcomingBroadcasts(
+  max = 6,
+): Promise<ScheduledBroadcast[]> {
   const search = await call<SearchResponse>(
     "search",
     {
@@ -189,29 +261,124 @@ export async function getUpcomingBroadcast(): Promise<{
       channelId: CHANNEL_ID,
       eventType: "upcoming",
       type: "video",
-      maxResults: "1",
+      maxResults: String(Math.min(max, 25)),
       order: "date",
     },
     600,
   );
 
-  const item = search?.items?.[0];
-  const videoId = item?.id?.videoId;
-  if (!videoId) return null;
+  const items = (search?.items ?? []).filter((it) => it.id?.videoId);
+  if (!items.length) return [];
 
+  const ids = items.map((it) => it.id!.videoId!).join(",");
   const details = await call<VideosResponse>(
     "videos",
-    { part: "liveStreamingDetails", id: videoId },
+    { part: "liveStreamingDetails,snippet", id: ids },
     600,
   );
+  const startById = new Map(
+    (details?.items ?? []).map((d) => [
+      d.id,
+      d.liveStreamingDetails?.scheduledStartTime ?? null,
+    ]),
+  );
 
-  return {
-    videoId,
-    title: item?.snippet?.title ?? "Upcoming service",
-    thumbnail: pickThumb(item?.snippet?.thumbnails, videoId),
-    scheduledFor:
-      details?.items?.[0]?.liveStreamingDetails?.scheduledStartTime ?? null,
-  };
+  return items
+    .map((it) => {
+      const videoId = it.id!.videoId!;
+      return {
+        videoId,
+        title: it.snippet?.title ?? "Upcoming service",
+        description: it.snippet?.description ?? "",
+        thumbnail: pickThumb(it.snippet?.thumbnails, videoId),
+        scheduledFor: startById.get(videoId) ?? null,
+      } satisfies ScheduledBroadcast;
+    })
+    .sort((a, b) => {
+      const ta = a.scheduledFor ? Date.parse(a.scheduledFor) : Infinity;
+      const tb = b.scheduledFor ? Date.parse(b.scheduledFor) : Infinity;
+      return ta - tb;
+    });
+}
+
+/** Back-compat: the single soonest upcoming broadcast, or null. */
+export async function getUpcomingBroadcast(): Promise<ScheduledBroadcast | null> {
+  return (await getUpcomingBroadcasts(1))[0] ?? null;
+}
+
+export interface CompletedBroadcast {
+  videoId: string;
+  title: string;
+  description: string;
+  thumbnail: string;
+  publishedAt: string;
+  endedAt: string | null;
+  durationSeconds: number | null;
+}
+
+interface CompletedSearchResponse {
+  items?: {
+    id?: { videoId?: string };
+    snippet?: {
+      title?: string;
+      description?: string;
+      thumbnails?: ThumbSet;
+      publishedAt?: string;
+    };
+  }[];
+}
+
+/**
+ * Finished livestreams on the channel, newest first — the Sunday-service
+ * archive. `search.list eventType=completed` is 100 units, plus 1 for a
+ * details batch (durations and actual end times). Cached for an hour: a past
+ * service does not change, and a service that just ended appears within the
+ * hour.
+ */
+export async function getCompletedBroadcasts(
+  max = 12,
+): Promise<CompletedBroadcast[]> {
+  const search = await call<CompletedSearchResponse>(
+    "search",
+    {
+      part: "snippet",
+      channelId: CHANNEL_ID,
+      eventType: "completed",
+      type: "video",
+      maxResults: String(Math.min(max, 25)),
+      order: "date",
+    },
+    3_600,
+  );
+
+  const items = (search?.items ?? []).filter((it) => it.id?.videoId);
+  if (!items.length) return [];
+
+  const ids = items.map((it) => it.id!.videoId!).join(",");
+  const details = await call<VideosResponse>(
+    "videos",
+    { part: "contentDetails,liveStreamingDetails", id: ids },
+    3_600,
+  );
+  const detailById = new Map(
+    (details?.items ?? []).map((d) => [d.id, d]),
+  );
+
+  return items.map((it) => {
+    const videoId = it.id!.videoId!;
+    const d = detailById.get(videoId);
+    return {
+      videoId,
+      title: it.snippet?.title ?? "Sunday service",
+      description: it.snippet?.description ?? "",
+      thumbnail: pickThumb(it.snippet?.thumbnails, videoId),
+      publishedAt: it.snippet?.publishedAt ?? "",
+      endedAt: d?.liveStreamingDetails?.actualStartTime ?? null,
+      durationSeconds: d?.contentDetails?.duration
+        ? parseDuration(d.contentDetails.duration)
+        : null,
+    } satisfies CompletedBroadcast;
+  });
 }
 
 /* -------------------------------------------------------------------------
@@ -345,6 +512,84 @@ export async function getPlaylistVideos(
       } satisfies ApiVideo;
     })
     .filter((v): v is ApiVideo => v !== null);
+}
+
+/* -------------------------------------------------------------------------
+   Channel uploads
+   ------------------------------------------------------------------------- */
+
+interface ChannelsResponse {
+  items?: {
+    contentDetails?: { relatedPlaylists?: { uploads?: string } };
+  }[];
+}
+
+/**
+ * The channel's uploads playlist id. Derived from the channel id by swapping
+ * the "UC" prefix for "UU" — a documented YouTube invariant — so this costs
+ * nothing. The API call is kept as a fallback for unusual channels.
+ */
+export async function getUploadsPlaylistId(): Promise<string | null> {
+  if (CHANNEL_ID.startsWith("UC")) return `UU${CHANNEL_ID.slice(2)}`;
+
+  const res = await call<ChannelsResponse>(
+    "channels",
+    { part: "contentDetails", id: CHANNEL_ID },
+    86_400,
+  );
+  return res?.items?.[0]?.contentDetails?.relatedPlaylists?.uploads ?? null;
+}
+
+/**
+ * Everything the channel has uploaded, newest first, across several pages.
+ *
+ * 1 unit per page of 50. CCF publishes many short clips a week, so reaching a
+ * year of Sunday messages takes several hundred items; eight pages costs 8
+ * units and covers roughly five months of uploads at CCF's current rate.
+ */
+export async function getChannelUploads(pages = 8): Promise<ApiVideo[]> {
+  const uploads = await getUploadsPlaylistId();
+  if (!uploads) return [];
+
+  const out: ApiVideo[] = [];
+  let pageToken: string | undefined;
+
+  for (let page = 0; page < pages; page++) {
+    const res = await call<PlaylistItemsResponse & { nextPageToken?: string }>(
+      "playlistItems",
+      {
+        part: "snippet,contentDetails",
+        playlistId: uploads,
+        maxResults: "50",
+        ...(pageToken ? { pageToken } : {}),
+      },
+      3_600,
+    );
+    if (!res?.items?.length) break;
+
+    for (const it of res.items) {
+      const id = it.snippet?.resourceId?.videoId;
+      const title = it.snippet?.title;
+      if (!id || !title) continue;
+      if (title === "Private video" || title === "Deleted video") continue;
+
+      out.push({
+        id,
+        title,
+        description: it.snippet?.description ?? "",
+        thumbnail: pickThumb(it.snippet?.thumbnails, id),
+        publishedAt:
+          it.contentDetails?.videoPublishedAt ?? it.snippet?.publishedAt ?? "",
+        position: it.snippet?.position ?? 0,
+        href: `https://www.youtube.com/watch?v=${id}`,
+      });
+    }
+
+    pageToken = res.nextPageToken;
+    if (!pageToken) break;
+  }
+
+  return out;
 }
 
 /* -------------------------------------------------------------------------

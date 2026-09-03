@@ -65,15 +65,14 @@ export default async function CommunityPage({
             <ButtonLink
               href="/grow/find-a-dgroup"
               size="lg"
-              className="border-paper-bright bg-paper-bright text-night hover:bg-bone hover:border-bone"
+                tone="on-dark"
             >
               Find a Dgroup
             </ButtonLink>
             <ButtonLink
               href="/events"
-              tone="ghost"
+              tone="ghost-on-dark"
               size="lg"
-              className="text-paper-bright hover:bg-white/10 hover:border-white/25"
             >
               What&rsquo;s on →
             </ButtonLink>
@@ -266,22 +265,20 @@ export default async function CommunityPage({
             <div>
               <h2 className="display-md">New to {c.name}?</h2>
               <p className="mt-4 max-w-xl leading-relaxed text-paper-bright/70">
-                Come to a gathering without telling anyone first. If you would
-                rather someone was expecting you, plan a visit and we will meet
-                you at the door.
+                Come to a gathering without telling anyone first. Check when we
+                meet, and we will look for you at the door.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
               <ButtonLink
-                href="/visit/plan"
-                className="border-paper-bright bg-paper-bright text-night hover:bg-bone hover:border-bone"
+                href="/visit/service-times"
+                tone="on-dark"
               >
-                Plan a visit
+                Service times
               </ButtonLink>
               <ButtonLink
                 href="/communities"
-                tone="ghost"
-                className="text-paper-bright hover:bg-white/10 hover:border-white/25"
+                tone="ghost-on-dark"
               >
                 Other communities →
               </ButtonLink>

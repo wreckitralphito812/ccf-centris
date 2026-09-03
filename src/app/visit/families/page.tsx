@@ -17,8 +17,8 @@ export default function FamiliesPage() {
         lead="NXTGEN runs alongside every Sunday service with rooms built for each age. Or keep your children with you in the main hall. Both are completely normal here."
         actions={
           <>
-            <ButtonLink href="/visit/plan" size="lg">
-              Plan your visit
+            <ButtonLink href="/visit/service-times" size="lg">
+              See service times
             </ButtonLink>
             <ButtonLink href="/communities/nxtgen" tone="outline" size="lg">
               About NXTGEN
@@ -120,14 +120,13 @@ export default function FamiliesPage() {
             <div className="flex flex-wrap gap-3">
               <ButtonLink
                 href="/communities/families"
-                className="border-paper-bright bg-paper-bright text-night hover:bg-bone hover:border-bone"
+                tone="on-dark"
               >
                 Families community
               </ButtonLink>
               <ButtonLink
                 href="/grow/find-a-dgroup"
-                tone="ghost"
-                className="text-paper-bright hover:bg-white/10 hover:border-white/25"
+                tone="ghost-on-dark"
               >
                 Find a Dgroup →
               </ButtonLink>

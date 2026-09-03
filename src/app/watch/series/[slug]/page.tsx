@@ -7,6 +7,12 @@ import { MessageCard } from "@/components/cards";
 import { findMessages, getSeries, getSeriesBySlug } from "@/lib/queries";
 import { fmtDate } from "@/lib/format";
 
+/** Live from CCF's channel: refresh hourly so new messages appear
+ *  without a redeploy, and resolve slugs published since the last build. */
+export const revalidate = 3600;
+export const dynamicParams = true;
+
+
 export async function generateStaticParams() {
   return (await getSeries()).map((s) => ({ slug: s.slug }));
 }

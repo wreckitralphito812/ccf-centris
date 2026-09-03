@@ -31,11 +31,11 @@ export default async function ServiceTimesPage() {
         lead="Services run about 90 minutes. NXTGEN runs alongside every Sunday service, and check-in opens 30 minutes before."
         actions={
           <>
-            <ButtonLink href="/visit/plan" size="lg">
-              Plan your visit
-            </ButtonLink>
-            <ButtonLink href="/watch/live" tone="outline" size="lg">
+            <ButtonLink href="/watch/live" size="lg">
               Watch online
+            </ButtonLink>
+            <ButtonLink href="/visit/directions" tone="outline" size="lg">
+              Getting here
             </ButtonLink>
           </>
         }

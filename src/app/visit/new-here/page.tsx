@@ -30,8 +30,8 @@ export default async function NewHerePage() {
         title="Your first Sunday, without the guesswork."
         lead="Here is honestly everything that happens, so nothing catches you off guard."
         actions={
-          <ButtonLink href="/visit/plan" size="lg">
-            Plan your visit
+          <ButtonLink href="/visit/service-times" size="lg">
+            See service times
           </ButtonLink>
         }
       />
@@ -196,13 +196,13 @@ export default async function NewHerePage() {
               <div className="mt-8">
                 <ButtonLink
                   href="/visit/directions"
-                  className="border-paper-bright bg-paper-bright text-night hover:bg-bone hover:border-bone"
+                tone="on-dark"
                 >
                   Directions and parking
                 </ButtonLink>
               </div>
             </div>
-            <p className="font-script text-4xl leading-tight text-paper-bright/40 sm:text-5xl">
+            <p className="font-script text-4xl leading-tight text-paper-bright/85 sm:text-5xl">
               there&rsquo;s a seat for you
             </p>
           </div>

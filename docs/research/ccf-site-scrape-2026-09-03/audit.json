@@ -1,0 +1,297 @@
+{
+  "generated_at": "2026-09-03T10:03:52+00:00",
+  "checks": {
+    "record_count_matches_manifest": true,
+    "inventory_count_matches_manifest": true,
+    "record_urls_unique": true,
+    "inventory_urls_unique": true,
+    "parser_version_consistent": true,
+    "no_unicode_replacement_characters": true,
+    "no_robots_disallowed_urls": true,
+    "discovery_limit_not_reached": true
+  },
+  "all_integrity_checks_pass": true,
+  "counts": {
+    "records": 2648,
+    "sitemap_inventory": 5359,
+    "statuses": {
+      "0": 1,
+      "200": 2641,
+      "404": 6
+    },
+    "content_classes": {
+      "location": 221,
+      "page": 518,
+      "post": 28,
+      "sermon": 1382,
+      "taxonomy_archive": 498,
+      "unknown": 1
+    },
+    "sitemaps": {
+      "author-sitemap": 1,
+      "category-sitemap": 1,
+      "link-discovery": 410,
+      "location-categories-sitemap": 24,
+      "location-sitemap": 221,
+      "page-sitemap": 434,
+      "post-sitemap": 28,
+      "sermon-sitemap": 1000,
+      "sermon-sitemap2": 382,
+      "sermon_category-sitemap": 101,
+      "sermon_speaker-sitemap": 46
+    },
+    "discovery_rounds": {
+      "1": 363,
+      "2": 14,
+      "3": 17,
+      "4": 16
+    },
+    "empty_successes": 12,
+    "missing_titles_on_success": 0,
+    "missing_canonical_on_success": 10,
+    "records_with_images": 2323,
+    "records_with_embeds": 1323,
+    "records_with_json_ld": 2642,
+    "unique_linked_downloads": 46,
+    "max_archive_page_discovered": 86
+  },
+  "known_site_issues": [
+    {
+      "status": 404,
+      "url": "https://www.ccf.org.ph/commitment-card/",
+      "error": ""
+    },
+    {
+      "status": 0,
+      "url": "https://www.ccf.org.ph/discipleship-journey",
+      "error": "TooManyRedirects: Exceeded 30 redirects."
+    },
+    {
+      "status": 404,
+      "url": "https://www.ccf.org.ph/discipleship-journey-2024/",
+      "error": ""
+    },
+    {
+      "status": 404,
+      "url": "https://www.ccf.org.ph/discipleship-journey-faqs/",
+      "error": ""
+    },
+    {
+      "status": 404,
+      "url": "https://www.ccf.org.ph/discipleship-journey-test/",
+      "error": ""
+    },
+    {
+      "status": 404,
+      "url": "https://www.ccf.org.ph/others/advisory-theological-systems",
+      "error": ""
+    },
+    {
+      "status": 404,
+      "url": "https://www.ccf.org.ph/others/covid-19",
+      "error": ""
+    }
+  ],
+  "empty_server_html_records": [
+    {
+      "url": "https://www.ccf.org.ph/give",
+      "title": "CCF Give - Give via Bank, Bills Payment, Debit, or Credit Card",
+      "warnings": [
+        "server_html_empty",
+        "canonical_missing",
+        "client_rendered_giving_handoff; see giving-dynamic.json"
+      ]
+    },
+    {
+      "url": "https://www.ccf.org.ph/discipleship-journey-2024-old/",
+      "title": "Discipleship Journey 2024 - Christ's Commission Fellowship",
+      "warnings": [
+        "server_html_empty"
+      ]
+    },
+    {
+      "url": "https://www.ccf.org.ph/discipleship-journey-test-2023/",
+      "title": "Discipleship Journey Test - Christ's Commission Fellowship",
+      "warnings": [
+        "server_html_empty"
+      ]
+    },
+    {
+      "url": "https://www.ccf.org.ph/discipleship-journey-test-2024/",
+      "title": "Discipleship Journey Test 2024 - Christ's Commission Fellowship",
+      "warnings": [
+        "server_html_empty"
+      ]
+    },
+    {
+      "url": "https://www.ccf.org.ph/djgoscan1/",
+      "title": "djgoscan1 - Christ's Commission Fellowship",
+      "warnings": [
+        "server_html_empty"
+      ]
+    },
+    {
+      "url": "https://www.ccf.org.ph/give-through-gcash/",
+      "title": "CCF Give - Give via Bank, Bills Payment, Debit, or Credit Card",
+      "warnings": [
+        "server_html_empty",
+        "canonical_missing",
+        "client_rendered_giving_handoff; see giving-dynamic.json"
+      ]
+    },
+    {
+      "url": "https://www.ccf.org.ph/give/",
+      "title": "CCF Give - Give via Bank, Bills Payment, Debit, or Credit Card",
+      "warnings": [
+        "server_html_empty",
+        "canonical_missing",
+        "client_rendered_giving_handoff; see giving-dynamic.json"
+      ]
+    },
+    {
+      "url": "https://www.ccf.org.ph/give/bank-transfer-transaction-successful/",
+      "title": "CCF Give - Give via Bank, Bills Payment, Debit, or Credit Card",
+      "warnings": [
+        "server_html_empty",
+        "canonical_missing",
+        "client_rendered_giving_handoff; see giving-dynamic.json"
+      ]
+    },
+    {
+      "url": "https://www.ccf.org.ph/give/bills-payment-tutorial/",
+      "title": "CCF Give - Give via Bank, Bills Payment, Debit, or Credit Card",
+      "warnings": [
+        "server_html_empty",
+        "canonical_missing",
+        "client_rendered_giving_handoff; see giving-dynamic.json"
+      ]
+    },
+    {
+      "url": "https://www.ccf.org.ph/new-give-submit-sandbox/",
+      "title": "New Give Submit Sandbox - Christ's Commission Fellowship",
+      "warnings": [
+        "server_html_empty"
+      ]
+    },
+    {
+      "url": "https://www.ccf.org.ph/new-give-submit/",
+      "title": "New Give Submit - Christ's Commission Fellowship",
+      "warnings": [
+        "server_html_empty"
+      ]
+    },
+    {
+      "url": "https://www.ccf.org.ph/podcast-download/",
+      "title": "Podcast download - Christ's Commission Fellowship",
+      "warnings": [
+        "server_html_empty"
+      ]
+    }
+  ],
+  "top_external_hosts": [
+    {
+      "host": "go.ccf.org.ph",
+      "link_occurrences": 436
+    },
+    {
+      "host": "youtu.be",
+      "link_occurrences": 294
+    },
+    {
+      "host": "glc.ccf.org.ph",
+      "link_occurrences": 123
+    },
+    {
+      "host": "www.ccfbeyond.org",
+      "link_occurrences": 40
+    },
+    {
+      "host": "www.facebook.com",
+      "link_occurrences": 24
+    },
+    {
+      "host": "form.jotform.com",
+      "link_occurrences": 13
+    },
+    {
+      "host": "bit.ly",
+      "link_occurrences": 13
+    },
+    {
+      "host": "www.youtube.com",
+      "link_occurrences": 11
+    },
+    {
+      "host": "www.biblegateway.com",
+      "link_occurrences": 8
+    },
+    {
+      "host": "open.spotify.com",
+      "link_occurrences": 6
+    },
+    {
+      "host": "elevate-give.ccf.org.ph",
+      "link_occurrences": 6
+    },
+    {
+      "host": "play.google.com",
+      "link_occurrences": 5
+    },
+    {
+      "host": "apps.apple.com",
+      "link_occurrences": 5
+    },
+    {
+      "host": "www.instagram.com",
+      "link_occurrences": 5
+    },
+    {
+      "host": "smallgroups.ccf.org.ph",
+      "link_occurrences": 5
+    },
+    {
+      "host": "docs.google.com",
+      "link_occurrences": 4
+    },
+    {
+      "host": "m.me",
+      "link_occurrences": 4
+    },
+    {
+      "host": "idc.org.ph",
+      "link_occurrences": 4
+    },
+    {
+      "host": "instagram.com",
+      "link_occurrences": 4
+    },
+    {
+      "host": "youtube.com",
+      "link_occurrences": 4
+    },
+    {
+      "host": "pldthome.com",
+      "link_occurrences": 4
+    },
+    {
+      "host": "www.passagesbooks.com",
+      "link_occurrences": 3
+    },
+    {
+      "host": "www.amazon.com",
+      "link_occurrences": 3
+    },
+    {
+      "host": "fb.watch",
+      "link_occurrences": 3
+    },
+    {
+      "host": "omflit.com",
+      "link_occurrences": 3
+    }
+  ],
+  "hashes": {
+    "content_jsonl_sha256": "9b3d38b06dd48c7ab178bd0276fb87da6726b8a0beae3ad43b7659ee3967647e",
+    "sitemap_urls_jsonl_sha256": "2aaaecbe4461ac63b25cc64a3500158b806daee8a72e930f307566dad1924534"
+  }
+}

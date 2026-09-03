@@ -135,8 +135,8 @@ export default function JourneyPage() {
               </p>
             </div>
             <div className="flex flex-col justify-center border border-hairline bg-paper-bright p-8">
-              <p className="font-script text-4xl leading-tight text-ink-soft">
-                come as you are, but don&rsquo;t stay as you are
+              <p className="display-md leading-tight text-ink">
+                Growth happens with people, not alone
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <ButtonLink href="/grow/find-a-dgroup">Find a Dgroup</ButtonLink>

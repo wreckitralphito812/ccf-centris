@@ -1,8 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { Button, Pill } from "@/components/ui";
+import {
+  Field,
+  FormSuccess,
+  controlClass,
+  focusFirstInvalid,
+} from "@/components/form";
 import { fmtPeso } from "@/lib/format";
 
 /**
@@ -13,6 +19,9 @@ import { fmtPeso } from "@/lib/format";
  * payment provider is connected: the flow is real, the charge is not, and the
  * copy never implies otherwise.
  */
+
+type Errors = Partial<Record<"name" | "email", string>>;
+
 export function RegisterForm({
   eventTitle,
   priceCents,
@@ -27,11 +36,23 @@ export function RegisterForm({
   const [done, setDone] = useState(false);
   const [party, setParty] = useState(1);
   const [form, setForm] = useState({ name: "", email: "", mobile: "" });
+  const [errors, setErrors] = useState<Errors>({});
+  const formRef = useRef<HTMLFormElement>(null);
 
   // Deterministic-looking reference so the confirmation feels real.
   const ref = `CEN-${eventTitle.replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase()}-${String(
     (eventTitle.length * 7919) % 9000 + 1000,
   )}`;
+
+  function validate(): boolean {
+    const next: Errors = {};
+    if (!form.name.trim()) next.name = "Tell us your name.";
+    if (!form.email.trim()) next.email = "We need an email to reach you.";
+    else if (!/.+@.+\..+/.test(form.email))
+      next.email = "That does not look like an email address.";
+    setErrors(next);
+    return focusFirstInvalid(next, formRef.current);
+  }
 
   if (!requiresRegistration) {
     return (
@@ -41,7 +62,7 @@ export function RegisterForm({
           Just turn up.
         </h2>
         <p className="mt-3 leading-relaxed text-ink-soft">
-          There is no list and no ticket for this one. Come as you are, bring
+          There is no list and no ticket for this one. Just turn up, and bring
           whoever you like.
         </p>
         <Link
@@ -56,7 +77,7 @@ export function RegisterForm({
 
   if (done) {
     return (
-      <div className="border border-clay bg-clay/8 p-7">
+      <FormSuccess>
         <p className="label text-clay">
           {full ? "You're on the waitlist" : "You're registered"}
         </p>
@@ -68,7 +89,9 @@ export function RegisterForm({
           <>
             <div className="mt-6 border border-dashed border-ink/25 bg-paper-bright p-5 text-center">
               <p className="label text-ink-mute">Your reference</p>
-              <p className="font-display mt-1 text-3xl tracking-wider">{ref}</p>
+              <p className="font-display mt-1 text-3xl tracking-wider tabular">
+                {ref}
+              </p>
               {/* Stand-in for the QR ticket the live system will issue. */}
               <div
                 aria-hidden
@@ -96,18 +119,18 @@ export function RegisterForm({
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
             href="/events"
-            className="label border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
+            className="btn-press label border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
           >
             More events
           </Link>
           <Link
             href="/events/calendar"
-            className="label border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+            className="btn-press label border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
           >
             See the calendar
           </Link>
         </div>
-      </div>
+      </FormSuccess>
     );
   }
 
@@ -136,42 +159,58 @@ export function RegisterForm({
       )}
 
       <form
+        ref={formRef}
         className="mt-6 space-y-5"
+        noValidate
         onSubmit={(e) => {
           e.preventDefault();
+          if (!validate()) return;
           setDone(true);
         }}
       >
-        <Field label="Your name" required>
-          <input
-            required
-            type="text"
-            autoComplete="name"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className={input}
-          />
+        <Field label="Your name" name="name" required error={errors.name}>
+          {(p) => (
+            <input
+              {...p}
+              type="text"
+              autoComplete="name"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className={controlClass}
+            />
+          )}
         </Field>
 
-        <Field label="Email" required>
-          <input
-            required
-            type="email"
-            autoComplete="email"
-            value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-            className={input}
-          />
+        <Field label="Email" name="email" required error={errors.email}>
+          {(p) => (
+            <input
+              {...p}
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              className={controlClass}
+            />
+          )}
         </Field>
 
-        <Field label="Mobile" hint="Optional, for last-minute changes">
-          <input
-            type="tel"
-            autoComplete="tel"
-            value={form.mobile}
-            onChange={(e) => setForm({ ...form, mobile: e.target.value })}
-            className={input}
-          />
+        <Field
+          label="Mobile"
+          name="mobile"
+          hint="Optional, for last-minute changes"
+        >
+          {(p) => (
+            <input
+              {...p}
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={form.mobile}
+              onChange={(e) => setForm({ ...form, mobile: e.target.value })}
+              className={controlClass}
+            />
+          )}
         </Field>
 
         {!full ? (
@@ -181,19 +220,22 @@ export function RegisterForm({
               <button
                 type="button"
                 aria-label="One fewer"
-                onClick={() => setParty((p) => Math.max(1, p - 1))}
-                className="flex h-8 w-8 items-center justify-center border border-ink/25 transition-colors hover:border-ink"
+                onClick={() => setParty((n) => Math.max(1, n - 1))}
+                className="btn-press flex h-8 w-8 items-center justify-center border border-ink/25 transition-colors hover:border-ink"
               >
                 −
               </button>
-              <span className="font-display w-5 text-center text-xl tabular-nums">
+              <span
+                className="font-display w-5 text-center text-xl tabular"
+                aria-live="polite"
+              >
                 {party}
               </span>
               <button
                 type="button"
                 aria-label="One more"
-                onClick={() => setParty((p) => Math.min(10, p + 1))}
-                className="flex h-8 w-8 items-center justify-center border border-ink/25 transition-colors hover:border-ink"
+                onClick={() => setParty((n) => Math.min(10, n + 1))}
+                className="btn-press flex h-8 w-8 items-center justify-center border border-ink/25 transition-colors hover:border-ink"
               >
                 +
               </button>
@@ -204,7 +246,7 @@ export function RegisterForm({
         {priceCents > 0 && !full ? (
           <div className="flex items-baseline justify-between border-t border-hairline pt-4">
             <span className="label text-ink-mute">Total on arrival</span>
-            <span className="font-display text-2xl">
+            <span className="font-display text-2xl tabular">
               {fmtPeso(priceCents * party)}
             </span>
           </div>
@@ -220,33 +262,5 @@ export function RegisterForm({
         </p>
       </form>
     </div>
-  );
-}
-
-const input =
-  "w-full border border-hairline bg-paper px-4 py-3 text-[0.95rem] outline-none focus:border-ink";
-
-function Field({
-  label,
-  hint,
-  required,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="label text-ink-mute">
-        {label}
-        {required ? <span className="text-clay"> *</span> : null}
-      </span>
-      {hint ? (
-        <span className="mt-1 block text-[0.8rem] text-ink-mute">{hint}</span>
-      ) : null}
-      <span className="mt-2 block">{children}</span>
-    </label>
   );
 }

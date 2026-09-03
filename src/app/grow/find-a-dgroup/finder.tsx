@@ -56,11 +56,11 @@ export function DgroupFinder({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search by name, area, or description"
-          className="w-full border border-hairline bg-paper-bright px-4 py-3 text-[0.95rem] outline-none focus:border-ink"
+          className="w-full border border-hairline bg-paper-bright px-4 py-3 text-[0.95rem] focus:border-ink"
         />
         <button
           type="submit"
-          className="label shrink-0 border border-ink bg-ink px-5 text-paper-bright transition-colors hover:bg-night"
+          className="btn-press label shrink-0 border border-ink bg-ink px-5 text-paper-bright transition-colors hover:bg-night"
         >
           Search
         </button>
@@ -79,7 +79,7 @@ export function DgroupFinder({
                 aria-pressed={on}
                 onClick={() => set("day", on ? "" : String(d))}
                 className={cx(
-                  "label border px-3.5 py-2 transition-colors",
+                  "btn-press label border px-3.5 py-2 transition-colors",
                   on
                     ? "border-clay bg-clay text-paper-bright"
                     : "border-ink/25 text-ink hover:border-ink",
@@ -121,7 +121,8 @@ export function DgroupFinder({
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-hairline pt-5">
         <p className="text-[0.88rem] text-ink-mute">
-          {total} {total === 1 ? "group" : "groups"}
+          <span className="tabular">{total}</span>{" "}
+          {total === 1 ? "group" : "groups"}
           {active.length ? " matching" : " meeting around Centris"}
         </p>
         {active.length ? (
@@ -160,7 +161,7 @@ function Select({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full border border-hairline bg-paper-bright px-3 py-2.5 text-[0.9rem] outline-none focus:border-ink"
+        className="w-full border border-hairline bg-paper-bright px-3 py-2.5 text-[0.9rem] focus:border-ink"
       >
         <option value="">Any</option>
         {options.map(([v, l]) => (

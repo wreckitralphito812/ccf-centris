@@ -1,13 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui";
+import { Button, cx } from "@/components/ui";
+import {
+  Field,
+  FormSuccess,
+  controlClass,
+  focusFirstInvalid,
+} from "@/components/form";
 
 /**
  * Dgroup interest. Goes to the Dgroup team, never straight to the leader,
  * and never publishes the enquirer's details anywhere public.
  */
+
+type Errors = Partial<Record<"name" | "email", string>>;
+
 export function InterestForm({ dgroupName }: { dgroupName: string }) {
   const [sent, setSent] = useState(false);
   const [form, setForm] = useState({
@@ -17,10 +26,22 @@ export function InterestForm({ dgroupName }: { dgroupName: string }) {
     age: "",
     message: "",
   });
+  const [errors, setErrors] = useState<Errors>({});
+  const formRef = useRef<HTMLFormElement>(null);
+
+  function validate(): boolean {
+    const next: Errors = {};
+    if (!form.name.trim()) next.name = "Tell us your name.";
+    if (!form.email.trim()) next.email = "We need an email to reply to.";
+    else if (!/.+@.+\..+/.test(form.email))
+      next.email = "That does not look like an email address.";
+    setErrors(next);
+    return focusFirstInvalid(next, formRef.current);
+  }
 
   if (sent) {
     return (
-      <div className="border border-clay bg-clay/8 p-7">
+      <FormSuccess>
         <p className="label text-clay">Sent</p>
         <h2 className="font-display mt-3 text-2xl leading-tight">
           Thanks. Someone will be in touch.
@@ -36,85 +57,111 @@ export function InterestForm({ dgroupName }: { dgroupName: string }) {
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
             href="/grow/find-a-dgroup"
-            className="label border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+            className="btn-press label border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
           >
             Browse other groups
           </Link>
           <Link
-            href="/visit/plan"
-            className="label border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
+            href="/visit/service-times"
+            className="btn-press label border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
           >
-            Plan a Sunday visit
+            Sunday service times
           </Link>
         </div>
-      </div>
+      </FormSuccess>
     );
   }
 
   return (
     <form
+      ref={formRef}
       className="space-y-5"
+      noValidate
       onSubmit={(e) => {
         e.preventDefault();
+        if (!validate()) return;
         setSent(true);
       }}
     >
-      <Field label="Your name" required>
-        <input
-          required
-          type="text"
-          autoComplete="name"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          className={inputClass}
-        />
+      <Field label="Your name" name="name" required error={errors.name}>
+        {(p) => (
+          <input
+            {...p}
+            type="text"
+            autoComplete="name"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            className={controlClass}
+          />
+        )}
       </Field>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Email" required>
-          <input
-            required
-            type="email"
-            autoComplete="email"
-            value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-            className={inputClass}
-          />
+        <Field label="Email" name="email" required error={errors.email}>
+          {(p) => (
+            <input
+              {...p}
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              className={controlClass}
+            />
+          )}
         </Field>
-        <Field label="Mobile" hint="Optional">
-          <input
-            type="tel"
-            autoComplete="tel"
-            value={form.mobile}
-            onChange={(e) => setForm({ ...form, mobile: e.target.value })}
-            className={inputClass}
-          />
+        <Field label="Mobile" name="mobile" hint="Optional">
+          {(p) => (
+            <input
+              {...p}
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={form.mobile}
+              onChange={(e) => setForm({ ...form, mobile: e.target.value })}
+              className={controlClass}
+            />
+          )}
         </Field>
       </div>
 
-      <Field label="Age bracket" hint="Optional, helps us place you well">
-        <select
-          value={form.age}
-          onChange={(e) => setForm({ ...form, age: e.target.value })}
-          className={inputClass}
-        >
-          <option value="">Prefer not to say</option>
-          {["Under 18", "18–24", "25–34", "35–44", "45–59", "60+"].map((a) => (
-            <option key={a} value={a}>
-              {a}
-            </option>
-          ))}
-        </select>
+      <Field
+        label="Age bracket"
+        name="age"
+        hint="Optional, helps us place you well"
+      >
+        {(p) => (
+          <select
+            {...p}
+            value={form.age}
+            onChange={(e) => setForm({ ...form, age: e.target.value })}
+            className={cx(controlClass, "py-2.5")}
+          >
+            <option value="">Prefer not to say</option>
+            {["Under 18", "18–24", "25–34", "35–44", "45–59", "60+"].map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
+          </select>
+        )}
       </Field>
 
-      <Field label="Anything you'd like them to know" hint="Optional">
-        <textarea
-          rows={4}
-          value={form.message}
-          onChange={(e) => setForm({ ...form, message: e.target.value })}
-          className={inputClass}
-          placeholder="New to CCF, work shifts, coming with my spouse, anything at all."
-        />
+      <Field
+        label="Anything you'd like them to know"
+        name="message"
+        hint="Optional"
+      >
+        {(p) => (
+          <textarea
+            {...p}
+            rows={4}
+            value={form.message}
+            onChange={(e) => setForm({ ...form, message: e.target.value })}
+            className={controlClass}
+            placeholder="New to CCF, work shifts, coming with my spouse, anything at all."
+          />
+        )}
       </Field>
 
       <p className="text-[0.82rem] leading-relaxed text-ink-mute">
@@ -127,33 +174,5 @@ export function InterestForm({ dgroupName }: { dgroupName: string }) {
         Send my interest
       </Button>
     </form>
-  );
-}
-
-const inputClass =
-  "w-full border border-hairline bg-paper-bright px-4 py-3 text-[0.95rem] outline-none focus:border-ink";
-
-function Field({
-  label,
-  hint,
-  required,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="label text-ink-mute">
-        {label}
-        {required ? <span className="text-clay"> *</span> : null}
-      </span>
-      {hint ? (
-        <span className="mt-1 block text-[0.8rem] text-ink-mute">{hint}</span>
-      ) : null}
-      <span className="mt-2 block">{children}</span>
-    </label>
   );
 }

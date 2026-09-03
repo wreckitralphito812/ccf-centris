@@ -5,6 +5,11 @@ import { ButtonLink, Container, Eyebrow, Section } from "@/components/ui";
 import { getFourWs, getMessages } from "@/lib/queries";
 import { fmtDate } from "@/lib/format";
 
+/** Live from CCF's channel: refresh hourly so new messages appear
+ *  without a redeploy. */
+export const revalidate = 3600;
+
+
 export const metadata: Metadata = {
   title: "4Ws",
   description:

@@ -6,6 +6,12 @@ import { Container, EmptyState, Section } from "@/components/ui";
 import { MessageCard } from "@/components/cards";
 import { findMessages, getSpeakerBySlug, getSpeakers } from "@/lib/queries";
 
+/** Live from CCF's channel: refresh hourly so new messages appear
+ *  without a redeploy, and resolve slugs published since the last build. */
+export const revalidate = 3600;
+export const dynamicParams = true;
+
+
 export async function generateStaticParams() {
   return (await getSpeakers()).map((s) => ({ slug: s.slug }));
 }

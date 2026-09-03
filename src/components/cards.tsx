@@ -12,6 +12,7 @@ import {
   fmtTimeRange,
 } from "@/lib/format";
 import { Pill, cx } from "./ui";
+import { YouTubeThumb } from "./youtube-thumb";
 
 /* --- Message ---------------------------------------------------------------- */
 
@@ -90,13 +91,21 @@ export function MessageCard({ m, compact }: { m: Message; compact?: boolean }) {
     <article className="group">
       <Link href={`/watch/messages/${m.slug}`} className="block">
         <div className="relative aspect-[16/10] overflow-hidden border border-hairline">
-          <MessageArt
-            seed={m.slug}
-            label={m.series?.title}
-            className="h-full w-full transition-transform duration-500 group-hover:scale-[1.03]"
-          />
+          {m.sermon_video_key ? (
+            <YouTubeThumb
+              videoId={m.sermon_video_key}
+              alt={m.title}
+              className="h-full w-full"
+            />
+          ) : (
+            <MessageArt
+              seed={m.slug}
+              label={m.series?.title}
+              className="h-full w-full"
+            />
+          )}
           {m.duration_seconds ? (
-            <span className="label absolute bottom-2 right-2 bg-night/85 px-2 py-1 text-paper-bright">
+            <span className="label absolute bottom-2 right-2 bg-night/85 px-2 py-1 text-paper-bright tabular">
               {fmtDuration(m.duration_seconds)}
             </span>
           ) : null}
@@ -107,7 +116,7 @@ export function MessageCard({ m, compact }: { m: Message; compact?: boolean }) {
           ) : null}
           <h3
             className={cx(
-              "font-display mt-1.5 leading-tight transition-colors group-hover:text-clay",
+              "font-display mt-1.5 leading-tight group-hover:text-clay",
               compact ? "text-lg" : "text-xl sm:text-2xl",
             )}
           >
@@ -132,7 +141,7 @@ export function MessageCard({ m, compact }: { m: Message; compact?: boolean }) {
 export function EventCard({ e }: { e: CcfEvent }) {
   const full = e.capacity !== null && e.seats_taken >= e.capacity;
   return (
-    <article className="group flex h-full flex-col border border-hairline bg-paper-bright transition-colors hover:border-ink">
+    <article className="group flex h-full flex-col border border-hairline bg-paper-bright hover:border-ink">
       <Link href={`/events/${e.slug}`} className="flex h-full flex-col">
         <div className="relative aspect-[16/9] overflow-hidden">
           <MessageArt seed={e.slug} label={e.category ?? "Event"} className="h-full w-full" />
@@ -157,7 +166,7 @@ export function EventCard({ e }: { e: CcfEvent }) {
             {e.category ? <Pill tone="muted">{e.category}</Pill> : null}
             {full ? <Pill tone="clay">Waitlist</Pill> : null}
           </div>
-          <h3 className="font-display mt-3 text-xl leading-tight transition-colors group-hover:text-clay">
+          <h3 className="font-display mt-3 text-xl leading-tight group-hover:text-clay">
             {e.title}
           </h3>
           {e.summary ? (
@@ -218,12 +227,12 @@ export function CommunityCard({ c }: { c: Community }) {
   return (
     <Link
       href={`/communities/${c.slug}`}
-      className="group relative flex min-h-[16rem] flex-col justify-end overflow-hidden border border-hairline p-6 transition-colors"
+      className="group relative flex min-h-[16rem] flex-col justify-end overflow-hidden border border-hairline p-6"
       style={{ background: accent }}
     >
       <div
         aria-hidden
-        className="absolute inset-0 opacity-25 transition-transform duration-700 group-hover:scale-110"
+        className="absolute inset-0 opacity-25"
         style={{
           backgroundImage: "radial-gradient(#f4efe6 1px, transparent 1.2px)",
           backgroundSize: "8px 8px",
@@ -293,7 +302,7 @@ export function DgroupCard({ d }: { d: Dgroup }) {
         </p>
         <Link
           href={`/grow/find-a-dgroup/${d.id}`}
-          className="label border border-ink px-3.5 py-2 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+          className="btn-press label border border-ink px-3.5 py-2 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
         >
           I'm interested
         </Link>
@@ -315,17 +324,17 @@ export function FacilityCard({ f }: { f: Facility }) {
   return (
     <Link
       href={`/centris/facilities/${f.slug}`}
-      className="group flex h-full flex-col border border-hairline bg-paper-bright transition-colors hover:border-ink"
+      className="group flex h-full flex-col border border-hairline bg-paper-bright hover:border-ink"
     >
       <div className="aspect-[16/10] overflow-hidden">
         <MessageArt
           seed={f.slug}
           label={f.name}
-          className="h-full w-full transition-transform duration-500 group-hover:scale-[1.03]"
+          className="h-full w-full"
         />
       </div>
       <div className="flex flex-1 flex-col p-5">
-        <h3 className="font-display text-xl leading-tight transition-colors group-hover:text-clay">
+        <h3 className="font-display text-xl leading-tight group-hover:text-clay">
           {f.name}
         </h3>
         {f.description ? (
@@ -348,10 +357,10 @@ export function VolunteerCard({ r }: { r: VolunteerRole }) {
   return (
     <Link
       href={`/serve/${r.slug}`}
-      className="group flex h-full flex-col border border-hairline bg-paper-bright p-5 transition-colors hover:border-ink"
+      className="group flex h-full flex-col border border-hairline bg-paper-bright p-5 hover:border-ink"
     >
       {r.ministry ? <p className="label text-clay">{r.ministry}</p> : null}
-      <h3 className="font-display mt-2 text-xl leading-tight transition-colors group-hover:text-clay">
+      <h3 className="font-display mt-2 text-xl leading-tight group-hover:text-clay">
         {r.title}
       </h3>
       {r.description ? (

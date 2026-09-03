@@ -37,7 +37,7 @@ export function MobileActionBar() {
 
   const items = weekend
     ? [
-        { label: "Visit", href: "/visit/plan" },
+        { label: "Times", href: "/visit/service-times" },
         { label: "Live", href: "/watch/live" },
         { label: "Directions", href: "/visit/directions" },
         { label: "More", href: "/search" },
@@ -58,7 +58,7 @@ export function MobileActionBar() {
         <Link
           key={i.href}
           href={i.href}
-          className="label py-3.5 text-center text-ink transition-colors active:bg-ink/5"
+          className="label grid min-h-11 place-items-center py-3 text-center text-ink transition-colors active:bg-ink/5"
         >
           {i.label}
         </Link>

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { messages, series, speakers } from "@/data/teaching";
+import { getTeaching } from "@/lib/teaching-live";
 import { addons, communities, facilities } from "@/data/center";
 import {
   announcements,
@@ -74,6 +74,7 @@ export async function getUpcomingServices(limit = 8): Promise<Service[]> {
 // --- Messages ---------------------------------------------------------------
 
 export async function getMessages(): Promise<Message[]> {
+  const { messages } = await getTeaching();
   return [...messages].sort((a, b) => b.preached_on.localeCompare(a.preached_on));
 }
 
@@ -83,6 +84,7 @@ export async function getLatestMessage(): Promise<Message | null> {
 }
 
 export async function getMessage(slug: string): Promise<Message | null> {
+  const { messages } = await getTeaching();
   return messages.find((m) => m.slug === slug) ?? null;
 }
 
@@ -133,6 +135,7 @@ export async function getMessageFacets() {
   const topics = [...new Set(all.flatMap((m) => m.topics))].sort();
   const books = [...new Set(all.flatMap((m) => m.bible_books))].sort();
   const years = [...new Set(all.map((m) => m.preached_on.slice(0, 4)))].sort().reverse();
+  const { series, speakers } = await getTeaching();
   return { topics, books, years, series, speakers };
 }
 
@@ -152,18 +155,20 @@ export async function getRelatedMessages(m: Message, limit = 3): Promise<Message
 }
 
 export async function getSeries() {
-  return series;
+  return (await getTeaching()).series;
 }
 
 export async function getSeriesBySlug(slug: string) {
+  const { series } = await getTeaching();
   return series.find((s) => s.slug === slug) ?? null;
 }
 
 export async function getSpeakers() {
-  return speakers;
+  return (await getTeaching()).speakers;
 }
 
 export async function getSpeakerBySlug(slug: string) {
+  const { speakers } = await getTeaching();
   return speakers.find((s) => s.slug === slug) ?? null;
 }
 

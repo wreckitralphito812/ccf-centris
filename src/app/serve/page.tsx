@@ -145,14 +145,13 @@ export default async function ServePage() {
             <div className="flex flex-wrap gap-3">
               <ButtonLink
                 href="/events/serve-team-orientation"
-                className="border-paper-bright bg-paper-bright text-night hover:bg-bone hover:border-bone"
+                tone="on-dark"
               >
                 Serve team orientation
               </ButtonLink>
               <ButtonLink
                 href="/contact"
-                tone="ghost"
-                className="text-paper-bright hover:bg-white/10 hover:border-white/25"
+                tone="ghost-on-dark"
               >
                 Ask someone →
               </ButtonLink>

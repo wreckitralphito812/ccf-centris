@@ -1,9 +1,16 @@
 import { cx } from "./ui";
 
 /**
- * The CCF mark: lowercase geometric "ccf" inside a thin ring.
- * Redrawn from the official logo at ccf.org.ph so it scales and inherits
- * colour. Replace with the supplied vector once CCF provides brand assets.
+ * The CCF mark: a lowercase "ccf" wordmark inside a thin ring.
+ *
+ * Redrawn from CCF's official mark so it scales cleanly and inherits colour
+ * from `currentColor` — the supplied asset is a raster lockup on a photo
+ * background, which cannot sit beside type. Proportions follow the original:
+ * the wordmark occupies the lower-middle of the ring, the two c's are open
+ * counters of equal weight, and the f rises above their x-height with a
+ * hooked terminal and a crossbar that ties it to the second c.
+ *
+ * Replace with CCF's own vector once brand assets are provided.
  */
 export function CcfMark({
   className,
@@ -20,27 +27,35 @@ export function CcfMark({
       className={cx("shrink-0", className)}
       fill="none"
     >
-      <circle cx="50" cy="50" r="45" stroke="currentColor" strokeWidth="5.5" />
-      {/* Two open counters and an f, matching the mark's geometry. */}
+      <circle cx="50" cy="50" r="43" stroke="currentColor" strokeWidth="5" />
+      {/* First c — an open counter, mouth to the right. */}
       <path
-        d="M40.5 40.2a13.5 13.5 0 1 0 0 19.6"
+        d="M43.8 45.4a12.4 12.4 0 1 0 0 17.2"
         stroke="currentColor"
-        strokeWidth="8.4"
-        strokeLinecap="butt"
+        strokeWidth="7.6"
+        strokeLinecap="round"
       />
+      {/* Second c, same weight and aperture. */}
       <path
-        d="M62.5 40.2a13.5 13.5 0 1 0 0 19.6"
+        d="M64.6 45.4a12.4 12.4 0 1 0 0 17.2"
         stroke="currentColor"
-        strokeWidth="8.4"
-        strokeLinecap="butt"
+        strokeWidth="7.6"
+        strokeLinecap="round"
       />
+      {/* f — ascender with a hooked terminal, sitting on the baseline. */}
       <path
-        d="M67.5 65V42.5c0-6.2 5-11.2 11.2-11.2 2.3 0 4.3.6 5.8 1.6"
+        d="M70.4 68V42.2c0-5.9 4.6-10.1 10.2-9.1"
         stroke="currentColor"
-        strokeWidth="8.4"
-        strokeLinecap="butt"
+        strokeWidth="7.6"
+        strokeLinecap="round"
       />
-      <path d="M62 50.5h18" stroke="currentColor" strokeWidth="7.6" />
+      {/* Crossbar, tying the f to the second c. */}
+      <path
+        d="M62.4 48.6h15.4"
+        stroke="currentColor"
+        strokeWidth="6.6"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

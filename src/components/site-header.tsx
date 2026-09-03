@@ -94,25 +94,25 @@ export function SiteHeader() {
           <Link
             href="/search"
             aria-label="Search"
-            className="hidden p-2 text-ink transition-colors hover:text-clay sm:block"
+            className="hidden h-10 w-10 place-items-center text-ink transition-colors hover:text-clay sm:grid"
           >
             <SearchIcon />
           </Link>
           <Link
             href="/watch/live"
-            className="label hidden items-center gap-2 border border-clay bg-clay px-3.5 py-2 text-paper-bright transition-colors hover:bg-clay-deep md:inline-flex"
+            className="btn-press label hidden items-center gap-2 border border-clay bg-clay px-3.5 py-2 text-paper-bright transition-colors hover:bg-clay-deep md:inline-flex"
           >
             Watch live
           </Link>
           <Link
-            href="/visit/plan"
-            className="label hidden items-center border border-ink px-3.5 py-2 text-ink transition-colors hover:bg-ink hover:text-paper-bright sm:inline-flex"
+            href="/visit/service-times"
+            className="btn-press label hidden items-center border border-ink px-3.5 py-2 text-ink transition-colors hover:bg-ink hover:text-paper-bright sm:inline-flex"
           >
-            Plan your visit
+            Service times
           </Link>
           <button
             type="button"
-            className="p-2 lg:hidden"
+            className="btn-press grid h-11 w-11 place-items-center lg:hidden"
             aria-label={mobile ? "Close menu" : "Open menu"}
             aria-expanded={mobile}
             onClick={() => setMobile((v) => !v)}
@@ -175,10 +175,10 @@ export function SiteHeader() {
                 Watch live
               </Link>
               <Link
-                href="/visit/plan"
+                href="/visit/service-times"
                 className="label flex-1 border border-ink px-4 py-3 text-center text-ink"
               >
-                Plan your visit
+                Service times
               </Link>
             </div>
 
@@ -220,13 +220,10 @@ export function SiteHeader() {
 }
 
 const MENU_BLURB: Record<string, string> = {
-  Visit: "Everything you need for your first Sunday.",
-  Watch: "Sunday, live or whenever you have time.",
-  Grow: "Life is better together. Start with a Dgroup.",
-  Communities: "Find the people in your season.",
-  Events: "What's happening at Centris.",
-  Serve: "There's a place for you to serve.",
-  Centris: "3,200 square metres, built to be used.",
+  Visit: "Everything you need for your first Sunday with us.",
+  Watch: "Join the service live, or catch up when it suits you.",
+  "Get Involved": "Dgroups, community, growing in the Word, and serving — the life of the church beyond Sunday.",
+  Centris: "A look around the center and what happens in it.",
 };
 
 /* --- Icons. Inline so nothing blocks first paint. --- */

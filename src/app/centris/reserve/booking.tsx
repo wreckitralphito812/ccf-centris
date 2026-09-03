@@ -1,10 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { Facility, ReservationAddon, Slot } from "@/lib/types";
 import { fmtDayLong, fmtPeso, fmtTime } from "@/lib/format";
 import { Button, Pill, cx } from "@/components/ui";
+import {
+  Field,
+  FormSuccess,
+  controlClass,
+  focusFirstInvalid,
+} from "@/components/form";
 
 /**
  * Court and room booking.
@@ -86,8 +92,22 @@ export function BookingFlow({
 
   const canContinue1 = Boolean(facility);
   const canContinue2 = isCourt ? Boolean(courtId && startIso) : Boolean(chosenDate && startIso);
-  const canSubmit =
-    accepted && form.name.trim() !== "" && form.email.trim() !== "";
+
+  const [errors, setErrors] = useState<
+    Partial<Record<"name" | "email" | "accept", string>>
+  >({});
+  const formRef = useRef<HTMLFormElement>(null);
+
+  function validate(): boolean {
+    const next: typeof errors = {};
+    if (!form.name.trim()) next.name = "Tell us your name.";
+    if (!form.email.trim()) next.email = "We need an email to reach you.";
+    else if (!/.+@.+\..+/.test(form.email))
+      next.email = "That does not look like an email address.";
+    if (!accepted) next.accept = "Please read and accept the rules first.";
+    setErrors(next);
+    return focusFirstInvalid(next, formRef.current);
+  }
 
   if (done) {
     return <Confirmation
@@ -133,7 +153,7 @@ export function BookingFlow({
                         setStartIso(null);
                         setLayout("");
                       }}
-                      className="mt-1 h-4 w-4 accent-[var(--clay)]"
+                      className="mt-1 h-4 w-4 accent-clay"
                     />
                     <span className="min-w-0 flex-1">
                       <span className="font-display block text-xl leading-tight">
@@ -193,7 +213,7 @@ export function BookingFlow({
                         setStartIso(null);
                       }}
                       className={cx(
-                        "label border px-3.5 py-2 transition-colors",
+                        "btn-press label border px-3.5 py-2 transition-colors",
                         courtId === c.id
                           ? "border-clay bg-clay text-paper-bright"
                           : "border-ink/25 text-ink hover:border-ink",
@@ -219,7 +239,7 @@ export function BookingFlow({
                       setStartIso(null);
                     }}
                     className={cx(
-                      "label shrink-0 border px-3.5 py-2 transition-colors",
+                      "btn-press label shrink-0 border px-3.5 py-2 transition-colors",
                       chosenDate === d
                         ? "border-clay bg-clay text-paper-bright"
                         : "border-ink/25 text-ink hover:border-ink",
@@ -256,7 +276,7 @@ export function BookingFlow({
                           setHours(1);
                         }}
                         className={cx(
-                          "border px-2 py-2.5 text-[0.82rem] font-semibold transition-colors",
+                          "btn-press border px-2 py-2.5 text-[0.82rem] font-semibold transition-colors",
                           taken &&
                             "cursor-not-allowed border-transparent bg-ink/5 text-ink-mute/50 line-through",
                           !taken &&
@@ -286,7 +306,7 @@ export function BookingFlow({
                       aria-pressed={hours === h}
                       onClick={() => setHours(h)}
                       className={cx(
-                        "label border px-3.5 py-2 transition-colors",
+                        "btn-press label border px-3.5 py-2 transition-colors",
                         hours === h
                           ? "border-clay bg-clay text-paper-bright"
                           : "border-ink/25 text-ink hover:border-ink",
@@ -325,29 +345,47 @@ export function BookingFlow({
           >
             {!isCourt ? (
               <div className="mt-6 space-y-5">
-                <Field label="Activity or event name" required>
-                  <input
-                    required
-                    value={form.activity}
-                    onChange={(e) => setForm({ ...form, activity: e.target.value })}
-                    className={input}
-                  />
+                <Field label="Activity or event name" name="activity" required>
+                  {(p) => (
+                    <input
+                      {...p}
+                      type="text"
+                      value={form.activity}
+                      onChange={(e) =>
+                        setForm({ ...form, activity: e.target.value })
+                      }
+                      className={controlClass}
+                    />
+                  )}
                 </Field>
-                <Field label="Organisation or ministry" hint="Optional">
-                  <input
-                    value={form.org}
-                    onChange={(e) => setForm({ ...form, org: e.target.value })}
-                    className={input}
-                  />
+                <Field
+                  label="Organisation or ministry"
+                  name="org"
+                  hint="Optional"
+                >
+                  {(p) => (
+                    <input
+                      {...p}
+                      type="text"
+                      value={form.org}
+                      onChange={(e) => setForm({ ...form, org: e.target.value })}
+                      className={controlClass}
+                    />
+                  )}
                 </Field>
-                <Field label="What's it for?">
-                  <textarea
-                    rows={3}
-                    value={form.purpose}
-                    onChange={(e) => setForm({ ...form, purpose: e.target.value })}
-                    className={input}
-                    placeholder="A GLC class, a team training, a Dgroup leaders' meeting."
-                  />
+                <Field label="What's it for?" name="purpose">
+                  {(p) => (
+                    <textarea
+                      {...p}
+                      rows={3}
+                      value={form.purpose}
+                      onChange={(e) =>
+                        setForm({ ...form, purpose: e.target.value })
+                      }
+                      className={controlClass}
+                      placeholder="A GLC class, a team training, a Dgroup leaders' meeting."
+                    />
+                  )}
                 </Field>
 
                 {facility?.layouts.length ? (
@@ -361,7 +399,7 @@ export function BookingFlow({
                           aria-pressed={layout === l}
                           onClick={() => setLayout(layout === l ? "" : l)}
                           className={cx(
-                            "label border px-3.5 py-2 transition-colors",
+                            "btn-press label border px-3.5 py-2 transition-colors",
                             layout === l
                               ? "border-clay bg-clay text-paper-bright"
                               : "border-ink/25 text-ink hover:border-ink",
@@ -385,7 +423,7 @@ export function BookingFlow({
                   type="button"
                   aria-label="Fewer"
                   onClick={() => setParticipants((p) => Math.max(1, p - 1))}
-                  className="flex h-8 w-8 items-center justify-center border border-ink/25 transition-colors hover:border-ink"
+                  className="btn-press flex h-8 w-8 items-center justify-center border border-ink/25 transition-colors hover:border-ink"
                 >
                   −
                 </button>
@@ -400,7 +438,7 @@ export function BookingFlow({
                       Math.min(facility?.capacity ?? 200, p + 1),
                     )
                   }
-                  className="flex h-8 w-8 items-center justify-center border border-ink/25 transition-colors hover:border-ink"
+                  className="btn-press flex h-8 w-8 items-center justify-center border border-ink/25 transition-colors hover:border-ink"
                 >
                   +
                 </button>
@@ -438,7 +476,7 @@ export function BookingFlow({
                               [a.id]: Math.max(0, (p[a.id] ?? 0) - 1),
                             }))
                           }
-                          className="flex h-7 w-7 items-center justify-center border border-ink/25 text-sm transition-colors hover:border-ink"
+                          className="btn-press flex h-7 w-7 items-center justify-center border border-ink/25 text-sm transition-colors hover:border-ink"
                         >
                           −
                         </button>
@@ -452,7 +490,7 @@ export function BookingFlow({
                               [a.id]: Math.min(10, (p[a.id] ?? 0) + 1),
                             }))
                           }
-                          className="flex h-7 w-7 items-center justify-center border border-ink/25 text-sm transition-colors hover:border-ink"
+                          className="btn-press flex h-7 w-7 items-center justify-center border border-ink/25 text-sm transition-colors hover:border-ink"
                         >
                           +
                         </button>
@@ -474,40 +512,57 @@ export function BookingFlow({
             body="We need a name and an email so the facilities team can reach you."
           >
             <form
+              ref={formRef}
               className="mt-6 space-y-5"
+              noValidate
               onSubmit={(e) => {
                 e.preventDefault();
+                if (!validate()) return;
                 setDone(true);
               }}
             >
-              <Field label="Your name" required>
-                <input
-                  required
-                  autoComplete="name"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className={input}
-                />
+              <Field label="Your name" name="name" required error={errors.name}>
+                {(p) => (
+                  <input
+                    {...p}
+                    type="text"
+                    autoComplete="name"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    className={controlClass}
+                  />
+                )}
               </Field>
               <div className="grid gap-5 sm:grid-cols-2">
-                <Field label="Email" required>
-                  <input
-                    required
-                    type="email"
-                    autoComplete="email"
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    className={input}
-                  />
+                <Field label="Email" name="email" required error={errors.email}>
+                  {(p) => (
+                    <input
+                      {...p}
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      value={form.email}
+                      onChange={(e) =>
+                        setForm({ ...form, email: e.target.value })
+                      }
+                      className={controlClass}
+                    />
+                  )}
                 </Field>
-                <Field label="Mobile" hint="For same-day changes">
-                  <input
-                    type="tel"
-                    autoComplete="tel"
-                    value={form.mobile}
-                    onChange={(e) => setForm({ ...form, mobile: e.target.value })}
-                    className={input}
-                  />
+                <Field label="Mobile" name="mobile" hint="For same-day changes">
+                  {(p) => (
+                    <input
+                      {...p}
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      value={form.mobile}
+                      onChange={(e) =>
+                        setForm({ ...form, mobile: e.target.value })
+                      }
+                      className={controlClass}
+                    />
+                  )}
                 </Field>
               </div>
 
@@ -533,22 +588,34 @@ export function BookingFlow({
                 <label className="mt-5 flex items-start gap-3">
                   <input
                     type="checkbox"
+                    name="accept"
                     checked={accepted}
                     onChange={(e) => setAccepted(e.target.checked)}
-                    className="mt-1 h-4 w-4 accent-[var(--clay)]"
+                    aria-invalid={errors.accept ? true : undefined}
+                    aria-describedby={errors.accept ? "accept-err" : undefined}
+                    className="mt-1 h-4 w-4 accent-clay"
                   />
                   <span className="text-[0.9rem] text-ink-soft">
                     I have read the rules and accept them on behalf of everyone
                     in my group.
                   </span>
                 </label>
+                {errors.accept ? (
+                  <p
+                    id="accept-err"
+                    className="mt-1.5 flex items-center gap-1.5 text-[0.8rem] font-semibold text-clay-deep"
+                  >
+                    <span aria-hidden>!</span>
+                    {errors.accept}
+                  </p>
+                ) : null}
               </div>
 
               <div className="flex flex-wrap justify-between gap-3">
                 <Button type="button" tone="ghost" onClick={() => setStep(3)}>
                   Back
                 </Button>
-                <Button type="submit" size="lg" disabled={!canSubmit}>
+                <Button type="submit" size="lg">
                   {facility?.requires_approval
                     ? "Send request"
                     : "Confirm booking"}
@@ -606,7 +673,7 @@ export function BookingFlow({
 
         <div className="mt-6 flex items-baseline justify-between border-t border-hairline pt-5">
           <span className="label text-ink-mute">Estimated total</span>
-          <span className="font-display text-3xl">{fmtPeso(total)}</span>
+          <span className="font-display text-3xl tabular">{fmtPeso(total)}</span>
         </div>
 
         <p className="mt-4 text-[0.8rem] leading-relaxed text-ink-mute">
@@ -650,7 +717,7 @@ function Confirmation({
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="border border-clay bg-clay/8 p-8">
+      <FormSuccess className="p-8">
         <p className="label text-clay">
           {pending ? "Request sent" : "Booking confirmed"}
         </p>
@@ -665,7 +732,9 @@ function Confirmation({
 
         <div className="mt-7 border border-dashed border-ink/25 bg-paper-bright p-6 text-center">
           <p className="label text-ink-mute">Reference</p>
-          <p className="font-display mt-1 text-3xl tracking-wider">{ref}</p>
+          <p className="font-display mt-1 text-3xl tracking-wider tabular">
+            {ref}
+          </p>
         </div>
 
         <dl className="mt-7 divide-y divide-hairline border-y border-hairline">
@@ -703,18 +772,18 @@ function Confirmation({
         <div className="mt-7 flex flex-wrap gap-3">
           <Link
             href="/centris/availability"
-            className="label border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
+            className="btn-press label border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
           >
             Book another
           </Link>
           <Link
             href="/centris/sports"
-            className="label border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+            className="btn-press label border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
           >
             Sports at Centris
           </Link>
         </div>
-      </div>
+      </FormSuccess>
     </div>
   );
 }
@@ -803,34 +872,6 @@ function Row({ label, value }: { label: string; value: string }) {
       <dt className="text-ink-mute">{label}</dt>
       <dd className="mt-0.5 font-semibold text-ink">{value}</dd>
     </div>
-  );
-}
-
-const input =
-  "w-full border border-hairline bg-paper px-4 py-3 text-[0.95rem] outline-none focus:border-ink";
-
-function Field({
-  label,
-  hint,
-  required,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="label text-ink-mute">
-        {label}
-        {required ? <span className="text-clay"> *</span> : null}
-      </span>
-      {hint ? (
-        <span className="mt-1 block text-[0.8rem] text-ink-mute">{hint}</span>
-      ) : null}
-      <span className="mt-2 block">{children}</span>
-    </label>
   );
 }
 
