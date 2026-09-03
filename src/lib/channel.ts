@@ -284,7 +284,7 @@ export async function getFastTracksWithVideos(
   const tracks = await getFastTracks(n);
   if (!hasYouTubeApi) return tracks.map((p) => ({ ...p, videos: [] }));
   const lists = await Promise.all(
-    tracks.map((p) => getPlaylistVideos(p.id, 30)),
+    tracks.map((p) => getPlaylistVideos(p.id, 200)),
   );
   return tracks.map((p, i) => ({
     ...p,
@@ -307,7 +307,7 @@ export async function getFeaturedSeriesWithVideos(
   if (!hasYouTubeApi) return groups.map((g) => ({ ...g, videos: [] }));
   const lists = await Promise.all(
     groups.map((g) =>
-      g.main ? getSeriesVideos(g.main.id, 30) : Promise.resolve([]),
+      g.main ? getSeriesVideos(g.main.id, 200) : Promise.resolve([]),
     ),
   );
   return groups.map((g, i) => ({
@@ -360,7 +360,7 @@ export async function getSeriesGroupBySlug(
   if (!group) return null;
 
   const playlistId = group.main?.id ?? group.companions[0]?.id;
-  const videos = playlistId ? await getSeriesVideos(playlistId, 50) : [];
+  const videos = playlistId ? await getSeriesVideos(playlistId, 200) : [];
   return { group, videos };
 }
 

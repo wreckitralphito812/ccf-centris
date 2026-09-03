@@ -470,48 +470,64 @@ interface PlaylistItemsResponse {
   }[];
 }
 
+type PlaylistItem = NonNullable<PlaylistItemsResponse["items"]>[number];
+
+function toPlaylistVideo(it: PlaylistItem): ApiVideo | null {
+  const id = it.snippet?.resourceId?.videoId;
+  const title = it.snippet?.title;
+  if (!id || !title) return null;
+  // YouTube keeps removed videos in playlists under these titles.
+  if (title === "Private video" || title === "Deleted video") return null;
+
+  return {
+    id,
+    title,
+    description: it.snippet?.description ?? "",
+    thumbnail: pickThumb(it.snippet?.thumbnails, id),
+    publishedAt:
+      it.contentDetails?.videoPublishedAt ?? it.snippet?.publishedAt ?? "",
+    position: it.snippet?.position ?? 0,
+    href: `https://www.youtube.com/watch?v=${id}`,
+  } satisfies ApiVideo;
+}
+
 /**
- * Videos inside a playlist, in playlist order. 1 unit, cached for an hour.
- * Deleted and private videos are dropped rather than rendered as dead cards.
+ * Videos inside a playlist, in playlist order. Pages through the playlist
+ * (50 items / 1 unit each) until `limit` is reached or the playlist ends, so a
+ * 60-part series comes back whole rather than truncated at the first page.
+ * Cached for an hour. Deleted and private videos are dropped.
  */
 export async function getPlaylistVideos(
   playlistId: string,
-  limit = 50,
+  limit = 200,
 ): Promise<ApiVideo[]> {
-  const res = await call<PlaylistItemsResponse>(
-    "playlistItems",
-    {
-      part: "snippet,contentDetails",
-      playlistId,
-      maxResults: String(Math.min(limit, 50)),
-    },
-    3_600,
-  );
+  const out: ApiVideo[] = [];
+  let pageToken: string | undefined;
 
-  if (!res?.items?.length) return [];
+  while (out.length < limit) {
+    const res = await call<PlaylistItemsResponse & { nextPageToken?: string }>(
+      "playlistItems",
+      {
+        part: "snippet,contentDetails",
+        playlistId,
+        maxResults: String(Math.min(limit - out.length, 50)),
+        ...(pageToken ? { pageToken } : {}),
+      },
+      3_600,
+    );
 
-  return res.items
-    .map((it) => {
-      const id = it.snippet?.resourceId?.videoId;
-      const title = it.snippet?.title;
-      if (!id || !title) return null;
-      // YouTube keeps removed videos in playlists under these titles.
-      if (title === "Private video" || title === "Deleted video") return null;
+    if (!res?.items?.length) break;
 
-      return {
-        id,
-        title,
-        description: it.snippet?.description ?? "",
-        thumbnail: pickThumb(it.snippet?.thumbnails, id),
-        publishedAt:
-          it.contentDetails?.videoPublishedAt ??
-          it.snippet?.publishedAt ??
-          "",
-        position: it.snippet?.position ?? 0,
-        href: `https://www.youtube.com/watch?v=${id}`,
-      } satisfies ApiVideo;
-    })
-    .filter((v): v is ApiVideo => v !== null);
+    for (const it of res.items) {
+      const v = toPlaylistVideo(it);
+      if (v) out.push(v);
+    }
+
+    pageToken = res.nextPageToken;
+    if (!pageToken) break;
+  }
+
+  return out.slice(0, limit);
 }
 
 /* -------------------------------------------------------------------------

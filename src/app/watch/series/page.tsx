@@ -37,7 +37,7 @@ export default async function SeriesIndexPage() {
   // rest expand to a "watch on the playlist" link until they're opened.
   const eagerVideos = await Promise.all(
     withMain.slice(0, EAGER).map(async (g) =>
-      g.main ? getSeriesVideos(g.main.id, 40) : [],
+      g.main ? getSeriesVideos(g.main.id, 200) : [],
     ),
   );
 
