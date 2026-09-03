@@ -2,11 +2,13 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Publish official articles, podcast and broadcast destinations, expanded missions pathways, global-search integration, and content-sync visibility.
+**Goal:** Publish official articles, podcast and broadcast destinations, expanded missions pathways, and global-search integration.
 
-**Architecture:** Extend the established synchronizer with typed editorial and media parsers, serve their records through the content repository, and compose routes from existing UI primitives. Missions remains Centris-focused with labeled CCF Beyond handoffs; until Admin authentication exists, operators read sync status only through a secret-protected endpoint.
+**Architecture:** Extend the established synchronizer with typed editorial and media parsers, add `articles`, `mediaChannels`, and `missionPaths` sections to the committed content snapshot, serve their records through `src/lib/queries.ts`, and compose routes from existing UI primitives. Missions remains Centris-focused with labeled CCF Beyond handoffs. No database. Sync status lives in the snapshot `meta` block and the scheduled workflow's run log (see the foundation plan's Task 7); there is no status endpoint.
 
-**Tech Stack:** Next.js 16.3.4, React 19, TypeScript, Supabase, Cheerio, sanitize-html, Node test runner through tsx
+> **Revision note (2026-09-04):** This plan predates the "no Supabase / no cron endpoint" decision. Tasks below still describe migrations and a secret-protected status route — before executing this plan, re-plan those the way the foundation plan was: snapshot sections instead of tables, `validateSection` cases instead of RLS, and drop the status-route task entirely (Operations is covered by the workflow log).
+
+**Tech Stack:** Next.js 16.3.4, React 19, TypeScript, Cheerio, sanitize-html, Node test runner through tsx
 
 **Spec:** docs/superpowers/specs/2026-09-03-live-content-sync-design.md
 
@@ -25,15 +27,14 @@
 - src/lib/content/parsers/articles.ts: article index and detail parsing.
 - src/lib/content/parsers/media.ts: podcast and broadcast parsing.
 - src/lib/content/parsers/missions.ts: approved missions handoffs.
-- supabase/migrations/0005_editorial_media.sql: article/media/missions records.
+- src/lib/content/snapshot.ts: articles/mediaChannels/missionPaths sections.
 - src/app/articles/page.tsx: paginated article archive.
 - src/app/articles/[slug]/page.tsx: sanitized detail route.
 - src/app/watch/podcasts/page.tsx: podcast destinations.
 - src/app/watch/broadcast-channels/page.tsx: current channels and schedules.
 - src/app/serve/missions/page.tsx: Pray, Connect, Give, Go, and Stories paths.
 - src/lib/queries.ts: editorial queries and global-search integration.
-- src/app/api/cron/content-sync/status/route.ts: secret-protected sync status.
-- docs/content-sync.md: operation and recovery runbook.
+- docs/content-sync.md: operation and recovery runbook (extend the one from the foundation plan).
 
 ### Task 1: Model and parse editorial, media, and missions content
 

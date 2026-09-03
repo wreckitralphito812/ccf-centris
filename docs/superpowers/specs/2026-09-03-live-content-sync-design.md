@@ -24,12 +24,12 @@ This project includes:
 3. The historical message and 4Ws catalogues.
 4. Articles, podcasts, broadcast channels, and a fuller missions page.
 5. The GLC class catalogue, synchronized from `glc.ccf.org.ph`.
-6. A repeatable scheduled synchronization system with monitoring and a bundled
-   last-known-good fallback.
+6. A repeatable synchronization command plus a scheduled CI workflow that
+   regenerates and deploys the committed content snapshot.
 
 Authenticated Dmember and Dleader resources are explicitly deferred. No
-protected content is fetched, stored, or exposed in this phase. Supabase Auth,
-member accounts, and role-gated member routes will receive a separate design.
+protected content is fetched, stored, or exposed in this phase. Member
+accounts and role-gated member routes will receive a separate design.
 
 ## Product principles
 
@@ -42,8 +42,8 @@ member accounts, and role-gated member routes will receive a separate design.
   metadata.
 - A failed synchronization cannot replace valid published content with empty,
   partial, or malformed content.
-- The application continues to work without Supabase by using the bundled
-  snapshot in development and preview environments.
+- The application needs no database or external service to render; it reads the
+  committed content snapshot in every environment.
 
 ## Architecture
 
@@ -55,23 +55,25 @@ CCF sitemap and public HTML pages
     fetch -> classify -> parse -> sanitize -> validate
               |
               v
-      atomic Supabase upserts
+   atomic write of the committed content snapshot
+   (src/data/generated/public-content.json)
               |
               v
-      content repository interface
+      content repository interface (src/lib/queries.ts)
               |
               v
         Next.js public routes
 ```
 
-The synchronization job has two entry points backed by the same implementation:
+There is no database. Synchronized content is stored as a single normalized
+JSON snapshot committed to the repository. Public pages read that snapshot
+through the `src/lib/queries.ts` seam and never fetch upstream at request time.
 
-- a local command for development, validation, and manual recovery;
-- a secret-protected server endpoint that an external scheduler can call.
-
-The scheduler is intentionally provider-neutral. Deployment documentation will
-show how to call the endpoint from the selected hosting scheduler without
-coupling the content parser to that provider.
+The synchronization job runs as a local command (`npm run content:sync`), used
+for development, validation, manual recovery, and by a scheduled CI workflow.
+The workflow re-runs the command on a cadence, and — when the snapshot changed —
+commits and deploys it. "The site updates whenever CCF ships new content" means
+one workflow run later. No server endpoint and no runtime secret are involved.
 
 ## Synchronization policy
 
@@ -87,63 +89,60 @@ coupling the content parser to that provider.
 ### Incremental behavior
 
 The job reads the official sitemap index and compares each item's sitemap
-`lastmod`, stored checksum, ETag, and Last-Modified value where available.
-Unchanged records are skipped. Changed records are fetched at a bounded
-concurrency and normalized before any database write occurs.
+`lastmod`, the checksum stored in the previous snapshot, and ETag/Last-Modified
+values where available. Unchanged records are skipped. Changed records are
+fetched at a bounded concurrency and normalized before the snapshot is rewritten.
 
-Each source record stores:
+Each record in the snapshot carries provenance:
 
 - source URL, resolved URL, and canonical URL;
 - upstream content class and stable WordPress identifier when present;
 - sitemap modification time and retrieval time;
-- response status, content type, checksum, and parser version;
-- last successful synchronization time and most recent error;
-- publication state and validation warnings.
+- content checksum and parser version;
+- last successful synchronization time and, per section, the most recent error.
 
 ### Failure handling
 
 - Network requests use timeouts, limited retries, and exponential backoff.
-- HTTP failures and parse failures are recorded without deleting the previous
-  successful record.
-- A collection is published only after its complete staged batch passes schema
-  validation.
+- HTTP failures and parse failures leave the previous snapshot in place; the
+  affected section keeps its last good records and records the error.
+- A section is rewritten only after its complete freshly-parsed batch passes
+  schema validation. The snapshot is written atomically (temp file + rename).
 - Empty responses, unexpected content types, redirect loops, and records with
-  missing required identity fields are quarantined from publication.
-- The sync endpoint requires a server-only secret, rejects concurrent runs, and
-  returns a summarized result without exposing credentials or source bodies.
+  missing required identity fields are dropped from that run, never published.
+- The local command refuses to run twice concurrently (a lock file) and prints
+  a summary of inserted/updated/skipped/dropped counts per section.
 
 ## Data model
 
-Existing tables remain the canonical typed models for `messages`, `series`,
-`speakers`, `four_ws`, and `resources`. A new migration adds upstream identity,
-provenance, publication, and synchronization fields without breaking the seed
-repository.
+There is no database and no migration. The typed models for `messages`,
+`series`, `speakers`, `four_ws`, and `resources` gain upstream identity and
+provenance fields, and all synchronized content lives in one committed file:
 
-New public-content tables:
+`src/data/generated/public-content.json` — a normalized snapshot with a top-level
+key per section:
 
-- `scripture_memory`: year, week, verse reference, verse text, image/download
-  URL, source URL, and publication date.
-- `chronicle_issues`: issue title, related series, service date or date range,
-  download URL, displayed download count with observation time, and source URL.
-- `articles`: slug, title, excerpt, sanitized body, author, publication and
-  modification dates, hero image, source URL, and publication state.
-- `media_channels`: channel kind, label, description, destination URL, schedule
-  text, platform, sort order, and active state.
-- `glc_classes`: stable track key, title, GLC library category, description,
+- `resources`: slug, title, description, official URL, format, language,
+  audience, external flag, and provenance.
+- `scriptureMemory`: year, week, verse reference, verse text, raw date label,
+  normalized date, view URL, download URL, and provenance.
+- `chronicleIssues`: stable download id, title, related series, service date or
+  date range (raw label plus normalized), download URL, displayed download count
+  with its observation time, and provenance.
+- `intercede`: campaign title, start/end dates, sanitized body HTML, Bible-plan
+  URL, audio/video URLs, prayer-request path, and provenance.
+- `glcClasses`: stable track key, title, GLC library category, description,
   delivery-format labels (face-to-face, Zoom, e-learning, Dgroup), workbook or
-  materials download URL, source URL, sort order, and active state.
-- `content_sync_sources`: provenance, conditional-request metadata, checksums,
-  parser version, status, warnings, and timestamps.
-- `content_sync_runs`: start/end times, trigger, per-content counts, warnings,
-  failure summary, and overall outcome.
+  materials download URL, sort order, active flag, and provenance.
+- `articles`, `mediaChannels`: added by the later editorial/media plan, same
+  shape convention.
+- `meta`: per-section last-run time, checksums, parser version, and warnings.
 
-The public tables retain anonymous read policies. Synchronization writes use a
-server-only Supabase service credential and are never exposed to the browser.
-
-The application reads through the existing repository seam in
-`src/lib/queries.ts`. Pages must not import generated data or Supabase clients
-directly. When Supabase is unavailable or unconfigured, the repository reads a
-small normalized snapshot generated from the completed authorized crawl.
+The application reads only through the existing repository seam in
+`src/lib/queries.ts`. Pages must not import the generated snapshot directly.
+In development, preview, and production the repository reads the committed
+snapshot; the current hand-authored seed data is retained only as the fallback
+when a section is absent from the snapshot.
 
 ## Parsing and content rules
 
@@ -283,14 +282,14 @@ Automated checks cover:
 
 - parser fixtures for every supported content class;
 - URL allowlisting, unsafe-protocol rejection, and HTML sanitization;
-- deterministic normalization and idempotent upserts;
+- deterministic normalization and a stable, re-runnable snapshot write;
 - sitemap `lastmod` and checksum-based incremental behavior;
-- atomic publication and last-known-good retention after failures;
+- atomic snapshot writes and last-known-good retention after failures;
 - message-edition deduplication and explicit relationship rules;
-- repository fallback behavior without Supabase credentials;
+- repository reads falling back to seed data when a section is absent;
 - resource download destinations and disabled states;
 - filtering, pagination, metadata, canonical URLs, and global search results;
-- authentication of the scheduler endpoint and concurrency locking.
+- the sync command's concurrency lock and per-section summary.
 
 Release validation includes lint, TypeScript, production build, focused route
 tests, and browser checks for the new and modified routes. Any repository-wide
@@ -299,23 +298,23 @@ focused validation.
 
 ## Operational visibility
 
-Until Admin authentication is implemented, synchronization status is available
-only from a secret-protected server endpoint. It reports the last successful
-run, duration, inserted/updated/skipped/quarantined counts, and bounded source
-failures without exposing page bodies or credentials. A visible Admin status
-page is deferred with the rest of the authenticated Admin work. A failed run
-does not automatically trigger a destructive cleanup.
+Synchronization status lives in the snapshot's `meta` block and in the CI
+workflow's run log: last successful run per section, counts of
+inserted/updated/skipped/dropped records, and any bounded source failures. The
+`content:sync` command prints the same summary and exits non-zero when a section
+fails validation, so a failed scheduled run is visible in CI without shipping a
+bad snapshot. A failed run never deletes existing records.
 
 ## Rollout sequence
 
-1. Add provenance, sync-run storage, repository fallback, and parser tests.
+1. Add source policy, provenance contracts, the snapshot store, and parser tests.
 2. Make existing resource downloads functional.
 3. Add Scripture Memory, Chronicle, and Intercede.
 4. Add the GLC class catalogue.
 5. Import and expose historical messages and 4Ws, and make the homepage and
    message-detail 4Ws blocks render the live current-week guide.
 6. Add articles, podcasts, broadcast channels, expanded missions, and search.
-7. Add scheduler documentation and complete browser verification.
+7. Add the scheduled sync workflow, runbook, and complete browser verification.
 
 Each step leaves the application in a usable state and can ship independently.
 

@@ -4,9 +4,9 @@
 
 **Goal:** Build the scheduled, cached CCF content pipeline and ship working Resources, Scripture Memory, Chronicle, Intercede, and GLC catalogue pages.
 
-**Architecture:** A server-only TypeScript synchronizer reads approved CCF sitemaps and public HTML, parses and sanitizes typed records, and atomically upserts them into Supabase. Public queries use Supabase when configured and a normalized bundled snapshot otherwise; visitor requests never scrape upstream.
+**Architecture:** A TypeScript synchronizer reads approved CCF sitemaps and public HTML, parses and sanitizes typed records, and atomically rewrites a committed JSON snapshot (`src/data/generated/public-content.json`). Public queries read that snapshot through `src/lib/queries.ts`, falling back to the existing seed data per section; visitor requests never scrape upstream. There is no database. A scheduled CI workflow re-runs the sync command and commits the refreshed snapshot.
 
-**Tech Stack:** Next.js 16.3.4 App Router, React 19, TypeScript, Supabase JS, Cheerio, sanitize-html, Node test runner through tsx
+**Tech Stack:** Next.js 16.3.4 App Router, React 19, TypeScript, Cheerio, sanitize-html, Node test runner through tsx
 
 **Spec:** docs/superpowers/specs/2026-09-03-live-content-sync-design.md
 
@@ -17,7 +17,7 @@
 - Do not import test, sandbox, UAT, old-version, payment-response, login, restricted, or attachment-shell routes.
 - Do not copy media binaries, payment workflows, or donation account metadata.
 - A failed sync must retain the last successfully published records.
-- Public pages read only through repository functions; they do not import Supabase or generated JSON directly.
+- Public pages read only through repository functions in src/lib/queries.ts; they do not import the generated snapshot JSON directly.
 - Preserve all unrelated dirty work and stage only files owned by the active task.
 - Read the relevant guides in node_modules/next/dist/docs/ before modifying Next.js route or cache behavior.
 
@@ -31,14 +31,11 @@
 - src/lib/content/parsers/resources.ts: Resource, Scripture Memory, Chronicle, and Intercede parsers.
 - src/lib/content/parsers/glc.ts: GLC library index and class-page parser.
 - src/lib/content/fetch-source.ts: bounded HTTP client with conditional requests.
-- src/lib/content/store.ts: Supabase/fallback storage interface.
-- src/lib/content/sync.ts: incremental orchestration, staging, and publication.
-- src/lib/content/fallback.ts: normalized bundled snapshot loader.
-- src/data/generated/public-content.json: compact last-known-good fallback.
-- scripts/build-content-fallback.ts: fallback generator for the authorized corpus.
-- scripts/sync-ccf-content.ts: local synchronization command.
-- src/app/api/cron/content-sync/route.ts: secret-protected scheduler entry point.
-- supabase/migrations/0003_public_content_sync.sql: content and provenance tables.
+- src/lib/content/snapshot.ts: read/validate/atomically write the committed content snapshot.
+- src/lib/content/sync.ts: incremental orchestration and per-section validation.
+- src/data/generated/public-content.json: the committed content snapshot (last-known-good).
+- scripts/seed-content-snapshot.ts: one-time snapshot seed from the authorized corpus.
+- scripts/sync-ccf-content.ts: local synchronization command (also run by CI).
 - src/app/grow/resources/page.tsx: functional resource library.
 - src/app/grow/resources/scripture-memory/page.tsx: Scripture archive.
 - src/app/grow/resources/chronicle/page.tsx: Chronicle archive.
@@ -258,109 +255,106 @@ git add src/lib/content/parsers/resources.ts src/lib/content/parsers/resources.t
 git commit -m "feat: parse CCF resource collections"
 ~~~
 
-### Task 4: Add storage and the bundled fallback
+### Task 4: Add the snapshot store and seed it
 
 **Files:**
-- Create: supabase/migrations/0003_public_content_sync.sql
-- Create: src/lib/content/store.ts
-- Create: src/lib/content/fallback.ts
-- Create: scripts/build-content-fallback.ts
+- Create: src/lib/content/snapshot.ts
+- Create: src/lib/content/snapshot.test.ts
+- Create: scripts/seed-content-snapshot.ts
 - Create: src/data/generated/public-content.json
-- Test: src/lib/content/store.test.ts
-- Modify: .env.example
 
 **Interfaces:**
-- Produces: ContentStore with stageBatch, publishBatch, failBatch, listResources, listScriptureMemory, listChronicleIssues, getIntercede, and getSyncStatus; createPublicContentStore(env): ContentStore; and createSyncContentStore(env): ContentStore.
+- Produces: ContentSnapshot type; readSnapshot(): ContentSnapshot; writeSnapshot(next: ContentSnapshot): void (atomic temp-file + rename); replaceSection<K>(snap, key, records, meta): ContentSnapshot; and validateSection(key, records): { ok: true } | { ok: false; errors: string[] }.
 
-- [ ] **Step 1: Write the failing atomic-publication test**
+- [ ] **Step 1: Write the failing retention + atomic-write test**
 
 ~~~ts
-test("a failed batch leaves the published generation unchanged", async () => {
-  const store = memoryStore(existingGeneration);
-  const batch = await store.stageBatch("resources", [changedResource]);
-  await store.failBatch(batch.id, "fixture parse failed");
-  assert.deepEqual(await store.listResources({}), existingGeneration.resources);
+test("a failed section validation leaves the prior snapshot untouched", () => {
+  const prior = readSnapshot();
+  const bad = replaceSection(prior, "resources", [{ slug: "" } as never], meta());
+  const check = validateSection("resources", bad.resources);
+  assert.equal(check.ok, false);
+  assert.deepEqual(readSnapshot().resources, prior.resources); // never written
+});
+
+test("writeSnapshot is atomic and round-trips", () => {
+  const snap = readSnapshot();
+  writeSnapshot(snap);
+  assert.deepEqual(readSnapshot(), snap);
 });
 ~~~
 
 - [ ] **Step 2: Run and confirm failure**
 
-Run: npm run test:content -- src/lib/content/store.test.ts
+Run: npm run test:content -- src/lib/content/snapshot.test.ts
 
-Expected: FAIL because the store module is absent.
+Expected: FAIL because the snapshot module is absent.
 
-- [ ] **Step 3: Create migration and adapters**
+- [ ] **Step 3: Implement the snapshot store**
 
-Create content_sync_runs, content_sync_sources, scripture_memory, chronicle_issues, and intercede_campaigns. Extend resources with source, language, audience, format, publication, and generation fields. Add stable upstream unique keys, published-row read policies, and no browser write policy.
+`ContentSnapshot` has one key per section (`resources`, `scriptureMemory`, `chronicleIssues`, `intercede`, `glcClasses`) plus `meta` (per-section `lastRunAt`, `checksum`, `parserVersion`, `warnings`). `readSnapshot` reads `src/data/generated/public-content.json` and returns an empty-but-shaped snapshot if the file is missing. `writeSnapshot` writes pretty JSON with sorted keys to `<file>.tmp` then renames over the target. `replaceSection` returns a new snapshot with that section and its meta swapped, others untouched. `validateSection` runs the per-kind required-identity checks (non-empty slug/trackKey, integer year/week, `/download/{id}/` URL shape, etc.).
 
-createPublicContentStore uses SUPABASE_URL and SUPABASE_ANON_KEY so public-read RLS remains enforced, or returns the read-only fallback store when they are absent. createSyncContentStore requires SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY and has no fallback write mode. Keep the service key in a server-only module.
-
-- [ ] **Step 4: Generate a deterministic fallback**
+- [ ] **Step 4: Seed the snapshot from the authorized corpus**
 
 ~~~powershell
-npx tsx scripts/build-content-fallback.ts --input docs/research/ccf-site-scrape-2026-09-03/content.jsonl --output src/data/generated/public-content.json
+npx tsx scripts/seed-content-snapshot.ts --input docs/research/ccf-site-scrape-2026-09-03/content.jsonl --output src/data/generated/public-content.json
 ~~~
 
-The generator selects only approved collection records, normalizes through the production parsers, sorts deterministically, and omits raw HTML, site chrome, bank metadata, and unrelated crawl envelopes.
+The seeder feeds the corpus's structured records through the production parsers, keeps only the five approved sections, sorts deterministically, drops raw HTML / site chrome / bank metadata / unrelated crawl envelopes, and stamps `meta`.
 
 - [ ] **Step 5: Validate and commit**
 
 ~~~powershell
-npm run test:content -- src/lib/content/store.test.ts
+npm run test:content -- src/lib/content/snapshot.test.ts
 npm run typecheck
-git add .env.example supabase/migrations/0003_public_content_sync.sql src/lib/content/store.ts src/lib/content/store.test.ts src/lib/content/fallback.ts scripts/build-content-fallback.ts src/data/generated/public-content.json
-git commit -m "feat: store synchronized public content"
+git add src/lib/content/snapshot.ts src/lib/content/snapshot.test.ts scripts/seed-content-snapshot.ts src/data/generated/public-content.json
+git commit -m "feat: store synchronized content as a committed snapshot"
 ~~~
 
-### Task 5: Implement sync orchestration, CLI, and scheduler endpoint
+### Task 5: Implement sync orchestration and the local command
 
 **Files:**
 - Create: src/lib/content/sync.ts
 - Create: src/lib/content/sync.test.ts
 - Create: scripts/sync-ccf-content.ts
-- Create: src/app/api/cron/content-sync/route.ts
-- Create: src/app/api/cron/content-sync/route.test.ts
 - Modify: package.json
 
 **Interfaces:**
-- Produces: runContentSync(options): Promise<SyncSummary> and POST(request): Promise<Response>.
+- Produces: runContentSync(options): Promise<SyncSummary>, where SyncSummary has per-section `{ inserted, updated, skipped, dropped, error }`.
 
-- [ ] **Step 1: Write failing idempotency and authorization tests**
+- [ ] **Step 1: Write failing idempotency and retention tests**
 
 ~~~ts
 test("skips an unchanged source", async () => {
-  const summary = await runContentSync(harness({
-    etag: '"same"',
-    responseStatus: 304,
-  }));
-  assert.deepEqual(summary.counts, {
-    inserted: 0,
-    updated: 0,
-    skipped: 1,
-    quarantined: 0,
+  const summary = await runContentSync(harness({ etag: '"same"', responseStatus: 304 }));
+  assert.deepEqual(summary.sections.chronicleIssues, {
+    inserted: 0, updated: 0, skipped: 1, dropped: 0, error: null,
   });
 });
 
-test("cron rejects a missing bearer secret", async () => {
-  const response = await POST(new Request(
-    "http://local/api/cron/content-sync",
-    { method: "POST" },
-  ));
-  assert.equal(response.status, 401);
+test("a section that fails validation keeps its prior records and reports error", async () => {
+  const summary = await runContentSync(harnessWithMalformedChronicle);
+  assert.match(summary.sections.chronicleIssues.error ?? "", /identity/);
+  assert.deepEqual(readSnapshot().chronicleIssues, priorChronicle);
+});
+
+test("a second run with no upstream change writes nothing", async () => {
+  await runContentSync(harness());
+  const before = readFileSync(SNAPSHOT_PATH, "utf8");
+  await runContentSync(harness());
+  assert.equal(readFileSync(SNAPSHOT_PATH, "utf8"), before);
 });
 ~~~
 
 - [ ] **Step 2: Run and confirm failure**
 
-Run: npm run test:content -- src/lib/content/sync.test.ts src/app/api/cron/content-sync/route.test.ts
+Run: npm run test:content -- src/lib/content/sync.test.ts
 
-Expected: FAIL because sync and route exports are absent.
+Expected: FAIL because sync exports are absent.
 
 - [ ] **Step 3: Implement orchestration**
 
-Add public and teaching scopes, a store-backed advisory lock, conditional metadata, maximum concurrency of three, complete staged batches, atomic publication, per-source outcomes, and revalidateTag("ccf-public-content", "max") after successful publication. The public scope covers resources, Scripture Memory, Chronicle, Intercede, and the GLC catalogue.
-
-Use a POST Route Handler with the Node runtime. Compare Authorization: Bearer CONTENT_SYNC_SECRET using a timing-safe comparison. Accept only public, teaching, or all scopes and never return exception stacks.
+`runContentSync({ sections, fetchImpl, now })` iterates the requested sections (default: all five public sections — resources, scriptureMemory, chronicleIssues, intercede, glcClasses). For each: read the section's source URL(s), send conditional validators from the snapshot's `meta` checksum/etag, skip on 304 or unchanged checksum, otherwise parse + sanitize + `validateSection`. On success, `replaceSection`; on failure, leave the section and record the error. Bounded concurrency of three across section fetches. Write the snapshot once at the end, atomically, only if at least one section changed. Acquire a lock file (`.content-sync.lock`) and refuse to start if held. Return the `SyncSummary`; the process exits non-zero if any section has a non-null `error`.
 
 - [ ] **Step 4: Add and exercise the local command**
 
@@ -370,17 +364,19 @@ Add:
 "content:sync": "tsx scripts/sync-ccf-content.ts"
 ~~~
 
-Run: npm run content:sync -- --scope public --dry-run
+The script parses `--sections a,b`, `--dry-run` (parse and validate but never write the snapshot), and `--json` (print the summary as JSON). It prints a per-section table and exits non-zero on any section error.
 
-Expected: approved sources are fetched or reported unchanged, writes are skipped, and a JSON summary is printed.
+Run: npm run content:sync -- --dry-run
+
+Expected: approved sources are fetched or reported unchanged, no snapshot write occurs, and a per-section summary is printed.
 
 - [ ] **Step 5: Test and commit**
 
 ~~~powershell
-npm run test:content -- src/lib/content/sync.test.ts src/app/api/cron/content-sync/route.test.ts
+npm run test:content -- src/lib/content/sync.test.ts
 npm run typecheck
-git add package.json package-lock.json src/lib/content/sync.ts src/lib/content/sync.test.ts scripts/sync-ccf-content.ts src/app/api/cron/content-sync
-git commit -m "feat: synchronize CCF public content"
+git add package.json package-lock.json src/lib/content/sync.ts src/lib/content/sync.test.ts scripts/sync-ccf-content.ts
+git commit -m "feat: synchronize CCF public content into the snapshot"
 ~~~
 
 ### Task 6: Publish Resources, Scripture Memory, Chronicle, and Intercede
@@ -426,7 +422,7 @@ Expected: FAIL because the new queries and functional link markup are absent.
 
 - [ ] **Step 3: Implement queries and accessible pages**
 
-Use server-rendered URL filters, real anchor elements for downloads, visible file/language/external labels, semantic pagination, and existing PageHeader, Section, Container, Pill, and EmptyState components. Intercede shows an archived label when its end date precedes the current Manila date.
+`src/lib/queries.ts` reads the committed snapshot via `readSnapshot()`; when a section is empty it falls back to the existing hand-authored seed data. Pages import only these query functions, never the snapshot JSON. Use server-rendered URL filters, real anchor elements for downloads, visible file/language/external labels, semantic pagination, and existing PageHeader, Section, Container, Pill, and EmptyState components. Intercede shows an archived label when its end date precedes the current Manila date.
 
 - [ ] **Step 4: Validate**
 
@@ -445,25 +441,29 @@ git add src/lib/queries.ts src/lib/types.ts src/lib/nav.ts src/app/grow/resource
 git commit -m "feat: publish CCF resource collections"
 ~~~
 
-### Task 7: Verify the first release
+### Task 7: Add the scheduled workflow and verify the first release
 
 **Files:**
 - Create: src/app/grow/resources/resources.e2e.test.mjs
 - Create: docs/content-sync.md
-- Modify: .env.example
+- Create: .github/workflows/content-sync.yml
 
 **Interfaces:**
-- Produces: reproducible browser coverage and operator documentation.
+- Produces: reproducible browser coverage, an operator runbook, and a scheduled sync workflow.
 
 - [ ] **Step 1: Add the browser flow**
 
-Verify desktop and 390px layouts, keyboard traversal, URL-backed filters, one official download destination without downloading the binary, Chronicle grouping, Scripture year navigation, Intercede archived/current copy, and zero console errors.
+Verify desktop and 390px layouts, keyboard traversal, URL-backed filters, one official download destination without downloading the binary, Chronicle grouping, Scripture year navigation, Intercede archived/current copy, GLC category grouping, and zero console errors.
 
-- [ ] **Step 2: Document operation**
+- [ ] **Step 2: Add the scheduled sync workflow**
 
-Document SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, CONTENT_SYNC_SECRET, scheduler calls, dry-run recovery, exclusions, last-known-good behavior, and credential rotation without including real values.
+`.github/workflows/content-sync.yml`: runs on a `schedule` (every 6 hours) and `workflow_dispatch`. Steps: checkout, setup Node, `npm ci`, `npm run content:sync`, then — if `git status --porcelain` shows `src/data/generated/public-content.json` changed — commit it with a `chore: refresh CCF content snapshot` message and push to `main`. The job has no secrets; it only needs `contents: write` permission. If the sync command exits non-zero, the job fails and no commit is made.
 
-- [ ] **Step 3: Run all gates**
+- [ ] **Step 3: Document operation**
+
+`docs/content-sync.md`: what the snapshot is, the section list, `npm run content:sync` flags (`--sections`, `--dry-run`, `--json`), how the scheduled workflow refreshes and deploys it, how to do a manual full refresh and recover from a bad run (revert the snapshot commit), the source-policy exclusions, and the GLC host scope. No credentials — there are none.
+
+- [ ] **Step 4: Run all gates**
 
 ~~~powershell
 npm run test:content
@@ -474,15 +474,15 @@ npm run build
 
 Expected: all commands pass, aside from separately documented unrelated dirty-checkout failures.
 
-- [ ] **Step 4: Run browser verification against one isolated server**
+- [ ] **Step 5: Run browser verification against one isolated server**
 
 Start one dev or production server, run node src/app/grow/resources/resources.e2e.test.mjs, and stop it before invoking another Next command. Never run next dev and next build concurrently against .next.
 
-- [ ] **Step 5: Commit verification artifacts**
+- [ ] **Step 6: Commit verification artifacts**
 
 ~~~powershell
-git add src/app/grow/resources/resources.e2e.test.mjs docs/content-sync.md .env.example
-git commit -m "test: verify synchronized resource collections"
+git add src/app/grow/resources/resources.e2e.test.mjs docs/content-sync.md .github/workflows/content-sync.yml
+git commit -m "test: verify synchronized content and add the scheduled sync workflow"
 ~~~
 
 ### Task 8: Parse and publish the GLC class catalogue
@@ -492,20 +492,18 @@ git commit -m "test: verify synchronized resource collections"
 - Create: src/lib/content/parsers/glc.test.ts
 - Create: src/lib/content/__fixtures__/glc-library.html
 - Create: src/lib/content/__fixtures__/glc-class.html
-- Modify: src/lib/content/types.ts
+- Modify: src/lib/content/types.ts (GlcClassRecord already defined in Task 1 — extend if needed)
 - Modify: src/lib/content/sync.ts
-- Modify: src/lib/content/store.ts
-- Modify: src/lib/content/fallback.ts
-- Modify: scripts/build-content-fallback.ts
+- Modify: src/lib/content/snapshot.ts
+- Modify: scripts/seed-content-snapshot.ts
 - Modify: src/data/generated/public-content.json
-- Modify: supabase/migrations/0003_public_content_sync.sql
 - Modify: src/lib/queries.ts
 - Modify: src/lib/types.ts
 - Modify: src/app/grow/glc/page.tsx
 - Test: src/lib/content/glc-queries.test.ts
 
 **Interfaces:**
-- Produces: GlcClassRecord, parseGlcLibrary(html, source, observedAt), parseGlcClassPage(html, source, observedAt), and getGlcClasses(category?): Promise<GlcClassRecord[]>.
+- Produces: parseGlcLibrary(html, source, observedAt), parseGlcClassPage(html, source, observedAt), and getGlcClasses(category?): Promise<GlcClassRecord[]>. (GlcClassRecord is already in types.ts from Task 1.)
 
 - [ ] **Step 1: Extract minimal fixtures from glc.ccf.org.ph**
 
@@ -543,13 +541,13 @@ Run: npm run test:content -- src/lib/content/parsers/glc.test.ts src/lib/content
 
 Expected: FAIL because the GLC parser, store methods, and query are absent.
 
-- [ ] **Step 4: Implement the parser, storage, sync scope, and query**
+- [ ] **Step 4: Implement the parser, snapshot section, sync scope, and query**
 
-Add GlcClassRecord to types with required provenance. Add a glc_classes table to migration 0003 (or a follow-up 0003b if 0003 is already applied) with stable track_key unique key, category, title, description, formats text[], workbook_url, source_url, sort_order, active, generation, and published-row read policy plus no browser write. Add glc_class staging/publish/list methods to the store and the fallback reader. Add the GLC library index URL to the public sync scope so it refreshes every six hours, using lastmod/checksum skips and concurrency of three. Resolve class and workbook links against https://glc.ccf.org.ph/. Emit warnings, never guesses, for missing category, title, or formats. Regenerate the fallback with `--include glc`.
+Add a `glcClasses` section to `ContentSnapshot` and its `validateSection` case (non-empty `trackKey`, known `category`). Add the GLC library index URL to the sync's default section list so a scheduled run refreshes it, using checksum skips and concurrency of three. `parseGlcLibrary` reads the category groupings and one record per class link; `parseGlcClassPage` fills description and delivery formats. Resolve class and workbook links against `https://glc.ccf.org.ph/`. Emit warnings, never guesses, for missing category, title, or formats. Teach `seed-content-snapshot.ts` to include `glcClasses`.
 
 - [ ] **Step 5: Build the /grow/glc catalogue page**
 
-Replace the placeholder with a server-rendered catalogue grouped by category in the fixed order above, using existing PageHeader, Section, Container, Pill, and EmptyState primitives. Each class shows title, description, format Pills, a real anchor to its glc.ccf.org.ph page (labeled as an external CCF property), and a workbook download anchor when present. Show EmptyState per category when a category has no published classes.
+Replace the placeholder with a server-rendered catalogue grouped by category in the fixed order above, using existing PageHeader, Section, Container, Pill, and EmptyState primitives. Each class shows title, description, format Pills, a real anchor to its glc.ccf.org.ph page (labeled as an external CCF property), and a workbook download anchor when present. Show EmptyState per category when a category has no published classes. `getGlcClasses` reads the snapshot and returns an empty list (not seed data) when the section is absent.
 
 - [ ] **Step 6: Validate and commit**
 
@@ -557,6 +555,6 @@ Replace the placeholder with a server-rendered catalogue grouped by category in 
 npm run test:content -- src/lib/content/parsers/glc.test.ts src/lib/content/glc-queries.test.ts
 npm run lint -- src/app/grow/glc src/lib/content src/lib/queries.ts
 npm run typecheck
-git add src/lib/content/parsers/glc.ts src/lib/content/parsers/glc.test.ts src/lib/content/__fixtures__/glc-library.html src/lib/content/__fixtures__/glc-class.html src/lib/content/types.ts src/lib/content/sync.ts src/lib/content/store.ts src/lib/content/fallback.ts scripts/build-content-fallback.ts src/data/generated/public-content.json supabase/migrations src/lib/queries.ts src/lib/types.ts src/app/grow/glc/page.tsx src/lib/content/glc-queries.test.ts
+git add src/lib/content/parsers/glc.ts src/lib/content/parsers/glc.test.ts src/lib/content/__fixtures__/glc-library.html src/lib/content/__fixtures__/glc-class.html src/lib/content/types.ts src/lib/content/sync.ts src/lib/content/snapshot.ts scripts/seed-content-snapshot.ts src/data/generated/public-content.json src/lib/queries.ts src/lib/types.ts src/app/grow/glc/page.tsx src/lib/content/glc-queries.test.ts
 git commit -m "feat: publish the GLC class catalogue"
 ~~~

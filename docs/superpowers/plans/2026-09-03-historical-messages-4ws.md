@@ -4,9 +4,9 @@
 
 **Goal:** Import CCF's historical message and 4Ws catalogue into the existing searchable teaching experience without losing distinct editions or inventing relationships.
 
-**Architecture:** Extend the shared content synchronizer and existing teaching tables with upstream identity and edition metadata. Parse sermon, speaker, series, and 4Ws pages into typed records, publish complete batches atomically, and preserve src/lib/queries.ts as the only page-facing data seam.
+**Architecture:** Extend the shared content synchronizer and the committed snapshot with `messages`, `series`, `speakers`, `fourWs`, and `messageRelations` sections carrying upstream identity and edition metadata. Parse sermon, speaker, series, and 4Ws pages into typed records, rewrite each section atomically, and preserve src/lib/queries.ts as the only page-facing data seam. No database.
 
-**Tech Stack:** Next.js 16.3.4, React 19, TypeScript, Supabase, Cheerio, sanitize-html, Node test runner through tsx
+**Tech Stack:** Next.js 16.3.4, React 19, TypeScript, Cheerio, sanitize-html, Node test runner through tsx
 
 **Spec:** docs/superpowers/specs/2026-09-03-live-content-sync-design.md
 
@@ -26,8 +26,8 @@
 - src/lib/content/parsers/teaching.ts: sermon, speaker, and series parsing.
 - src/lib/content/parsers/four-ws.ts: structured 4Ws parsing.
 - src/lib/content/sync.ts: teaching synchronization scope.
-- src/lib/content/store.ts: teaching persistence and fallback reads.
-- supabase/migrations/0004_teaching_provenance.sql: upstream fields and relations.
+- src/lib/content/snapshot.ts: teaching sections read/written in the committed snapshot.
+- src/lib/content/snapshot.ts: teaching sections and their validation added to ContentSnapshot.
 - src/lib/queries.ts: repository-backed teaching queries.
 - src/app/watch/messages/page.tsx: historical filters and pagination.
 - src/app/watch/messages/[slug]/page.tsx: companion and source details.
@@ -40,7 +40,7 @@
 - Modify: src/lib/content/types.ts
 - Create: src/lib/content/teaching-normalize.ts
 - Test: src/lib/content/teaching-normalize.test.ts
-- Create: supabase/migrations/0004_teaching_provenance.sql
+- Modify: src/lib/content/snapshot.ts
 
 **Interfaces:**
 - Produces: TeachingEdition, ImportedMessage, ImportedFourWs, messageSourceKey(record), and buildExplicitRelations(records).
@@ -76,9 +76,9 @@ Run: npm run test:content -- src/lib/content/teaching-normalize.test.ts
 
 Expected: FAIL because the normalization module is absent.
 
-- [ ] **Step 3: Implement contracts and migration**
+- [ ] **Step 3: Implement contracts and snapshot sections**
 
-Add source URL, WordPress ID, source-modified time, service edition, content format, language, publication generation, checksum, and warnings to messages and four_ws. Add message_relations with from_message_id, to_message_id, relation_kind, and evidence_url; enforce a unique composite key and public reads.
+Add `sourceUrl`, `wordpressId`, `sourceModifiedAt`, `serviceEdition`, `format`, `language`, `checksum`, and `warnings` to the message and 4Ws record types. Add a `messageRelations` array (`fromKey`, `toKey`, `relationKind`, `evidenceUrl`) with a de-dup key. Extend `ContentSnapshot` with `messages`, `series`, `speakers`, `fourWs`, and `messageRelations` sections and their `validateSection` cases.
 
 - [ ] **Step 4: Run the focused test**
 
@@ -89,7 +89,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ~~~powershell
-git add src/lib/content/types.ts src/lib/content/teaching-normalize.ts src/lib/content/teaching-normalize.test.ts supabase/migrations/0004_teaching_provenance.sql
+git add src/lib/content/types.ts src/lib/content/teaching-normalize.ts src/lib/content/teaching-normalize.test.ts src/lib/content/snapshot.ts
 git commit -m "feat: model historical teaching editions"
 ~~~
 
@@ -150,34 +150,34 @@ git add src/lib/content/parsers/teaching.ts src/lib/content/parsers/four-ws.ts s
 git commit -m "feat: parse historical messages and 4Ws"
 ~~~
 
-### Task 3: Synchronize the historical catalogue atomically
+### Task 3: Synchronize the historical catalogue into the snapshot
 
 **Files:**
 - Modify: src/lib/content/sync.ts
-- Modify: src/lib/content/store.ts
+- Modify: src/lib/content/snapshot.ts
 - Modify: scripts/sync-ccf-content.ts
-- Modify: scripts/build-content-fallback.ts
+- Modify: scripts/seed-content-snapshot.ts
 - Modify: src/data/generated/public-content.json
 - Test: src/lib/content/teaching-sync.test.ts
 
 **Interfaces:**
-- Produces: syncTeachingCatalogue(context): Promise<SyncSummary> and teaching methods on ContentStore.
+- Produces: a `teaching` section group in `runContentSync` (messages, series, speakers, fourWs, messageRelations).
 
 - [ ] **Step 1: Write failing idempotency and retention tests**
 
 ~~~ts
 test("a second identical sync performs no writes", async () => {
-  const first = await syncTeachingCatalogue(harness);
-  const second = await syncTeachingCatalogue(harness);
-  assert.ok(first.counts.inserted > 0);
-  assert.equal(second.counts.inserted + second.counts.updated, 0);
+  await runContentSync(teachingHarness());
+  const before = readFileSync(SNAPSHOT_PATH, "utf8");
+  await runContentSync(teachingHarness());
+  assert.equal(readFileSync(SNAPSHOT_PATH, "utf8"), before);
 });
 
 test("a malformed sermon cannot erase the published archive", async () => {
-  await assert.rejects(() =>
-    syncTeachingCatalogue(harnessWithMalformedRecord),
-  );
-  assert.equal((await store.listMessages({})).length, originalCount);
+  const prior = readSnapshot().messages;
+  const summary = await runContentSync(teachingHarnessWithMalformedRecord());
+  assert.match(summary.sections.messages.error ?? "", /identity/);
+  assert.deepEqual(readSnapshot().messages, prior);
 });
 ~~~
 
@@ -189,12 +189,12 @@ Expected: FAIL because teaching synchronization is absent.
 
 - [ ] **Step 3: Implement sitemap-driven teaching sync**
 
-Process both sermon sitemaps, speaker and series taxonomies, and approved 4Ws pages. Use lastmod and checksums to skip unchanged records, maximum concurrency of three, atomic generations, stable source keys, and explicit relation evidence. Record source 404s without automatically deleting historical records.
+Process both sermon sitemaps, speaker and series taxonomies, and approved 4Ws pages as sync sections. Use lastmod and checksums to skip unchanged records, maximum concurrency of three, atomic per-section snapshot rewrites, stable source keys, and explicit relation evidence only. A section that fails validation keeps its prior records and records the error. Record source 404s without deleting historical records.
 
-- [ ] **Step 4: Refresh the teaching fallback**
+- [ ] **Step 4: Refresh the teaching sections of the seed snapshot**
 
 ~~~powershell
-npx tsx scripts/build-content-fallback.ts --input docs/research/ccf-site-scrape-2026-09-03/content.jsonl --output src/data/generated/public-content.json --include teaching
+npx tsx scripts/seed-content-snapshot.ts --input docs/research/ccf-site-scrape-2026-09-03/content.jsonl --output src/data/generated/public-content.json --sections teaching
 ~~~
 
 Expected: stable sorted output with normalized teaching fields and no raw crawl envelopes.
@@ -204,11 +204,11 @@ Expected: stable sorted output with normalized teaching fields and no raw crawl 
 ~~~powershell
 npm run test:content -- src/lib/content/teaching-sync.test.ts
 npm run typecheck
-git add src/lib/content/sync.ts src/lib/content/store.ts scripts/sync-ccf-content.ts scripts/build-content-fallback.ts src/data/generated/public-content.json src/lib/content/teaching-sync.test.ts
+git add src/lib/content/sync.ts src/lib/content/snapshot.ts scripts/sync-ccf-content.ts scripts/seed-content-snapshot.ts src/data/generated/public-content.json src/lib/content/teaching-sync.test.ts
 git commit -m "feat: synchronize historical teaching catalogue"
 ~~~
 
-### Task 4: Move teaching queries behind the content store
+### Task 4: Move teaching queries behind the snapshot
 
 **Files:**
 - Modify: src/lib/queries.ts
@@ -241,7 +241,7 @@ Expected: FAIL because format filtering and content-store reads are absent.
 
 - [ ] **Step 3: Implement repository-backed teaching queries**
 
-Keep existing signatures compatible. Use the current seed only through the fallback store. Let getRelatedMessages prefer explicit relations before same-series and shared-topic scoring.
+Keep existing signatures compatible. Read the snapshot's teaching sections; fall back to the current seed data per section when it is empty. Let getRelatedMessages prefer explicit relations before same-series and shared-topic scoring.
 
 - [ ] **Step 4: Test and typecheck**
 
