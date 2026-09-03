@@ -1,0 +1,45 @@
+name: Sync CCF content
+
+# Regenerates src/data/generated/public-content.json from ccf.org.ph and commits
+# it when it changed. This is what makes the site "update when CCF ships new
+# content" — no database, no runtime secret, just a scheduled snapshot refresh.
+
+on:
+  schedule:
+    - cron: "0 */6 * * *" # every 6 hours
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: content-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run the content sync
+        run: npm run content:sync -- --json
+
+      - name: Commit the snapshot if it changed
+        run: |
+          if [[ -n "$(git status --porcelain src/data/generated/public-content.json)" ]]; then
+            git config user.name  "ccf-content-bot"
+            git config user.email "ccf-content-bot@users.noreply.github.com"
+            git add src/data/generated/public-content.json
+            git commit -m "chore: refresh CCF content snapshot"
+            git push
+          else
+            echo "No content changes."
+          fi
