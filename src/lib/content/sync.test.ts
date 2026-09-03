@@ -41,8 +41,9 @@ function harness(overrides: { status?: number; body?: string } = {}) {
 test("a fresh run inserts parsed records into the snapshot", async () => {
   const h = harness();
   const summary = await runContentSync(h);
-  assert.ok(summary.sections.chronicleIssues.inserted > 0);
-  assert.equal(summary.sections.chronicleIssues.error, null);
+  const chronicle = summary.sections.chronicleIssues!;
+  assert.ok(chronicle.inserted > 0);
+  assert.equal(chronicle.error, null);
   const snap = readSnapshotFrom(h.snapshotPath);
   assert.equal(snap.chronicleIssues[0].downloadId, "41950");
 });
@@ -81,5 +82,5 @@ test("a section that fails validation keeps prior records and reports the error"
   const summary = await runContentSync({ ...h });
   // No records parsed -> section considered empty -> treated as a drop, prior kept.
   assert.deepEqual(readSnapshotFrom(h.snapshotPath).chronicleIssues, prior);
-  assert.equal(summary.sections.chronicleIssues.inserted, 0);
+  assert.equal(summary.sections.chronicleIssues!.inserted, 0);
 });
