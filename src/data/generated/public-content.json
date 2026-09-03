@@ -3061,7 +3061,283 @@
       "title": "Live a Christ-Centered Life"
     }
   ],
-  "glcClasses": [],
+  "glcClasses": [
+    {
+      "active": true,
+      "category": "GLC 1 EDIFY",
+      "description": null,
+      "formats": [
+        "dgroup",
+        "e-learning",
+        "face-to-face",
+        "zoom"
+      ],
+      "kind": "glc_class",
+      "sortOrder": 0,
+      "source": {
+        "canonicalUrl": "https://glc.ccf.org.ph/glc-1/",
+        "checksum": "db2c75b3b7dd7cb33c9dbcd270c48928034c5ee321a8750fbc3764898917ceca",
+        "fetchedAt": "2026-09-03T16:46:23.903Z",
+        "parserVersion": "1.0.0",
+        "resolvedUrl": "https://glc.ccf.org.ph/glc-1/",
+        "sourceModifiedAt": "Thu, 03 Sep 2026 15:53:26 GMT",
+        "sourceUrl": "https://glc.ccf.org.ph/glc-1/"
+      },
+      "title": "GLC 1",
+      "trackKey": "glc-1",
+      "workbookUrl": null
+    },
+    {
+      "active": true,
+      "category": "GLC 2 EQUIP",
+      "description": null,
+      "formats": [
+        "dgroup",
+        "e-learning",
+        "face-to-face",
+        "zoom"
+      ],
+      "kind": "glc_class",
+      "sortOrder": 1,
+      "source": {
+        "canonicalUrl": "https://glc.ccf.org.ph/glc-2-2/",
+        "checksum": "db2c75b3b7dd7cb33c9dbcd270c48928034c5ee321a8750fbc3764898917ceca",
+        "fetchedAt": "2026-09-03T16:46:23.903Z",
+        "parserVersion": "1.0.0",
+        "resolvedUrl": "https://glc.ccf.org.ph/glc-2-2/",
+        "sourceModifiedAt": "Thu, 03 Sep 2026 15:53:26 GMT",
+        "sourceUrl": "https://glc.ccf.org.ph/glc-2-2/"
+      },
+      "title": "GLC 2",
+      "trackKey": "glc-2-2",
+      "workbookUrl": null
+    },
+    {
+      "active": true,
+      "category": "GLC 3 EMPOW",
+      "description": null,
+      "formats": [
+        "dgroup",
+        "e-learning",
+        "face-to-face",
+        "zoom"
+      ],
+      "kind": "glc_class",
+      "sortOrder": 2,
+      "source": {
+        "canonicalUrl": "https://glc.ccf.org.ph/glc-3/",
+        "checksum": "db2c75b3b7dd7cb33c9dbcd270c48928034c5ee321a8750fbc3764898917ceca",
+        "fetchedAt": "2026-09-03T16:46:23.903Z",
+        "parserVersion": "1.0.0",
+        "resolvedUrl": "https://glc.ccf.org.ph/glc-3/",
+        "sourceModifiedAt": "Thu, 03 Sep 2026 15:53:26 GMT",
+        "sourceUrl": "https://glc.ccf.org.ph/glc-3/"
+      },
+      "title": "GLC 3",
+      "trackKey": "glc-3",
+      "workbookUrl": null
+    },
+    {
+      "active": true,
+      "category": "Apologetics",
+      "description": null,
+      "formats": [
+        "dgroup",
+        "e-learning",
+        "face-to-face",
+        "zoom"
+      ],
+      "kind": "glc_class",
+      "sortOrder": 3,
+      "source": {
+        "canonicalUrl": "https://glc.ccf.org.ph/apologetics/",
+        "checksum": "db2c75b3b7dd7cb33c9dbcd270c48928034c5ee321a8750fbc3764898917ceca",
+        "fetchedAt": "2026-09-03T16:46:23.903Z",
+        "parserVersion": "1.0.0",
+        "resolvedUrl": "https://glc.ccf.org.ph/apologetics/",
+        "sourceModifiedAt": "Thu, 03 Sep 2026 15:53:26 GMT",
+        "sourceUrl": "https://glc.ccf.org.ph/apologetics/"
+      },
+      "title": "Apologetics",
+      "trackKey": "apologetics",
+      "workbookUrl": null
+    },
+    {
+      "active": true,
+      "category": "Biblical Foundations",
+      "description": null,
+      "formats": [
+        "dgroup",
+        "e-learning",
+        "face-to-face",
+        "zoom"
+      ],
+      "kind": "glc_class",
+      "sortOrder": 4,
+      "source": {
+        "canonicalUrl": "https://glc.ccf.org.ph/biblical-foundations/",
+        "checksum": "db2c75b3b7dd7cb33c9dbcd270c48928034c5ee321a8750fbc3764898917ceca",
+        "fetchedAt": "2026-09-03T16:46:23.903Z",
+        "parserVersion": "1.0.0",
+        "resolvedUrl": "https://glc.ccf.org.ph/biblical-foundations/",
+        "sourceModifiedAt": "Thu, 03 Sep 2026 15:53:26 GMT",
+        "sourceUrl": "https://glc.ccf.org.ph/biblical-foundations/"
+      },
+      "title": "Biblical Foundations",
+      "trackKey": "biblical-foundations",
+      "workbookUrl": null
+    },
+    {
+      "active": true,
+      "category": "Book Studies",
+      "description": null,
+      "formats": [
+        "dgroup",
+        "e-learning",
+        "face-to-face",
+        "zoom"
+      ],
+      "kind": "glc_class",
+      "sortOrder": 5,
+      "source": {
+        "canonicalUrl": "https://glc.ccf.org.ph/book-studies/",
+        "checksum": "db2c75b3b7dd7cb33c9dbcd270c48928034c5ee321a8750fbc3764898917ceca",
+        "fetchedAt": "2026-09-03T16:46:23.903Z",
+        "parserVersion": "1.0.0",
+        "resolvedUrl": "https://glc.ccf.org.ph/book-studies/",
+        "sourceModifiedAt": "Thu, 03 Sep 2026 15:53:26 GMT",
+        "sourceUrl": "https://glc.ccf.org.ph/book-studies/"
+      },
+      "title": "Book Studies",
+      "trackKey": "book-studies",
+      "workbookUrl": null
+    },
+    {
+      "active": true,
+      "category": "Discipleship",
+      "description": null,
+      "formats": [
+        "dgroup",
+        "e-learning",
+        "face-to-face",
+        "zoom"
+      ],
+      "kind": "glc_class",
+      "sortOrder": 6,
+      "source": {
+        "canonicalUrl": "https://glc.ccf.org.ph/discipleship/",
+        "checksum": "db2c75b3b7dd7cb33c9dbcd270c48928034c5ee321a8750fbc3764898917ceca",
+        "fetchedAt": "2026-09-03T16:46:23.903Z",
+        "parserVersion": "1.0.0",
+        "resolvedUrl": "https://glc.ccf.org.ph/discipleship/",
+        "sourceModifiedAt": "Thu, 03 Sep 2026 15:53:26 GMT",
+        "sourceUrl": "https://glc.ccf.org.ph/discipleship/"
+      },
+      "title": "Discipleship",
+      "trackKey": "discipleship",
+      "workbookUrl": null
+    },
+    {
+      "active": true,
+      "category": "Engage",
+      "description": null,
+      "formats": [
+        "dgroup",
+        "e-learning",
+        "face-to-face",
+        "zoom"
+      ],
+      "kind": "glc_class",
+      "sortOrder": 7,
+      "source": {
+        "canonicalUrl": "https://glc.ccf.org.ph/engage/",
+        "checksum": "db2c75b3b7dd7cb33c9dbcd270c48928034c5ee321a8750fbc3764898917ceca",
+        "fetchedAt": "2026-09-03T16:46:23.903Z",
+        "parserVersion": "1.0.0",
+        "resolvedUrl": "https://glc.ccf.org.ph/engage/",
+        "sourceModifiedAt": "Thu, 03 Sep 2026 15:53:26 GMT",
+        "sourceUrl": "https://glc.ccf.org.ph/engage/"
+      },
+      "title": "Engage",
+      "trackKey": "engage",
+      "workbookUrl": null
+    },
+    {
+      "active": true,
+      "category": "Evangelism",
+      "description": null,
+      "formats": [
+        "dgroup",
+        "e-learning",
+        "face-to-face",
+        "zoom"
+      ],
+      "kind": "glc_class",
+      "sortOrder": 8,
+      "source": {
+        "canonicalUrl": "https://glc.ccf.org.ph/evangelism/",
+        "checksum": "db2c75b3b7dd7cb33c9dbcd270c48928034c5ee321a8750fbc3764898917ceca",
+        "fetchedAt": "2026-09-03T16:46:23.903Z",
+        "parserVersion": "1.0.0",
+        "resolvedUrl": "https://glc.ccf.org.ph/evangelism/",
+        "sourceModifiedAt": "Thu, 03 Sep 2026 15:53:26 GMT",
+        "sourceUrl": "https://glc.ccf.org.ph/evangelism/"
+      },
+      "title": "Evangelism",
+      "trackKey": "evangelism",
+      "workbookUrl": null
+    },
+    {
+      "active": true,
+      "category": "Leadership",
+      "description": null,
+      "formats": [
+        "dgroup",
+        "e-learning",
+        "face-to-face",
+        "zoom"
+      ],
+      "kind": "glc_class",
+      "sortOrder": 9,
+      "source": {
+        "canonicalUrl": "https://glc.ccf.org.ph/leadership/",
+        "checksum": "db2c75b3b7dd7cb33c9dbcd270c48928034c5ee321a8750fbc3764898917ceca",
+        "fetchedAt": "2026-09-03T16:46:23.903Z",
+        "parserVersion": "1.0.0",
+        "resolvedUrl": "https://glc.ccf.org.ph/leadership/",
+        "sourceModifiedAt": "Thu, 03 Sep 2026 15:53:26 GMT",
+        "sourceUrl": "https://glc.ccf.org.ph/leadership/"
+      },
+      "title": "Leadership",
+      "trackKey": "leadership",
+      "workbookUrl": null
+    },
+    {
+      "active": true,
+      "category": "Theology and Bible",
+      "description": null,
+      "formats": [
+        "dgroup",
+        "e-learning",
+        "face-to-face",
+        "zoom"
+      ],
+      "kind": "glc_class",
+      "sortOrder": 10,
+      "source": {
+        "canonicalUrl": "https://glc.ccf.org.ph/theology-and-bible/",
+        "checksum": "db2c75b3b7dd7cb33c9dbcd270c48928034c5ee321a8750fbc3764898917ceca",
+        "fetchedAt": "2026-09-03T16:46:23.903Z",
+        "parserVersion": "1.0.0",
+        "resolvedUrl": "https://glc.ccf.org.ph/theology-and-bible/",
+        "sourceModifiedAt": "Thu, 03 Sep 2026 15:53:26 GMT",
+        "sourceUrl": "https://glc.ccf.org.ph/theology-and-bible/"
+      },
+      "title": "Theology and Bible",
+      "trackKey": "theology-and-bible",
+      "workbookUrl": null
+    }
+  ],
   "intercede": [
     {
       "audioUrl": "https://go.ccf.org.ph/CCFSpotify",
@@ -3240,6 +3516,12 @@
         "Unparseable Chronicle line: Our Hope Is In Christ, The Risen LORD! (31915 downloads)",
         "Unparseable Chronicle line: Put Your Confidence In Christ (30897 downloads)"
       ]
+    },
+    "glcClasses": {
+      "checksum": "f5bdef5f5f4189528f6f93967b3875bc001f6b4879a0c4ee176620b0e9071c15",
+      "lastRunAt": "2026-09-03T16:46:23.903Z",
+      "parserVersion": "1.0.0",
+      "warnings": []
     },
     "intercede": {
       "checksum": "cb19c22b529f465445948a4971b565d0ce4a6446ca94a624c8d3ea3c7064c00b",

@@ -12,6 +12,7 @@
 import { createHash } from "node:crypto";
 
 import { fetchSource, type FetchImpl } from "./fetch-source";
+import { parseGlcLibrary } from "./parsers/glc";
 import {
   parseChroniclePage,
   parseIntercedePage,
@@ -51,10 +52,7 @@ interface SectionSpec {
   parse: (html: string, src: SourceRecord, observedAt: string) => ParseResult<unknown>;
 }
 
-const SECTION_SPECS: Record<
-  Exclude<SnapshotSection, "glcClasses">,
-  SectionSpec
-> = {
+const SECTION_SPECS: Record<SnapshotSection, SectionSpec> = {
   resources: {
     url: "https://www.ccf.org.ph/resources/",
     parse: parseResourcesPage as SectionSpec["parse"],
@@ -70,6 +68,10 @@ const SECTION_SPECS: Record<
   intercede: {
     url: "https://www.ccf.org.ph/intercede/",
     parse: parseIntercedePage as SectionSpec["parse"],
+  },
+  glcClasses: {
+    url: "https://glc.ccf.org.ph/",
+    parse: parseGlcLibrary as SectionSpec["parse"],
   },
 };
 
@@ -93,7 +95,7 @@ function emptyOutcome(): SectionOutcome {
 }
 
 async function syncSection(
-  key: Exclude<SnapshotSection, "glcClasses">,
+  key: SnapshotSection,
   snapshot: ContentSnapshot,
   opts: Required<Pick<RunContentSyncOptions, "now">> & { fetchImpl?: FetchImpl },
 ): Promise<{ outcome: SectionOutcome; next?: { records: unknown[]; meta: SectionMeta } }> {
@@ -194,7 +196,7 @@ export async function runContentSync(
   const snapshotPath = options.snapshotPath ?? SNAPSHOT_PATH;
   const now = options.now ?? (() => new Date().toISOString());
   const requested = (options.sections ?? DEFAULT_SECTIONS).filter(
-    (s): s is Exclude<SnapshotSection, "glcClasses"> => s in SECTION_SPECS,
+    (s): s is SnapshotSection => s in SECTION_SPECS,
   );
 
   let snapshot = readSnapshotFrom(snapshotPath);

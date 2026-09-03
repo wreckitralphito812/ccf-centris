@@ -12,6 +12,8 @@ import { manilaDateKey } from "../format";
 import { readSnapshot } from "./snapshot";
 import type {
   ChronicleIssueRecord,
+  GlcCategory,
+  GlcClassRecord,
   IntercedeRecord,
   ResourceRecord,
   ScriptureMemoryRecord,
@@ -116,4 +118,32 @@ export function getCurrentIntercede(today = manilaDateKey()): Promise<IntercedeV
   if (!campaign) return Promise.resolve(null);
   const archived = campaign.endDate ? campaign.endDate < today : false;
   return Promise.resolve({ campaign, archived });
+}
+
+// --- GLC catalogue ------------------------------------------------
+
+export function getGlcCatalogue(category?: GlcCategory): Promise<GlcClassRecord[]> {
+  let rows = [...readSnapshot().glcClasses].filter((c) => c.active);
+  rows.sort((a, b) => a.sortOrder - b.sortOrder);
+  if (category) rows = rows.filter((c) => c.category === category);
+  return Promise.resolve(rows);
+}
+
+export interface GlcCategoryGroup {
+  category: GlcCategory;
+  classes: GlcClassRecord[];
+}
+
+export async function getGlcCatalogueGroups(): Promise<GlcCategoryGroup[]> {
+  const rows = await getGlcCatalogue();
+  const order: GlcCategory[] = [];
+  const byCategory = new Map<GlcCategory, GlcClassRecord[]>();
+  for (const cls of rows) {
+    if (!byCategory.has(cls.category)) {
+      byCategory.set(cls.category, []);
+      order.push(cls.category);
+    }
+    byCategory.get(cls.category)!.push(cls);
+  }
+  return order.map((category) => ({ category, classes: byCategory.get(category)! }));
 }

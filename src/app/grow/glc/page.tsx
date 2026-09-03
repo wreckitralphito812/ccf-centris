@@ -7,8 +7,11 @@ import {
   Section,
   SectionHead,
 } from "@/components/ui";
-import { getGlcClasses, getGlcPrograms } from "@/lib/queries";
+import { getGlcCatalogueGroups, getGlcClasses, getGlcPrograms } from "@/lib/queries";
 import { fmtDate } from "@/lib/format";
+
+/** The library catalogue is synced from glc.ccf.org.ph each content-sync run. */
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "GLC",
@@ -17,9 +20,10 @@ export const metadata: Metadata = {
 };
 
 export default async function GlcPage() {
-  const [programs, classes] = await Promise.all([
+  const [programs, classes, libraryGroups] = await Promise.all([
     getGlcPrograms(),
     getGlcClasses(),
+    getGlcCatalogueGroups(),
   ]);
 
   return (
@@ -141,6 +145,45 @@ export default async function GlcPage() {
           </div>
         </Container>
       </Section>
+
+      {libraryGroups.length > 0 ? (
+        <Section id="library" tone="deep" className="scroll-mt-24">
+          <Container>
+            <SectionHead
+              eyebrow="The full catalogue"
+              title="GLC Library"
+              lead="Every GLC training track, straight from glc.ccf.org.ph. Take any of these face-to-face, over Zoom, through e-learning, or in your Dgroup."
+            />
+            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {libraryGroups.map((group) => (
+                <div
+                  key={group.category}
+                  className="flex flex-col border border-hairline bg-paper-bright p-6"
+                >
+                  <h3 className="font-display text-xl leading-tight">
+                    {group.category}
+                  </h3>
+                  <ul className="mt-3 space-y-2 text-[0.9rem]">
+                    {group.classes.map((cls) => (
+                      <li key={cls.trackKey}>
+                        <a
+                          href={cls.source.sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-ink underline decoration-hairline underline-offset-2 hover:decoration-ink"
+                        >
+                          {cls.title} ↗
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="label mt-4 text-ink-mute">On glc.ccf.org.ph</p>
+                </div>
+              ))}
+            </div>
+          </Container>
+        </Section>
+      ) : null}
     </>
   );
 }

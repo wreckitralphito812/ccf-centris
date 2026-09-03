@@ -438,11 +438,14 @@ export {
   getScriptureYears,
   getCurrentScriptureMemory,
   getCurrentIntercede,
+  getGlcCatalogue,
+  getGlcCatalogueGroups,
 } from "@/lib/content/public-queries";
 export type {
   ResourceFilters,
   ChronicleGroup,
   IntercedeView,
+  GlcCategoryGroup,
 } from "@/lib/content/public-queries";
 
 // --- Global search ----------------------------------------------------------
