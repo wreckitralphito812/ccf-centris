@@ -20,6 +20,7 @@ import {
   type ButtonTone,
   buttonVariants,
 } from "./ui/button";
+import { Badge } from "./ui/badge";
 
 type ButtonSize = "sm" | "md" | "lg";
 
@@ -235,27 +236,13 @@ export function Pill({
   className,
 }: {
   children: ReactNode;
-  tone?: "default" | "clay" | "sky" | "moss" | "live" | "muted";
+  tone?: import("./ui/badge").PillTone;
   className?: string;
 }) {
-  const tones = {
-    default: "border-ink/25 text-ink",
-    clay: "border-clay/40 bg-clay/10 text-clay-deep",
-    sky: "border-sky/40 bg-sky/10 text-sky",
-    moss: "border-moss/40 bg-moss/10 text-moss",
-    live: "border-transparent bg-clay text-paper-bright",
-    muted: "border-transparent bg-ink/8 text-ink-mute",
-  } as const;
   return (
-    <span
-      className={cx(
-        "label inline-flex items-center gap-1.5 border px-2.5 py-1",
-        tones[tone],
-        className,
-      )}
-    >
+    <Badge variant={tone} className={className}>
       {children}
-    </span>
+    </Badge>
   );
 }
 
