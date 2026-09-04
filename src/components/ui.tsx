@@ -185,6 +185,8 @@ export function SectionHead({
 
 /* --- Surfaces --------------------------------------------------------------- */
 
+import { Card as CardBase } from "./ui/card";
+
 export function Card({
   children,
   className,
@@ -194,6 +196,11 @@ export function Card({
   className?: string;
   as?: "div" | "article" | "li";
 }) {
+  // CardBase renders a <div>; when the caller needs <article>/<li> we fall
+  // back to a plain element with the same class so semantics are preserved.
+  if (As === "div") {
+    return <CardBase className={className}>{children}</CardBase>;
+  }
   return (
     <As
       className={cx(
