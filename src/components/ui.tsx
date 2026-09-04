@@ -9,61 +9,19 @@ export function cx(...parts: (string | false | null | undefined)[]) {
   return parts.filter(Boolean).join(" ");
 }
 
-/* --- Button ---------------------------------------------------------------- */
+/* --- Button -------------------------------------------------------------- */
 
-/* Tones ending in `-on-dark` are for sections sitting on --night or over
-   photography. They exist as real tones rather than as call-site className
-   overrides: an override of the same specificity loses to the tone it is
-   trying to replace depending on stylesheet order, which silently produced
-   cream-on-cream buttons across the site. */
-type ButtonTone =
-  | "primary"
-  | "ink"
-  | "outline"
-  | "ghost"
-  | "sky"
-  | "on-dark"
-  | "outline-on-dark"
-  | "ghost-on-dark";
+/* The primitive lives in ./ui/button (shadcn-derived, CCF-themed). These
+   wrappers keep the historic prop surface — `tone` (not `variant`), `size`,
+   `full` — so call sites are unchanged. */
+
+import {
+  Button as ButtonBase,
+  type ButtonTone,
+  buttonVariants,
+} from "./ui/button";
+
 type ButtonSize = "sm" | "md" | "lg";
-
-const TONE: Record<ButtonTone, string> = {
-  primary:
-    "bg-clay text-paper-bright border-clay hover:bg-clay-deep hover:border-clay-deep",
-  ink: "bg-ink text-paper-bright border-ink hover:bg-night hover:border-night",
-  outline:
-    "bg-transparent text-ink border-ink hover:bg-ink hover:text-paper-bright",
-  ghost:
-    "bg-transparent text-ink border-transparent hover:border-ink/30 hover:bg-ink/5",
-  sky: "bg-sky text-paper-bright border-sky hover:brightness-110",
-
-  /* Solid cream on a dark ground. The primary CTA wherever the section is
-     dark. Ink text on paper-bright is 15.8:1. */
-  "on-dark":
-    "bg-paper-bright text-night border-paper-bright hover:bg-bone hover:border-bone",
-  /* Outlined cream. Secondary action beside `on-dark`. */
-  "outline-on-dark":
-    "bg-transparent text-paper-bright border-paper-bright hover:bg-paper-bright hover:text-night",
-  /* Quiet cream. Tertiary action on a dark ground. */
-  "ghost-on-dark":
-    "bg-transparent text-paper-bright border-transparent hover:border-paper-bright/40 hover:bg-paper-bright/10",
-};
-
-const SIZE: Record<ButtonSize, string> = {
-  sm: "px-3.5 py-1.5 text-[0.78rem]",
-  md: "px-5 py-2.5 text-[0.86rem]",
-  lg: "px-5 py-3 text-[0.9rem] sm:px-7 sm:py-3.5 sm:text-[0.95rem]",
-};
-
-function buttonClass(tone: ButtonTone, size: ButtonSize, full?: boolean) {
-  return cx(
-    "btn-press inline-flex items-center justify-center gap-2 border font-semibold uppercase tracking-[0.1em]",
-    "transition-colors duration-200 disabled:opacity-40 disabled:pointer-events-none",
-    TONE[tone],
-    SIZE[size],
-    full && "w-full",
-  );
-}
 
 export function Button({
   tone = "primary",
@@ -76,7 +34,15 @@ export function Button({
   size?: ButtonSize;
   full?: boolean;
 }) {
-  return <button className={cx(buttonClass(tone, size, full), className)} {...rest} />;
+  return (
+    <ButtonBase
+      variant={tone}
+      size={size}
+      full={full}
+      className={className}
+      {...rest}
+    />
+  );
 }
 
 export function ButtonLink({
@@ -90,7 +56,12 @@ export function ButtonLink({
   size?: ButtonSize;
   full?: boolean;
 }) {
-  return <Link className={cx(buttonClass(tone, size, full), className)} {...rest} />;
+  return (
+    <Link
+      className={cx(buttonVariants({ variant: tone, size, full }), className)}
+      {...rest}
+    />
+  );
 }
 
 /* --- Structure -------------------------------------------------------------- */
