@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import {
   ButtonLink,
   Container,
@@ -79,6 +80,17 @@ export default async function CommunityPage({
           </>
         }
       />
+
+      <div className="border-b border-hairline bg-paper-bright">
+        <Container className="py-4">
+          <Breadcrumbs
+            items={[
+              { label: "Communities", href: "/communities" },
+              { label: c.name },
+            ]}
+          />
+        </Container>
+      </div>
 
       {c.meeting_note ? (
         <div className="border-b border-hairline bg-paper-bright">

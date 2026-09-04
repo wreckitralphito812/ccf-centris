@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Container, EmptyState, Section } from "@/components/ui";
 import { MessageCard } from "@/components/cards";
 import { findMessages, getSpeakerBySlug, getSpeakers } from "@/lib/queries";
@@ -52,6 +53,14 @@ export default async function SpeakerPage({
 
       <Section>
         <Container>
+          <Breadcrumbs
+            className="mb-8"
+            items={[
+              { label: "Watch", href: "/watch" },
+              { label: "Speakers", href: "/watch/speakers" },
+              { label: s.name },
+            ]}
+          />
           <p className="label mb-8 text-ink-mute">
             {messages.length} {messages.length === 1 ? "message" : "messages"}
           </p>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ButtonLink, Container, Pill, Section } from "@/components/ui";
 import {
   getCurrentFourWs,
@@ -85,6 +86,14 @@ export default async function FourWsGuidePage({ params }: { params: Params }) {
 
       <Section>
         <Container>
+          <Breadcrumbs
+            className="mb-8"
+            items={[
+              { label: "Watch", href: "/watch" },
+              { label: "4Ws Guides", href: "/watch/4ws" },
+              { label: guide.title },
+            ]}
+          />
           <div className="flex flex-wrap items-center gap-2.5">
             {week?.weekNumber ? (
               <Pill tone="clay">Week {week.weekNumber}</Pill>

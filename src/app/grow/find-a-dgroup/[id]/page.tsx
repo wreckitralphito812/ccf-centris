@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Container, DetailRow, Pill, Section } from "@/components/ui";
 import { PageHeader } from "@/components/page-header";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { DgroupCard } from "@/components/cards";
 import { findDgroups, getDgroup } from "@/lib/queries";
 import { AUDIENCE_LABEL, MODE_LABEL, dayName } from "@/lib/format";
@@ -46,14 +47,14 @@ export default async function DgroupPage({
 
       <Section>
         <Container>
-          <nav aria-label="Breadcrumb" className="mb-8">
-            <Link
-              href="/grow/find-a-dgroup"
-              className="label text-ink-mute transition-colors hover:text-clay"
-            >
-              ← All Dgroups
-            </Link>
-          </nav>
+          <Breadcrumbs
+            className="mb-8"
+            items={[
+              { label: "Grow", href: "/grow" },
+              { label: "Find a Dgroup", href: "/grow/find-a-dgroup" },
+              { label: d.name },
+            ]}
+          />
 
           <div className="grid gap-12 lg:grid-cols-[1fr_24rem] lg:items-start">
             <div>
@@ -117,7 +118,7 @@ export default async function DgroupPage({
                 Send a note and the Dgroup team will introduce you.
               </p>
               <div className="mt-6">
-                <InterestForm dgroupName={d.name} />
+                <InterestForm dgroupId={d.id} dgroupName={d.name} />
               </div>
             </aside>
           </div>

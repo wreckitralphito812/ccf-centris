@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   ButtonLink,
@@ -10,6 +9,7 @@ import {
   SectionHead,
 } from "@/components/ui";
 import { EventCard, MessageArt } from "@/components/cards";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { getEvent, getEvents, getUpcomingEvents } from "@/lib/queries";
 import {
   fmtDate,
@@ -104,14 +104,13 @@ export default async function EventPage({
       {/* Hero */}
       <section className="border-b border-hairline bg-paper-deep">
         <Container className="py-12 sm:py-16">
-          <nav aria-label="Breadcrumb" className="mb-8">
-            <Link
-              href="/events"
-              className="label text-ink-mute transition-colors hover:text-clay"
-            >
-              ← All events
-            </Link>
-          </nav>
+          <Breadcrumbs
+            className="mb-8"
+            items={[
+              { label: "Events", href: "/events" },
+              { label: e.title },
+            ]}
+          />
 
           <div className="grid gap-10 lg:grid-cols-[1.3fr_1fr] lg:items-center">
             <div>

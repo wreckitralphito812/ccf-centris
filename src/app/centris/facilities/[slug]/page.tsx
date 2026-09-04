@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   ButtonLink,
@@ -10,6 +9,7 @@ import {
   SectionHead,
 } from "@/components/ui";
 import { FacilityCard, MessageArt } from "@/components/cards";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { getFacilities, getFacility } from "@/lib/queries";
 import { fmtPeso } from "@/lib/format";
 
@@ -47,14 +47,14 @@ export default async function FacilityPage({
     <>
       <section className="border-b border-hairline bg-paper-deep">
         <Container className="py-12 sm:py-16">
-          <nav aria-label="Breadcrumb" className="mb-8">
-            <Link
-              href="/centris/facilities"
-              className="label text-ink-mute transition-colors hover:text-clay"
-            >
-              ← All facilities
-            </Link>
-          </nav>
+          <Breadcrumbs
+            className="mb-8"
+            items={[
+              { label: "Centris", href: "/centris" },
+              { label: "Facilities", href: "/centris/facilities" },
+              { label: f.name },
+            ]}
+          />
 
           <div className="grid gap-10 lg:grid-cols-[1.2fr_1fr] lg:items-center">
             <div>

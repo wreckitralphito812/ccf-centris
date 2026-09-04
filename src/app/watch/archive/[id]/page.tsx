@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Container, Section } from "@/components/ui";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { getArchivedService, getSundayServices } from "@/lib/services";
 import { fmtDayLong } from "@/lib/format";
 import { YOUTUBE } from "@/lib/site";
@@ -37,12 +38,14 @@ export default async function ArchivedServicePage({
   return (
     <Section tone="ink" className="py-10 sm:py-14">
       <Container>
-        <Link
-          href="/watch/archive"
-          className="link label text-paper-bright/60 underline underline-offset-4 hover:text-paper-bright"
-        >
-          ← Sunday archive
-        </Link>
+        <Breadcrumbs
+          tone="dark"
+          items={[
+            { label: "Watch", href: "/watch" },
+            { label: "Sunday Archive", href: "/watch/archive" },
+            { label: service.title },
+          ]}
+        />
 
         <div className="mt-6 grid gap-10 lg:grid-cols-[1.6fr_1fr]">
           <div>

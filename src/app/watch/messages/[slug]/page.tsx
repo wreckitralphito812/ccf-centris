@@ -10,6 +10,7 @@ import {
   SectionHead,
 } from "@/components/ui";
 import { MessageArt, MessageCard } from "@/components/cards";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import {
   getFourWsWeeks,
   getMessage,
@@ -90,14 +91,15 @@ export default async function MessagePage({
       {/* Player */}
       <Section tone="ink" className="py-10 sm:py-14">
         <Container>
-          <nav aria-label="Breadcrumb" className="mb-6">
-            <Link
-              href="/watch/messages"
-              className="label text-paper-bright/50 transition-colors hover:text-paper-bright"
-            >
-              ← All messages
-            </Link>
-          </nav>
+          <Breadcrumbs
+            tone="dark"
+            className="mb-6"
+            items={[
+              { label: "Watch", href: "/watch" },
+              { label: "Messages", href: "/watch/messages" },
+              { label: m.title },
+            ]}
+          />
 
           <div className="grid gap-10 lg:grid-cols-[1.6fr_1fr]">
             <div>

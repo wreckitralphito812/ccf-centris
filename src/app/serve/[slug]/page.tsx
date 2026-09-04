@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import {
   ButtonLink,
   Container,
@@ -54,14 +54,13 @@ export default async function VolunteerRolePage({
 
       <Section>
         <Container>
-          <nav aria-label="Breadcrumb" className="mb-8">
-            <Link
-              href="/serve"
-              className="label text-ink-mute transition-colors hover:text-clay"
-            >
-              ← All roles
-            </Link>
-          </nav>
+          <Breadcrumbs
+            className="mb-8"
+            items={[
+              { label: "Serve", href: "/serve" },
+              { label: role.title },
+            ]}
+          />
 
           <div className="grid gap-12 lg:grid-cols-[1fr_24rem] lg:items-start">
             <div>
@@ -118,7 +117,11 @@ export default async function VolunteerRolePage({
             </div>
 
             <aside className="lg:sticky lg:top-28">
-              <ApplyForm roleTitle={role.title} screened={screened} />
+              <ApplyForm
+                roleId={role.id}
+                roleTitle={role.title}
+                screened={screened}
+              />
             </aside>
           </div>
         </Container>

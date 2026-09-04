@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Container, EmptyState, Section } from "@/components/ui";
 import { MessageCard } from "@/components/cards";
 import { findMessages, getSeries, getSeriesBySlug } from "@/lib/queries";
@@ -53,6 +54,14 @@ export default async function SeriesPage({
 
       <Section>
         <Container>
+          <Breadcrumbs
+            className="mb-8"
+            items={[
+              { label: "Watch", href: "/watch" },
+              { label: "Series", href: "/watch/series" },
+              { label: s.title },
+            ]}
+          />
           {s.starts_on ? (
             <p className="label mb-8 text-ink-mute">
               {fmtDate(s.starts_on)}
