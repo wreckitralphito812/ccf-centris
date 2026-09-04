@@ -12,25 +12,36 @@ import {
 } from "./admin-ui";
 import {
   findDgroups,
-  getMyReservations,
+  getDgroupInquiries,
+  getReservations,
   getServiceWindow,
   getUpcomingEvents,
+  getVolunteerApplications,
   getVolunteerRoles,
 } from "@/lib/queries";
-import { fmtDayLong, fmtDayShort, fmtPeso, fmtTime } from "@/lib/format";
+import { fmtDayLong, fmtDayShort, fmtTime } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminDashboard() {
-  const [window, events, dgroups, roles, reservations] = await Promise.all([
-    getServiceWindow(),
-    getUpcomingEvents(5),
-    findDgroups({}),
-    getVolunteerRoles(),
-    getMyReservations(),
-  ]);
+  const [window, events, dgroups, roles, reservations, inquiries, applications] =
+    await Promise.all([
+      getServiceWindow(),
+      getUpcomingEvents(5),
+      findDgroups({}),
+      getVolunteerRoles(),
+      getReservations(),
+      getDgroupInquiries(),
+      getVolunteerApplications(),
+    ]);
 
   const pending = reservations.filter((r) => r.status === "pending");
+  const openInquiries = inquiries.filter(
+    (e) => e.status === "new" || e.status === "contacted",
+  );
+  const freshApplications = applications.filter((a) => a.status === "submitted");
 
   return (
     <div className="space-y-8">
@@ -41,10 +52,14 @@ export default async function AdminDashboard() {
 
       {/* Queues first: the things a person has to act on. */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Awaiting approval" value={pending.length} tone="clay" note="Room reservation requests" />
-        <Stat label="Dgroup enquiries" value={7} tone="clay" note="Unassigned this week" />
-        <Stat label="Prayer requests" value={12} tone="clay" note="Prayer team only" />
-        <Stat label="Volunteer applications" value={5} tone="clay" note="Awaiting a first reply" />
+        <Stat label="Awaiting approval" value={pending.length} tone="clay" note="Reservation requests" />
+        <Stat label="Dgroup enquiries" value={openInquiries.length} tone="clay" note="New or in conversation" />
+        <Stat label="Volunteer applications" value={freshApplications.length} tone="clay" note="Awaiting a first reply" />
+        <Stat
+          label="Next service"
+          value={window.next ? fmtTime(window.next.starts_at) : "—"}
+          note={window.next ? fmtDayLong(window.next.starts_at) : undefined}
+        />
       </div>
 
       {/* Then the picture. */}
@@ -52,11 +67,7 @@ export default async function AdminDashboard() {
         <Stat label="Open Dgroups" value={dgroups.length} note="Accepting new members" />
         <Stat label="Upcoming events" value={events.length} note="Published and dated" />
         <Stat label="Volunteer roles" value={roles.length} note="Across all teams" />
-        <Stat
-          label="Next service"
-          value={window.next ? fmtTime(window.next.starts_at) : "—"}
-          note={window.next ? fmtDayLong(window.next.starts_at) : undefined}
-        />
+        <Stat label="Reservations total" value={reservations.length} note="All statuses, all time" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -69,16 +80,22 @@ export default async function AdminDashboard() {
           }
         >
           {pending.length ? (
-            <Table columns={["Space", "When", "Party", "Value", "Status"]}>
+            <Table columns={["Space", "Requested by", "When", "Party", "Status"]}>
               {pending.map((r) => (
                 <tr key={r.id}>
                   <Td>
-                    <span className="font-semibold">{r.facility_name}</span>
-                    {r.activity_name ? (
+                    <span className="font-semibold">{r.facility_name ?? "—"}</span>
+                    {r.court_name ?? r.activity_name ? (
                       <span className="mt-0.5 block text-[0.82rem] text-ink-mute">
-                        {r.activity_name}
+                        {r.court_name ?? r.activity_name}
                       </span>
                     ) : null}
+                  </Td>
+                  <Td>
+                    <span className="font-semibold">{r.contact_name}</span>
+                    <span className="mt-0.5 block text-[0.82rem] text-ink-mute">
+                      {r.contact_email}
+                    </span>
                   </Td>
                   <Td>
                     {fmtDayShort(r.starts_at)}
@@ -86,8 +103,7 @@ export default async function AdminDashboard() {
                       {fmtTime(r.starts_at)} – {fmtTime(r.ends_at)}
                     </span>
                   </Td>
-                  <Td>{r.participants}</Td>
-                  <Td>{fmtPeso(r.total_cents)}</Td>
+                  <Td className="tabular-nums">{r.participants}</Td>
                   <Td>
                     <Status value={r.status} />
                   </Td>
@@ -150,10 +166,10 @@ export default async function AdminDashboard() {
       </AdminPanel>
 
       <AdminNote>
-        This is a preview of the CCF Centris admin. In the live system every
-        screen is gated by role: a facilities administrator never sees a prayer
-        request, and prayer and pastoral records are restricted at the database
-        level rather than only in the interface.
+        Reservations, Dgroup enquiries, and volunteer applications are live.
+        Access is currently one shared staff code; per-role gating — so a
+        facilities administrator never sees a prayer request — lands with staff
+        accounts.
       </AdminNote>
     </div>
   );

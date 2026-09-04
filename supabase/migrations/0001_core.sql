@@ -1,8 +1,8 @@
 -- CCF Centris — core schema
 -- Multi-satellite from day one. Every scoped table carries satellite_id.
 
-create extension if not exists "pgcrypto";
-create extension if not exists "btree_gist";
+create extension if not exists "pgcrypto" with schema extensions;
+create extension if not exists "btree_gist" with schema extensions;
 
 -- ---------------------------------------------------------------------------
 -- Satellites
@@ -337,7 +337,7 @@ create table event_registrations (
   mobile       text,
   party_size   int not null default 1,
   status       registration_status not null default 'confirmed',
-  ticket_code  text not null default encode(gen_random_bytes(6), 'hex'),
+  ticket_code  text not null default encode(extensions.gen_random_bytes(6), 'hex'),
   created_at   timestamptz not null default now()
 );
 

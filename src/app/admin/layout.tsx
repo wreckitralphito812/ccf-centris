@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ADMIN_NAV } from "@/lib/nav";
 import { CcfMark } from "@/components/wordmark";
+import { isAdmin, isAdminConfigured } from "@/lib/admin-auth";
+import { adminLogout } from "@/app/actions/admin";
+import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = {
   title: { default: "Admin", template: "%s — CCF Centris Admin" },
@@ -19,7 +22,12 @@ export const metadata: Metadata = {
  * by the role policies in supabase/migrations/0002_rls.sql, so a facilities
  * administrator never sees a prayer request.
  */
-export default function AdminLayout({ children }: LayoutProps<"/admin">) {
+export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
+  // Shared-code gate. When no code is configured the console stays open but
+  // read-only (mutations refuse in the actions themselves).
+  const gated = isAdminConfigured();
+  const signedIn = gated ? await isAdmin() : true;
+
   return (
     <div className="min-h-screen bg-paper-deep">
       <div className="border-b border-hairline bg-night text-paper-bright">
@@ -33,7 +41,11 @@ export default function AdminLayout({ children }: LayoutProps<"/admin">) {
           </Link>
 
           <p className="label ml-auto hidden text-paper-bright/40 sm:block">
-            Preview — not connected to live data
+            {gated
+              ? signedIn
+                ? "Signed in"
+                : "Sign in to continue"
+              : "Preview — read-only"}
           </p>
 
           <Link
@@ -42,11 +54,33 @@ export default function AdminLayout({ children }: LayoutProps<"/admin">) {
           >
             View site
           </Link>
+
+          {gated && signedIn ? (
+            <form action={adminLogout}>
+              <button
+                type="submit"
+                className="label border border-paper-bright/25 px-3.5 py-2 text-paper-bright transition-colors hover:bg-white/10"
+              >
+                Sign out
+              </button>
+            </form>
+          ) : null}
         </div>
       </div>
 
-      <div className="mx-auto flex max-w-[110rem] flex-col gap-8 px-5 py-8 sm:px-8 lg:flex-row">
-        <nav
+      {gated && !signedIn ? (
+        <div className="mx-auto max-w-sm px-5 py-16 sm:px-8">
+          <h1 className="font-display text-3xl leading-tight">Admin sign in</h1>
+          <p className="mt-2 text-[0.92rem] leading-relaxed text-ink-soft">
+            Staff share one access code. Ask the Centris office if you need it.
+          </p>
+          <div className="mt-8">
+            <LoginForm />
+          </div>
+        </div>
+      ) : (
+        <div className="mx-auto flex max-w-[110rem] flex-col gap-8 px-5 py-8 sm:px-8 lg:flex-row">
+          <nav
           aria-label="Admin"
           className="shrink-0 lg:w-56 lg:sticky lg:top-8 lg:self-start"
         >
@@ -71,8 +105,9 @@ export default function AdminLayout({ children }: LayoutProps<"/admin">) {
           </div>
         </nav>
 
-        <main className="min-w-0 flex-1">{children}</main>
-      </div>
+          <main className="min-w-0 flex-1">{children}</main>
+        </div>
+      )}
     </div>
   );
 }

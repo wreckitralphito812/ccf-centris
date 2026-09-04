@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test:content": "tsx --test \"src/**/*.test.ts\"",
     "content:sync": "tsx scripts/sync-ccf-content.ts",
-    "content:seed": "tsx scripts/seed-content-snapshot.ts"
+    "content:seed": "tsx scripts/seed-content-snapshot.ts",
+    "seed:facilities": "tsx scripts/seed-centris-facilities.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
@@ -32,6 +33,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
+    "supabase": "^2.116.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.13",
     "typescript": "^5"

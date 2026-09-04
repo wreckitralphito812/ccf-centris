@@ -1,16 +1,15 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useActionState, useMemo, useState, startTransition } from "react";
 import Link from "next/link";
 import type { Facility, ReservationAddon, Slot } from "@/lib/types";
 import { fmtDayLong, fmtPeso, fmtTime } from "@/lib/format";
 import { Button, Pill, cx } from "@/components/ui";
+import { Field, FormSuccess, controlClass } from "@/components/form";
 import {
-  Field,
-  FormSuccess,
-  controlClass,
-  focusFirstInvalid,
-} from "@/components/form";
+  createReservation,
+  type ReservationResult,
+} from "@/app/actions/reservations";
 
 /**
  * Court and room booking.
@@ -54,7 +53,6 @@ export function BookingFlow({
   const [layout, setLayout] = useState("");
   const [picked, setPicked] = useState<Record<string, number>>({});
   const [accepted, setAccepted] = useState(false);
-  const [done, setDone] = useState(false);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -63,6 +61,12 @@ export function BookingFlow({
     activity: "",
     purpose: "",
   });
+
+  const [result, submit, pending] = useActionState<
+    ReservationResult | null,
+    FormData
+  >(createReservation, null);
+  const errors = result?.fieldErrors ?? {};
 
   const facility = useMemo(
     () => facilities.find((f) => f.slug === facilitySlug) ?? null,
@@ -93,32 +97,29 @@ export function BookingFlow({
   const canContinue1 = Boolean(facility);
   const canContinue2 = isCourt ? Boolean(courtId && startIso) : Boolean(chosenDate && startIso);
 
-  const [errors, setErrors] = useState<
-    Partial<Record<"name" | "email" | "accept", string>>
-  >({});
-  const formRef = useRef<HTMLFormElement>(null);
+  // 24h HH:MM in Manila, for the hidden start_time field the action parses.
+  const start24 = startIso
+    ? new Intl.DateTimeFormat("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+        timeZone: "Asia/Manila",
+      }).format(new Date(startIso))
+    : "";
 
-  function validate(): boolean {
-    const next: typeof errors = {};
-    if (!form.name.trim()) next.name = "Tell us your name.";
-    if (!form.email.trim()) next.email = "We need an email to reach you.";
-    else if (!/.+@.+\..+/.test(form.email))
-      next.email = "That does not look like an email address.";
-    if (!accepted) next.accept = "Please read and accept the rules first.";
-    setErrors(next);
-    return focusFirstInvalid(next, formRef.current);
-  }
-
-  if (done) {
-    return <Confirmation
-      facility={facility}
-      courtId={courtId}
-      startIso={startIso}
-      hours={hours}
-      total={total}
-      isCourt={isCourt}
-      participants={participants}
-    />;
+  if (result?.ok) {
+    return (
+      <Confirmation
+        reference={result.reference ?? "—"}
+        facility={facility}
+        courtId={courtId}
+        startIso={startIso}
+        hours={hours}
+        total={total}
+        isCourt={isCourt}
+        participants={participants}
+      />
+    );
   }
 
   return (
@@ -512,15 +513,34 @@ export function BookingFlow({
             body="We need a name and an email so the facilities team can reach you."
           >
             <form
-              ref={formRef}
               className="mt-6 space-y-5"
               noValidate
               onSubmit={(e) => {
                 e.preventDefault();
-                if (!validate()) return;
-                setDone(true);
+                const fd = new FormData();
+                fd.set("facility_slug", facilitySlug ?? "");
+                if (isCourt && courtId) fd.set("court_id", courtId);
+                fd.set("date", chosenDate);
+                fd.set("start_time", start24);
+                fd.set("hours", String(hours));
+                fd.set("participants", String(participants));
+                if (layout) fd.set("layout", layout);
+                fd.set("activity", form.activity);
+                fd.set("org", form.org);
+                fd.set("purpose", form.purpose);
+                fd.set("name", form.name);
+                fd.set("email", form.email);
+                fd.set("mobile", form.mobile);
+                fd.set("accept", accepted ? "true" : "");
+                startTransition(() => submit(fd));
               }}
             >
+              {result?.formError ? (
+                <p className="border border-clay bg-clay/8 px-4 py-3 text-[0.85rem] font-semibold text-clay-deep">
+                  {result.formError}
+                </p>
+              ) : null}
+
               <Field label="Your name" name="name" required error={errors.name}>
                 {(p) => (
                   <input
@@ -615,10 +635,12 @@ export function BookingFlow({
                 <Button type="button" tone="ghost" onClick={() => setStep(3)}>
                   Back
                 </Button>
-                <Button type="submit" size="lg">
-                  {facility?.requires_approval
-                    ? "Send request"
-                    : "Confirm booking"}
+                <Button type="submit" size="lg" disabled={pending}>
+                  {pending
+                    ? "Sending…"
+                    : facility?.requires_approval
+                      ? "Send request"
+                      : "Confirm booking"}
                 </Button>
               </div>
             </form>
@@ -694,6 +716,7 @@ export function BookingFlow({
 /* --- Confirmation ---------------------------------------------------------- */
 
 function Confirmation({
+  reference,
   facility,
   courtId,
   startIso,
@@ -702,6 +725,7 @@ function Confirmation({
   isCourt,
   participants,
 }: {
+  reference: string;
   facility: Facility | null;
   courtId: string | null;
   startIso: string | null;
@@ -711,9 +735,7 @@ function Confirmation({
   participants: number;
 }) {
   const pending = facility?.requires_approval ?? false;
-  const ref = `CEN-${(facility?.slug ?? "res").slice(0, 3).toUpperCase()}-${
-    (startIso ? new Date(startIso).getTime() % 9000 : 1234) + 1000
-  }`;
+  const ref = reference;
 
   return (
     <div className="mx-auto max-w-2xl">

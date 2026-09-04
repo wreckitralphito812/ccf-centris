@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { NAV } from "@/lib/nav";
 import { cx } from "./ui";
 import { Wordmark } from "./wordmark";
+import { AccountMenu } from "./account-menu";
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -113,6 +114,7 @@ export function SiteHeader() {
           >
             Service times
           </Link>
+          <AccountMenu />
           <button
             type="button"
             className="btn-press grid h-11 w-11 place-items-center lg:hidden"

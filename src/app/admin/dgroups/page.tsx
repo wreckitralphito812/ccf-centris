@@ -9,28 +9,33 @@ import {
   Table,
   Td,
 } from "../admin-ui";
-import { findDgroups } from "@/lib/queries";
-import { AUDIENCE_LABEL, MODE_LABEL, dayName } from "@/lib/format";
+import { QueueActions } from "../queue-actions";
+import { findDgroups, getDgroupInquiries } from "@/lib/queries";
+import { setInquiryStatus } from "@/app/actions/admin";
+import { hasSupabase } from "@/lib/supabase/server";
+import { isAdminConfigured } from "@/lib/admin-auth";
+import { AUDIENCE_LABEL, MODE_LABEL, dayName, fmtDayShort } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Dgroups" };
 
-/** Enquiries waiting on the Dgroup team. */
-const ENQUIRIES = [
-  { id: "e1", name: "Rina D.", group: "Quezon Ave Young Pros", when: "1 hour ago", status: "new" },
-  { id: "e2", name: "Marco S.", group: "Centris Men's Breakfast", when: "Yesterday", status: "new" },
-  { id: "e3", name: "Anonymous", group: "New Believers", when: "Yesterday", status: "new" },
-  { id: "e4", name: "Cess V.", group: "Tuesday Morning Women", when: "2 days ago", status: "contacted" },
-  { id: "e5", name: "Paolo T.", group: "Married and Learning", when: "3 days ago", status: "contacted" },
-  { id: "e6", name: "Jun L.", group: "Sports Ministry Dgroup", when: "4 days ago", status: "joined" },
-  { id: "e7", name: "Beth A.", group: "Online Weeknight", when: "5 days ago", status: "joined" },
+const TRANSITIONS = [
+  { label: "Mark contacted", status: "contacted" as const },
+  { label: "Joined", status: "joined" as const, tone: "go" as const },
+  { label: "Decline", status: "declined" as const, tone: "stop" as const },
+  { label: "Close", status: "closed" as const },
 ];
 
 export default async function AdminDgroups() {
-  const dgroups = await findDgroups({});
-  const newEnquiries = ENQUIRIES.filter((e) => e.status === "new");
+  const [dgroups, inquiries] = await Promise.all([
+    findDgroups({}),
+    getDgroupInquiries(),
+  ]);
+
+  const open = inquiries.filter((e) => e.status === "new" || e.status === "contacted");
   const nearlyFull = dgroups.filter(
     (d) => d.seats_left !== null && d.seats_left <= 2,
   );
+  const readOnly = !isAdminConfigured() || !hasSupabase();
 
   return (
     <div className="space-y-8">
@@ -39,35 +44,63 @@ export default async function AdminDgroups() {
         lead="Groups, leaders, and the enquiries waiting for an introduction."
       />
 
+      {!hasSupabase() ? (
+        <AdminNote>
+          Not connected to a database. Set <code>SUPABASE_URL</code> and{" "}
+          <code>SUPABASE_SERVICE_ROLE_KEY</code> to see live enquiries.
+        </AdminNote>
+      ) : null}
+
       <div className="grid gap-4 sm:grid-cols-4">
-        <Stat label="New enquiries" value={newEnquiries.length} tone="clay" note="Unassigned" />
+        <Stat label="Open enquiries" value={open.length} tone="clay" note="New or in conversation" />
         <Stat label="Open groups" value={dgroups.length} note="Accepting members" />
         <Stat label="Nearly full" value={nearlyFull.length} note="Two places or fewer" />
-        <Stat label="Multiplied this year" value={4} tone="moss" note="New groups from existing ones" />
+        <Stat label="Total enquiries" value={inquiries.length} note="All time" />
       </div>
 
       <AdminPanel title="Enquiries">
-        <Table columns={["Who", "Interested in", "Received", "Status", "Actions"]}>
-          {ENQUIRIES.map((e) => (
-            <tr key={e.id}>
-              <Td className="font-semibold">{e.name}</Td>
-              <Td>{e.group}</Td>
-              <Td className="text-ink-mute">{e.when}</Td>
-              <Td>
-                <Status value={e.status} />
-              </Td>
-              <Td>
-                <RowActions
-                  actions={
-                    e.status === "new"
-                      ? ["Assign", "Introduce", "Decline"]
-                      : ["View", "Mark joined"]
-                  }
-                />
-              </Td>
-            </tr>
-          ))}
-        </Table>
+        {inquiries.length ? (
+          <Table columns={["Who", "Interested in", "Received", "Status", "Actions"]}>
+            {inquiries.map((e) => (
+              <tr key={e.id}>
+                <Td>
+                  <span className="font-semibold">{e.full_name}</span>
+                  <span className="mt-0.5 block text-[0.82rem] text-ink-mute">
+                    {e.email}
+                    {e.mobile ? ` · ${e.mobile}` : ""}
+                    {e.age_bracket ? ` · ${e.age_bracket}` : ""}
+                  </span>
+                  {e.message ? (
+                    <span className="mt-1 block max-w-md text-[0.82rem] leading-relaxed text-ink-soft">
+                      {e.message}
+                    </span>
+                  ) : null}
+                </Td>
+                <Td>{e.subject ?? "No group named"}</Td>
+                <Td className="text-ink-mute">{fmtDayShort(e.created_at)}</Td>
+                <Td>
+                  <Status value={e.status} />
+                </Td>
+                <Td>
+                  {readOnly ? (
+                    <span className="label text-ink-mute">Read-only</span>
+                  ) : (
+                    <QueueActions
+                      id={e.id}
+                      current={e.status}
+                      transitions={TRANSITIONS}
+                      onSet={setInquiryStatus}
+                    />
+                  )}
+                </Td>
+              </tr>
+            ))}
+          </Table>
+        ) : (
+          <p className="px-5 py-8 text-center text-[0.9rem] text-ink-mute">
+            No enquiries yet.
+          </p>
+        )}
       </AdminPanel>
 
       <AdminPanel title="Groups">

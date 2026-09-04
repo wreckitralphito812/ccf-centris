@@ -1,14 +1,13 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useActionState } from "react";
 import Link from "next/link";
 import { Button, cx } from "@/components/ui";
+import { Field, FormSuccess, controlClass } from "@/components/form";
 import {
-  Field,
-  FormSuccess,
-  controlClass,
-  focusFirstInvalid,
-} from "@/components/form";
+  submitVolunteerApplication,
+  type InquiryResult,
+} from "@/app/actions/inquiries";
 
 /**
  * Volunteer application. Goes to the volunteer team for that ministry, and
@@ -17,37 +16,22 @@ import {
  * surprised by a background check is a volunteer who drops out.
  */
 
-type Errors = Partial<Record<"name" | "email", string>>;
-
 export function ApplyForm({
+  roleId,
   roleTitle,
   screened,
 }: {
+  roleId: string;
   roleTitle: string;
   screened: boolean;
 }) {
-  const [sent, setSent] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    mobile: "",
-    availability: "",
-    message: "",
-  });
-  const [errors, setErrors] = useState<Errors>({});
-  const formRef = useRef<HTMLFormElement>(null);
+  const [state, action, pending] = useActionState<InquiryResult | null, FormData>(
+    submitVolunteerApplication,
+    null,
+  );
+  const errs = state?.fieldErrors ?? {};
 
-  function validate(): boolean {
-    const next: Errors = {};
-    if (!form.name.trim()) next.name = "Tell us your name.";
-    if (!form.email.trim()) next.email = "We need an email to reply to.";
-    else if (!/.+@.+\..+/.test(form.email))
-      next.email = "That does not look like an email address.";
-    setErrors(next);
-    return focusFirstInvalid(next, formRef.current);
-  }
-
-  if (sent) {
+  if (state?.ok) {
     return (
       <FormSuccess>
         <p className="label text-clay">Application sent</p>
@@ -59,6 +43,14 @@ export function ApplyForm({
           week. It is a conversation about whether the role suits you, not an
           interview.
         </p>
+        {state.reference ? (
+          <p className="mt-3 text-[0.88rem] text-ink-mute">
+            Your reference:{" "}
+            <span className="font-semibold tracking-wide text-ink">
+              {state.reference}
+            </span>
+          </p>
+        ) : null}
         {screened ? (
           <p className="mt-3 text-[0.88rem] leading-relaxed text-ink-mute">
             This role involves children or pastoral confidence, so the next step
@@ -85,45 +77,38 @@ export function ApplyForm({
 
   return (
     <div className="border border-hairline bg-paper-bright p-7">
-      <h2 className="font-display text-2xl leading-tight">
-        Apply for this role
-      </h2>
+      <h2 className="font-display text-2xl leading-tight">Apply for this role</h2>
       <p className="mt-2 text-[0.9rem] leading-relaxed text-ink-soft">
         No experience needed unless the role says otherwise.
       </p>
 
-      <form
-        ref={formRef}
-        className="mt-6 space-y-5"
-        noValidate
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!validate()) return;
-          setSent(true);
-        }}
-      >
-        <Field label="Your name" name="name" required error={errors.name}>
+      <form action={action} className="mt-6 space-y-5" noValidate>
+        <input type="hidden" name="role_id" value={roleId} />
+
+        {state?.formError ? (
+          <p className="border border-clay bg-clay/8 px-4 py-3 text-[0.85rem] font-semibold text-clay-deep">
+            {state.formError}
+          </p>
+        ) : null}
+
+        <Field label="Your name" name="name" required error={errs.name}>
           {(p) => (
             <input
               {...p}
               type="text"
               autoComplete="name"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
               className={controlClass}
             />
           )}
         </Field>
 
-        <Field label="Email" name="email" required error={errors.email}>
+        <Field label="Email" name="email" required error={errs.email}>
           {(p) => (
             <input
               {...p}
               type="email"
               inputMode="email"
               autoComplete="email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
               className={controlClass}
             />
           )}
@@ -136,8 +121,6 @@ export function ApplyForm({
               type="tel"
               inputMode="tel"
               autoComplete="tel"
-              value={form.mobile}
-              onChange={(e) => setForm({ ...form, mobile: e.target.value })}
               className={controlClass}
             />
           )}
@@ -145,14 +128,7 @@ export function ApplyForm({
 
         <Field label="When are you usually free?" name="availability">
           {(p) => (
-            <select
-              {...p}
-              value={form.availability}
-              onChange={(e) =>
-                setForm({ ...form, availability: e.target.value })
-              }
-              className={cx(controlClass, "py-2.5")}
-            >
+            <select {...p} defaultValue="" className={cx(controlClass, "py-2.5")}>
               <option value="">Choose one</option>
               {[
                 "Saturday evening service",
@@ -175,8 +151,6 @@ export function ApplyForm({
             <textarea
               {...p}
               rows={4}
-              value={form.message}
-              onChange={(e) => setForm({ ...form, message: e.target.value })}
               className={controlClass}
               placeholder="Experience, questions, or constraints on your time."
             />
@@ -191,8 +165,8 @@ export function ApplyForm({
           </p>
         ) : null}
 
-        <Button type="submit" size="lg" full>
-          Send application
+        <Button type="submit" size="lg" full disabled={pending}>
+          {pending ? "Sending…" : "Send application"}
         </Button>
 
         <p className="text-[0.8rem] leading-relaxed text-ink-mute">

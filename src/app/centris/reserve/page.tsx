@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
-import { Container, Eyebrow, Section, SectionHead } from "@/components/ui";
+import { ButtonLink, Container, Eyebrow, Section, SectionHead } from "@/components/ui";
 import {
   getAddons,
   getCourtSlots,
   getFacility,
   getReservableFacilities,
 } from "@/lib/queries";
+import { currentUser } from "@/lib/supabase/ssr";
+import { hasSupabase } from "@/lib/supabase/server";
 import { addDaysKey, manilaDateKey } from "@/lib/format";
 import { BookingFlow } from "./booking";
 
@@ -29,6 +32,10 @@ export default async function ReservePage({
   const today = manilaDateKey();
   const rawDate = one(sp.date);
   const date = rawDate && /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? rawDate : today;
+
+  // Booking needs an account. When Supabase isn't configured there are no
+  // accounts, so the flow stays open (it just can't actually write).
+  const signedIn = !hasSupabase() || Boolean(await currentUser());
 
   const [facilities, addons, hall] = await Promise.all([
     getReservableFacilities(),
@@ -59,15 +66,45 @@ export default async function ReservePage({
 
       <Section>
         <Container>
-          <BookingFlow
-            facilities={facilities}
-            addons={addons}
-            slotsByCourt={slotsByCourt}
-            initialFacility={one(sp.facility)}
-            initialCourt={one(sp.court)}
-            date={date}
-            dateOptions={dateOptions}
-          />
+          {signedIn ? (
+            <BookingFlow
+              facilities={facilities}
+              addons={addons}
+              slotsByCourt={slotsByCourt}
+              initialFacility={one(sp.facility)}
+              initialCourt={one(sp.court)}
+              date={date}
+              dateOptions={dateOptions}
+            />
+          ) : (
+            <div className="mx-auto max-w-xl border border-hairline bg-paper-bright p-8 text-center">
+              <Eyebrow>Sign in</Eyebrow>
+              <h2 className="mt-3 font-display text-2xl">
+                Reserving needs an account
+              </h2>
+              <p className="mx-auto mt-3 max-w-md text-[0.92rem] leading-relaxed text-ink-soft">
+                So you can see your bookings and cancel if plans change. There
+                is no password — we email you a sign-in link.
+              </p>
+              <div className="mt-6">
+                <ButtonLink
+                  href={`/sign-in?next=${encodeURIComponent(
+                    `/centris/reserve${rawDate ? `?date=${date}` : ""}`,
+                  )}`}
+                  size="lg"
+                >
+                  Sign in to continue
+                </ButtonLink>
+              </div>
+              <p className="mt-6 text-[0.85rem] text-ink-mute">
+                Just browsing?{" "}
+                <Link href="/centris/availability" className="text-clay underline underline-offset-4">
+                  Check court availability
+                </Link>{" "}
+                without signing in.
+              </p>
+            </div>
+          )}
         </Container>
       </Section>
 
