@@ -33,7 +33,7 @@ import {
   Stagger,
 } from "@/components/motion";
 import { CcfMark } from "@/components/wordmark";
-import { SectionIcon } from "@/components/icons";
+import { PlayGlyph, SectionIcon } from "@/components/icons";
 import { YouTubeThumb } from "@/components/youtube-thumb";
 import { YouTubeEmbed } from "@/components/youtube-embed";
 import { WelcomeVideo } from "@/components/welcome-video";
@@ -107,6 +107,8 @@ export default async function HomePage() {
         latest={latest}
         fourWs={fourWs}
       />
+
+      <WhatADgroupIs />
 
       <FindYourPeople count={dgroups.length} communities={communities} />
 
@@ -222,6 +224,213 @@ const FOUR_WS = [
   ["Works", "One concrete step before the group meets again."],
 ] as const;
 
+/* --- What a Dgroup is --------------------------------------------------------
+
+   Explains the concept before "Find your people" invites the visitor in.
+   Three parts: the definition, a diagram of the weekly 4Ws rhythm, and the
+   four reasons to join (CCF's "four C's") with the verse behind each. Content
+   is CCF's own, condensed from ccf.org.ph.
+--------------------------------------------------------------------------- */
+
+/**
+ * The weekly rhythm of a Dgroup meeting, drawn as a loop: the four movements
+ * run in order and the group comes back the next week to do it again. Pure
+ * inline SVG in brand tones, matching the site's other hand-drawn marks.
+ */
+function DgroupRhythm() {
+  // Four nodes evenly around a circle, starting at the top.
+  const cx0 = 130;
+  const cy0 = 130;
+  const r = 92;
+  const nodes = FOUR_WS.map(([name], i) => {
+    const a = -Math.PI / 2 + (i * Math.PI) / 2;
+    return { name, x: cx0 + r * Math.cos(a), y: cy0 + r * Math.sin(a) };
+  });
+
+  return (
+    <figure className="border border-hairline bg-paper-bright p-6 sm:p-8">
+      <figcaption className="label text-ink-mute">
+        The weekly rhythm
+      </figcaption>
+      <svg
+        viewBox="0 0 260 260"
+        className="mx-auto mt-4 w-full max-w-[19rem]"
+        role="img"
+        aria-label="A Dgroup meeting moves through four steps each week — Welcome, Worship, Word, Works — then the group meets again the following week and repeats the cycle."
+      >
+        <defs>
+          <marker
+            id="rhythm-arrow"
+            viewBox="0 0 10 10"
+            refX="7"
+            refY="5"
+            markerWidth="6"
+            markerHeight="6"
+            orient="auto-start-reverse"
+          >
+            <path d="M0 0l10 5-10 5z" className="fill-clay" />
+          </marker>
+        </defs>
+
+        {/* The loop, drawn as four arcs so each carries its own arrowhead. */}
+        {nodes.map((n, i) => {
+          const next = nodes[(i + 1) % 4];
+          return (
+            <path
+              key={n.name}
+              d={`M ${n.x} ${n.y} A ${r} ${r} 0 0 1 ${next.x} ${next.y}`}
+              className="fill-none stroke-clay/45"
+              strokeWidth={1.7}
+              strokeDasharray="1 6"
+              strokeLinecap="round"
+              markerEnd="url(#rhythm-arrow)"
+            />
+          );
+        })}
+
+        {nodes.map((n, i) => (
+          <g key={n.name}>
+            <circle
+              cx={n.x}
+              cy={n.y}
+              r={26}
+              className="fill-paper stroke-clay/40"
+              strokeWidth={1.5}
+            />
+            <text
+              x={n.x}
+              y={n.y - 2}
+              textAnchor="middle"
+              className="fill-clay-deep font-display"
+              style={{ fontSize: "11px", fontWeight: 600 }}
+            >
+              {n.name}
+            </text>
+            <text
+              x={n.x}
+              y={n.y + 11}
+              textAnchor="middle"
+              className="fill-ink-mute"
+              style={{ fontSize: "8px" }}
+            >
+              {`step ${i + 1}`}
+            </text>
+          </g>
+        ))}
+
+        <text
+          x={cx0}
+          y={cy0 - 4}
+          textAnchor="middle"
+          className="fill-ink"
+          style={{ fontSize: "10px", fontWeight: 600 }}
+        >
+          every
+        </text>
+        <text
+          x={cx0}
+          y={cy0 + 9}
+          textAnchor="middle"
+          className="fill-ink"
+          style={{ fontSize: "10px", fontWeight: 600 }}
+        >
+          week
+        </text>
+      </svg>
+      <p className="mt-4 text-[0.86rem] leading-relaxed text-ink-soft">
+        One meeting moves through all four, then the group gathers again the
+        next week and begins the cycle once more. It&rsquo;s a habit, not a
+        course &mdash; there&rsquo;s no graduation.
+      </p>
+    </figure>
+  );
+}
+
+/**
+ * CCF's four reasons to join a Dgroup — the "four C's" — each with the verse
+ * it rests on. Quoted from ccf.org.ph.
+ */
+const FOUR_CS = [
+  {
+    c: "Community",
+    what: "Fellowship, and a safe place to share your life with others.",
+    verse: "Bear one another's burdens, and thereby fulfill the law of Christ.",
+    ref: "Galatians 6:2",
+  },
+  {
+    c: "Care",
+    what: "A spiritual family that supports, encourages, and prays for you.",
+    verse:
+      "Let us consider how to stimulate one another to love and good deeds … encouraging one another.",
+    ref: "Hebrews 10:24–25",
+  },
+  {
+    c: "Character",
+    what: "Growth through honest accountability and building each other up.",
+    verse: "Iron sharpens iron, so one man sharpens another.",
+    ref: "Proverbs 27:17",
+  },
+  {
+    c: "Collaboration",
+    what: "A place to serve God shoulder to shoulder.",
+    verse:
+      "As each one has received a special gift, employ it in serving one another.",
+    ref: "1 Peter 4:10",
+  },
+] as const;
+
+function WhatADgroupIs() {
+  return (
+    <Section tone="bright" className="pt-10! pb-12! sm:pt-14! sm:pb-20!">
+      <Container>
+        <RevealHead
+          eyebrow="What is a Dgroup?"
+          icon="people"
+          title="A small group, meeting every week"
+          lead="A Dgroup — short for discipleship group — is a handful of people who meet regularly, share their lives, study the Bible together, and stay accountable to one another, all in the pursuit of becoming more like Christ."
+        />
+
+        <Reveal
+          as="div"
+          delay={0.05}
+          className="mt-10 grid gap-8 lg:grid-cols-[1fr_1.1fr] lg:items-start"
+        >
+          <DgroupRhythm />
+
+          <div>
+            <p className="label text-ink-mute">Why join one</p>
+            <Stagger className="mt-4 grid gap-px border border-hairline bg-hairline sm:grid-cols-2">
+              {FOUR_CS.map(({ c, what, verse, ref }) => (
+                <div key={c} className="flex flex-col bg-paper-bright p-5">
+                  <h3 className="font-display text-lg leading-tight text-clay-deep">
+                    {c}
+                  </h3>
+                  <p className="mt-1.5 text-[0.9rem] leading-relaxed text-ink-soft">
+                    {what}
+                  </p>
+                  <p className="mt-3 border-l-2 border-clay/40 pl-3 text-[0.82rem] italic leading-relaxed text-ink-mute">
+                    &ldquo;{verse}&rdquo;
+                    <span className="label mt-1 block not-italic text-clay">
+                      {ref}
+                    </span>
+                  </p>
+                </div>
+              ))}
+            </Stagger>
+
+            <p className="mt-5 text-[0.92rem] leading-relaxed text-ink-soft">
+              <span className="font-semibold text-ink">Who can join?</span>{" "}
+              Anyone who wants to know God more, understand the Bible, and grow
+              in a community of believers. You don&rsquo;t need to be a member,
+              or to have it all figured out first.
+            </p>
+          </div>
+        </Reveal>
+      </Container>
+    </Section>
+  );
+}
+
 /* --- 2. Sunday's message ------------------------------------------------------
 
    The seeded "latest message" feature. The right-hand rail carries the message
@@ -242,25 +451,23 @@ function SundayMessage({
   const guideHref = fourWs?.week.hasGuide
     ? `/watch/4ws/${fourWs.week.slug}`
     : "/watch/4ws";
-  // One-line preview per movement, from the synced guide when we have it.
-  const preview = (html: string | null | undefined): string | null => {
-    if (!html) return null;
-    const t = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  const clip = (s: string | null | undefined): string | null => {
+    if (!s) return null;
+    const t = s.replace(/\s+/g, " ").trim();
     return t.length > 96 ? `${t.slice(0, 95)}…` : t || null;
   };
   const GENERIC: Record<string, string> = Object.fromEntries(FOUR_WS);
-  const movements: [string, string][] = fourWs?.guide
-    ? (["Welcome", "Worship", "Word", "Works"] as const).map((name) => {
-        const html =
-          name === "Welcome"
-            ? fourWs.guide!.welcomeHtml
-            : name === "Worship"
-              ? fourWs.guide!.worshipHtml
-              : name === "Word"
-                ? fourWs.guide!.wordHtml
-                : fourWs.guide!.worksHtml;
-        return [name, preview(html) ?? GENERIC[name]];
-      })
+  const g = fourWs?.guide;
+  const movements: [string, string][] = g
+    ? ([
+        ["Welcome", clip(g.welcome)],
+        [
+          "Worship",
+          g.worshipSongs.length ? clip(g.worshipSongs.slice(0, 4).join(", ")) : null,
+        ],
+        ["Word", clip(g.word?.passageRef ?? g.word?.passageText)],
+        ["Works", clip(g.works?.applyIntro ?? g.works?.share)],
+      ] as const).map(([name, val]) => [name, val ?? GENERIC[name]])
     : [];
   return (
     <Section tone="bright" className="pt-10! pb-12! sm:pt-12! sm:pb-16!">
@@ -302,8 +509,8 @@ function SundayMessage({
                   />
                 )}
                 <span className="pointer-events-none absolute inset-0 grid place-items-center">
-                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-clay text-2xl text-paper-bright">
-                    ▶
+                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-clay text-paper-bright">
+                    <PlayGlyph className="ml-0.5 h-6 w-6" />
                   </span>
                 </span>
               </div>
@@ -350,8 +557,7 @@ function SundayMessage({
           </article>
 
           <div>
-            <p className="label text-ink-mute">Take it further</p>
-            <div className="mt-4 border border-hairline bg-paper p-5 sm:p-6">
+            <div className="border border-hairline bg-paper p-5 sm:p-6">
               <p className="font-display text-2xl leading-tight">
                 The 4Ws for this week
               </p>
@@ -605,8 +811,8 @@ function WatchWithCcf({
                       alt={s.title}
                     />
                     <span className="pointer-events-none absolute inset-0 grid place-items-center">
-                      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-clay text-lg text-paper-bright">
-                        ▶
+                      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-clay text-paper-bright">
+                        <PlayGlyph className="ml-0.5 h-5 w-5" />
                       </span>
                     </span>
                   </Link>

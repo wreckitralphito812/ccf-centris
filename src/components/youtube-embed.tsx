@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { YouTubeThumb } from "./youtube-thumb";
+import { PlayGlyph } from "./icons";
 import { cx } from "./ui";
 
 /**
@@ -74,8 +75,8 @@ export function YouTubeEmbed({
         loading={loading}
       />
       <span className="pointer-events-none absolute inset-0 grid place-items-center">
-        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-clay text-2xl text-paper-bright transition-transform group-hover:scale-110">
-          ▶
+        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-clay text-paper-bright transition-transform group-hover:scale-110">
+          <PlayGlyph className="ml-0.5 h-6 w-6" />
         </span>
       </span>
     </button>

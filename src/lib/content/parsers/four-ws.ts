@@ -6,13 +6,14 @@
  *   "Mon DD and DD:" date prefix, a standard-edition link, and usually a
  *   "(GoViral Edition)" link.
  * - `parseFourWsGuide` reads a single 4Ws page. Its section headers render as
- *   images (`<img alt="Worship">` …); a section's content is the markup
- *   between its header image and the next one.
+ *   images (`<img alt="Worship">` …); a section's content is the text between
+ *   its header image and the next one, which this parser structures into typed
+ *   parts (a question, a song list, scripture points, prayer-point groups …)
+ *   rather than passing through flat HTML.
  */
 
-import { load, sanitizeImportedHtml, type Loaded } from "../html";
+import { load, type Loaded } from "../html";
 import type {
-  FourWsGuideRecord,
   FourWsWeekRecord,
   ParseResult,
   SourceRecord,
@@ -54,16 +55,6 @@ function normalizeWeekend(
   let iso = `${contextYear}-${pad(month)}-${pad(day)}`;
   if (iso > runIso.slice(0, 10)) iso = `${contextYear - 1}-${pad(month)}-${pad(day)}`;
   return iso;
-}
-
-/** "AUG 30, 2026" -> "2026-08-30". */
-function normalizeGuideDate(label: string): string | null {
-  const m = label.match(/([A-Za-z]+)\.?\s+(\d{1,2}),\s*(\d{4})/);
-  if (!m) return null;
-  const month = MONTHS[m[1].toLowerCase()];
-  if (!month) return null;
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${m[3]}-${pad(month)}-${pad(Number(m[2]))}`;
 }
 
 // --- Index --------------------------------------------------------------
@@ -147,138 +138,5 @@ export function parseFourWsIndex(
   return { records, warnings };
 }
 
-// --- Guide -----------------------------------------------------------
 
-const SECTION_BY_ALT: [RegExp, keyof FourWsGuideRecord][] = [
-  [/^worship$/i, "worshipHtml"],
-  [/^welcome$/i, "welcomeHtml"],
-  [/^word$/i, "wordHtml"],
-  [/^works$/i, "worksHtml"],
-  [/weekly prayer points/i, "prayerPointsHtml"],
-  [/^memory verse$/i, "memoryVerseText"], // handled specially below
-];
-
-function sectionKeyForAlt(alt: string): keyof FourWsGuideRecord | null {
-  for (const [re, key] of SECTION_BY_ALT) if (re.test(alt.trim())) return key;
-  return null;
-}
-
-export function parseFourWsGuide(
-  html: string,
-  src: SourceRecord,
-  _observedAt: string,
-): { record: FourWsGuideRecord; warnings: string[] } {
-  const $ = load(html);
-  const warnings: string[] = [];
-
-  const title =
-    text(
-      $("strong, h1, h2")
-        .filter((_i, e) => /[A-Z]{4}/.test($(e).text()) && $(e).text().trim().length < 120)
-        .first(),
-    ) || text($("title")).replace(/^4Ws\s*-\s*/i, "").replace(/\s*-\s*Christ's.*$/i, "");
-
-  const dateLabel =
-    $("p, span, div")
-      .toArray()
-      .map((e) => text($(e)))
-      .find((t) => /^[A-Za-z]+\.?\s+\d{1,2},\s*20\d\d$/.test(t)) ?? null;
-
-  // A section header renders as `<img alt="Worship">` etc. Several sections can
-  // share one Elementor row, so work at the text-block level: walk the content
-  // leaves in document order, switch the current section whenever a
-  // section-header image is passed, and collect each `.wpb_text_column` /
-  // list / paragraph into the current section.
-  const sections: Partial<Record<keyof FourWsGuideRecord, string[]>> = {};
-  let currentKey: keyof FourWsGuideRecord | null = null;
-
-  const scope = $(".vc_row.wpb_row.section").length
-    ? $(".vc_row.wpb_row.section")
-    : $("body");
-
-  // Section headers, plus the text blocks that carry content. Prefer
-  // `.wpb_text_column`; fall back to bare `<p>`/`<ul>` when the page has none.
-  const hasTextColumns = scope.find(".wpb_text_column").length > 0;
-  const contentSelector = hasTextColumns
-    ? "img[alt], .wpb_text_column"
-    : "img[alt], p, ul, ol";
-  const seen = new Set<string>();
-
-  scope.find(contentSelector).each((_i, el) => {
-    const node = $(el);
-
-    if (el.tagName === "img") {
-      const key = sectionKeyForAlt((node.attr("alt") ?? "").trim());
-      if (key) currentKey = key;
-      return;
-    }
-    if (!currentKey) return;
-    // Skip a text column that only wraps a section-header image, and any
-    // element nested inside another one we already collected.
-    if (
-      node
-        .find("img[alt]")
-        .toArray()
-        .some((img) => sectionKeyForAlt(($(img).attr("alt") ?? "").trim()))
-    ) {
-      return;
-    }
-    if (node.parents(".wpb_text_column").length > 0 && hasTextColumns) return;
-
-    const clone = node.clone();
-    clone.find("img, noscript, .separator, script").remove();
-    // For a wrapper (.wpb_text_column) keep its inner markup; for a bare
-    // block (<p>/<li>/<ul>) keep the element itself so paragraph structure
-    // survives.
-    const markup =
-      el.tagName === "div"
-        ? (clone.html() ?? "").trim()
-        : ($.html(clone) ?? "").trim();
-    const flat = clone.text().replace(/\s+/g, " ").trim();
-    if (markup && flat && !seen.has(flat)) {
-      seen.add(flat);
-      (sections[currentKey] ??= []).push(markup);
-    }
-  });
-
-  const html_ = (key: keyof FourWsGuideRecord): string | null => {
-    const parts = sections[key];
-    if (!parts || parts.length === 0) return null;
-    const clean = sanitizeImportedHtml(parts.join("\n"));
-    return clean || null;
-  };
-
-  const memoryRaw = sections.memoryVerseText?.join("\n") ?? "";
-  const $mem = load(`<div>${memoryRaw}</div>`);
-  let memParas = $mem("p, li")
-    .toArray()
-    .map((p) => $mem(p).text().replace(/\s+/g, " ").trim())
-    .filter(Boolean);
-  if (memParas.length === 0 && memoryRaw.trim()) {
-    // No paragraph structure survived — split on line breaks.
-    memParas = memoryRaw
-      .replace(/<[^>]+>/g, "\n")
-      .split("\n")
-      .map((s) => s.replace(/\s+/g, " ").trim())
-      .filter(Boolean);
-  }
-
-  const record: FourWsGuideRecord = {
-    kind: "four_ws_guide",
-    slug: slugFromUrl(src.sourceUrl),
-    title,
-    dateLabel,
-    date: dateLabel ? normalizeGuideDate(dateLabel) : null,
-    worshipHtml: html_("worshipHtml"),
-    welcomeHtml: html_("welcomeHtml"),
-    wordHtml: html_("wordHtml"),
-    worksHtml: html_("worksHtml"),
-    prayerPointsHtml: html_("prayerPointsHtml"),
-    memoryVerseReference: memParas[0] ?? null,
-    memoryVerseText: memParas.slice(1).join(" ") || null,
-    source: src,
-  };
-
-  if (!record.title) warnings.push("4Ws guide has no title");
-  return { record, warnings };
-}
+export { parseFourWsGuide } from "./four-ws-guide";

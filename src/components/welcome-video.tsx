@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { cx } from "./ui";
+import { PlayGlyph } from "./icons";
 
 /**
  * "Welcome to CCF" intro film, served from /public/videos as a self-hosted
@@ -61,8 +62,8 @@ export function WelcomeVideo({
         loading="lazy"
       />
       <span className="pointer-events-none absolute inset-0 grid place-items-center bg-night/20 transition-colors group-hover:bg-night/10">
-        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-clay text-2xl text-paper-bright shadow-lg transition-transform group-hover:scale-110">
-          ▶
+        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-clay text-paper-bright shadow-lg transition-transform group-hover:scale-110">
+          <PlayGlyph className="ml-0.5 h-7 w-7" />
         </span>
       </span>
       <span className="label pointer-events-none absolute bottom-3 left-3 bg-night/80 px-2.5 py-1 text-paper-bright">

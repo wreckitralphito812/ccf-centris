@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { cx } from "./ui";
+import { PlayGlyph } from "./icons";
 import { YouTubeThumb } from "./youtube-thumb";
 import { YouTubeEmbed } from "./youtube-embed";
 
@@ -18,6 +19,56 @@ const dateFmt = new Intl.DateTimeFormat("en-PH", {
   day: "numeric",
   year: "numeric",
 });
+
+/* --- Icons -------------------------------------------------------------------
+   Play uses the shared solid PlayGlyph from components/icons.tsx; the rest are
+   1.7px stroke line icons matching that file. All take `currentColor`. */
+
+const strokeProps = {
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.7,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+  "aria-hidden": true,
+};
+
+function CloseIcon({ className }: { className?: string }) {
+  return (
+    <svg {...strokeProps} className={className}>
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  );
+}
+
+function ArrowIcon({
+  dir,
+  className,
+}: {
+  dir: "left" | "right";
+  className?: string;
+}) {
+  return (
+    <svg
+      {...strokeProps}
+      className={className}
+      style={dir === "left" ? { transform: "scaleX(-1)" } : undefined}
+    >
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+function InfoIcon({ className }: { className?: string }) {
+  return (
+    <svg {...strokeProps} className={className}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v5" />
+      <path d="M12 8h.01" />
+    </svg>
+  );
+}
 
 interface Props {
   kindLabel: string;
@@ -94,8 +145,8 @@ export function SeriesPlayerCard(props: Props) {
         >
           <YouTubeThumb src={cover} fallbackSrc={coverFallback} alt={series} />
           <span className="pointer-events-none absolute inset-0 grid place-items-center bg-night/0 transition-colors group-hover:bg-night/20">
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-clay text-2xl text-paper-bright transition-transform group-hover:scale-110">
-              ▶
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-clay text-paper-bright transition-transform group-hover:scale-110">
+              <PlayGlyph className="ml-0.5 h-6 w-6" />
             </span>
           </span>
           <span className="label absolute bottom-2 right-2 bg-night/85 px-2 py-1 text-paper-bright">
@@ -171,9 +222,7 @@ function SeriesTheatre({
             autoFocus
             className="btn-press inline-flex shrink-0 items-center gap-2 rounded-full border border-ink/20 px-4 py-2 text-[0.8rem] font-semibold text-ink transition-colors hover:bg-ink hover:text-paper-bright"
           >
-            <span aria-hidden className="text-base leading-none">
-              ✕
-            </span>
+            <CloseIcon className="h-4 w-4" />
             Close
           </button>
         </header>
@@ -202,7 +251,8 @@ function SeriesTheatre({
                 disabled={selectedIndex === 0}
                 className="btn-press label inline-flex items-center gap-1.5 text-ink-soft transition-colors hover:text-clay disabled:pointer-events-none disabled:opacity-30"
               >
-                ← Prev
+                <ArrowIcon dir="left" className="h-3.5 w-3.5" />
+                Prev
               </button>
               <p className="min-w-0 truncate text-center text-[0.82rem] text-ink-mute tabular">
                 Part {selectedIndex + 1} of {videos.length}
@@ -213,7 +263,8 @@ function SeriesTheatre({
                 disabled={selectedIndex === videos.length - 1}
                 className="btn-press label inline-flex items-center gap-1.5 text-ink-soft transition-colors hover:text-clay disabled:pointer-events-none disabled:opacity-30"
               >
-                Next →
+                Next
+                <ArrowIcon dir="right" className="h-3.5 w-3.5" />
               </button>
             </div>
           </div>
@@ -228,15 +279,14 @@ function SeriesTheatre({
                 rel="noreferrer"
                 className="link label text-clay underline underline-offset-4"
               >
-                On YouTube →
+                On YouTube
+                <ArrowIcon dir="right" className="ml-1 inline h-3 w-3 align-[-0.1em]" />
               </a>
             </div>
 
             {showHint ? (
               <div className="flex shrink-0 items-start gap-2 border-b border-hairline bg-clay/8 px-4 py-2.5 text-[0.78rem] leading-snug text-ink-soft">
-                <span aria-hidden className="mt-px text-clay">
-                  ⓘ
-                </span>
+                <InfoIcon className="mt-px h-3.5 w-3.5 shrink-0 text-clay" />
                 <span className="flex-1">
                   Pick any part to jump straight to it. Press{" "}
                   <kbd className="rounded border border-ink/20 bg-paper px-1 text-[0.7rem] tabular">
@@ -250,7 +300,7 @@ function SeriesTheatre({
                   aria-label="Dismiss tip"
                   className="shrink-0 text-ink-mute transition-colors hover:text-ink"
                 >
-                  ✕
+                  <CloseIcon className="h-3.5 w-3.5" />
                 </button>
               </div>
             ) : null}
@@ -278,9 +328,7 @@ function SeriesTheatre({
                         )}
                       >
                         {active ? (
-                          <span aria-hidden className="text-[0.6rem]">
-                            ▶
-                          </span>
+                          <PlayGlyph className="mt-0.5 h-3 w-3" />
                         ) : (
                           String(i + 1).padStart(2, "0")
                         )}

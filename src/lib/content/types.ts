@@ -140,19 +140,57 @@ export interface FourWsWeekRecord {
   source: SourceRecord;
 }
 
-/** The full parsed content of one 4Ws guide page. */
+/** One "TITLE (references)" line under Word > Point It Out. */
+export interface FourWsPoint {
+  heading: string;
+  /** The parenthetical scripture references, without the parentheses. */
+  refs: string | null;
+}
+
+/** Word section, structured. `raw` holds any lines that didn't fit the shape. */
+export interface FourWsWord {
+  passageRef: string | null;
+  readNote: string | null;
+  passageText: string | null;
+  pointItOut: FourWsPoint[];
+  paraphrase: string | null;
+  talkAbout: string[];
+  raw: string[];
+}
+
+/** Works section, structured. */
+export interface FourWsWorks {
+  applyIntro: string | null;
+  /** Simple / Measurable / Appropriate / Realistic / Time-bound. */
+  smart: string[];
+  iWill: string | null;
+  share: string | null;
+  raw: string[];
+}
+
+/** One Roman-numeral group under Weekly Prayer Points. */
+export interface FourWsPrayerGroup {
+  heading: string;
+  items: string[];
+}
+
+/** The full parsed content of one 4Ws guide page, as typed parts. */
 export interface FourWsGuideRecord {
   kind: "four_ws_guide";
   slug: string;
   title: string;
   dateLabel: string | null;
   date: string | null;
-  /** Sanitized HTML per section; null when the page omits it. */
-  worshipHtml: string | null;
-  welcomeHtml: string | null;
-  wordHtml: string | null;
-  worksHtml: string | null;
-  prayerPointsHtml: string | null;
+  /** The opening question. */
+  welcome: string | null;
+  /** Worship set, split into individual songs. */
+  worshipSongs: string[];
+  word: FourWsWord | null;
+  works: FourWsWorks | null;
+  /** "Pray Care Share In Action" — the three sentences. */
+  prayCareShare: { pray: string; care: string; share: string } | null;
+  /** Weekly Prayer Points, grouped by their Roman-numeral headings. */
+  prayerPoints: FourWsPrayerGroup[];
   memoryVerseReference: string | null;
   memoryVerseText: string | null;
   source: SourceRecord;

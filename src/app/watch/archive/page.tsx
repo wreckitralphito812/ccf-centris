@@ -9,6 +9,7 @@ import {
   SectionHead,
 } from "@/components/ui";
 import { YouTubeThumb } from "@/components/youtube-thumb";
+import { PlayGlyph } from "@/components/icons";
 import { getCollections, getSeriesArchive, KIND_LABEL } from "@/lib/channel";
 import { getSundayServices } from "@/lib/services";
 import { fmtDayLong } from "@/lib/format";
@@ -94,8 +95,8 @@ export default async function ArchivePage() {
                       alt={s.title}
                     />
                     <span className="pointer-events-none absolute inset-0 grid place-items-center">
-                      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-clay text-xl text-paper-bright">
-                        ▶
+                      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-clay text-paper-bright">
+                        <PlayGlyph className="ml-0.5 h-5 w-5" />
                       </span>
                     </span>
                   </Link>

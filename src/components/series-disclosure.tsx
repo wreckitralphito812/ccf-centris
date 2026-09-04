@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { cx } from "./ui";
+import { PlayGlyph } from "./icons";
 import { YouTubeThumb } from "./youtube-thumb";
 
 /** Shape mirrors lib/channel.ts ApiVideo, kept local so this stays a client file. */
@@ -138,8 +139,8 @@ export function SeriesDisclosure({ row }: { row: SeriesRow }) {
                   <div className="relative aspect-video overflow-hidden border border-hairline">
                     <YouTubeThumb videoId={v.id} alt={v.title} />
                     <span className="pointer-events-none absolute inset-0 grid place-items-center">
-                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-clay text-lg text-paper-bright">
-                        ▶
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-clay text-paper-bright">
+                        <PlayGlyph className="ml-0.5 h-4 w-4" />
                       </span>
                     </span>
                   </div>
