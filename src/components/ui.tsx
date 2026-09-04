@@ -1,5 +1,14 @@
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
+import type { VariantProps } from "class-variance-authority";
+
+import {
+  Button as ButtonBase,
+  type ButtonTone,
+  buttonVariants,
+} from "./ui/button";
+import { Badge, type PillTone } from "./ui/badge";
+import { Card as CardBase } from "./ui/card";
 
 /* ---------------------------------------------------------------------------
    Primitives shared across the whole site. Everything visual starts here.
@@ -15,14 +24,7 @@ export function cx(...parts: (string | false | null | undefined)[]) {
    wrappers keep the historic prop surface — `tone` (not `variant`), `size`,
    `full` — so call sites are unchanged. */
 
-import {
-  Button as ButtonBase,
-  type ButtonTone,
-  buttonVariants,
-} from "./ui/button";
-import { Badge } from "./ui/badge";
-
-type ButtonSize = "sm" | "md" | "lg";
+type ButtonSize = NonNullable<VariantProps<typeof buttonVariants>["size"]>;
 
 export function Button({
   tone = "primary",
@@ -185,8 +187,6 @@ export function SectionHead({
 
 /* --- Surfaces --------------------------------------------------------------- */
 
-import { Card as CardBase } from "./ui/card";
-
 export function Card({
   children,
   className,
@@ -243,7 +243,7 @@ export function Pill({
   className,
 }: {
   children: ReactNode;
-  tone?: import("./ui/badge").PillTone;
+  tone?: PillTone;
   className?: string;
 }) {
   return (

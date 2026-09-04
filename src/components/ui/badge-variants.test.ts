@@ -25,3 +25,10 @@ test("base always includes the label utility and border box", () => {
   assert.match(cls, /\blabel\b/);
   assert.match(cls, /border px-2\.5 py-1/);
 });
+
+test("base pins the full label + box string", () => {
+  assert.match(
+    badgeVariants({}),
+    /label inline-flex items-center gap-1\.5 border px-2\.5 py-1/,
+  );
+});

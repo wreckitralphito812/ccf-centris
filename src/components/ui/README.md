@@ -15,6 +15,9 @@ Primitives in this folder are **shadcn/ui-derived, re-themed for CCF Centris**.
 names (`tone`, `size`, `full`). Call sites import from `@/components/ui`, not
 from this folder.
 
+`card.tsx` is just the `Card` shell today; add sub-parts
+(`CardHeader`/`CardContent`/…) when a real consumer needs them.
+
 ## Adding a new primitive
 
 1. `npx shadcn@latest add <name>` (writes here via `components.json`).

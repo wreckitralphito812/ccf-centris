@@ -32,3 +32,10 @@ test("full adds w-full", () => {
 test("base always includes btn-press", () => {
   assert.match(buttonVariants({}), /btn-press/);
 });
+
+test("base pins the full type + reset string", () => {
+  assert.match(
+    buttonVariants({}),
+    /uppercase tracking-\[0\.1em\] transition-colors duration-200 disabled:opacity-40 disabled:pointer-events-none/,
+  );
+});
