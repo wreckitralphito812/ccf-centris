@@ -310,6 +310,19 @@ interface SeriesIndex {
  * current one is usually in that state, with only a Run Through playlist —
  * and its Run Through entries carry the same title and speaker as the sermon.
  */
+/**
+ * How many playlists of each kind to open when building the index.
+ *
+ * CCF has ~366 playlists, and roughly 60% of them are series/special/run-
+ * through — so indexing all of them means several hundred sequential API
+ * calls per cold build: slow, and a large quota bill that grows every year
+ * CCF adds a series. The index only exists to attribute *recent* sermons to
+ * a series, and the catalog is ordered newest-first, so the newest N cover
+ * every message the site actually displays.
+ */
+const INDEX_PRIMARY_LIMIT = 12;
+const INDEX_COMPANION_LIMIT = 8;
+
 async function buildSeriesIndex(): Promise<SeriesIndex> {
   const byVideo = new Map<string, string>();
   const byTitleSpeaker = new Map<string, string>();
@@ -317,30 +330,39 @@ async function buildSeriesIndex(): Promise<SeriesIndex> {
 
   const catalog = await getCatalog();
 
-  const primary = catalog.filter(
-    (p) => (p.kind === "series" || p.kind === "special") && p.series,
-  );
-  const companions = catalog.filter(
-    (p) => p.kind === "run_through" && p.series,
-  );
+  const primary = catalog
+    .filter((p) => (p.kind === "series" || p.kind === "special") && p.series)
+    .slice(0, INDEX_PRIMARY_LIMIT);
+  const companions = catalog
+    .filter((p) => p.kind === "run_through" && p.series)
+    .slice(0, INDEX_COMPANION_LIMIT);
 
-  for (const p of primary) {
+  for (const p of [...primary, ...companions]) {
     if (!playlist.has(p.series)) playlist.set(p.series, p);
-    for (const v of await getPlaylistVideos(p.id, 50)) {
-      if (!byVideo.has(v.id)) byVideo.set(v.id, p.series);
-    }
   }
 
-  for (const p of companions) {
-    if (!playlist.has(p.series)) playlist.set(p.series, p);
-    for (const v of await getPlaylistVideos(p.id, 50)) {
+  // Fetch in parallel — youtube-api.ts's concurrency gate keeps this to
+  // MAX_CONCURRENCY requests in flight, so this is a latency win, not a burst.
+  const [primaryLists, companionLists] = await Promise.all([
+    Promise.all(primary.map((p) => getPlaylistVideos(p.id, 50))),
+    Promise.all(companions.map((p) => getPlaylistVideos(p.id, 50))),
+  ]);
+
+  primary.forEach((p, i) => {
+    for (const v of primaryLists[i] ?? []) {
+      if (!byVideo.has(v.id)) byVideo.set(v.id, p.series);
+    }
+  });
+
+  companions.forEach((p, i) => {
+    for (const v of companionLists[i] ?? []) {
       // Companion titles read "<Title> | <Speaker> | Run Through".
       const parts = tidy(v.title).split("|").map(tidy);
       if (parts.length < 2) continue;
       const key = matchKey(parts[0], parts[1]);
       if (!byTitleSpeaker.has(key)) byTitleSpeaker.set(key, p.series);
     }
-  }
+  });
 
   return { byVideo, byTitleSpeaker, playlist };
 }
@@ -412,8 +434,10 @@ async function buildLiveTeaching(): Promise<LiveTeaching> {
 
   const index = await buildSeriesIndex();
 
+  // getVideoDurations batches internally (50 ids / 1 unit), so every message
+  // gets a runtime — not just the 50 newest, as when this was truncated here.
   const durations = await getVideoDurations(
-    [...groups.values()].map((g) => g[0].video.id).slice(0, 50),
+    [...groups.values()].map((g) => g[0].video.id),
   );
 
   const seriesByName = new Map<string, Series>();

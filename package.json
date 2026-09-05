@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test:content": "tsx --test \"src/**/*.test.ts\"",
+    "test:content": "tsx --conditions=react-server --test \"src/**/*.test.ts\"",
     "content:sync": "tsx scripts/sync-ccf-content.ts",
     "content:seed": "tsx scripts/seed-content-snapshot.ts",
     "seed:facilities": "tsx scripts/seed-centris-facilities.ts",

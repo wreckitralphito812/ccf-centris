@@ -26,6 +26,61 @@ import "server-only";
 const API = "https://www.googleapis.com/youtube/v3";
 
 const KEY = process.env.YOUTUBE_API_KEY;
+
+/* -------------------------------------------------------------------------
+   Outbound rate control
+
+   Several callers fan out with Promise.all (getFeaturedSeriesWithVideos,
+   getChannelPlaylists' page loop, …), so a single cold render — no Next
+   fetch cache to absorb it — can burst a dozen requests at YouTube in a
+   few milliseconds and trip its short-window rate limit (HTTP 429, or 403
+   with reason "rateLimitExceeded"/"userRateLimitExceeded"). Three guards:
+
+     1. a small concurrency gate, so we never have more than MAX_CONCURRENCY
+        requests in flight at once;
+     2. in-flight de-duplication, so N concurrent identical calls share one
+        fetch rather than each making their own;
+     3. bounded retry with exponential backoff (honouring Retry-After) when
+        YouTube does push back.
+   ------------------------------------------------------------------------- */
+
+const MAX_CONCURRENCY = 3;
+const RETRY_DELAYS_MS = [400, 1_200, 3_000];
+
+let active = 0;
+const waiters: Array<() => void> = [];
+
+function acquire(): Promise<void> {
+  if (active < MAX_CONCURRENCY) {
+    active += 1;
+    return Promise.resolve();
+  }
+  return new Promise<void>((resolve) => waiters.push(resolve));
+}
+
+function release(): void {
+  active -= 1;
+  const next = waiters.shift();
+  if (next) {
+    active += 1;
+    next();
+  }
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** In-flight fetches, keyed by full request URL, so concurrent identical
+ *  calls await one shared promise instead of hitting YouTube each. */
+const inflight = new Map<string, Promise<unknown>>();
+
+/** Whether a 403 body is Google's rate-limit signal rather than a real
+ *  quota/permission failure (which no amount of retrying will fix). */
+function isRateLimit403(body: unknown): boolean {
+  const reason = (body as {
+    error?: { errors?: Array<{ reason?: string }> };
+  })?.error?.errors?.[0]?.reason;
+  return reason === "rateLimitExceeded" || reason === "userRateLimitExceeded";
+}
 export const CHANNEL_ID =
   process.env.YOUTUBE_CHANNEL_ID ?? "UCF1Wrrlls2ioQyn5WG-_nIQ";
 
@@ -82,22 +137,94 @@ async function call<T>(
   if (!KEY) return null;
 
   const qs = new URLSearchParams({ ...params, key: KEY });
-  try {
-    const res = await fetch(`${API}/${endpoint}?${qs}`, {
-      next: { revalidate },
-    });
-    if (!res.ok) {
-      // 403 here is almost always quota exhaustion or a key restriction.
-      // Log for the operator; the caller still gets a clean null.
+  const url = `${API}/${endpoint}?${qs}`;
+  // Key without the api key, so the dedup key is stable but not secret-bearing
+  // in any log. The URL itself is only held in memory.
+  const dedupKey = `${endpoint}?${new URLSearchParams(params)}`;
+
+  const existing = inflight.get(dedupKey);
+  if (existing) return existing as Promise<T | null>;
+
+  const run = (async (): Promise<T | null> => {
+    const attempts = RETRY_DELAYS_MS.length + 1;
+
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      await acquire();
+      let res: Response;
+      try {
+        res = await fetch(url, { next: { revalidate } });
+      } catch (err) {
+        release();
+        // Network blip — retry a couple of times before giving up.
+        if (attempt < attempts - 1) {
+          await sleep(RETRY_DELAYS_MS[attempt] ?? 0);
+          continue;
+        }
+        console.warn(`[youtube] ${endpoint} threw:`, err);
+        return null;
+      }
+
+      if (res.ok) {
+        try {
+          return (await res.json()) as T;
+        } catch (err) {
+          // A truncated or malformed body. Retrying can help (it is usually a
+          // dropped connection), but never let it escape: this module's
+          // contract is that callers get null rather than a thrown error.
+          if (attempt < attempts - 1) {
+            await sleep(RETRY_DELAYS_MS[attempt] ?? 0);
+            continue;
+          }
+          console.warn(`[youtube] ${endpoint} sent an unreadable body:`, err);
+          return null;
+        } finally {
+          release();
+        }
+      }
+
+      // Non-OK: decide whether this is worth retrying.
+      let body: unknown = null;
+      try {
+        body = await res.json();
+      } catch {
+        /* no JSON body */
+      }
+      release();
+
+      const rateLimited =
+        res.status === 429 ||
+        (res.status === 403 && isRateLimit403(body)) ||
+        (res.status >= 500 && res.status <= 599);
+
+      if (rateLimited && attempt < attempts - 1) {
+        const retryAfter = Number(res.headers.get("retry-after"));
+        const wait = Number.isFinite(retryAfter) && retryAfter > 0
+          ? retryAfter * 1_000
+          : RETRY_DELAYS_MS[attempt] ?? 0;
+        console.warn(
+          `[youtube] ${endpoint} ${res.status}, backing off ${wait}ms ` +
+            `(attempt ${attempt + 1}/${attempts})`,
+        );
+        await sleep(wait);
+        continue;
+      }
+
+      // A plain 403 is quota exhaustion or a key restriction — retrying
+      // won't help. Log and hand the caller a clean null so it falls back.
       console.warn(
         `[youtube] ${endpoint} failed: ${res.status} ${res.statusText}`,
       );
       return null;
     }
-    return (await res.json()) as T;
-  } catch (err) {
-    console.warn(`[youtube] ${endpoint} threw:`, err);
+
     return null;
+  })();
+
+  inflight.set(dedupKey, run);
+  try {
+    return await run;
+  } finally {
+    inflight.delete(dedupKey);
   }
 }
 
@@ -612,32 +739,67 @@ export async function getChannelUploads(pages = 8): Promise<ApiVideo[]> {
    Video details
    ------------------------------------------------------------------------- */
 
-/** ISO 8601 duration ("PT1H12M30S") to seconds. */
+/**
+ * ISO 8601 duration ("PT1H12M30S", "P1DT2H") to seconds. 0 if unparseable.
+ *
+ * The day component matters: YouTube emits `P#DT…` once a video runs past 24
+ * hours, which a `PT`-only pattern silently scores as 0. Anchored so a string
+ * that is not a duration fails outright rather than matching the empty run of
+ * optional groups.
+ */
 export function parseDuration(iso: string): number {
-  const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  const m = iso.match(
+    /^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?)?$/,
+  );
   if (!m) return 0;
-  return Number(m[1] ?? 0) * 3600 + Number(m[2] ?? 0) * 60 + Number(m[3] ?? 0);
+
+  const [, d, h, min, s] = m;
+  if (d === undefined && h === undefined && min === undefined && s === undefined) {
+    return 0;
+  }
+
+  return (
+    Number(d ?? 0) * 86_400 +
+    Number(h ?? 0) * 3600 +
+    Number(min ?? 0) * 60 +
+    Math.floor(Number(s ?? 0))
+  );
 }
 
 /**
- * Durations for up to 50 videos in one call. 1 unit total, so always batch
- * rather than calling per video.
+ * Durations for any number of videos, batched 50 per call (the API's cap).
+ *
+ * 1 unit per batch, so this is cheap even for a few hundred ids — far cheaper
+ * than a call per video. Duplicate ids are collapsed first so a caller passing
+ * a list with repeats does not pay for extra batches.
  */
 export async function getVideoDurations(
   ids: string[],
 ): Promise<Map<string, number>> {
   const out = new Map<string, number>();
-  if (!ids.length) return out;
+  const unique = [...new Set(ids.filter(Boolean))];
+  if (!unique.length) return out;
 
-  const res = await call<VideosResponse>(
-    "videos",
-    { part: "contentDetails", id: ids.slice(0, 50).join(",") },
-    3_600,
+  const batches: string[][] = [];
+  for (let i = 0; i < unique.length; i += 50) {
+    batches.push(unique.slice(i, i + 50));
+  }
+
+  const responses = await Promise.all(
+    batches.map((batch) =>
+      call<VideosResponse>(
+        "videos",
+        { part: "contentDetails", id: batch.join(",") },
+        3_600,
+      ),
+    ),
   );
 
-  for (const v of res?.items ?? []) {
-    if (v.id && v.contentDetails?.duration) {
-      out.set(v.id, parseDuration(v.contentDetails.duration));
+  for (const res of responses) {
+    for (const v of res?.items ?? []) {
+      if (v.id && v.contentDetails?.duration) {
+        out.set(v.id, parseDuration(v.contentDetails.duration));
+      }
     }
   }
   return out;

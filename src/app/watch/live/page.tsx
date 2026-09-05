@@ -16,7 +16,6 @@ import { getLatestMessage, getMessages, getServiceWindow } from "@/lib/queries";
 import { fmtDayLong, fmtTime } from "@/lib/format";
 import { SITE, YOUTUBE, youtubeLiveEmbed } from "@/lib/site";
 import { getChannelVideos } from "@/lib/youtube";
-import { getLiveBroadcast } from "@/lib/youtube-api";
 import { getSundayServices } from "@/lib/services";
 
 export const metadata: Metadata = {
@@ -25,8 +24,23 @@ export const metadata: Metadata = {
     "Watch CCF Centris worship services live, or catch the next one. Sunday services stream from Eton Centris, Quezon City.",
 };
 
-/** Live state depends on the clock, so never cache this page. */
-export const dynamic = "force-dynamic";
+/**
+ * Revalidate the whole route once a minute.
+ *
+ * Not `force-dynamic`: that overrides every fetch() on the page to
+ * `{ cache: 'no-store' }`, discarding youtube-api.ts's own revalidate windows
+ * and re-spending the full ~300-unit quota cost (search + upcoming + live
+ * check) on every page view — enough to burn the 10,000/day allowance in
+ * about 30 visits.
+ *
+ * But it cannot be left unset either. With no Request-time API on this page,
+ * the default (`revalidate: false`) would prerender the route at build time
+ * and freeze `getServiceWindow()`'s `new Date()` into the HTML, pinning the
+ * live banner and countdown to the clock at build. A 60s window keeps the
+ * clock-derived state honest while still collapsing a burst of traffic onto
+ * one set of API calls.
+ */
+export const revalidate = 60;
 
 export default async function WatchLivePage() {
   const [window, latest, messages, channel, sunday] = await Promise.all([
@@ -36,13 +50,15 @@ export default async function WatchLivePage() {
     // Live from CCF's channel, so this stays current between deploys.
     getChannelVideos(8),
     // Sunday-service state: live / next scheduled / archive, self-correcting.
-    // This page is force-dynamic, so the 60s live check is fine here.
+    // The 60s cache on the live check keeps this fresh without force-dynamic.
     getSundayServices({ checkLive: true }),
   ]);
 
   // The API is the source of truth for whether a stream is actually running.
   // The local schedule is only a fallback when the API is unavailable.
-  const broadcast = await getLiveBroadcast();
+  // getSundayServices({ checkLive: true }) above already made this call —
+  // calling it again here would double the 101-unit cost on every page load.
+  const broadcast = sunday.live;
 
   const live = broadcast ? (window.current ?? window.next ?? null) : window.current;
   const nextService = sunday.next;

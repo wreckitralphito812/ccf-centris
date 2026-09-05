@@ -96,10 +96,19 @@ export function serviceDateFromTitle(title: string): Date | null {
   if (month === undefined) return null;
   const day = Number(m[2]);
   const year = Number(m[3]);
+
+  // Reject a day that does not exist in that month. Without this, "February
+  // 31" quietly rolls over to March 3 (a real-looking but wrong service date),
+  // and "September 32" yields an Invalid Date — which still passes an
+  // `instanceof Date` guard and then throws from .toISOString().
+  const probe = new Date(Date.UTC(year, month, day));
+  if (probe.getUTCMonth() !== month || probe.getUTCDate() !== day) return null;
+
   const mm = String(month + 1).padStart(2, "0");
   const dd = String(day).padStart(2, "0");
   // 09:00 Asia/Manila = 01:00 UTC.
-  return new Date(`${year}-${mm}-${dd}T09:00:00+08:00`);
+  const parsed = new Date(`${year}-${mm}-${dd}T09:00:00+08:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 /* --- Fallback: compute the next Sunday ----------------------------------- */
@@ -161,11 +170,14 @@ export async function getSundayServices(
   ]);
 
   // Keep only the Sunday-service livestreams, each with a parseable date.
+  // `instanceof Date` alone is not enough — an Invalid Date satisfies it and
+  // then throws from .toISOString() further down — so check the time value.
   const dated = streams
     .filter((s) => SERVICE_TITLE.test(s.title))
     .map((s) => ({ ...s, date: serviceDateFromTitle(s.title) }))
     .filter(
-      (s): s is (typeof s & { date: Date }) => s.date instanceof Date,
+      (s): s is (typeof s & { date: Date }) =>
+        s.date instanceof Date && !Number.isNaN(s.date.getTime()),
     );
 
   const fromApi = dated.length > 0;
