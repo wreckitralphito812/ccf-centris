@@ -671,7 +671,7 @@ function WatchWithCcf({
         />
 
         <Reveal as="div" delay={0.05} className="mt-8">
-          <div className="mx-auto max-w-4xl overflow-hidden border border-hairline bg-night shadow-[0_24px_60px_-45px_rgba(23,21,15,0.5)]">
+          <div className="mx-auto w-full max-w-[min(56rem,calc(82vh*16/9))] overflow-hidden border border-hairline bg-night shadow-[0_24px_60px_-45px_rgba(23,21,15,0.5)]">
             <WelcomeVideo />
           </div>
         </Reveal>
