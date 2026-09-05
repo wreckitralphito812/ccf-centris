@@ -11,7 +11,8 @@
     "test:content": "tsx --test \"src/**/*.test.ts\"",
     "content:sync": "tsx scripts/sync-ccf-content.ts",
     "content:seed": "tsx scripts/seed-content-snapshot.ts",
-    "seed:facilities": "tsx scripts/seed-centris-facilities.ts"
+    "seed:facilities": "tsx scripts/seed-centris-facilities.ts",
+    "assets:check": "tsx scripts/check-public-assets.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",

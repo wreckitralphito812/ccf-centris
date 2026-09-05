@@ -1,34 +1,18 @@
 name: Deploy to Vercel
 
-# Why this exists: the site lives on one person's Vercel project, but the
-# whole team are GitHub collaborators here. This workflow lets any of them
-# ship — a merge to main deploys to production, a pull request gets its own
-# preview URL — without needing a seat on the Vercel project. It authenticates
-# as the token owner via the VERCEL_TOKEN repo secret.
-#
-# One-time setup by the Vercel project owner:
-#   1. Create a token at https://vercel.com/account/tokens
-#   2. From a local checkout: `npx vercel link` then read .vercel/project.json
-#      for "orgId" and "projectId" (or copy them from Project Settings).
-#   3. Add repo secrets (Settings -> Secrets and variables -> Actions):
-#        VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
-#   4. Disconnect Vercel's own Git integration for this project
-#      (Project -> Settings -> Git) so deployments don't run twice.
+# Lets any GitHub collaborator ship without a seat on the Vercel project: a
+# push to main deploys to production. Authenticates as the VERCEL_TOKEN
+# owner via repo secrets (VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID).
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    branches:
+      - main
+  workflow_dispatch:
 
-# Never let two deploys of the same ref race; newer wins.
 concurrency:
-  group: vercel-deploy-${{ github.event.pull_request.number || github.ref }}
+  group: vercel-production-${{ github.ref }}
   cancel-in-progress: true
-
-permissions:
-  contents: read
-  pull-requests: write # to leave the preview-URL comment
 
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -36,73 +20,114 @@ env:
 
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    # Skip PRs that come from forks: repo secrets aren't exposed to them, so
-    # the deploy would fail anyway. Branch PRs from collaborators are fine.
-    if: >
-      github.event_name == 'push' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+    timeout-minutes: 30
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
-      - uses: actions/setup-node@v4
+      - name: Validate required secrets
+        shell: bash
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          for secret_name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            if [ -z "${!secret_name}" ]; then
+              echo "::error::Missing required secret: ${secret_name}"
+              exit 1
+            fi
+          done
+
+      - name: Recreate Vercel project settings
+        shell: bash
+        run: |
+          mkdir -p .vercel
+          org_id="$(printf '%s' "${VERCEL_ORG_ID}" | tr -d '\r\n')"
+          project_id="$(printf '%s' "${VERCEL_PROJECT_ID}" | tr -d '\r\n')"
+          printf '{"orgId":"%s","projectId":"%s"}\n' "$org_id" "$project_id" > .vercel/project.json
+
+      - name: Normalize Vercel token
+        shell: bash
+        env:
+          VERCEL_TOKEN_SECRET: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          token="$(printf '%s' "${VERCEL_TOKEN_SECRET}" | tr -d '\r\n')"
+          echo "VERCEL_TOKEN_CLEAN=${token}" >> "$GITHUB_ENV"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify static public asset references
+        run: npm run assets:check
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
-      - name: Resolve environment
-        id: env
+      - name: Verify Vercel token
+        run: vercel whoami --token="$VERCEL_TOKEN_CLEAN"
+
+      - name: Verify linked Vercel project access
+        run: vercel project inspect --token="$VERCEL_TOKEN_CLEAN"
+
+      - name: Pull Vercel environment
+        run: vercel pull --yes --debug --environment=production --token="$VERCEL_TOKEN_CLEAN"
+
+      - name: Check the Vercel project root matches the repository layout
+        shell: bash
         run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            echo "target=production" >> "$GITHUB_OUTPUT"
-            echo "prod_flag=--prod" >> "$GITHUB_OUTPUT"
-          else
-            echo "target=preview" >> "$GITHUB_OUTPUT"
-            echo "prod_flag=" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Pull Vercel environment info
-        run: vercel pull --yes --debug --environment=${{ steps.env.outputs.target }} --token="${{ secrets.VERCEL_TOKEN }}"
-
-      - name: Build
-        run: vercel build ${{ steps.env.outputs.prod_flag }} --token="${{ secrets.VERCEL_TOKEN }}"
-
-      - name: Deploy
-        id: deploy
-        run: |
-          url=$(vercel deploy --prebuilt ${{ steps.env.outputs.prod_flag }} --token="${{ secrets.VERCEL_TOKEN }}")
-          echo "url=$url" >> "$GITHUB_OUTPUT"
-          echo "Deployed to $url"
-
-      - name: Comment the preview URL on the PR
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const url = '${{ steps.deploy.outputs.url }}';
-            const marker = '<!-- vercel-preview -->';
-            const body = `${marker}\n🔺 **Preview deployed:** ${url}\n\n_Updated for commit ${context.sha.slice(0, 7)}._`;
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-            const existing = comments.find((c) => c.body?.includes(marker));
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existing.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body,
-              });
+          node -e '
+            const fs = require("fs");
+            const project = JSON.parse(fs.readFileSync(".vercel/project.json", "utf8"));
+            const root = project.settings?.rootDirectory ?? null;
+            if (root === null || root === "" || root === ".") {
+              console.log("Vercel Root Directory resolves to the repository root.");
+              process.exit(0);
             }
+            console.log("::error::The Vercel project sets Root Directory to \"" + root + "\", but the landing app now lives at the repository root. Open the project in Vercel, go to Settings -> Build & Deployment -> Root Directory, clear the field, and save. Then re-run this workflow.");
+            process.exit(1);
+          '
+
+      - name: Build project
+        run: vercel build --prod --token="$VERCEL_TOKEN_CLEAN"
+
+      - name: Deploy to Vercel
+        id: deploy
+        shell: bash
+        run: |
+          deployment_url="$(vercel deploy --prebuilt --prod --yes --token="$VERCEL_TOKEN_CLEAN")"
+          if [[ ! "$deployment_url" =~ ^https:// ]]; then
+            echo "::error::Vercel did not return a valid deployment URL."
+            exit 1
+          fi
+          echo "url=${deployment_url}" >> "$GITHUB_OUTPUT"
+          echo "Deployed to ${deployment_url}"
+
+      - name: Verify deployed landing page
+        shell: bash
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --location \
+            --retry 5 \
+            --retry-all-errors \
+            --retry-delay 5 \
+            --max-time 30 \
+            --output /dev/null \
+            "$DEPLOYMENT_URL"
