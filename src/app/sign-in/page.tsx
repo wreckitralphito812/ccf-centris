@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { Container, Section } from "@/components/ui";
 import { currentUser } from "@/lib/supabase/ssr";
 import { hasSupabase } from "@/lib/supabase/server";
+import { GoogleButton } from "./google-button";
 import { SignInForm } from "./sign-in-form";
 
 export const metadata: Metadata = {
@@ -40,6 +41,12 @@ export default async function SignInPage({
               been used — request a fresh one.
             </p>
           ) : null}
+          <GoogleButton next={next} />
+          <div className="my-6 flex items-center gap-4">
+            <span className="h-px flex-1 bg-hairline" />
+            <span className="label text-ink-mute">or</span>
+            <span className="h-px flex-1 bg-hairline" />
+          </div>
           <SignInForm next={next} />
         </Container>
       </Section>

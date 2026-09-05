@@ -48,6 +48,22 @@ export function SignInForm({ next }: { next: string }) {
         )}
       </Field>
 
+      <Field
+        label="Phone"
+        name="phone"
+        hint="Optional — so we can reach you about a booking."
+      >
+        {(p) => (
+          <input
+            {...p}
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            className={controlClass}
+          />
+        )}
+      </Field>
+
       <Button type="submit" size="lg" full disabled={pending}>
         {pending ? "Sending…" : "Email me a sign-in link"}
       </Button>

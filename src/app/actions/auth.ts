@@ -35,6 +35,16 @@ export async function sendMagicLink(
     return { ok: false, formError: "Enter a valid email address." };
   }
 
+  // Optional. Kept only if it holds phone-ish characters after a light clean;
+  // no strict format is enforced. Reaches the profile via the
+  // `on_auth_user_created` trigger, which reads `mobile` from user metadata —
+  // so it lands on first signup only.
+  const phone =
+    String(formData.get("phone") ?? "")
+      .replace(/[^\d+()\-\s]/g, "")
+      .replace(/\s+/g, " ")
+      .trim() || null;
+
   const origin = (await headers()).get("origin") ?? "";
   const supabase = await createSupabaseServer();
 
@@ -42,6 +52,7 @@ export async function sendMagicLink(
     email,
     options: {
       emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      data: phone ? { mobile: phone } : undefined,
     },
   });
 
