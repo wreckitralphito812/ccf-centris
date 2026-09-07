@@ -86,15 +86,24 @@
   --color-bone: var(--bone);
   --color-night: var(--night);
 
-  /* CCF's brand face is Proxima Nova (--ccf-font on ccf.org.ph), which is
-     Adobe-licensed and cannot ship here. Montserrat is the closest free
-     geometric humanist sans and already appears in CCF's own font stack,
-     so body copy stays recognisably CCF. Fraunces carries the editorial
-     display voice the Gen Z direction asks for; Caveat is the handwritten
-     accent. Swap --font-sans for Proxima Nova once CCF provides the licence. */
-  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  /* Typography follows the CCF Brand Book, which names two faces and no others.
+
+     PRIMARY — Futura Std Medium: the logo face, and the book's choice for print
+     headlines and sub-headlines. Adobe-licensed, so Jost ships in its place:
+     free, and metric-compatible enough that swapping in licensed Futura later
+     needs no layout changes.
+
+     SECONDARY — Proxima Nova: the book's face for web headlines, headers and
+     body. Listed first in --font-sans so an Adobe Fonts kit activates it with no
+     other edit (see ADOBE_FONTS_KIT_ID in layout.tsx). Montserrat carries body
+     copy until then — it already appears in ccf.org.ph's own font stack, so the
+     fallback still reads as CCF.
+
+     There is no third face. The book specifies none, so headline moments that
+     previously used a script accent now use the display face at display size,
+     which is exactly what the book intends the primary for. */
+  --font-display: var(--font-jost), Futura, "Century Gothic", "Trebuchet MS", sans-serif;
   --font-sans: "proxima-nova", var(--font-montserrat), "Helvetica Neue", Arial, sans-serif;
-  --font-script: var(--font-caveat), "Segoe Script", cursive;
 }
 
 * {
@@ -212,42 +221,46 @@ a.link,
   font-optical-sizing: auto;
 }
 
-.font-script {
-  font-family: var(--font-script);
-}
+/* The display sizes below were tuned for a serif, which carries weight 700 and
+   heavy negative tracking without closing up. Futura is a geometric sans: its
+   round bowls need air, and the brand book names Futura Std MEDIUM specifically.
+   So weights drop to 500-600 and the tracking pulls back to roughly a third of
+   what the serif wanted. */
 
 /* Oversized editorial heading that may crop at the viewport edge. */
 .display-xl {
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 500;
   /* Bounded by both axes so two lines clear the fold on short viewports. The
      floor is kept modest so a two-word line fits a ~340px phone with the
      hero card's padding subtracted. */
   font-size: clamp(2.7rem, min(11vw, 15vh), 8rem);
-  line-height: 0.86;
-  letter-spacing: -0.035em;
+  line-height: 0.92;
+  letter-spacing: -0.012em;
 }
 
 .display-lg {
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 500;
   font-size: clamp(2.15rem, 6.5vw, 5rem);
-  line-height: 0.92;
-  letter-spacing: -0.03em;
+  line-height: 0.98;
+  letter-spacing: -0.01em;
 }
 
 .display-md {
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 500;
   font-size: clamp(1.7rem, 3.6vw, 3rem);
-  line-height: 1.02;
-  letter-spacing: -0.02em;
+  line-height: 1.08;
+  letter-spacing: -0.006em;
 }
 
-/* Set a display heading in CCF's brand face (Proxima Nova, then Montserrat)
-   instead of the editorial serif. The geometric sans needs a heavier weight
-   and slightly looser tracking than the serif to read as a title, and a hair
-   more line-height so the two lines don't collide. */
+/* Set a heading in the brand book's SECONDARY face (Proxima Nova, then
+   Montserrat) rather than the primary. The book explicitly allows this —
+   Proxima Nova is its choice for web headlines and sub-headlines — so this is
+   the sanctioned alternative voice to .display-*, not a departure. It carries a
+   heavier weight and tighter tracking than the primary to hold its own as a
+   title. */
 .brand-face {
   font-family: var(--font-sans);
   font-weight: 800;

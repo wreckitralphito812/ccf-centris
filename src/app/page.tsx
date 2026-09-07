@@ -169,7 +169,7 @@ function Welcome({
               <span className="text-clay">CCF Centris</span>
             </h1>
 
-            <p className="font-script mt-2.5 text-2xl text-ink-soft sm:text-3xl">
+            <p className="font-display font-light tracking-wide mt-2.5 text-2xl text-ink-soft sm:text-3xl">
               worship, grow, connect, serve
             </p>
 

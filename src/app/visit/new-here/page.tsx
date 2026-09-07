@@ -202,7 +202,7 @@ export default async function NewHerePage() {
                 </ButtonLink>
               </div>
             </div>
-            <p className="font-script text-4xl leading-tight text-paper-bright/85 sm:text-5xl">
+            <p className="font-display font-light tracking-wide text-4xl leading-tight text-paper-bright/85 sm:text-5xl">
               there&rsquo;s a seat for you
             </p>
           </div>

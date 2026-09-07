@@ -74,7 +74,7 @@ export default function AboutPage() {
               <p className="mt-5 text-[1.05rem] leading-relaxed text-ink-soft">
                 {VISION}
               </p>
-              <p className="font-script mt-8 text-3xl text-ink-soft">
+              <p className="font-display font-light tracking-wide mt-8 text-3xl text-ink-soft">
                 small groups, transformed lives
               </p>
             </div>

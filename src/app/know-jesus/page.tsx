@@ -126,7 +126,7 @@ export default function KnowJesusPage() {
             </div>
 
             <div className="taped border border-hairline bg-paper-bright p-8 pt-10">
-              <p className="font-script text-2xl leading-relaxed text-ink">
+              <p className="font-display font-light tracking-wide text-2xl leading-relaxed text-ink">
                 Lord Jesus, I need You. I confess that I am a sinner. I believe
                 that You died on the cross to pay for all my sins. With Your
                 help, I will turn away from my sins. Please come into my life
