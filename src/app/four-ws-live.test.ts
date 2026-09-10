@@ -13,9 +13,10 @@ test("homepage 4Ws rail is driven by the synced guide, not a hardcoded blurb", (
   assert.match(src, /weekNumber|dateSpan/);
 });
 
-test("homepage 'Get the 4Ws guide' points at the guide route, not a message anchor", () => {
+test("homepage 4Ws button points at the synced guide, not a message anchor", () => {
   const src = read("src/app/page.tsx");
-  assert.match(src, /guideHref/);
+  // The synced PDF when the guide has one, the guide route otherwise.
+  assert.match(src, /fourWs\?\.guide\?\.downloadUrl/);
   assert.match(src, /\/watch\/4ws\/\$\{fourWs\.week\.slug\}/);
   assert.doesNotMatch(src, /messages\/\$\{latest\.slug\}#four-ws/);
 });

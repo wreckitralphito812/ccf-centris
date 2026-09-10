@@ -330,6 +330,15 @@ function LastSunday({
               Watch the message, then talk it through with your Dgroup using
               this week&rsquo;s 4Ws guide.
             </p>
+            {/* Names the guide's week, since the replay and the 4Ws can belong
+                to different Sundays early in the week. */}
+            {fourWs ? (
+              <p className="label mt-4 text-ink-mute">
+                4Ws for{" "}
+                {fourWs.week.weekNumber ? `Week ${fourWs.week.weekNumber} · ` : ""}
+                {fourWs.week.dateSpan ?? fourWs.week.serviceDateLabel}
+              </p>
+            ) : null}
             <div className="mt-auto flex flex-wrap gap-3 pt-7">
               {replay ? (
                 <ButtonLink href="/watch">Watch now</ButtonLink>
