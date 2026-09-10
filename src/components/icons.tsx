@@ -12,6 +12,7 @@ type IconName =
   | "building" // Around Centris
   | "hands" // Serve
   | "pin" // Where we are
+  | "heart" // Prayer
   | "sparkle"; // intro / welcome
 
 export function SectionIcon({
@@ -79,6 +80,12 @@ export function SectionIcon({
         <svg {...p}>
           <path d="M12 21s-6-5.4-6-10a6 6 0 0 1 12 0c0 4.6-6 10-6 10Z" />
           <circle cx="12" cy="11" r="2.2" />
+        </svg>
+      );
+    case "heart":
+      return (
+        <svg {...p}>
+          <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />
         </svg>
       );
     case "sparkle":
