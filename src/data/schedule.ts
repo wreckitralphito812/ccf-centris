@@ -1,14 +1,14 @@
 import type { Service } from "@/lib/types";
 import { messages, series, speakers } from "./teaching";
 import { venues } from "./center";
+import { SERVICE_TIMES } from "@/lib/site";
 
 /**
  * Services are generated relative to the current date rather than pinned, so
  * the homepage's before / during / after states are always demonstrable.
- * Sunday 9:00 and 11:30, plus a Saturday 17:00 gathering.
  *
- * Times below are representative. Confirmed CCF Centris service times will be
- * set through the admin.
+ * Slots come from SERVICE_TIMES in lib/site, so the seed schedule and every
+ * page that states a service time always agree.
  */
 
 const MANILA_OFFSET_MIN = 8 * 60;
@@ -38,11 +38,14 @@ interface Slot {
   venueId: string;
 }
 
-const SLOTS: Slot[] = [
-  { dow: 6, hour: 17, minute: 0, durationMin: 90, title: "Saturday Worship", venueId: "ven-1" },
-  { dow: 0, hour: 9, minute: 0, durationMin: 90, title: "Sunday Worship", venueId: "ven-1" },
-  { dow: 0, hour: 11, minute: 30, durationMin: 90, title: "Sunday Worship", venueId: "ven-1" },
-];
+const SLOTS: Slot[] = SERVICE_TIMES.map((s) => ({
+  dow: s.dow,
+  hour: s.hour,
+  minute: s.minute,
+  durationMin: 90,
+  title: `${s.day} Worship`,
+  venueId: "ven-1",
+}));
 
 const venueById = Object.fromEntries(venues.map((v) => [v.id, v]));
 

@@ -77,21 +77,27 @@ export function SiteHeader() {
           aria-label="Main"
           className="ml-3 hidden items-center gap-0.5 lg:flex xl:ml-4 xl:gap-1"
         >
-          {NAV.map((group) => (
-            <div key={group.label} onMouseEnter={() => hoverOpen(group.label)}>
-              <Link
-                href={group.href}
-                aria-expanded={open === group.label}
-                onFocus={() => hoverOpen(group.label)}
-                className={cx(
-                  "label px-2.5 py-2 transition-colors xl:px-3",
-                  isActive(group.href) ? "text-clay" : "text-ink hover:text-clay",
-                )}
-              >
-                {group.label}
-              </Link>
-            </div>
-          ))}
+          {NAV.map((group) => {
+            // A group with no items is a plain link: hovering it closes any
+            // open panel rather than opening an empty one.
+            const hasMenu = group.items.length > 0;
+            const reveal = () => (hasMenu ? hoverOpen(group.label) : hoverClose());
+            return (
+              <div key={group.label} onMouseEnter={reveal}>
+                <Link
+                  href={group.href}
+                  aria-expanded={hasMenu ? open === group.label : undefined}
+                  onFocus={reveal}
+                  className={cx(
+                    "label whitespace-nowrap px-2 py-2 transition-colors xl:px-3",
+                    isActive(group.href) ? "text-clay" : "text-ink hover:text-clay",
+                  )}
+                >
+                  {group.label}
+                </Link>
+              </div>
+            );
+          })}
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
@@ -103,14 +109,14 @@ export function SiteHeader() {
             <SearchIcon />
           </Link>
           <Link
-            href="/watch/live"
-            className="btn-press label hidden items-center gap-2 border border-clay bg-clay px-3.5 py-2 text-paper-bright transition-colors hover:bg-clay-deep md:inline-flex"
+            href="/watch"
+            className="btn-press label hidden items-center gap-2 border border-clay bg-clay px-3.5 py-2 text-paper-bright transition-colors hover:bg-clay-deep md:inline-flex lg:hidden xl:inline-flex"
           >
-            Watch live
+            Last Sunday
           </Link>
           <Link
             href="/visit/service-times"
-            className="btn-press label hidden items-center border border-ink px-3.5 py-2 text-ink transition-colors hover:bg-ink hover:text-paper-bright sm:inline-flex"
+            className="btn-press label hidden items-center border border-ink px-3.5 py-2 text-ink transition-colors hover:bg-ink hover:text-paper-bright sm:inline-flex lg:hidden xl:inline-flex"
           >
             Service times
           </Link>
@@ -177,10 +183,10 @@ export function SiteHeader() {
           <div className="px-5 py-6">
             <div className="flex gap-2">
               <Link
-                href="/watch/live"
+                href="/watch"
                 className="label flex-1 border border-clay bg-clay px-4 py-3 text-center text-paper-bright"
               >
-                Watch live
+                Last Sunday
               </Link>
               <Link
                 href="/visit/service-times"
@@ -199,26 +205,36 @@ export function SiteHeader() {
             </Link>
 
             <nav aria-label="Mobile" className="mt-6">
-              {NAV.map((group) => (
-                <details key={group.label} className="border-b border-hairline">
-                  <summary className="flex cursor-pointer list-none items-center justify-between py-4">
+              {NAV.map((group) =>
+                group.items.length === 0 ? (
+                  <Link
+                    key={group.label}
+                    href={group.href}
+                    className="flex items-center justify-between border-b border-hairline py-4"
+                  >
                     <span className="font-display text-2xl">{group.label}</span>
-                    <ChevronIcon />
-                  </summary>
-                  <ul className="pb-4">
-                    {group.items.map((item) => (
-                      <li key={item.href}>
-                        <Link
-                          href={item.href}
-                          className="block py-2.5 text-[0.95rem] text-ink-soft"
-                        >
-                          {item.label}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-              ))}
+                  </Link>
+                ) : (
+                  <details key={group.label} className="border-b border-hairline">
+                    <summary className="flex cursor-pointer list-none items-center justify-between py-4">
+                      <span className="font-display text-2xl">{group.label}</span>
+                      <ChevronIcon />
+                    </summary>
+                    <ul className="pb-4">
+                      {group.items.map((item) => (
+                        <li key={item.href}>
+                          <Link
+                            href={item.href}
+                            className="block py-2.5 text-[0.95rem] text-ink-soft"
+                          >
+                            {item.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                ),
+              )}
             </nav>
           </div>
         </div>
@@ -229,10 +245,7 @@ export function SiteHeader() {
 
 const MENU_BLURB: Record<string, string> = {
   Visit: "Everything you need for your first Sunday.",
-  Watch: "Join the service live, or watch on your own time.",
-  Connect: "Find your people — Dgroups, communities, and a team to serve on.",
-  Grow: "Grow in the Word — the journey, classes, and resources.",
-  Centris: "The center and the life that fills it.",
+  "What\u2019s Happening": "Events, happenings, and the month ahead at Centris.",
 };
 
 /* --- Icons. Inline so nothing blocks first paint. --- */

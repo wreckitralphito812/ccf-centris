@@ -44,10 +44,15 @@ export const YOUTUBE = {
 /**
  * CCF Centris' own social accounts. The YouTube channel is CCF-wide (see
  * YOUTUBE above); these are the center's own.
+ *
+ * Both accounts are still being set up. A null URL means "not live yet": the
+ * Connect page shows that button as coming soon, and the footer and structured
+ * data leave it out. Fill in a URL and it goes live everywhere at once.
  */
-export const SOCIALS = {
-  instagram: "https://www.instagram.com/ccfcentris/",
-} as const;
+export const SOCIALS: Record<"instagram" | "facebook", string | null> = {
+  instagram: null,
+  facebook: null,
+};
 
 /** Live embed for a channel. Falls back to the channel's current stream. */
 export function youtubeLiveEmbed(channelId: string = YOUTUBE.channelId) {
@@ -95,6 +100,48 @@ export function organizationJsonLd() {
     },
     ...(SITE.email ? { email: SITE.email } : {}),
     ...(SITE.phone ? { telephone: SITE.phone } : {}),
-    sameAs: [SOCIALS.instagram, YOUTUBE.channelUrl],
+    sameAs: [SOCIALS.instagram, SOCIALS.facebook, YOUTUBE.channelUrl].filter(
+      (url): url is string => Boolean(url),
+    ),
   };
 }
+
+/**
+ * CCF Centris service times — the single source for every page that states
+ * them, and for the seed schedule. One service for now; add an entry when a
+ * second opens. `dow` is 0 for Sunday, in Manila time.
+ */
+export const SERVICE_TIMES = [
+  { dow: 0, day: "Sunday", hour: 10, minute: 0, time: "10:00 AM" },
+] as const;
+
+/**
+ * External sign-up flows run by CCF, linked from the Connect page. They are
+ * CCF-wide forms, so the site links out rather than re-hosting them. The
+ * volunteer URL is stored without the `fbclid` tracking parameter it was
+ * shared with.
+ */
+export const CONNECT_LINKS = {
+  dgroupSignup: "https://form.jotform.com/223131440974451",
+  volunteerSignup: "https://volunteer-management.ccf.org.ph/recruitment/form",
+} as const;
+
+/**
+ * CCF Net, CCF's online church. The Watch page embeds its Sunday replay and
+ * invites people without a nearby satellite to join it.
+ */
+export const CCF_NET = {
+  name: "CCF Net",
+  url: "https://ccfnet.online.church/",
+} as const;
+
+/**
+ * Where "Leave a message" on the Contact page goes. A staff inbox stands in
+ * until CCF Centris has an official address; change it here when one exists.
+ * `officeHours` stays null until confirmed, and the Contact page hides the
+ * row rather than guess.
+ */
+export const CONTACT = {
+  messageEmail: "adrian.camacho@ccf.org.ph",
+  officeHours: null as string | null,
+} as const;

@@ -38,13 +38,13 @@ export function MobileActionBar() {
   const items = weekend
     ? [
         { label: "Times", href: "/visit/service-times" },
-        { label: "Live", href: "/watch/live" },
+        { label: "Watch", href: "/watch" },
         { label: "Directions", href: "/visit/directions" },
         { label: "More", href: "/search" },
       ]
     : [
         { label: "Events", href: "/events" },
-        { label: "Dgroups", href: "/grow/find-a-dgroup" },
+        { label: "Connect", href: "/connect" },
         { label: "Reserve", href: "/centris/reserve" },
         { label: "More", href: "/search" },
       ];

@@ -31,7 +31,7 @@ const ROUTES = [
       "Take the lifts or escalators to the second floor.",
       "Follow signage for CCF Centris.",
     ],
-    note: "Parking fills quickly before the later Sunday service. If you can, come to the earlier one or arrive 20 minutes ahead.",
+    note: "Parking fills quickly on Sunday mornings. Arriving 20 minutes before the 10:00 AM service gives you time to find a slot.",
   },
   {
     id: "grab",

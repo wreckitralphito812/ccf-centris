@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SITE, MAPS_LINK, YOUTUBE, SOCIALS, organizationJsonLd } from "@/lib/site";
+import { SITE, MAPS_LINK, YOUTUBE, SOCIALS, SERVICE_TIMES, organizationJsonLd } from "@/lib/site";
 import { Wordmark } from "./wordmark";
 
 /**
@@ -37,7 +37,7 @@ const COLUMNS: FooterColumn[] = [
     heading: "Watch",
     id: "footer-watch",
     links: [
-      { label: "Watch live", href: "/watch/live" },
+      { label: "Last Sunday", href: "/watch" },
       { label: "Latest message", href: "/watch/latest" },
       { label: "Messages & series", href: "/watch/messages" },
       { label: "Sunday archive", href: "/watch/archive" },
@@ -70,8 +70,7 @@ const COLUMNS: FooterColumn[] = [
     heading: "Care & giving",
     id: "footer-care",
     links: [
-      { label: "Request prayer", href: "/care/prayer" },
-      { label: "Talk to someone", href: "/care/talk" },
+      { label: "Prayer Wall", href: "/prayer-wall" },
       { label: "Giving", href: "/giving" },
       { label: "Who we are", href: "/about" },
       { label: "Contact", href: "/contact" },
@@ -98,14 +97,14 @@ export function SiteFooter() {
       <div className="border-b border-white/15">
         <div className="mx-auto flex max-w-[110rem] flex-col gap-4 px-5 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <p className="font-display text-xl leading-snug sm:text-2xl">
-            We&rsquo;d love to see you this Sunday.
+            We&rsquo;d love to see you this Sunday at {SERVICE_TIMES[0].time}.
           </p>
           <div className="flex flex-wrap gap-3">
             <Link
-              href="/watch/live"
+              href="/visit/directions"
               className="btn-press label inline-flex items-center border border-clay bg-clay px-4 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
             >
-              Watch live
+              Getting here
             </Link>
             <Link
               href="/visit/service-times"
@@ -157,16 +156,29 @@ export function SiteFooter() {
               >
                 Get directions
               </a>
-              <a
-                href={SOCIALS.instagram}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="CCF Centris on Instagram"
-                className="label inline-flex items-center gap-2 border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
-              >
-                <InstagramGlyph />
-                Instagram
-              </a>
+              {SOCIALS.instagram ? (
+                <a
+                  href={SOCIALS.instagram}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="CCF Centris on Instagram"
+                  className="label inline-flex items-center gap-2 border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
+                >
+                  <InstagramGlyph />
+                  Instagram
+                </a>
+              ) : null}
+              {SOCIALS.facebook ? (
+                <a
+                  href={SOCIALS.facebook}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="CCF Centris on Facebook"
+                  className="label inline-flex items-center gap-2 border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
+                >
+                  Facebook
+                </a>
+              ) : null}
               <a
                 href={YOUTUBE.channelUrl}
                 target="_blank"

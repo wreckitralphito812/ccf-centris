@@ -9,7 +9,7 @@ import {
 } from "@/lib/queries";
 import { findDgroups, getCurrentFourWsGuide } from "@/lib/queries";
 import { manilaDateKey, fmtDayLong, fmtTime, fmtUntil } from "@/lib/format";
-import { SITE, MAPS_LINK } from "@/lib/site";
+import { MAPS_LINK, SERVICE_TIMES, SITE } from "@/lib/site";
 import {
   ButtonLink,
   Container,
@@ -161,9 +161,12 @@ function Welcome({
               </div>
             )}
 
-            {/* Set in CCF's own brand face (--font-sans: Proxima Nova, then
-                Montserrat) rather than the editorial display serif, per CCF. */}
-            <h1 className="display-xl brand-face mt-3 sm:mt-4">
+            {/* Set in the brand book's secondary face (--font-sans: Proxima
+                Nova, then Montserrat). Sized display-lg, not display-xl: at the
+                larger size "Welcome to" can't fit the card and the headline
+                breaks across four lines, pushing the service time below the
+                first screen. */}
+            <h1 className="display-lg brand-face mt-3 sm:mt-4">
               Welcome to
               <br />
               <span className="text-clay">CCF Centris</span>
@@ -181,23 +184,19 @@ function Welcome({
               MRT.
             </p>
 
-            {/* Worshipping with us — online first — is the one clear primary.
-                Service times is the strong secondary. Full-width and stacked
-                on a phone so the pair never wraps to a ragged half-row. */}
-            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-              <ButtonLink href="/watch/live" size="lg" full className="sm:w-auto">
-                {live ? "Join the live service" : "Worship with us online"}
-              </ButtonLink>
-              <ButtonLink
-                href="/visit/service-times"
-                tone="outline"
-                size="lg"
-                full
-                className="sm:w-auto"
-              >
-                See service times
-              </ButtonLink>
-            </div>
+            {/* The service time itself, stated outright rather than behind a
+                button. Reads SERVICE_TIMES, so it can't drift from the
+                schedule. */}
+            <dl className="mt-5 flex flex-wrap gap-x-10 gap-y-3 border-t border-hairline pt-4">
+              {SERVICE_TIMES.map((s) => (
+                <div key={`${s.dow}-${s.time}`}>
+                  <dt className="label text-clay">{s.day}s</dt>
+                  <dd className="font-display mt-1.5 text-3xl leading-none text-ink sm:text-4xl">
+                    {s.time}
+                  </dd>
+                </div>
+              ))}
+            </dl>
 
             {live && current ? (
               <p className="mt-4 border-t border-hairline pt-3 text-[0.95rem] text-ink-soft sm:mt-5 sm:pt-4">

@@ -13,14 +13,13 @@ export interface NavGroup {
 /**
  * The full navigation. Every href here resolves to a real page.
  *
- * Five doors, chosen for a first-time visitor: Visit (come in person),
- * Watch (join online), Connect (find your people — Dgroups, the life-stage
- * communities, serving), Grow (growing in the Word — the journey, classes,
- * resources, prayer), and Centris (this building and what happens in it).
+ * Seven tabs, set by CCF Centris leadership: Visit (come in person), Watch
+ * (last Sunday's message and its 4Ws), Connect (socials, Dgroup and volunteer
+ * sign-up), Prayer Wall, What's Happening (events and the calendar), Reserve
+ * (book a space at the center), and Contact. The center overview that was its
+ * own Centris tab now lives on the homepage.
  *
- * Connect and Grow were one "Get Involved" menu of 17 links, which was too
- * long to scan and overran the viewport. Splitting them keeps each panel to
- * a single short, two-column list.
+ * A group with no items renders as a plain link, with no dropdown panel.
  */
 export const NAV: NavGroup[] = [
   {
@@ -34,57 +33,19 @@ export const NAV: NavGroup[] = [
       { label: "Common questions", href: "/visit/faqs", blurb: "Answers for first-time guests" },
     ],
   },
+  { label: "Watch", href: "/watch", items: [] },
+  { label: "Connect", href: "/connect", items: [] },
+  { label: "Prayer Wall", href: "/prayer-wall", items: [] },
   {
-    label: "Watch",
-    href: "/watch",
+    label: "What\u2019s Happening",
+    href: "/events",
     items: [
-      { label: "Watch live", href: "/watch/live", blurb: "The Sunday service online" },
-      { label: "Latest message", href: "/watch/latest", blurb: "This week's teaching" },
-      { label: "Messages & series", href: "/watch/messages", blurb: "The full teaching archive" },
-      { label: "4Ws guides", href: "/watch/4ws", blurb: "Discussion guides for Dgroups" },
+      { label: "Events & happenings", href: "/events", blurb: "What\u2019s coming up at Centris" },
+      { label: "Calendar", href: "/events/calendar", blurb: "The month at a glance" },
     ],
   },
-  {
-    label: "Connect",
-    href: "/communities",
-    items: [
-      { label: "Find a Dgroup", href: "/grow/find-a-dgroup", blurb: "Search by day and life stage" },
-      { label: "How Dgroups work", href: "/grow/join-a-dgroup", blurb: "What a group involves" },
-      { label: "NXTGEN", href: "/communities/nxtgen", blurb: "Children and their families" },
-      { label: "Elevate", href: "/communities/elevate", blurb: "Students and youth" },
-      { label: "B1G", href: "/communities/b1g", blurb: "Single adults" },
-      { label: "Women", href: "/communities/women", blurb: "Women of every season" },
-      { label: "Men", href: "/communities/men", blurb: "Men growing together" },
-      { label: "Sports", href: "/communities/sports", blurb: "Recreation and fellowship" },
-      { label: "Serve & volunteer", href: "/serve", blurb: "Join a ministry team" },
-      { label: "Missions", href: "/serve/missions", blurb: "Outreach beyond Quezon City" },
-    ],
-  },
-  {
-    label: "Grow",
-    href: "/grow",
-    items: [
-      { label: "Discipleship journey", href: "/grow/journey", blurb: "Steps toward maturity" },
-      { label: "GLC classes", href: "/grow/glc", blurb: "Deeper study of the Word" },
-      { label: "Resources", href: "/grow/resources", blurb: "CCF's growth materials" },
-      { label: "52-Week Scripture", href: "/grow/resources/scripture-memory", blurb: "This week's memory verse" },
-      { label: "Chronicle", href: "/grow/resources/chronicle", blurb: "The weekly message digest" },
-      { label: "Intercede", href: "/intercede", blurb: "Prayer & Fasting weeks" },
-      { label: "Know Jesus", href: "/know-jesus", blurb: "Beginning to follow Him" },
-    ],
-  },
-  {
-    label: "Centris",
-    href: "/centris",
-    items: [
-      { label: "Explore the center", href: "/centris", blurb: "An overview of the facility" },
-      { label: "Facilities", href: "/centris/facilities", blurb: "Spaces and capacities" },
-      { label: "Play sports", href: "/centris/sports", blurb: "Basketball, badminton, pickleball" },
-      { label: "Court availability", href: "/centris/availability", blurb: "Current openings" },
-      { label: "Reserve a space", href: "/centris/reserve", blurb: "Book a court or room" },
-      { label: "Upcoming events", href: "/events", blurb: "What's scheduled at Centris" },
-    ],
-  },
+  { label: "Reserve", href: "/centris/reserve", items: [] },
+  { label: "Contact", href: "/contact", items: [] },
 ];
 
 export const ADMIN_NAV: { section: string; items: NavItem[] }[] = [
