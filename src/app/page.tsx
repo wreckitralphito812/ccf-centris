@@ -3,13 +3,13 @@ import {
   getCommunities,
   getLatestMessage,
   getServiceWindow,
-  getFacilities,
   getSportsToday,
   getVolunteerRoles,
 } from "@/lib/queries";
 import { findDgroups, getCurrentFourWsGuide } from "@/lib/queries";
 import { manilaDateKey, fmtDayLong, fmtTime, fmtUntil } from "@/lib/format";
 import { MAPS_LINK, SERVICE_TIMES, SITE } from "@/lib/site";
+import { ROOMS } from "@/data/rooms";
 import {
   ButtonLink,
   Container,
@@ -25,14 +25,12 @@ import {
   CardEntrance,
   CountUp,
   HeroStage,
-  HoverLift,
   PulseDot,
   Reveal,
   RevealHead,
   RevealItem,
   Stagger,
 } from "@/components/motion";
-import { CcfMark } from "@/components/wordmark";
 import { PlayGlyph, SectionIcon } from "@/components/icons";
 import { YouTubeThumb } from "@/components/youtube-thumb";
 import { YouTubeEmbed } from "@/components/youtube-embed";
@@ -69,12 +67,11 @@ export const revalidate = 3600;
  *   7. Where we are — how to get here
  */
 export default async function HomePage() {
-  const [window, latest, communities, facilities, roles] =
+  const [window, latest, communities, roles] =
     await Promise.all([
       getServiceWindow(),
       getLatestMessage(),
       getCommunities(),
-      getFacilities(),
       getVolunteerRoles(),
     ]);
 
@@ -114,7 +111,7 @@ export default async function HomePage() {
 
       <Serve roles={roles} />
 
-      <TheCenter facilities={facilities} courts={courts} />
+      <TheCenter courts={courts} />
 
       <WhereWeAre />
     </>
@@ -151,14 +148,12 @@ function Welcome({
                 We&rsquo;re worshipping live right now
               </Link>
             ) : (
-              /* The mark leads the eyebrow, so CCF is identified before the
-                 center name in the headline below. */
-              <div className="flex items-center gap-3">
-                <CcfMark className="h-9 w-9 text-clay" />
-                <Eyebrow rule={false}>
-                  Christ&rsquo;s Commission Fellowship
-                </Eyebrow>
-              </div>
+              /* The eyebrow names CCF before the center name in the headline
+                 below. The header carries the official CCF Centris mark, so
+                 the hero doesn't repeat it. */
+              <Eyebrow rule={false}>
+                Christ&rsquo;s Commission Fellowship
+              </Eyebrow>
             )}
 
             {/* Set in the brand book's secondary face (--font-sans: Proxima
@@ -1155,21 +1150,16 @@ function CourtBoard({ courts }: { courts: CourtToday[] }) {
 ---------------------------------------------------------------------------- */
 
 function TheCenter({
-  facilities,
   courts,
 }: {
-  facilities: Awaited<ReturnType<typeof getFacilities>>;
   courts: Awaited<ReturnType<typeof getSportsToday>>;
 }) {
-  const featured = facilities.filter((f) =>
-    [
-      "main-worship-hall",
-      "sports-hall",
-      "multipurpose-hall-1",
-      "dgroup-lounge",
-    ].includes(f.slug),
-  );
   const shownCourts = courts.slice(0, 4);
+  const setups = [
+    ["class", "Class"],
+    ["table", "Table"],
+    ["furniture", "Furniture"],
+  ] as const;
 
   return (
     <Section tone="bright">
@@ -1177,47 +1167,72 @@ function TheCenter({
         <RevealHead
           eyebrow="Around CCF Centris"
           icon="building"
-          title="Room to gather, to learn, and to play"
-          lead="A worship hall that seats 1,300, a sports hall for 800, four flexible halls for classes and events, and a lounge made for Dgroups — and the sports hall is open to the neighborhood, not only to CCF."
-          action={
-            <ButtonLink href="/centris" tone="outline">
-              Take a look around
-            </ButtonLink>
-          }
+          title="What’s where"
+          lead="Everything is on the second floor of Centris Station: rooms for classes, Dgroups, and gatherings, and a sports court. Seats are listed for each way a room can be set up."
         />
 
-        <Stagger className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {featured.map((f) => (
-            <HoverLift key={f.id}>
-              <Link
-                href={`/centris/facilities/${f.slug}`}
-                className="group block border border-hairline bg-paper transition-colors hover:border-ink"
-              >
-                {/* Placeholder art until CCF supplies real photos of each
-                    space — the YouTube stills used before weren't of the
-                    venues. */}
-                <div className="aspect-[4/3] overflow-hidden">
-                  <MessageArt
-                    seed={f.slug}
-                    label={f.name}
-                    className="h-full w-full"
-                  />
-                </div>
-                <div className="p-5">
-                  <h3 className="font-display text-lg leading-tight">
-                    {f.name}
-                  </h3>
-                  {f.capacity ? (
-                    <p className="mt-1 text-[0.82rem] text-ink-mute">
-                      Seats{" "}
-                      <CountUp value={f.capacity} className="tabular" />
-                    </p>
-                  ) : null}
-                </div>
-              </Link>
-            </HoverLift>
-          ))}
-        </Stagger>
+        <Reveal as="div" className="mt-10 overflow-x-auto border border-hairline bg-paper">
+          <table className="w-full min-w-[36rem] border-collapse text-left">
+            <caption className="sr-only">
+              Rooms at CCF Centris and how many people each seats per setup
+            </caption>
+            <thead>
+              <tr className="border-b border-hairline">
+                <th scope="col" className="label px-5 py-3 text-ink-mute">
+                  Room
+                </th>
+                {setups.map(([key, label]) => (
+                  <th
+                    key={key}
+                    scope="col"
+                    className="label px-5 py-3 text-right text-ink-mute"
+                  >
+                    {label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {ROOMS.map((room) => (
+                <tr key={room.slug} className="border-b border-hairline last:border-b-0">
+                  <th scope="row" className="px-5 py-4 align-top font-normal">
+                    {room.href ? (
+                      <Link
+                        href={room.href}
+                        className="font-display text-lg leading-tight text-ink transition-colors hover:text-clay"
+                      >
+                        {room.name}
+                      </Link>
+                    ) : (
+                      <span className="font-display text-lg leading-tight text-ink">
+                        {room.name}
+                      </span>
+                    )}
+                    <span className="mt-1 block max-w-md text-[0.85rem] leading-snug text-ink-mute">
+                      {room.blurb}
+                    </span>
+                  </th>
+                  {setups.map(([key]) => (
+                    <td
+                      key={key}
+                      className="tabular px-5 py-4 text-right align-top text-[1.05rem] text-ink"
+                    >
+                      {room.capacity[key] ?? (
+                        <span className="text-ink-mute" aria-label="not offered">
+                          —
+                        </span>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Reveal>
+        <p className="mt-3 text-[0.82rem] leading-relaxed text-ink-mute">
+          Class: rows of chairs facing the front. Table: groups seated around
+          tables. Furniture: the room&rsquo;s own lounge seating.
+        </p>
 
         {shownCourts.length ? (
           <Reveal as="div" className="mt-12">
