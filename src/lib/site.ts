@@ -45,12 +45,12 @@ export const YOUTUBE = {
  * CCF Centris' own social accounts. The YouTube channel is CCF-wide (see
  * YOUTUBE above); these are the center's own.
  *
- * Both accounts are still being set up. A null URL means "not live yet": the
- * Connect page shows that button as coming soon, and the footer and structured
- * data leave it out. Fill in a URL and it goes live everywhere at once.
+ * A null URL means "not live yet": the Connect page shows that button as
+ * coming soon, and the footer and structured data leave it out. Facebook is
+ * still being set up; fill in its URL and it goes live everywhere at once.
  */
 export const SOCIALS: Record<"instagram" | "facebook", string | null> = {
-  instagram: null,
+  instagram: "https://www.instagram.com/ccfcentris/",
   facebook: null,
 };
 
@@ -138,10 +138,26 @@ export const CCF_NET = {
 /**
  * Where "Leave a message" on the Contact page goes. A staff inbox stands in
  * until CCF Centris has an official address; change it here when one exists.
- * `officeHours` stays null until confirmed, and the Contact page hides the
- * row rather than guess.
+ *
+ * Every message arrives with `messageSubject`, so one Outlook rule can file
+ * website mail into its own folder. That works on any mailbox, unlike a
+ * "+tag" address, which Microsoft 365 bounces if the tenant has plus
+ * addressing switched off.
+ *
+ * `officeHours` is a placeholder until the center confirms its hours; set it
+ * to null and the Contact page hides the row.
  */
 export const CONTACT = {
   messageEmail: "adrian.camacho@ccf.org.ph",
-  officeHours: null as string | null,
+  messageSubject: "[CCF Centris website] New message",
+  officeHours: "10:00 AM – 9:00 PM" as string | null,
+} as const;
+
+/**
+ * Where to park: the Eton Centris pin CCF Centris shared. Full parking
+ * instructions come later; until then the directions page links this pin.
+ */
+export const PARKING = {
+  name: "Eton Centris Elevated Parking 2",
+  mapsUrl: "https://maps.app.goo.gl/sjFA6pVwzF5Bqk23A",
 } as const;

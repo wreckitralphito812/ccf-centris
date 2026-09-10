@@ -18,7 +18,7 @@ export const metadata: Metadata = {
  * never coming. A mailto link always arrives.
  */
 const MESSAGE_HREF = `mailto:${CONTACT.messageEmail}?subject=${encodeURIComponent(
-  "Message from the CCF Centris website",
+  CONTACT.messageSubject,
 )}`;
 
 export default function ContactPage() {

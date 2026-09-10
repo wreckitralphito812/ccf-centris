@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Eyebrow, Section, SectionHead } from "@/components/ui";
-import { MAPS_EMBED, MAPS_LINK, SITE } from "@/lib/site";
+import { MAPS_EMBED, MAPS_LINK, PARKING, SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Directions",
@@ -24,14 +24,15 @@ const ROUTES = [
   {
     id: "car",
     label: "Driving",
-    lead: "Parking is on site at Eton Centris.",
+    lead: `Park at ${PARKING.name}.`,
     steps: [
       "Enter Eton Centris from EDSA or from Quezon Avenue.",
-      "Park in the mall car park. Rates are set by the mall and posted at entry.",
+      `Follow the signs to ${PARKING.name}. Rates are set by the mall and posted at entry.`,
       "Take the lifts or escalators to the second floor.",
       "Follow signage for CCF Centris.",
     ],
     note: "Parking fills quickly on Sunday mornings. Arriving 20 minutes before the 10:00 AM service gives you time to find a slot.",
+    link: { label: "Open the parking pin in Google Maps", href: PARKING.mapsUrl },
   },
   {
     id: "grab",
@@ -148,6 +149,16 @@ export default function DirectionsPage() {
                   <p className="mt-5 border-l-2 border-clay pl-4 text-[0.85rem] leading-relaxed text-ink-mute">
                     {r.note}
                   </p>
+                ) : null}
+                {r.link ? (
+                  <a
+                    href={r.link.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="label mt-5 inline-flex items-center gap-1.5 text-clay underline underline-offset-4 hover:text-clay-deep"
+                  >
+                    {r.link.label} &#8599;
+                  </a>
                 ) : null}
               </div>
             ))}
