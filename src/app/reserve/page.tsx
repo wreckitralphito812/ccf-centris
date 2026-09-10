@@ -25,7 +25,7 @@ const OPTIONS: {
   {
     eyebrow: "Ministry & church gatherings",
     title: "Request a room.",
-    body: "For ministry meetings, trainings, and events. Send a request, and once an admin approves it, it goes on the calendar.",
+    body: "Free for ministry meetings, trainings, and events. Send a request, and once an admin approves it, it goes on the calendar.",
     href: "/centris/reserve",
     cta: "Request a room",
   },

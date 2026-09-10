@@ -3,7 +3,6 @@ import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Eyebrow, Section, SectionHead } from "@/components/ui";
 import {
-  getAddons,
   getCourtSlots,
   getFacility,
   getReservableFacilities,
@@ -16,7 +15,7 @@ import { BookingFlow } from "./booking";
 export const metadata: Metadata = {
   title: "Reserve a space",
   description:
-    "Book a basketball, badminton, or pickleball court, or request a multipurpose hall at CCF Centris. Open to the community.",
+    "Book the basketball or pickleball court, or request a multipurpose hall at CCF Centris. Rooms are free for ministries.",
 };
 
 /** Availability is live, so this page is never cached. */
@@ -37,9 +36,8 @@ export default async function ReservePage({
   // accounts, so the flow stays open (it just can't actually write).
   const signedIn = !hasSupabase() || Boolean(await currentUser());
 
-  const [facilities, addons, hall] = await Promise.all([
+  const [facilities, hall] = await Promise.all([
     getReservableFacilities(),
-    getAddons(),
     getFacility("sports-hall"),
   ]);
 
@@ -69,7 +67,6 @@ export default async function ReservePage({
           {signedIn ? (
             <BookingFlow
               facilities={facilities}
-              addons={addons}
               slotsByCourt={slotsByCourt}
               initialFacility={one(sp.facility)}
               initialCourt={one(sp.court)}
@@ -119,7 +116,7 @@ export default async function ReservePage({
             {[
               ["Cancelling", "Cancel at least 24 hours ahead and there is no penalty. Repeated no-shows affect future bookings."],
               ["Approval", "Courts are usually instant. Multipurpose halls are a request first, confirmed by the facilities team within a day."],
-              ["Payment", "Settled with the facilities team through CCF's own channels. Nothing is charged through this site."],
+              ["Payment", "Rooms are free for ministries. Court rates will be posted soon. Nothing is charged through this site."],
               ["Footwear", "Non-marking indoor shoes are required on the sport floor. No exceptions, it damages the surface."],
               ["Setup time", "Room bookings must include setup and packing-down time in the window you book."],
               ["Under 16s", "An adult must be present for anyone under 16 using the Sports Hall."],
@@ -139,9 +136,9 @@ export default async function ReservePage({
           <div className="mt-10 border-l-2 border-clay bg-paper-bright py-4 pl-5 pr-4">
             <Eyebrow>Note</Eyebrow>
             <p className="mt-2 max-w-2xl leading-relaxed text-ink-soft">
-              Rates, hours, and policies shown here are representative and will
-              be set by the CCF Centris facilities team before the booking
-              system opens to the public.
+              Hours and policies shown here are placeholders and will be set by
+              the CCF Centris facilities team before the booking system opens
+              to the public.
             </p>
           </div>
         </Container>

@@ -189,11 +189,13 @@ export default async function FacilityPage({
                 <DetailRow label="Hours">
                   {to12h(f.open_time)} – {to12h(f.close_time)}
                 </DetailRow>
-                {f.hourly_rate_cents !== null ? (
+                {f.hourly_rate_cents !== null || f.is_reservable ? (
                   <DetailRow label="Rate">
-                    {f.hourly_rate_cents === 0
-                      ? "No charge"
-                      : `${fmtPeso(f.hourly_rate_cents)} per hour`}
+                    {f.hourly_rate_cents === null
+                      ? "To be posted"
+                      : f.hourly_rate_cents === 0
+                        ? "No charge"
+                        : `${fmtPeso(f.hourly_rate_cents)} per hour`}
                   </DetailRow>
                 ) : null}
                 <DetailRow label="Booking">

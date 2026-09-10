@@ -2,7 +2,7 @@
 
 import { useActionState, useMemo, useState, startTransition } from "react";
 import Link from "next/link";
-import type { Facility, ReservationAddon, Slot } from "@/lib/types";
+import type { Facility, Slot } from "@/lib/types";
 import { fmtDayLong, fmtPeso, fmtTime } from "@/lib/format";
 import { Button, Pill, cx } from "@/components/ui";
 import { Field, FormSuccess, controlClass } from "@/components/form";
@@ -19,16 +19,15 @@ import {
  * that a facilities admin approves. The step list adapts rather than showing
  * irrelevant questions.
  *
- * Nothing is charged. A court booking ends "reserved, pay at the desk" and a
- * room ends "pending approval", which is what actually happens until CCF's own
- * payment channel is connected.
+ * Nothing is charged and no total is shown. Rooms are free for ministries, and
+ * court rates aren't set yet, so any price here would be invented. A court
+ * booking ends "reserved" and a room ends "pending approval".
  */
 
 type Step = 1 | 2 | 3 | 4;
 
 export function BookingFlow({
   facilities,
-  addons,
   slotsByCourt,
   initialFacility,
   initialCourt,
@@ -36,7 +35,6 @@ export function BookingFlow({
   dateOptions,
 }: {
   facilities: Facility[];
-  addons: ReservationAddon[];
   slotsByCourt: Record<string, Slot[]>;
   initialFacility: string | null;
   initialCourt: string | null;
@@ -51,7 +49,6 @@ export function BookingFlow({
   const [hours, setHours] = useState(1);
   const [participants, setParticipants] = useState(4);
   const [layout, setLayout] = useState("");
-  const [picked, setPicked] = useState<Record<string, number>>({});
   const [accepted, setAccepted] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -86,14 +83,6 @@ export function BookingFlow({
     return Math.max(1, n);
   }, [startIso, slots]);
 
-  const addonTotal = Object.entries(picked).reduce((sum, [id, qty]) => {
-    const a = addons.find((x) => x.id === id);
-    return sum + (a ? a.price_cents * qty : 0);
-  }, 0);
-
-  const rate = facility?.hourly_rate_cents ?? 0;
-  const total = rate * hours + addonTotal;
-
   const canContinue1 = Boolean(facility);
   const canContinue2 = isCourt ? Boolean(courtId && startIso) : Boolean(chosenDate && startIso);
 
@@ -115,7 +104,6 @@ export function BookingFlow({
         courtId={courtId}
         startIso={startIso}
         hours={hours}
-        total={total}
         isCourt={isCourt}
         participants={participants}
       />
@@ -169,12 +157,14 @@ export function BookingFlow({
                         {f.capacity ? (
                           <Pill tone="muted">Up to {f.capacity}</Pill>
                         ) : null}
-                        {f.hourly_rate_cents ? (
+                        {f.hourly_rate_cents === 0 ? (
+                          <Pill tone="moss">No charge</Pill>
+                        ) : f.hourly_rate_cents === null ? (
+                          <Pill tone="muted">Rates to be posted</Pill>
+                        ) : (
                           <Pill tone="muted">
                             {fmtPeso(f.hourly_rate_cents)}/hr
                           </Pill>
-                        ) : (
-                          <Pill tone="moss">No charge</Pill>
                         )}
                         {f.requires_approval ? (
                           <Pill tone="clay">Needs approval</Pill>
@@ -384,7 +374,7 @@ export function BookingFlow({
                         setForm({ ...form, purpose: e.target.value })
                       }
                       className={controlClass}
-                      placeholder="A GLC class, a team training, a Dgroup leaders' meeting."
+                      placeholder="A GLC class, a team training, a Dgroup leaders' meeting. Mention any chairs, tables, or AV you'll need."
                     />
                   )}
                 </Field>
@@ -445,62 +435,6 @@ export function BookingFlow({
                 </button>
               </span>
             </div>
-
-            <fieldset className="mt-7">
-              <legend className="label text-ink-mute">
-                Anything else? (optional)
-              </legend>
-              <div className="mt-3 space-y-px border border-hairline bg-hairline">
-                {addons.map((a) => {
-                  const qty = picked[a.id] ?? 0;
-                  return (
-                    <div
-                      key={a.id}
-                      className="flex items-center gap-4 bg-paper-bright p-4"
-                    >
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-[0.92rem] font-semibold">
-                          {a.name}
-                        </span>
-                        <span className="block text-[0.8rem] text-ink-mute">
-                          {fmtPeso(a.price_cents)}
-                          {a.unit ? ` ${a.unit}` : ""}
-                        </span>
-                      </span>
-                      <span className="flex items-center gap-3">
-                        <button
-                          type="button"
-                          aria-label={`Fewer ${a.name}`}
-                          onClick={() =>
-                            setPicked((p) => ({
-                              ...p,
-                              [a.id]: Math.max(0, (p[a.id] ?? 0) - 1),
-                            }))
-                          }
-                          className="btn-press flex h-7 w-7 items-center justify-center border border-ink/25 text-sm transition-colors hover:border-ink"
-                        >
-                          −
-                        </button>
-                        <span className="w-5 text-center tabular-nums">{qty}</span>
-                        <button
-                          type="button"
-                          aria-label={`More ${a.name}`}
-                          onClick={() =>
-                            setPicked((p) => ({
-                              ...p,
-                              [a.id]: Math.min(10, (p[a.id] ?? 0) + 1),
-                            }))
-                          }
-                          className="btn-press flex h-7 w-7 items-center justify-center border border-ink/25 text-sm transition-colors hover:border-ink"
-                        >
-                          +
-                        </button>
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </fieldset>
 
             <Nav onBack={() => setStep(2)} onNext={() => setStep(4)} />
           </Panel>
@@ -679,28 +613,13 @@ export function BookingFlow({
             value={String(participants)}
           />
           {layout ? <Row label="Layout" value={layout} /> : null}
-          {Object.entries(picked).filter(([, q]) => q > 0).length ? (
-            <Row
-              label="Extras"
-              value={Object.entries(picked)
-                .filter(([, q]) => q > 0)
-                .map(([id, q]) => {
-                  const a = addons.find((x) => x.id === id);
-                  return `${a?.name} ×${q}`;
-                })
-                .join(", ")}
-            />
-          ) : null}
         </dl>
 
-        <div className="mt-6 flex items-baseline justify-between border-t border-hairline pt-5">
-          <span className="label text-ink-mute">Estimated total</span>
-          <span className="font-display text-3xl tabular">{fmtPeso(total)}</span>
-        </div>
-
-        <p className="mt-4 text-[0.8rem] leading-relaxed text-ink-mute">
-          Nothing is charged online. Payment is settled with the facilities
-          team, through CCF&rsquo;s own channels. Keep your reference.
+        <p className="mt-6 border-t border-hairline pt-5 text-[0.8rem] leading-relaxed text-ink-mute">
+          {isCourt
+            ? "Court rates will be posted soon. Nothing is charged online."
+            : "Rooms are free for ministries. Nothing is charged online."}{" "}
+          Keep your reference.
         </p>
         <Link
           href="/centris/reserve#policies"
@@ -721,7 +640,6 @@ function Confirmation({
   courtId,
   startIso,
   hours,
-  total,
   isCourt,
   participants,
 }: {
@@ -730,7 +648,6 @@ function Confirmation({
   courtId: string | null;
   startIso: string | null;
   hours: number;
-  total: number;
   isCourt: boolean;
   participants: number;
 }) {
@@ -776,7 +693,6 @@ function Confirmation({
             ],
             ["Length", `${hours} ${hours === 1 ? "hour" : "hours"}`],
             [isCourt ? "Players" : "Participants", String(participants)],
-            ["Total", fmtPeso(total)],
           ].map(([k, v]) => (
             <div key={k} className="flex justify-between gap-4 py-3">
               <dt className="label text-ink-mute">{k}</dt>
@@ -786,9 +702,9 @@ function Confirmation({
         </dl>
 
         <p className="mt-5 text-[0.85rem] leading-relaxed text-ink-mute">
-          {total > 0
-            ? "Payment is settled at the desk through CCF's own channels. Nothing was charged online."
-            : "There is no charge for this booking."}
+          {isCourt
+            ? "Court rates will be posted soon. Nothing was charged online."
+            : "There is no charge. Rooms are free for ministries."}
         </p>
 
         <div className="mt-7 flex flex-wrap gap-3">
