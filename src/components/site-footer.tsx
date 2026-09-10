@@ -122,7 +122,7 @@ export function SiteFooter() {
         <div className="grid gap-12 lg:grid-cols-[minmax(0,20rem)_1fr]">
           {/* Brand block */}
           <div>
-            <Wordmark tone="paper" />
+            <Wordmark variant="full" />
             <address className="mt-6 space-y-4 not-italic text-[0.95rem] leading-relaxed text-paper-bright/85">
               <span className="block">
                 {SITE.addressLines.map((line) => (

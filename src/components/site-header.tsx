@@ -110,13 +110,13 @@ export function SiteHeader() {
           </Link>
           <Link
             href="/watch"
-            className="btn-press label hidden items-center gap-2 border border-clay bg-clay px-3.5 py-2 text-paper-bright transition-colors hover:bg-clay-deep md:inline-flex lg:hidden xl:inline-flex"
+            className="btn-press label hidden items-center gap-2 border border-clay bg-clay px-3.5 py-2 whitespace-nowrap text-paper-bright transition-colors hover:bg-clay-deep md:inline-flex lg:hidden xl:inline-flex"
           >
             Last Sunday
           </Link>
           <Link
             href="/visit/service-times"
-            className="btn-press label hidden items-center border border-ink px-3.5 py-2 text-ink transition-colors hover:bg-ink hover:text-paper-bright sm:inline-flex lg:hidden xl:inline-flex"
+            className="btn-press label hidden items-center border border-ink px-3.5 py-2 text-ink transition-colors whitespace-nowrap hover:bg-ink hover:text-paper-bright sm:inline-flex lg:hidden 2xl:inline-flex"
           >
             Service times
           </Link>

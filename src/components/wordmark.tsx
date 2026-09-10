@@ -1,4 +1,49 @@
+import Image from "next/image";
 import { cx } from "./ui";
+
+/**
+ * The official CCF Centris satellite marks, as supplied by CCF Centris. Two
+ * lockups, used interchangeably by fit:
+ *
+ * - "horizontal": the ring and CENTRIS on one line. Header and tight spots.
+ * - "full": the same with "Christ's Commission Fellowship" beneath. Footer,
+ *   and anywhere with room.
+ *
+ * The CCF Brand Book sets a 50px minimum height for satellite marks on the
+ * web and forbids redrawing, recolouring, or adding effects, so these render
+ * the supplied files as they are and never below that height.
+ */
+const MARKS = {
+  horizontal: { src: "/logos/ccf-centris-horizontal.png", width: 2872, height: 1196 },
+  full: { src: "/logos/ccf-centris-full.png", width: 3927, height: 1538 },
+} as const;
+
+export function Wordmark({
+  variant = "horizontal",
+  className,
+}: {
+  variant?: keyof typeof MARKS;
+  className?: string;
+}) {
+  const mark = MARKS[variant];
+  return (
+    <Image
+      src={mark.src}
+      width={mark.width}
+      height={mark.height}
+      alt="CCF Centris"
+      priority={variant === "horizontal"}
+      sizes={variant === "horizontal" ? "120px" : "240px"}
+      className={cx(
+        // no-frame opts out of the site-wide image frame: the brand book allows
+        // nothing drawn on or around the mark.
+        "no-frame w-auto",
+        variant === "horizontal" ? "h-[50px]" : "h-[90px]",
+        className,
+      )}
+    />
+  );
+}
 
 /**
  * The CCF mark: a lowercase "ccf" wordmark inside a thin ring.
@@ -57,21 +102,5 @@ export function CcfMark({
         strokeLinecap="round"
       />
     </svg>
-  );
-}
-
-/** Mark plus the center name, used in the header and footer. */
-export function Wordmark({ tone = "ink" }: { tone?: "ink" | "paper" }) {
-  const fg = tone === "paper" ? "text-paper-bright" : "text-ink";
-  return (
-    <span className={cx("flex items-center gap-2.5", fg)}>
-      <CcfMark className="h-8 w-8 text-clay" />
-      <span className="flex flex-col leading-none">
-        <span className="stencil text-[0.95rem] leading-none">CCF</span>
-        <span className="font-display text-[1.15rem] italic leading-none tracking-tight">
-          Centris
-        </span>
-      </span>
-    </span>
   );
 }
