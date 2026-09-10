@@ -45,7 +45,7 @@ export function MobileActionBar() {
     : [
         { label: "Events", href: "/events" },
         { label: "Connect", href: "/connect" },
-        { label: "Reserve", href: "/centris/reserve" },
+        { label: "Reserve", href: "/reserve" },
         { label: "More", href: "/search" },
       ];
 

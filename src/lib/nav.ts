@@ -44,7 +44,7 @@ export const NAV: NavGroup[] = [
       { label: "Calendar", href: "/events/calendar", blurb: "The month at a glance" },
     ],
   },
-  { label: "Reserve", href: "/centris/reserve", items: [] },
+  { label: "Reserve", href: "/reserve", items: [] },
   { label: "Contact", href: "/contact", items: [] },
 ];
 
