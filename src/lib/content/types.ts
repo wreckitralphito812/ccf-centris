@@ -193,6 +193,11 @@ export interface FourWsGuideRecord {
   prayerPoints: FourWsPrayerGroup[];
   memoryVerseReference: string | null;
   memoryVerseText: string | null;
+  /**
+   * The guide's PDF on ccf.org.ph, or null when the page offers none. Absent
+   * on snapshots taken before the parser read it.
+   */
+  downloadUrl?: string | null;
   source: SourceRecord;
 }
 

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { runContentSync } from "./sync";
+import { PARSER_VERSION, runContentSync } from "./sync";
 import { emptySnapshot, readSnapshotFrom, writeSnapshotTo } from "./snapshot";
 
 const CHRONICLE_HTML = readFileSync(
@@ -83,4 +83,93 @@ test("a section that fails validation keeps prior records and reports the error"
   // No records parsed -> section considered empty -> treated as a drop, prior kept.
   assert.deepEqual(readSnapshotFrom(h.snapshotPath).chronicleIssues, prior);
   assert.equal(summary.sections.chronicleIssues!.inserted, 0);
+});
+
+/** A snapshot holding one 4Ws week and its guide, parsed by `parserVersion`. */
+function guideSnapshot(parserVersion: string) {
+  const url = "https://www.ccf.org.ph/4ws-love-god-goviral-edition/";
+  const source = {
+    sourceUrl: url,
+    canonicalUrl: url,
+    resolvedUrl: url,
+    sourceModifiedAt: null,
+    fetchedAt: "2026-09-01T00:00:00.000Z",
+    checksum: "prior",
+    parserVersion,
+  };
+  const snap = emptySnapshot();
+  snap.fourWsWeeks = [
+    {
+      kind: "four_ws_week",
+      slug: "4ws-love-god",
+      title: "Love God",
+      seriesTitle: null,
+      year: 2026,
+      serviceDateLabel: "Sep 5 and 6",
+      serviceDate: "2026-09-06",
+      standardUrl: "https://www.ccf.org.ph/4ws-love-god/",
+      goViralUrl: url,
+      source,
+    },
+  ];
+  snap.fourWsGuides = [
+    {
+      kind: "four_ws_guide",
+      slug: "4ws-love-god",
+      title: "LOVE GOD",
+      dateLabel: null,
+      date: null,
+      welcome: null,
+      worshipSongs: [],
+      word: null,
+      works: null,
+      prayCareShare: null,
+      prayerPoints: [],
+      memoryVerseReference: null,
+      memoryVerseText: null,
+      source,
+    },
+  ];
+  const snapshotPath = join(mkdtempSync(join(tmpdir(), "ccf-sync-")), "public-content.json");
+  writeSnapshotTo(snapshotPath, snap);
+  return { snapshotPath, url };
+}
+
+test("a guide parsed by an older parser is fetched again and updated", async () => {
+  const { snapshotPath, url } = guideSnapshot("0.9.0");
+  const summary = await runContentSync({
+    snapshotPath,
+    sections: ["fourWsGuides"],
+    now: () => "2026-09-10T00:00:00.000Z",
+    fetchImpl: async (u: string) =>
+      u === url
+        ? new Response(
+            '<html><body><h1>LOVE GOD</h1><a href ="https://www.ccf.org.ph/download/41972/" download>PDF</a></body></html>',
+            { status: 200, headers: { "content-type": "text/html" } },
+          )
+        : new Response(null, { status: 404 }),
+  });
+
+  assert.equal(summary.sections.fourWsGuides?.updated, 1);
+  assert.equal(summary.sections.fourWsGuides?.inserted, 0);
+  const [guide] = readSnapshotFrom(snapshotPath).fourWsGuides;
+  assert.equal(guide?.downloadUrl, "https://www.ccf.org.ph/download/41972/");
+  assert.equal(guide?.source.parserVersion, PARSER_VERSION);
+});
+
+test("a guide from the current parser is not fetched again", async () => {
+  const { snapshotPath } = guideSnapshot(PARSER_VERSION);
+  let fetches = 0;
+  const summary = await runContentSync({
+    snapshotPath,
+    sections: ["fourWsGuides"],
+    now: () => "2026-09-10T00:00:00.000Z",
+    fetchImpl: async () => {
+      fetches++;
+      return new Response(null, { status: 404 });
+    },
+  });
+
+  assert.equal(fetches, 0);
+  assert.equal(summary.sections.fourWsGuides?.skipped, 1);
 });

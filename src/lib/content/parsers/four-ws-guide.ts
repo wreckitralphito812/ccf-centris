@@ -287,6 +287,13 @@ export function parseFourWsGuide(
 
   const mem = lines.memoryVerse.map((l) => l.trim()).filter(Boolean);
 
+  // The PDF sits in a WPBakery raw-HTML block, written with spaces around the
+  // equals sign: <a href = "https://www.ccf.org.ph/download/41930/" download>.
+  // Cheerio reads that attribute like any other.
+  const downloadHref = $('a[href*="/download/"]').first().attr("href")?.trim();
+  const downloadUrl =
+    downloadHref && /^https?:\/\//.test(downloadHref) ? downloadHref : null;
+
   const record: FourWsGuideRecord = {
     kind: "four_ws_guide",
     slug: slugFromUrl(src.sourceUrl),
@@ -301,6 +308,7 @@ export function parseFourWsGuide(
     prayerPoints,
     memoryVerseReference: mem[0] ?? null,
     memoryVerseText: mem.slice(1).join(" ") || null,
+    downloadUrl,
     source: src,
   };
 

@@ -115,3 +115,21 @@ test("guide structures Works, Pray-Care-Share, and grouped Prayer Points", () =>
   assert.equal(record.memoryVerseReference, "Psalm 23:1");
   assert.match(record.memoryVerseText ?? "", /my shepherd/);
 });
+
+test("guide picks up the PDF link, spaced attribute and all", () => {
+  const html =
+    '<html><body><div class="vc_row wpb_row section"><div class="wpb_raw_code">' +
+    '<a href ="https://www.ccf.org.ph/download/41972/" target = "_blank" download><img src="dl.png" alt=""></a>' +
+    "</div></div></body></html>";
+  const { record } = parseFourWsGuide(html, src("https://www.ccf.org.ph/4ws-x/"), OBSERVED_AT);
+  assert.equal(record.downloadUrl, "https://www.ccf.org.ph/download/41972/");
+});
+
+test("guide has no PDF link when the page offers none", () => {
+  const { record } = parseFourWsGuide(
+    "<html><body><p>No PDF this week.</p></body></html>",
+    src("https://www.ccf.org.ph/4ws-x/"),
+    OBSERVED_AT,
+  );
+  assert.equal(record.downloadUrl, null);
+});

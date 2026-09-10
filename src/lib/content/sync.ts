@@ -32,7 +32,7 @@ import {
 } from "./snapshot";
 import type { ParseResult, SourceRecord } from "./types";
 
-export const PARSER_VERSION = "1.0.0";
+export const PARSER_VERSION = "1.1.0";
 
 export interface SectionOutcome {
   inserted: number;
@@ -205,8 +205,9 @@ async function mapWithConcurrency<T, R>(
 
 /**
  * Fetch and parse individual 4Ws guide pages for the newest weeks in the
- * index that do not yet have a stored guide (bounded per run). Uses the
- * GoViral edition when present — its layout is the one the parser handles.
+ * index that have no stored guide, or one parsed by an older PARSER_VERSION
+ * (bounded per run). Uses the GoViral edition when present — its layout is the
+ * one the parser handles.
  */
 async function syncFourWsGuides(
   snapshot: ContentSnapshot,
@@ -215,7 +216,15 @@ async function syncFourWsGuides(
   const observedAt = opts.now();
   const outcome = emptyOutcome();
 
-  const haveSlugs = new Set(snapshot.fourWsGuides.map((g) => g.slug));
+  // A guide from an older parser counts as missing, so a parser upgrade (a new
+  // field, a layout fix) reaches stored guides newest-first, a budget's worth
+  // per run, instead of only ever applying to weeks CCF publishes later.
+  const priorSlugs = new Set(snapshot.fourWsGuides.map((g) => g.slug));
+  const haveSlugs = new Set(
+    snapshot.fourWsGuides
+      .filter((g) => g.source.parserVersion === PARSER_VERSION)
+      .map((g) => g.slug),
+  );
   const weeks = [...snapshot.fourWsWeeks];
   // Newest first (the index is already newest-first; keep that order).
   const targets = weeks
@@ -272,7 +281,8 @@ async function syncFourWsGuides(
     return { outcome };
   }
 
-  outcome.inserted = newGuides.length;
+  outcome.updated = newGuides.filter((g) => priorSlugs.has(g.slug)).length;
+  outcome.inserted = newGuides.length - outcome.updated;
   return {
     outcome,
     next: {
