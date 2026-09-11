@@ -100,9 +100,12 @@ export function SiteFooter() {
             We&rsquo;d love to see you this Sunday at {SERVICE_TIMES[0].time}.
           </p>
           <div className="flex flex-wrap gap-3">
+            {/* Solid cream, not teal: under the footer's .bg-night the
+                inherited --clay is the lifted teal, and white on it failed
+                contrast. Matches the "on-dark" button tone in ui.tsx. */}
             <Link
               href="/visit/directions"
-              className="btn-press label inline-flex items-center border border-clay bg-clay px-4 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
+              className="btn-press label inline-flex items-center border border-paper-bright bg-paper-bright px-4 py-2.5 text-night transition-colors hover:border-bone hover:bg-bone"
             >
               Getting here
             </Link>
