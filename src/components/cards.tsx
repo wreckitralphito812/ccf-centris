@@ -36,11 +36,11 @@ export function MessageArt({
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
   // Large flat panels, so the exact CCF brand teal is correct here.
   const palettes = [
-    ["#00a6b6", "#f4efe6"],
-    ["#72042c", "#ebe3d5"],
+    ["#00a6b6", "#ffffff"],
+    ["#72042c", "#f4f7f7"],
     ["#10262b", "#00a6b6"],
-    ["#007682", "#e8dcc6"],
-    ["#4a5d3a", "#f4efe6"],
+    ["#007682", "#e6eef0"],
+    ["#4a5d3a", "#ffffff"],
   ];
   const [bg, fg] = palettes[h % palettes.length];
   const rot = (h % 5) - 2;

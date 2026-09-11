@@ -24,17 +24,19 @@
   color-scheme: light;
 
   /* Grounds.
-     Warm side of neutral throughout: the paper grounds carry a little more
-     red and yellow than a true beige. The inks keep that warmth in their
-     hue but are pulled close to black for contrast — body and secondary
-     copy should read as strongly as the headings, not sit back as grey. */
-  --paper: #f6f0e4;
-  --paper-deep: #eee4d2;
-  --paper-bright: #fdfaf4;
-  --ink: #201a12;
-  --ink-soft: #2e2820; /* body copy — near-black, warm */
-  --ink-mute: #5f574a; /* labels, dates, counts — still a step down, but dark */
-  --hairline: #ded4c0;
+     Clean, cool whites with a trace of CCF teal, so the logo sits "on white
+     or light backgrounds" as the brand book asks. They replace a warm cream
+     (#f6f0e4) that read as yellow-brown once the grain multiplied over it.
+     The inks are near-black in the same teal family, dark enough that body
+     and secondary copy read as strongly as the headings. --clay still
+     clears 4.5:1 on the deepest ground (--paper-deep). */
+  --paper: #f4f7f7;
+  --paper-deep: #e6eef0;
+  --paper-bright: #ffffff;
+  --ink: #142021;
+  --ink-soft: #223032; /* body copy — near-black, cool */
+  --ink-mute: #4d5c5e; /* labels, dates, counts — still a step down, but dark */
+  --hairline: #d3dfe1;
 
   /* Accents.
      Teal is CCF's real brand colour, lifted from the ccf.org.ph logo mark
@@ -56,7 +58,7 @@
   --clay-lift: #3ec6d0;
   --sky: #7d1235;           /* CCF maroon, warmed slightly off pure oxblood */
   --moss: #55643f;
-  --bone: #ecdfc8;
+  --bone: #e2ebed; /* hover surface, one step under --paper-deep */
   /* Dark ground. The old #10262b was a cold slate-teal that read severe under
      the display face. This keeps the same teal family but pulls it warm and
      green, so a full-bleed dark section feels like deep pine rather than
@@ -139,7 +141,9 @@ body::before {
   inset: 0;
   z-index: 3;
   pointer-events: none;
-  opacity: 0.4;
+  /* Kept faint on the white grounds: at 0.4 it greyed them into looking
+     unwashed. Enough to feel like paper up close, invisible at a glance. */
+  opacity: 0.22;
   mix-blend-mode: multiply;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.22'/%3E%3C/svg%3E");
 }
