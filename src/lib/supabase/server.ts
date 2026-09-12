@@ -22,8 +22,17 @@ const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 export const SATELLITE_ID =
   process.env.CENTRIS_SATELLITE_ID ?? "00000000-0000-0000-0000-0000000ce471";
 
+function isValidUrl(value: string | undefined): boolean {
+  if (!value) return false;
+  try {
+    return /^https?:$/.test(new URL(value).protocol);
+  } catch {
+    return false;
+  }
+}
+
 export function hasSupabase(): boolean {
-  return Boolean(url && serviceKey);
+  return isValidUrl(url) && Boolean(serviceKey);
 }
 
 let client: SupabaseClient | null = null;
