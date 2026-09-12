@@ -74,7 +74,7 @@ export function ShareButton({ title }: { title: string }) {
           /* clipboard blocked */
         }
       }}
-      className="label inline-flex items-center border border-white/25 px-4 py-2.5 text-paper-bright transition-colors hover:bg-white/10"
+      className="label tap border border-white/25 px-4 py-2.5 text-paper-bright transition-colors hover:bg-white/10"
     >
       {copied ? "Link copied" : "Share"}
     </button>

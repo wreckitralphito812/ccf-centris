@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
-import Link from "next/link";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Section } from "@/components/ui";
@@ -44,7 +43,7 @@ export default function ContactPage() {
                 <ContactRow label="Email">
                   <a
                     href={`mailto:${CONTACT.messageEmail}`}
-                    className="text-clay underline underline-offset-4"
+                    className="tap break-all text-clay underline underline-offset-4"
                   >
                     {CONTACT.messageEmail}
                   </a>
@@ -69,7 +68,6 @@ export default function ContactPage() {
                 <ButtonLink
                   href="/visit/directions"
                   tone="outline"
-                  size="sm"
                   full
                   className="mt-5"
                 >
@@ -93,12 +91,9 @@ export default function ContactPage() {
                   The Prayer Wall is where the CCF Centris community prays for
                   one another.
                 </p>
-                <Link
-                  href="/prayer-wall"
-                  className="label mt-4 inline-block border border-ink px-4 py-2.5 text-center text-ink transition-colors hover:bg-ink hover:text-paper-bright"
-                >
+                <ButtonLink href="/prayer-wall" tone="outline" full className="mt-4">
                   Go to the Prayer Wall
-                </Link>
+                </ButtonLink>
               </div>
 
               <div className="border border-hairline bg-paper-bright p-6">
@@ -111,7 +106,7 @@ export default function ContactPage() {
                   href="https://www.ccf.org.ph"
                   target="_blank"
                   rel="noreferrer"
-                  className="label mt-4 inline-block text-clay underline underline-offset-4"
+                  className="label tap mt-3 text-clay underline underline-offset-4"
                 >
                   ccf.org.ph
                 </a>

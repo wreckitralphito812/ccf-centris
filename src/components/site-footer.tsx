@@ -77,7 +77,7 @@ const COLUMNS: FooterColumn[] = [
 
 /** One utility-link style, shared by the brand block and the legal row. */
 const utilLink =
-  "text-paper-bright/70 underline-offset-4 transition-colors hover:text-paper-bright hover:underline";
+  "tap-dense text-paper-bright/70 underline-offset-4 transition-colors hover:text-paper-bright hover:underline";
 
 export function SiteFooter() {
   const hasContact = SITE.email || SITE.phone;
@@ -102,7 +102,7 @@ export function SiteFooter() {
                 contrast. Matches the "on-dark" button tone in ui.tsx. */}
             <Link
               href="/visit/directions"
-              className="btn-press label inline-flex items-center border border-paper-bright bg-paper-bright px-4 py-2.5 text-night transition-colors hover:border-bone hover:bg-bone"
+              className="btn-press label tap border border-paper-bright bg-paper-bright px-4 py-2.5 text-night transition-colors hover:border-bone hover:bg-bone"
             >
               Getting here
             </Link>
@@ -110,7 +110,7 @@ export function SiteFooter() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-[110rem] px-5 pb-24 pt-14 sm:px-8 sm:pb-14">
+      <div className="mx-auto max-w-[110rem] px-5 pb-14 pt-14 sm:px-8">
         <h2 className="sr-only">Site footer</h2>
 
         <div className="grid gap-12 lg:grid-cols-[minmax(0,20rem)_1fr]">
@@ -146,7 +146,7 @@ export function SiteFooter() {
                 href={MAPS_LINK}
                 target="_blank"
                 rel="noreferrer"
-                className="label inline-flex border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
+                className="label tap border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
               >
                 Get directions
               </a>
@@ -156,7 +156,7 @@ export function SiteFooter() {
                   target="_blank"
                   rel="noreferrer"
                   aria-label="CCF Centris on Instagram"
-                  className="label inline-flex items-center gap-2 border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
+                  className="label tap gap-2 border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
                 >
                   <InstagramGlyph />
                   Instagram
@@ -168,7 +168,7 @@ export function SiteFooter() {
                   target="_blank"
                   rel="noreferrer"
                   aria-label="CCF Centris on Facebook"
-                  className="label inline-flex items-center gap-2 border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
+                  className="label tap gap-2 border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
                 >
                   Facebook
                 </a>
@@ -178,14 +178,14 @@ export function SiteFooter() {
                 target="_blank"
                 rel="noreferrer"
                 aria-label="CCF on YouTube"
-                className="label inline-flex items-center gap-2 border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
+                className="label tap gap-2 border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
               >
                 <YouTubeGlyph />
                 YouTube
               </a>
             </div>
 
-            <p className="mt-8 max-w-xs text-[0.85rem] leading-relaxed text-paper-bright/65">
+            <p className="mt-8 max-w-xs text-[0.9rem] leading-relaxed text-paper-bright/65">
               A satellite center of {SITE.parent}, making disciples who make
               disciples since 1984.
             </p>
@@ -204,12 +204,12 @@ export function SiteFooter() {
                 >
                   {col.heading}
                 </h2>
-                <ul aria-labelledby={col.id} className="mt-4 space-y-2.5">
+                <ul aria-labelledby={col.id} className="mt-3 space-y-0.5 lg:mt-4 lg:space-y-2.5">
                   {col.links.map((link) => (
                     <li key={link.href}>
                       <Link
                         href={link.href}
-                        className="text-[0.92rem] text-paper-bright/85 underline-offset-4 transition-colors hover:text-paper-bright hover:underline"
+                        className="tap-dense text-[0.92rem] text-paper-bright/85 underline-offset-4 transition-colors hover:text-paper-bright hover:underline"
                       >
                         {link.label}
                       </Link>
@@ -221,7 +221,7 @@ export function SiteFooter() {
           </nav>
         </div>
 
-        <div className="mt-14 flex flex-col gap-3 border-t border-white/15 pt-6 text-[0.8rem] text-paper-bright/65 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-14 flex flex-col gap-3 border-t border-white/15 pt-6 text-[0.85rem] text-paper-bright/65 sm:flex-row sm:items-center sm:justify-between">
           <p>
             © {new Date().getFullYear()} {SITE.parent}. All rights reserved.
           </p>
@@ -238,7 +238,7 @@ export function SiteFooter() {
             <Link href="/accessibility" className={utilLink}>
               Accessibility
             </Link>
-            <a href="#main" className={`inline-flex items-center gap-1 ${utilLink}`}>
+            <a href="#main" className={`gap-1 ${utilLink}`}>
               <span aria-hidden>↑</span> Top
             </a>
           </div>

@@ -136,12 +136,12 @@ export default async function ResourcesPage({
                         href={r.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="label inline-block border border-ink px-4 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+                        className="label tap border border-ink px-4 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
                       >
                         {r.external ? "Open on ccf.org.ph ↗" : "Open"}
                       </a>
                     ) : (
-                      <span className="label inline-block border border-dashed border-hairline px-4 py-2.5 text-ink-mute">
+                      <span className="label tap border border-dashed border-hairline px-4 py-2.5 text-ink-mute">
                         Not yet available
                       </span>
                     )}

@@ -150,7 +150,7 @@ export default function AboutPage() {
             href={POSITION_STATEMENTS_URL}
             target="_blank"
             rel="noreferrer"
-            className="label mt-4 inline-flex items-center border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+            className="label mt-4 tap border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
           >
             Read CCF&rsquo;s full position
           </a>

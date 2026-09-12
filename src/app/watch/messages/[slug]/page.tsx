@@ -202,7 +202,7 @@ export default async function MessagePage({
                 {w ? (
                   <a
                     href="#four-ws"
-                    className="label inline-flex items-center border border-white/25 px-4 py-2.5 text-paper-bright transition-colors hover:bg-white/10"
+                    className="label tap border border-white/25 px-4 py-2.5 text-paper-bright transition-colors hover:bg-white/10"
                   >
                     4Ws
                   </a>

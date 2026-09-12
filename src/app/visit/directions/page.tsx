@@ -128,7 +128,7 @@ export default function DirectionsPage() {
                 href={MAPS_PLACE}
                 target="_blank"
                 rel="noreferrer"
-                className="link label mt-3 inline-block text-clay underline underline-offset-4"
+                className="link label tap mt-2 text-clay underline underline-offset-4"
               >
                 Open the pin in Google Maps &#8599;
               </a>
@@ -170,7 +170,7 @@ export default function DirectionsPage() {
                     href={r.link.href}
                     target="_blank"
                     rel="noreferrer"
-                    className="label mt-5 inline-flex items-center gap-1.5 text-clay underline underline-offset-4 hover:text-clay-deep"
+                    className="label tap mt-4 gap-1.5 text-clay underline underline-offset-4 hover:text-clay-deep"
                   >
                     {r.link.label} &#8599;
                   </a>

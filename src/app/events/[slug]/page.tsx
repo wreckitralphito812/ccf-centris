@@ -204,7 +204,7 @@ export default async function EventPage({
                   href={calendar}
                   target="_blank"
                   rel="noreferrer"
-                  className="label inline-flex items-center border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+                  className="label tap border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
                 >
                   Add to calendar
                 </a>
@@ -212,7 +212,7 @@ export default async function EventPage({
                   href={MAPS_LINK}
                   target="_blank"
                   rel="noreferrer"
-                  className="label inline-flex items-center border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+                  className="label tap border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
                 >
                   Directions
                 </a>

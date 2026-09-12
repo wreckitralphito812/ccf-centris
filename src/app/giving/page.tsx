@@ -36,7 +36,7 @@ export default function GivingPage() {
             href={CCF_GIVE_URL}
             target="_blank"
             rel="noreferrer"
-            className="label inline-flex items-center border border-clay bg-clay px-7 py-3.5 text-paper-bright transition-colors hover:bg-clay-deep"
+            className="label tap border border-clay bg-clay px-7 py-3.5 text-paper-bright transition-colors hover:bg-clay-deep"
           >
             Give through CCF
           </a>
@@ -103,7 +103,7 @@ export default function GivingPage() {
               href={CCF_GIVE_URL}
               target="_blank"
               rel="noreferrer"
-              className="label inline-flex items-center border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
+              className="label tap border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
             >
               Open CCF&rsquo;s giving page
             </a>

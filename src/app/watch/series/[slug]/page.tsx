@@ -45,7 +45,7 @@ export default async function SeriesPage({
         actions={
           <Link
             href="/watch/series"
-            className="label inline-flex items-center border border-ink px-7 py-3.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+            className="label tap border border-ink px-7 py-3.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
           >
             ← All series
           </Link>

@@ -63,7 +63,7 @@ function Welcome({ live }: { live: boolean }) {
        globals.css lifts --clay for everything under .bg-night, and the
        visit card is a paper surface inside this section: under that rule
        its links and "Get directions" button would turn pale teal on cream. */
-    <section className="relative isolate overflow-hidden bg-[var(--night)]">
+    <section className="relative isolate flex flex-col justify-center overflow-hidden bg-[var(--night)] lg:min-h-[calc(100svh-var(--chrome,4.875rem))]">
       <Image
         src="/photos/hero-welcome.jpg"
         alt=""
@@ -80,7 +80,13 @@ function Welcome({ live }: { live: boolean }) {
         className="absolute inset-0 -z-10 bg-gradient-to-t from-night/95 via-night/65 to-night/30 lg:bg-gradient-to-r lg:from-night/90 lg:via-night/55 lg:to-night/15"
       />
 
-      <Container className="grid gap-10 py-14 sm:py-20 lg:grid-cols-[minmax(0,1fr)_23rem] lg:items-center lg:gap-16 lg:py-24">
+      <Container className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_23rem] lg:items-center lg:gap-16 lg:py-24">
+        {/* Exactly one screen tall on phones and tablets, so the welcome is
+            all there is until you scroll — the visit card used to crowd into
+            the first view under the headline. `--chrome` is measured by
+            ChromeOffset; the fallback is the header's own height, used for the
+            first paint before that runs. */}
+        <div className="relative flex min-h-[calc(100svh-var(--chrome,4.875rem))] flex-col justify-center py-14 lg:min-h-0 lg:py-0">
         <HeroStage className="max-w-3xl">
           <p className="label text-clay-lift">
             Christ&rsquo;s Commission Fellowship
@@ -97,19 +103,63 @@ function Welcome({ live }: { live: boolean }) {
             Regardless of who you are or where life has taken you, you are more
             than welcome here.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <ButtonLink href="/visit/new-here" tone="on-dark" size="lg">
+          {/* Full width while they stack, so two buttons of different word
+              lengths do not leave a ragged edge down the phone screen. */}
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <ButtonLink
+              href="/visit/new-here"
+              tone="on-dark"
+              size="lg"
+              className="w-full sm:w-auto"
+            >
               Plan your visit
             </ButtonLink>
-            <ButtonLink href="/watch" tone="outline-on-dark" size="lg">
+            <ButtonLink
+              href="/watch"
+              tone="outline-on-dark"
+              size="lg"
+              className="w-full sm:w-auto"
+            >
               Watch last Sunday
             </ButtonLink>
           </div>
         </HeroStage>
+          <ScrollCue />
+        </div>
 
-        <VisitCard live={live} />
+        {/* Container carries no vertical padding below `lg` now that the block
+            above owns the first screen, so the card supplies its own. */}
+        <div className="pb-14 lg:pb-0">
+          <VisitCard live={live} />
+        </div>
       </Container>
     </section>
+  );
+}
+
+/**
+ * The nudge that says the page continues. A full-bleed hero that ends exactly
+ * at the fold gives no edge to read as "cut off", so without this it looks
+ * like the whole page. Hidden from assistive tech, which does not need it, and
+ * dropped at `lg` where the visit card is already in view beside the headline.
+ */
+function ScrollCue() {
+  return (
+    <span
+      aria-hidden
+      className="absolute inset-x-0 bottom-5 flex flex-col items-center gap-1.5 text-paper-bright/70 lg:hidden"
+    >
+      <span className="label text-[0.65rem]">Scroll</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M12 5v13m0 0 5-5m-5 5-5-5"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
   );
 }
 
@@ -127,7 +177,7 @@ function VisitCard({ live }: { live: boolean }) {
       {live ? (
         <Link
           href="/watch"
-          className="label inline-flex items-center gap-2 bg-clay px-3 py-1.5 text-paper-bright"
+          className="label tap gap-2 bg-clay px-3 py-1.5 text-paper-bright"
         >
           <LiveDot />
           Service happening now
@@ -145,7 +195,7 @@ function VisitCard({ live }: { live: boolean }) {
         href={PARKING.mapsUrl}
         target="_blank"
         rel="noreferrer"
-        className="link label mt-2 inline-block text-clay underline underline-offset-4"
+        className="link label tap mt-1 text-clay underline underline-offset-4"
       >
         Where to park
       </a>
@@ -162,10 +212,10 @@ function VisitCard({ live }: { live: boolean }) {
       </div>
 
       <p className="mt-5 flex flex-wrap gap-x-4 gap-y-2 border-t border-hairline pt-4">
-        <Link href="/prayer-wall" className="link label text-clay underline underline-offset-4">
+        <Link href="/prayer-wall" className="link label tap text-clay underline underline-offset-4">
           Ask for prayer
         </Link>
-        <Link href="/contact" className="link label text-clay underline underline-offset-4">
+        <Link href="/contact" className="link label tap text-clay underline underline-offset-4">
           Contact us
         </Link>
         {SOCIALS.instagram ? (
@@ -178,7 +228,7 @@ function VisitCard({ live }: { live: boolean }) {
             /* The glyph alone, no label: it is the one item in this row people
                recognise faster as a mark than as a word. Sized to the 44px
                touch target the text links beside it already clear. */
-            className="ml-auto grid h-11 w-11 -my-2 -mr-2 place-items-center text-clay transition-colors hover:text-clay-deep"
+            className="-my-1 -ml-3 grid h-11 w-11 place-items-center text-clay transition-colors hover:text-clay-deep sm:-mr-2 sm:ml-auto"
           >
             <InstagramGlyph className="h-5 w-5" />
           </a>
@@ -237,7 +287,7 @@ function NextSteps() {
         <p className="mt-8 text-center">
           <Link
             href="/connect"
-            className="link label text-clay underline underline-offset-4"
+            className="link label tap text-clay underline underline-offset-4"
           >
             More ways to connect &rarr;
           </Link>

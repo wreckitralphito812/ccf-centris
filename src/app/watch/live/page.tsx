@@ -237,7 +237,7 @@ export default async function WatchLivePage() {
                       href={nextService.watchUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="btn-press label inline-flex items-center border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
+                      className="btn-press label tap border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
                     >
                       Set a reminder on YouTube
                     </a>
@@ -246,7 +246,7 @@ export default async function WatchLivePage() {
                       href={`${YOUTUBE.channelUrl}/streams`}
                       target="_blank"
                       rel="noreferrer"
-                      className="btn-press label inline-flex items-center border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+                      className="btn-press label tap border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
                     >
                       See the schedule on YouTube
                     </a>
@@ -325,7 +325,7 @@ export default async function WatchLivePage() {
                   href={YOUTUBE.channelUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="label inline-flex items-center border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+                  className="label tap border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
                 >
                   Visit the channel
                 </a>
@@ -415,7 +415,7 @@ function AddToCalendar({
       href={`https://calendar.google.com/calendar/render?${params}`}
       target="_blank"
       rel="noreferrer"
-      className="label inline-flex items-center border border-clay bg-clay px-7 py-3.5 text-paper-bright transition-colors hover:bg-clay-deep"
+      className="label tap border border-clay bg-clay px-7 py-3.5 text-paper-bright transition-colors hover:bg-clay-deep"
     >
       Add to calendar
     </a>

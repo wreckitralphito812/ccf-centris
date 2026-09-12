@@ -66,7 +66,7 @@ export default async function ScriptureMemoryPage({
                   href={current.downloadUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="label mt-6 inline-block border border-ink px-4 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+                  className="label mt-6 tap border border-ink px-4 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
                 >
                   Download the card ↗
                 </a>

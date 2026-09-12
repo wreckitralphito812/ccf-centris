@@ -210,6 +210,46 @@ a.link,
   }
 }
 
+/* Touch-target floor: 44px, the size a fingertip actually hits (WCAG 2.5.5,
+   Apple HIG). Gated on a coarse pointer so a mouse still gets the tighter
+   control sizes the design was drawn at, and so the admin tables stay dense.
+   Covers every button and button-styled link, which all carry .btn-press. */
+@media (max-width: 63.9375rem), (pointer: coarse) {
+  .btn-press {
+    min-height: 44px;
+  }
+}
+
+/* Standalone text links and small bordered controls — "Where to park", "View
+   all 12", a row of quick links under a card. They are targets in their own
+   right, not words inside a sentence, so they get the same 44px floor.
+   Never put this on a link inside prose: it must stay inline to wrap with the
+   text around it. */
+.tap {
+  display: inline-flex;
+  align-items: center;
+}
+
+@media (max-width: 63.9375rem), (pointer: coarse) {
+  .tap {
+    min-height: 44px;
+  }
+}
+
+/* Dense link lists — the footer sitemap — where a full 44px row would push
+   the last column off the end of a long scroll. 36px clears the 24px WCAG
+   2.5.8 minimum with room to spare while keeping the list readable as a list. */
+.tap-dense {
+  display: inline-flex;
+  align-items: center;
+}
+
+@media (max-width: 63.9375rem), (pointer: coarse) {
+  .tap-dense {
+    min-height: 36px;
+  }
+}
+
 /* Values that change in place — timers, counters, prices, data columns —
    keep column width stable. */
 .tabular {
@@ -276,9 +316,20 @@ a.link,
 .label {
   font-family: var(--font-sans);
   font-weight: 600;
-  font-size: 0.6875rem;
+  /* 12px on phones and small tablets, 11px from `sm` up. Uppercase set at
+     0.18em tracking loses legibility fast at small sizes, and a phone is
+     both the smallest text and the furthest from the eye. */
+  font-size: 0.75rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
+}
+
+/* 11px is a desktop size. Phones and tablets keep the 12px step, matching
+   where the touch-target floor applies. */
+@media (min-width: 64rem) {
+  .label {
+    font-size: 0.6875rem;
+  }
 }
 
 .stencil {

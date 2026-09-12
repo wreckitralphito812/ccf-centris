@@ -96,7 +96,7 @@ export function SeriesDisclosure({ row }: { row: SeriesRow }) {
                     href={c.href}
                     target="_blank"
                     rel="noreferrer"
-                    className="label inline-flex items-center gap-1 border border-ink/20 px-2.5 py-1.5 text-ink-soft transition-colors hover:border-ink hover:text-ink"
+                    className="label tap gap-1 border border-ink/20 px-2.5 py-1.5 text-ink-soft transition-colors hover:border-ink hover:text-ink"
                   >
                     {c.label}
                     {c.count ? (
@@ -114,7 +114,7 @@ export function SeriesDisclosure({ row }: { row: SeriesRow }) {
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-controls={panelId}
-          className="btn-press label inline-flex items-center gap-2 self-start border border-ink px-4 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright sm:self-center"
+          className="btn-press label tap gap-2 self-start border border-ink px-4 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright sm:self-center"
         >
           {open ? "Hide videos" : "Show videos"}
           <ChevronIcon open={open} />

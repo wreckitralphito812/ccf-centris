@@ -85,7 +85,7 @@ export default async function SeriesIndexPage() {
             href={`${YOUTUBE.channelUrl}/playlists`}
             target="_blank"
             rel="noreferrer"
-            className="label inline-flex items-center border border-ink px-7 py-3.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+            className="label tap border border-ink px-7 py-3.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
           >
             All playlists on YouTube
           </a>

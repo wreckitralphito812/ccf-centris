@@ -98,7 +98,7 @@ export default function VisitPage() {
                 href={MAPS_PLACE}
                 target="_blank"
                 rel="noreferrer"
-                className="link label mt-4 inline-block text-clay underline underline-offset-4"
+                className="link label tap mt-3 text-clay underline underline-offset-4"
               >
                 Open the pin in Google Maps &#8599;
               </a>

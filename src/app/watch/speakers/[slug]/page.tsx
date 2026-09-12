@@ -44,7 +44,7 @@ export default async function SpeakerPage({
         actions={
           <Link
             href="/watch/speakers"
-            className="label inline-flex items-center border border-ink px-7 py-3.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+            className="label tap border border-ink px-7 py-3.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
           >
             ← All speakers
           </Link>

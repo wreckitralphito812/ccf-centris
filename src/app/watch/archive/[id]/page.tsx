@@ -93,13 +93,13 @@ export default async function ArchivedServicePage({
                 href={service.watchUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="btn-press label inline-flex items-center border border-paper-bright bg-paper-bright px-5 py-2.5 text-night transition-colors hover:bg-bone hover:border-bone"
+                className="btn-press label tap border border-paper-bright bg-paper-bright px-5 py-2.5 text-night transition-colors hover:bg-bone hover:border-bone"
               >
                 Open on YouTube
               </a>
               <Link
                 href="/watch/messages"
-                className="btn-press label inline-flex items-center border border-white/25 px-5 py-2.5 text-paper-bright transition-colors hover:bg-white/10"
+                className="btn-press label tap border border-white/25 px-5 py-2.5 text-paper-bright transition-colors hover:bg-white/10"
               >
                 Browse messages →
               </Link>

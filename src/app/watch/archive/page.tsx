@@ -53,7 +53,7 @@ export default async function ArchivePage() {
               href={`${YOUTUBE.channelUrl}/playlists`}
               target="_blank"
               rel="noreferrer"
-              className="label inline-flex items-center border border-ink px-7 py-3.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+              className="label tap border border-ink px-7 py-3.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
             >
               All playlists on YouTube
             </a>
@@ -73,7 +73,7 @@ export default async function ArchivePage() {
                   href={`${YOUTUBE.channelUrl}/streams`}
                   target="_blank"
                   rel="noreferrer"
-                  className="label inline-flex items-center border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+                  className="label tap border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
                 >
                   All streams on YouTube
                 </a>
@@ -196,7 +196,7 @@ export default async function ArchivePage() {
                                 href={c.href}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="label inline-flex items-center gap-1 border border-ink/20 px-2.5 py-1.5 text-ink-soft transition-colors hover:border-ink hover:text-ink"
+                                className="label tap gap-1 border border-ink/20 px-2.5 py-1.5 text-ink-soft transition-colors hover:border-ink hover:text-ink"
                               >
                                 {KIND_LABEL[c.kind]}
                                 {c.itemCount ? (
