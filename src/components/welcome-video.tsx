@@ -5,8 +5,10 @@ import { cx } from "./ui";
 import { PlayGlyph } from "./icons";
 
 /**
- * "Welcome to CCF" intro film, served from /public/videos as a self-hosted
- * MP4 (no YouTube chrome, no third-party request on first paint).
+ * "Welcome to CCF" intro film, served from Vercel Blob storage as a
+ * self-hosted MP4 (no YouTube chrome, no third-party request on first
+ * paint). Lives in Blob rather than /public so the ~28MB file isn't
+ * re-uploaded on every deploy.
  *
  * Costs nothing until pressed: the poster image stands in for the player,
  * and only on click does the real <video> mount and start. 16:9 and fluid,
@@ -14,8 +16,8 @@ import { PlayGlyph } from "./icons";
  * on desktop.
  */
 export function WelcomeVideo({
-  src = "/videos/welcome-to-ccf.mp4",
-  poster = "/videos/welcome-to-ccf-poster.jpg",
+  src = "https://zqrweqhvvyijaafm.public.blob.vercel-storage.com/welcome-to-ccf-rjCT1yIipTVRreMsWzMb4m3XTS5ylb.mp4",
+  poster = "https://zqrweqhvvyijaafm.public.blob.vercel-storage.com/welcome-to-ccf-poster.jpg",
   className,
 }: {
   src?: string;

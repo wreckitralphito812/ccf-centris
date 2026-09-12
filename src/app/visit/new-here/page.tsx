@@ -53,7 +53,7 @@ export default async function NewHerePage() {
               aria-label="Welcome to CCF"
               className="aspect-video w-full bg-night object-contain"
               controls
-              poster="/videos/welcome-to-ccf-poster.jpg"
+              poster="https://zqrweqhvvyijaafm.public.blob.vercel-storage.com/welcome-to-ccf-poster.jpg"
               playsInline
               preload="metadata"
             >
