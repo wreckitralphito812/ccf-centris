@@ -852,7 +852,7 @@ export async function globalSearch(q: string): Promise<SearchHit[]> {
   }
   for (const f of faqs) {
     if (match(f.question, f.answer)) {
-      hits.push({ kind: "FAQ", title: f.question, excerpt: f.answer, href: "/visit/faqs" });
+      hits.push({ kind: "FAQ", title: f.question, excerpt: f.answer, href: "/visit/new-here" });
     }
   }
   for (const r of volunteerRoles) {

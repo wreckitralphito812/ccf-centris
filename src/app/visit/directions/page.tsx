@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Eyebrow, Section, SectionHead } from "@/components/ui";
-import { MAPS_EMBED, MAPS_LINK, PARKING, SITE } from "@/lib/site";
+import { MAPS_EMBED, MAPS_LINK, MAPS_PLACE, PARKING, SITE, WAZE_LINK } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Directions",
@@ -65,16 +65,17 @@ export default function DirectionsPage() {
         lead="CCF Centris is on the second floor of Centris Station, inside Eton Centris, at the corner of EDSA and Quezon Avenue."
         actions={
           <>
-            <a
-              href={MAPS_LINK}
+            <ButtonLink href={MAPS_LINK} target="_blank" rel="noreferrer" size="lg">
+              Get directions
+            </ButtonLink>
+            <ButtonLink
+              href={WAZE_LINK}
               target="_blank"
               rel="noreferrer"
-              className="label inline-flex items-center border border-clay bg-clay px-7 py-3.5 text-paper-bright transition-colors hover:bg-clay-deep"
+              tone="outline"
+              size="lg"
             >
-              Open in maps
-            </a>
-            <ButtonLink href="/visit/new-here" tone="outline" size="lg">
-              New here?
+              Open in Waze
             </ButtonLink>
           </>
         }
@@ -113,14 +114,24 @@ export default function DirectionsPage() {
               </p>
             </div>
 
-            <div className="border border-hairline bg-paper-bright p-2">
-              <iframe
-                title="Map showing CCF Centris at Eton Centris, EDSA corner Quezon Avenue, Quezon City"
-                src={MAPS_EMBED}
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                className="aspect-square w-full"
-              />
+            <div>
+              <div className="border border-hairline bg-paper-bright p-2">
+                <iframe
+                  title="Map showing CCF Centris at Eton Centris, EDSA corner Quezon Avenue, Quezon City"
+                  src={MAPS_EMBED}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="aspect-square w-full"
+                />
+              </div>
+              <a
+                href={MAPS_PLACE}
+                target="_blank"
+                rel="noreferrer"
+                className="link label mt-3 inline-block text-clay underline underline-offset-4"
+              >
+                Open the pin in Google Maps &#8599;
+              </a>
             </div>
           </div>
         </Container>
@@ -132,7 +143,11 @@ export default function DirectionsPage() {
           <SectionHead eyebrow="Getting here" title="Pick your route" />
           <div className="mt-10 grid gap-px border border-hairline bg-hairline sm:grid-cols-2">
             {ROUTES.map((r) => (
-              <div key={r.id} className="bg-paper-bright p-7">
+              <div
+                key={r.id}
+                id={r.id}
+                className="scroll-mt-28 bg-paper-bright p-7"
+              >
                 <h3 className="font-display text-2xl">{r.label}</h3>
                 <p className="mt-2 text-[0.9rem] text-ink-soft">{r.lead}</p>
                 <ol className="mt-5 space-y-3">

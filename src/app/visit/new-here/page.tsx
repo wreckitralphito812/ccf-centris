@@ -18,9 +18,13 @@ export const metadata: Metadata = {
 };
 
 export default async function NewHerePage() {
+  // Every FAQ, not just the "visit" ones. The standalone FAQ page that used to
+  // carry the accessibility, Dgroup, and sports answers is gone, and this is
+  // where search sends anyone looking for them — so this page has to actually
+  // hold them.
   const [services, faqs] = await Promise.all([
     getUpcomingServices(3),
-    getFaqs("visit"),
+    getFaqs(),
   ]);
 
   return (
@@ -151,17 +155,14 @@ export default async function NewHerePage() {
                 us a note and a real person will reply.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <ButtonLink href="/visit/faqs" tone="outline">
-                  All FAQs
-                </ButtonLink>
-                <ButtonLink href="/contact" tone="ghost">
-                  Ask a question →
+                <ButtonLink href="/contact" tone="outline">
+                  Ask a question
                 </ButtonLink>
               </div>
             </div>
 
             <dl className="divide-y divide-hairline border-y border-hairline">
-              {faqs.slice(0, 6).map((f) => (
+              {faqs.map((f) => (
                 <div key={f.id} className="py-5">
                   <dt className="font-display text-lg">{f.question}</dt>
                   <dd className="mt-1.5 leading-relaxed text-ink-soft">{f.answer}</dd>

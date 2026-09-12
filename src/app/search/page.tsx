@@ -139,11 +139,11 @@ export default async function SearchPage({
             <div className="mt-10">
               <EmptyState
                 title={`Nothing matched "${q}".`}
-                body="Try a broader word, or browse from one of the main sections. If you are looking for something practical about visiting, the FAQs probably cover it."
+                body="Try a broader word, or browse from one of the main sections. If you are looking for something practical about visiting, the New here page probably covers it."
                 action={
                   <div className="flex flex-wrap justify-center gap-3">
-                    <ButtonLink href="/visit/faqs" tone="outline">
-                      Read the FAQs
+                    <ButtonLink href="/visit/new-here" tone="outline">
+                      Read New here
                     </ButtonLink>
                     <ButtonLink href="/contact">Ask us directly</ButtonLink>
                   </div>

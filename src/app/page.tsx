@@ -9,6 +9,7 @@ import {
 import {
   CCF_NET,
   CONNECT_LINKS,
+  MAPS_LINK,
   PARKING,
   SERVICE_TIMES,
   SITE,
@@ -16,7 +17,12 @@ import {
 } from "@/lib/site";
 import { ButtonLink, Container, LiveDot, Section } from "@/components/ui";
 import { HeroStage, Reveal, RevealHead, Stagger } from "@/components/motion";
-import { PlayGlyph, SectionIcon, type IconName } from "@/components/icons";
+import {
+  InstagramGlyph,
+  PlayGlyph,
+  SectionIcon,
+  type IconName,
+} from "@/components/icons";
 import { YouTubeThumb } from "@/components/youtube-thumb";
 import { InviteFriend } from "@/components/invite-friend";
 
@@ -144,8 +150,12 @@ function VisitCard({ live }: { live: boolean }) {
         Where to park
       </a>
 
+      {/* Straight into Google Maps navigation rather than via our own
+          directions page: someone reading this card is usually already on the
+          way, and the extra hop is one more tap before the route starts.
+          /visit still carries the full route write-up for anyone planning. */}
       <div className="mt-6 grid gap-2">
-        <ButtonLink href="/visit/directions" full>
+        <ButtonLink href={MAPS_LINK} target="_blank" rel="noreferrer" full>
           Get directions
         </ButtonLink>
         <InviteFriend message={invite} />
@@ -163,9 +173,14 @@ function VisitCard({ live }: { live: boolean }) {
             href={SOCIALS.instagram}
             target="_blank"
             rel="noreferrer"
-            className="link label text-clay underline underline-offset-4"
+            aria-label="CCF Centris on Instagram"
+            title="CCF Centris on Instagram"
+            /* The glyph alone, no label: it is the one item in this row people
+               recognise faster as a mark than as a word. Sized to the 44px
+               touch target the text links beside it already clear. */
+            className="ml-auto grid h-11 w-11 -my-2 -mr-2 place-items-center text-clay transition-colors hover:text-clay-deep"
           >
-            Instagram
+            <InstagramGlyph className="h-5 w-5" />
           </a>
         ) : null}
       </p>

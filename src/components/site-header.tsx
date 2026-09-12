@@ -14,6 +14,8 @@ export function SiteHeader() {
   const [mobile, setMobile] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bar = useRef<HTMLDivElement>(null);
+  const [barH, setBarH] = useState(0);
 
   useEffect(() => {
     setOpen(null);
@@ -25,6 +27,21 @@ export function SiteHeader() {
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  /* The mobile sheet hangs below the bar, and the bar's height is not a
+     constant: the wordmark steps up at xl, and the row rewraps at narrow
+     widths. It used to be hard-coded at 3.75rem, which is shorter than the
+     bar actually is — the sheet started underneath the header and its first
+     buttons sat behind it. Measure instead. */
+  useEffect(() => {
+    const el = bar.current;
+    if (!el) return;
+    const measure = () => setBarH(el.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
   useEffect(() => {
@@ -68,8 +85,20 @@ export function SiteHeader() {
       )}
       onMouseLeave={hoverClose}
     >
-      <div className="mx-auto flex max-w-[110rem] items-center gap-4 px-5 py-3.5 sm:px-8">
-        <Link href="/" className="shrink-0" aria-label="CCF Centris home">
+      <div
+        ref={bar}
+        className="mx-auto flex max-w-[110rem] items-center gap-4 px-5 py-3.5 sm:px-8"
+      >
+        {/* Home, from every page — the thing people reach for first when they
+            are lost. It dips and fades on press like every other control on
+            the site, so it reads as something you can tap rather than a
+            decoration that happens to be clickable. */}
+        <Link
+          href="/"
+          aria-label="CCF Centris home"
+          aria-current={pathname === "/" ? "page" : undefined}
+          className="btn-press shrink-0 transition-opacity duration-200 hover:opacity-70"
+        >
           <Wordmark />
         </Link>
 
@@ -173,7 +202,10 @@ export function SiteHeader() {
 
       {/* Mobile sheet */}
       {mobile ? (
-        <div className="fixed inset-x-0 bottom-0 top-[3.75rem] z-50 overflow-y-auto border-t border-hairline bg-paper lg:hidden">
+        <div
+          style={{ top: barH || undefined }}
+          className="fixed inset-x-0 bottom-0 top-[3.75rem] z-50 overflow-y-auto overscroll-contain border-t border-hairline bg-paper lg:hidden"
+        >
           <div className="px-5 py-6">
             <div className="flex gap-2">
               <Link

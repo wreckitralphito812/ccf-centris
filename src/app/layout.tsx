@@ -4,7 +4,6 @@ import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ChromeOffset } from "@/components/chrome-offset";
-import { MobileActionBar } from "@/components/mobile-action-bar";
 import { SITE } from "@/lib/site";
 
 /**
@@ -85,7 +84,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {children}
         </main>
         <SiteFooter />
-        <MobileActionBar />
       </body>
     </html>
   );

@@ -28,7 +28,6 @@ const COLUMNS: FooterColumn[] = [
     links: [
       { label: "New here", href: "/visit/new-here" },
       { label: "Getting here", href: "/visit/directions" },
-      { label: "Common questions", href: "/visit/faqs" },
     ],
   },
   {

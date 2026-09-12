@@ -1,58 +1,130 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
-import { ButtonLink, Container, Section } from "@/components/ui";
-import { NAV } from "@/lib/nav";
+import { ButtonLink, Container, Eyebrow, Section } from "@/components/ui";
+import { MAPS_EMBED, MAPS_LINK, MAPS_PLACE, SITE, WAZE_LINK } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Visit",
   description:
-    "Everything you need for your first Sunday at CCF Centris: service times, directions, parking, NXTGEN, and accessibility.",
+    "Find CCF Centris on the second floor of Centris Station, Eton Centris, EDSA corner Quezon Avenue. Open the map pin, get directions, or pick your route in.",
 };
 
-export default function VisitPage() {
-  const items = NAV.find((g) => g.label === "Visit")?.items ?? [];
+/**
+ * The Visit page answers one question — where are you and how do I get there —
+ * and answers it in that order: the pin, then directions, then the route in.
+ *
+ * It used to open with a grid of cards pointing at New here, Getting here, and
+ * Common questions, which restated the Visit menu directly under the Visit
+ * menu. Those pages are unchanged and still sit in the nav; this page no longer
+ * duplicates them.
+ */
 
+/**
+ * The ways in, each jumping to its own write-up on the directions page.
+ * Partitioned as buttons rather than run together as prose: arriving by train
+ * and arriving by car have nothing to say to each other, and nobody needs both.
+ * The MRT route leads — Centris Station connects straight to the mall, which
+ * makes it the simplest way in for most people.
+ */
+const ROUTES = [
+  { id: "mrt", label: "By MRT", detail: "Quezon Avenue station, connected" },
+  { id: "car", label: "Driving", detail: "Parking on site at Eton Centris" },
+  { id: "grab", label: "Grab or taxi", detail: "Drop off at the concourse" },
+  { id: "walk", label: "Walking", detail: "From the EDSA crossing" },
+];
+
+export default function VisitPage() {
   return (
     <>
       <PageHeader
         eyebrow="Visit"
         title={
           <>
-            New to CCF? <span className="italic text-clay">We&rsquo;d love to meet you.</span>
+            Come find us at{" "}
+            <span className="italic text-clay">Centris.</span>
           </>
         }
-        lead="Join us any Sunday. No registration, no dress code, and nobody will ask you to stand up."
-        actions={
-          <>
-            <ButtonLink href="/visit/new-here" size="lg">
-              What to expect
-            </ButtonLink>
-            <ButtonLink href="/visit/directions" tone="outline" size="lg">
-              Get directions
-            </ButtonLink>
-          </>
-        }
+        lead="Second floor of Centris Station, inside Eton Centris, at the corner of EDSA and Quezon Avenue. No registration, no dress code, and nobody will ask you to stand up."
       />
 
+      {/* The pin first. Everything else on this page is a way of acting on it. */}
       <Section>
         <Container>
-          <div className="grid gap-px border border-hairline bg-hairline sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((i) => (
-              <Link
-                key={i.href}
-                href={i.href}
-                className="group flex flex-col bg-paper-bright p-7 transition-colors hover:bg-bone"
+          <div className="grid gap-8 lg:grid-cols-[1.35fr_1fr] lg:items-start lg:gap-12">
+            <div className="border border-hairline bg-paper-bright p-2">
+              <iframe
+                title={`Map showing ${SITE.name} at Eton Centris, EDSA corner Quezon Avenue, Quezon City`}
+                src={MAPS_EMBED}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="aspect-[4/3] w-full lg:aspect-[5/4]"
+              />
+            </div>
+
+            <div className="lg:pt-2">
+              <Eyebrow>The pin</Eyebrow>
+              <address className="font-display mt-5 text-2xl not-italic leading-snug sm:text-3xl">
+                {SITE.addressLines.map((l) => (
+                  <span key={l} className="block">
+                    {l}
+                  </span>
+                ))}
+              </address>
+
+              <div className="mt-7 grid gap-2 sm:max-w-sm">
+                <ButtonLink
+                  href={MAPS_LINK}
+                  target="_blank"
+                  rel="noreferrer"
+                  size="lg"
+                  full
+                >
+                  Get directions
+                </ButtonLink>
+                <ButtonLink
+                  href={WAZE_LINK}
+                  target="_blank"
+                  rel="noreferrer"
+                  tone="outline"
+                  size="lg"
+                  full
+                >
+                  Open in Waze
+                </ButtonLink>
+              </div>
+
+              <a
+                href={MAPS_PLACE}
+                target="_blank"
+                rel="noreferrer"
+                className="link label mt-4 inline-block text-clay underline underline-offset-4"
               >
-                <h2 className="font-display text-2xl leading-tight transition-colors group-hover:text-clay">
-                  {i.label}
-                </h2>
-                {i.blurb ? (
-                  <p className="mt-2 text-[0.9rem] leading-relaxed text-ink-soft">
-                    {i.blurb}
-                  </p>
-                ) : null}
-                <span className="label mt-6 text-clay">Open →</span>
+                Open the pin in Google Maps &#8599;
+              </a>
+            </div>
+          </div>
+        </Container>
+      </Section>
+
+      {/* Then the route in, once they know where they are heading. */}
+      <Section tone="deep">
+        <Container>
+          <Eyebrow>Getting here</Eyebrow>
+          <h2 className="display-md mt-4 text-balance">Pick your route in.</h2>
+          <div className="mt-8 grid gap-px border border-hairline bg-hairline sm:grid-cols-2 lg:grid-cols-4">
+            {ROUTES.map((r) => (
+              <Link
+                key={r.id}
+                href={`/visit/directions#${r.id}`}
+                className="group flex min-h-28 flex-col justify-between bg-paper-bright p-6 transition-colors hover:bg-bone"
+              >
+                <span className="font-display text-xl leading-tight transition-colors group-hover:text-clay">
+                  {r.label}
+                </span>
+                <span className="mt-3 block text-[0.85rem] leading-relaxed text-ink-soft">
+                  {r.detail}
+                </span>
               </Link>
             ))}
           </div>

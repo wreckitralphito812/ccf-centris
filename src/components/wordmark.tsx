@@ -33,12 +33,16 @@ export function Wordmark({
       height={mark.height}
       alt="CCF Centris"
       priority={variant === "horizontal"}
-      sizes={variant === "horizontal" ? "120px" : "240px"}
+      sizes={variant === "horizontal" ? "(min-width: 80rem) 140px, 120px" : "240px"}
       className={cx(
         // no-frame opts out of the site-wide image frame: the brand book allows
         // nothing drawn on or around the mark.
         "no-frame w-auto",
-        variant === "horizontal" ? "h-[50px]" : "h-[90px]",
+        // The brand book's 50px floor for satellite marks on the web is the
+        // small end, not the only size: the header mark holds at 50px through
+        // phone and tablet, then takes the room a wide header gives it. It
+        // never goes below the floor.
+        variant === "horizontal" ? "h-[50px] xl:h-[56px]" : "h-[80px] sm:h-[90px]",
         className,
       )}
     />

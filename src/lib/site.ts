@@ -8,10 +8,14 @@ export const SITE = {
     "EDSA corner Quezon Avenue",
     "Quezon City",
   ],
-  /** Eton Centris, Quezon City. */
-  geo: { lat: 14.6432, lng: 121.0388 },
+  /**
+   * The CCF Centris pin itself, read off the Google Maps place the center
+   * shared (see MAPS_PLACE) — not the mall's. Every map surface derives from
+   * these coordinates, so none of them can drift onto Eton Centris' own pin.
+   */
+  geo: { lat: 14.6433095, lng: 121.0389583 },
   timezone: "Asia/Manila",
-  mapQuery: "Eton Centris, EDSA corner Quezon Avenue, Quezon City",
+  mapQuery: "CCF CENTRIS, Eton Centris, EDSA corner Quezon Avenue, Quezon City",
   /**
    * Public contact points, shown in the footer and used in structured data.
    * Left null until CCF Centris publishes them — the UI hides any that are
@@ -64,13 +68,36 @@ export function youtubeEmbed(videoId: string) {
   return `https://www.youtube.com/embed/${videoId}?rel=0`;
 }
 
-export const MAPS_EMBED = `https://www.google.com/maps?q=${encodeURIComponent(
-  SITE.mapQuery,
-)}&output=embed`;
+/**
+ * The Google Maps place CCF Centris shared. Kept as the canonical pin: it is
+ * the short link the team hands out, so "open the pin" anywhere on the site
+ * lands on the same place card they see.
+ */
+export const MAPS_PLACE = "https://maps.app.goo.gl/Q9ARwxoW55aYQ69TA";
 
+/** The pin as `lat,lng`. Coordinates, not a search string, so Google cannot
+ *  resolve us to the mall entrance or a neighbouring tenant. */
+const PIN = `${SITE.geo.lat},${SITE.geo.lng}`;
+
+/**
+ * Embedded map, dropped on the pin at street zoom. The `(label)` suffix is the
+ * documented way to name a marker; Google's embed redirect strips it today and
+ * the marker shows unlabelled, so it is kept for the day that changes and is
+ * not something the page should be built to rely on.
+ */
+export const MAPS_EMBED = `https://www.google.com/maps?q=${encodeURIComponent(
+  `${PIN}(${SITE.name})`,
+)}&z=17&output=embed`;
+
+/** "Get directions": opens Google Maps navigation straight to the pin. */
 export const MAPS_LINK = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-  SITE.mapQuery,
+  PIN,
 )}`;
+
+/** The same trip in Waze, for drivers who navigate with it instead. */
+export const WAZE_LINK = `https://www.waze.com/ul?ll=${encodeURIComponent(
+  PIN,
+)}&navigate=yes`;
 
 /**
  * Organization structured data for the site root. Rendered once in the footer
