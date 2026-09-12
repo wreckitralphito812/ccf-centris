@@ -52,12 +52,6 @@ export const communityDetail: Record<string, CommunityDetail> = {
       { q: "Are the volunteers checked?", a: "Every NXTGEN volunteer completes a background check and child safety training before their first Sunday, and no volunteer is ever alone with a child." },
     ],
     serveMinistry: "NXTGEN",
-    callout: {
-      title: "Coming with children for the first time?",
-      body: "The families page walks through check-in, nursing and changing facilities, stroller access, and what happens if you arrive late.",
-      href: "/visit/families",
-      cta: "Read the families guide",
-    },
   },
 
   elevate: {

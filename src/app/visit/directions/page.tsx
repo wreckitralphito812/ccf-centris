@@ -73,8 +73,8 @@ export default function DirectionsPage() {
             >
               Open in maps
             </a>
-            <ButtonLink href="/visit/service-times" tone="outline" size="lg">
-              Service times
+            <ButtonLink href="/visit/new-here" tone="outline" size="lg">
+              New here?
             </ButtonLink>
           </>
         }

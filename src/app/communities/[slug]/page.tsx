@@ -283,10 +283,10 @@ export default async function CommunityPage({
             </div>
             <div className="flex flex-wrap gap-3">
               <ButtonLink
-                href="/visit/service-times"
+                href="/visit/new-here"
                 tone="on-dark"
               >
-                Service times
+                Plan your visit
               </ButtonLink>
               <ButtonLink
                 href="/communities"

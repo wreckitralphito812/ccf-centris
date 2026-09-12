@@ -27,9 +27,7 @@ const COLUMNS: FooterColumn[] = [
     id: "footer-visit",
     links: [
       { label: "New here", href: "/visit/new-here" },
-      { label: "Service times", href: "/visit/service-times" },
       { label: "Getting here", href: "/visit/directions" },
-      { label: "Coming with kids", href: "/visit/families" },
       { label: "Common questions", href: "/visit/faqs" },
     ],
   },
@@ -108,12 +106,6 @@ export function SiteFooter() {
               className="btn-press label inline-flex items-center border border-paper-bright bg-paper-bright px-4 py-2.5 text-night transition-colors hover:border-bone hover:bg-bone"
             >
               Getting here
-            </Link>
-            <Link
-              href="/visit/service-times"
-              className="btn-press label inline-flex items-center border border-paper-bright/40 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
-            >
-              Service times
             </Link>
           </div>
         </div>

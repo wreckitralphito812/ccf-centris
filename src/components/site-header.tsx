@@ -114,12 +114,6 @@ export function SiteHeader() {
           >
             Last Sunday
           </Link>
-          <Link
-            href="/visit/service-times"
-            className="btn-press label hidden items-center border border-ink px-3.5 py-2 text-ink transition-colors whitespace-nowrap hover:bg-ink hover:text-paper-bright sm:inline-flex lg:hidden 2xl:inline-flex"
-          >
-            Service times
-          </Link>
           <AccountMenu />
           <button
             type="button"
@@ -189,10 +183,10 @@ export function SiteHeader() {
                 Last Sunday
               </Link>
               <Link
-                href="/visit/service-times"
+                href="/visit/directions"
                 className="label flex-1 border border-ink px-4 py-3 text-center text-ink"
               >
-                Service times
+                Getting here
               </Link>
             </div>
 

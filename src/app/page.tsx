@@ -14,7 +14,6 @@ import {
   SITE,
   SOCIALS,
 } from "@/lib/site";
-import { ROOMS } from "@/data/rooms";
 import { ButtonLink, Container, LiveDot, Section } from "@/components/ui";
 import { HeroStage, Reveal, RevealHead, Stagger } from "@/components/motion";
 import { PlayGlyph, SectionIcon, type IconName } from "@/components/icons";
@@ -33,8 +32,6 @@ export const revalidate = 1800;
  *   1. Welcome: photo hero, with the visit card beside the headline
  *   2. Take your next step: prayer, a Dgroup, a team
  *   3. Last Sunday: the CCF Net replay and this week's 4Ws
- *   4. New here: the first-Sunday invitation
- *   5. What's where: the floor guide, with room capacities
  */
 export default async function HomePage() {
   const [service, replay, fourWs] = await Promise.all([
@@ -48,8 +45,6 @@ export default async function HomePage() {
       <Welcome live={service.current !== null} />
       <NextSteps />
       <LastSunday replay={replay} fourWs={fourWs} />
-      <NewHere />
-      <WhatsWhere />
     </>
   );
 }
@@ -113,7 +108,7 @@ function Welcome({ live }: { live: boolean }) {
 }
 
 /**
- * Everything a first-time guest needs on one card: when, where, how to get
+ * Everything a first-time guest needs on one card: where, and how to get
  * there, and a way to bring someone along. Reads SERVICE_TIMES and SITE, so it
  * can't drift from the rest of the site.
  */
@@ -134,17 +129,6 @@ function VisitCard({ live }: { live: boolean }) {
       ) : (
         <p className="label text-clay">Join us this Sunday</p>
       )}
-
-      <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-3">
-        {SERVICE_TIMES.map((s) => (
-          <div key={`${s.dow}-${s.time}`}>
-            <dt className="label text-ink-mute">{s.day}s</dt>
-            <dd className="font-display mt-1.5 text-4xl leading-none">
-              {s.time}
-            </dd>
-          </div>
-        ))}
-      </dl>
 
       <address className="mt-5 border-t border-hairline pt-4 text-[0.95rem] not-italic leading-relaxed text-ink-soft">
         {SITE.addressLines.slice(0, 2).join(", ")}
@@ -359,125 +343,6 @@ function LastSunday({
             </div>
           </div>
         </Reveal>
-      </Container>
-    </Section>
-  );
-}
-
-/* --- 4. New here ----------------------------------------------------------- */
-
-function NewHere() {
-  return (
-    <Section tone="ink" className="py-14! sm:py-20!">
-      <Container className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-16">
-        <Reveal className="max-w-2xl">
-          <p className="label text-clay-lift">New to CCF Centris?</p>
-          <h2 className="display-md mt-4 text-paper-bright">Come as you are.</h2>
-          <p className="mt-4 text-[1.05rem] leading-relaxed text-paper-bright/80">
-            Wherever you are in life, you&rsquo;re welcome here. See what to
-            expect on your first Sunday, and how we care for your kids while
-            you worship.
-          </p>
-        </Reveal>
-        <div className="flex flex-wrap gap-3">
-          <ButtonLink href="/visit/new-here" tone="on-dark" size="lg">
-            What to expect
-          </ButtonLink>
-          <ButtonLink href="/visit/families" tone="outline-on-dark" size="lg">
-            Coming with kids
-          </ButtonLink>
-        </div>
-      </Container>
-    </Section>
-  );
-}
-
-/* --- 5. What's where ------------------------------------------------------- */
-
-const SETUPS = [
-  ["class", "Class"],
-  ["table", "Table"],
-  ["furniture", "Furniture"],
-] as const;
-
-function WhatsWhere() {
-  return (
-    <Section tone="bright" className="py-12! sm:py-20!">
-      <Container>
-        <RevealHead
-          eyebrow="Around CCF Centris"
-          icon="building"
-          title="What’s where"
-          lead="Everything is on the second floor of Centris Station: rooms for classes, Dgroups, and gatherings, and a sports court. Seats are listed for each way a room can be set up."
-          action={
-            <ButtonLink href="/reserve" tone="outline">
-              Reserve a space
-            </ButtonLink>
-          }
-        />
-
-        <Reveal className="mt-10 overflow-x-auto border border-hairline bg-paper">
-          <table className="w-full min-w-[36rem] border-collapse text-left">
-            <caption className="sr-only">
-              Rooms at CCF Centris and how many people each seats per setup
-            </caption>
-            <thead>
-              <tr className="border-b border-hairline">
-                <th scope="col" className="label px-5 py-3 text-ink-mute">
-                  Room
-                </th>
-                {SETUPS.map(([key, label]) => (
-                  <th
-                    key={key}
-                    scope="col"
-                    className="label px-5 py-3 text-right text-ink-mute"
-                  >
-                    {label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {ROOMS.map((room) => (
-                <tr key={room.slug} className="border-b border-hairline last:border-b-0">
-                  <th scope="row" className="px-5 py-4 align-top font-normal">
-                    {room.href ? (
-                      <Link
-                        href={room.href}
-                        className="font-display text-lg leading-tight text-ink transition-colors hover:text-clay"
-                      >
-                        {room.name}
-                      </Link>
-                    ) : (
-                      <span className="font-display text-lg leading-tight text-ink">
-                        {room.name}
-                      </span>
-                    )}
-                    <span className="mt-1 block max-w-md text-[0.85rem] leading-snug text-ink-mute">
-                      {room.blurb}
-                    </span>
-                  </th>
-                  {SETUPS.map(([key]) => (
-                    <td
-                      key={key}
-                      className="tabular px-5 py-4 text-right align-top text-[1.05rem] text-ink"
-                    >
-                      {room.capacity[key] ?? (
-                        <span className="text-ink-mute" aria-label="not offered">
-                          —
-                        </span>
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Reveal>
-        <p className="mt-3 text-[0.82rem] leading-relaxed text-ink-mute">
-          Class: rows of chairs facing the front. Table: groups seated around
-          tables. Furniture: the room&rsquo;s own lounge seating.
-        </p>
       </Container>
     </Section>
   );

@@ -30,8 +30,8 @@ export default async function NewHerePage() {
         title="Your first Sunday, without the guesswork."
         lead="Here is honestly everything that happens, so nothing catches you off guard."
         actions={
-          <ButtonLink href="/visit/service-times" size="lg">
-            See service times
+          <ButtonLink href="/visit/directions" size="lg">
+            Getting here
           </ButtonLink>
         }
       />
@@ -119,15 +119,7 @@ export default async function NewHerePage() {
       {/* Next services */}
       <Section tone="deep">
         <Container>
-          <SectionHead
-            eyebrow="Coming up"
-            title="Next services"
-            action={
-              <ButtonLink href="/visit/service-times" tone="outline">
-                All service times
-              </ButtonLink>
-            }
-          />
+          <SectionHead eyebrow="Coming up" title="Next services" />
           <div className="mt-10 grid gap-px border border-hairline bg-hairline sm:grid-cols-3">
             {services.map((s) => (
               <div key={s.id} className="bg-paper-bright p-7">

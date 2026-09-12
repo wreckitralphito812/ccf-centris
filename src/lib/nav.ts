@@ -27,9 +27,7 @@ export const NAV: NavGroup[] = [
     href: "/visit",
     items: [
       { label: "New here", href: "/visit/new-here", blurb: "What to expect your first Sunday" },
-      { label: "Service times", href: "/visit/service-times", blurb: "Our weekly schedule" },
       { label: "Getting here & parking", href: "/visit/directions", blurb: "Directions and parking" },
-      { label: "Coming with kids", href: "/visit/families", blurb: "Check-in and childcare" },
       { label: "Common questions", href: "/visit/faqs", blurb: "Answers for first-time guests" },
     ],
   },

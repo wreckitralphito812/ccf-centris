@@ -37,7 +37,7 @@ export function MobileActionBar() {
 
   const items = weekend
     ? [
-        { label: "Times", href: "/visit/service-times" },
+        { label: "Visit", href: "/visit" },
         { label: "Watch", href: "/watch" },
         { label: "Directions", href: "/visit/directions" },
         { label: "More", href: "/search" },

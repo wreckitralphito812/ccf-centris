@@ -25,8 +25,8 @@ export default function VisitPage() {
         lead="Join us any Sunday. No registration, no dress code, and nobody will ask you to stand up."
         actions={
           <>
-            <ButtonLink href="/visit/service-times" size="lg">
-              See service times
+            <ButtonLink href="/visit/new-here" size="lg">
+              What to expect
             </ButtonLink>
             <ButtonLink href="/visit/directions" tone="outline" size="lg">
               Get directions

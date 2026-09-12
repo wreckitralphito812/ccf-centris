@@ -171,8 +171,8 @@ export default function KnowJesusPage() {
               {
                 t: "Come on a Sunday",
                 b: "See what it is actually like before deciding anything. Stay as long as you like, leave whenever.",
-                href: "/visit/service-times",
-                cta: "See service times",
+                href: "/visit/new-here",
+                cta: "Plan your visit",
               },
               {
                 t: "Join a Dgroup",

@@ -36,11 +36,11 @@ export default function AboutPage() {
         actions={
           <>
             <ButtonLink
-              href="/visit/service-times"
+              href="/visit/new-here"
               size="lg"
                 tone="on-dark"
             >
-              See service times
+              Plan your visit
             </ButtonLink>
             <ButtonLink
               href="/grow/find-a-dgroup"
