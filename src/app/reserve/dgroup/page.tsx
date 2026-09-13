@@ -31,6 +31,7 @@ interface MyBooking {
   booked_on: string;
   slot_id: string;
   group_size: number;
+  status: string;
 }
 
 export default function DgroupTablesPage() {
@@ -52,9 +53,10 @@ export default function DgroupTablesPage() {
                 <p className="label text-clay">How it works</p>
                 <ol className="mt-4 space-y-3 text-[0.92rem] leading-relaxed text-ink-soft">
                   {[
-                    "Pick a night and a time.",
+                    "Pick a night and a time. Tables are booked in two-hour blocks.",
                     "Give the leader's name, a contact number, and how many are coming.",
-                    "We assign the smallest free table that fits and show it straight away.",
+                    "We hold the smallest free table that fits your group.",
+                    "A Centris admin approves it, and your table number appears here.",
                   ].map((step, i) => (
                     <li key={step} className="flex gap-3">
                       <span className="label shrink-0 text-clay">{i + 1}</span>
@@ -122,10 +124,10 @@ async function Booking() {
 
   const { data } = await supabase
     .from("dgroup_table_bookings")
-    .select("id, room_slug, table_label, booked_on, slot_id, group_size")
+    .select("id, room_slug, table_label, booked_on, slot_id, group_size, status")
     .eq("satellite_id", SATELLITE_ID)
     .eq("user_id", user.id)
-    .eq("status", "confirmed")
+    .in("status", ["pending", "confirmed"])
     .gte("booked_on", today)
     .order("booked_on");
   const mine = (data ?? []) as MyBooking[];
@@ -140,27 +142,46 @@ async function Booking() {
             Your tables
           </h2>
           <ul className="mt-4 divide-y divide-hairline border-y border-hairline">
-            {mine.map((m) => (
-              <li key={m.id} className="flex flex-wrap items-center justify-between gap-4 py-4">
-                <div>
-                  <p className="font-display text-xl text-ink">
-                    {m.table_label} &middot;{" "}
-                    {DGROUP_ROOMS.find((r) => r.slug === m.room_slug)?.name ?? m.room_slug}
-                  </p>
-                  <p className="mt-0.5 text-[0.9rem] text-ink-soft">
-                    {nightLabel(m.booked_on)},{" "}
-                    {DGROUP_SLOTS.find((s) => s.id === m.slot_id)?.label ?? m.slot_id} &middot;{" "}
-                    {m.group_size} {m.group_size === 1 ? "person" : "people"}
-                  </p>
-                </div>
-                <form action={cancelDgroupBooking}>
-                  <input type="hidden" name="id" value={m.id} />
-                  <button type="submit" className="label text-ink-mute transition-colors hover:text-sky">
-                    Cancel
-                  </button>
-                </form>
-              </li>
-            ))}
+            {mine.map((m) => {
+              const approved = m.status === "confirmed";
+              return (
+                <li key={m.id} className="flex flex-wrap items-center justify-between gap-4 py-4">
+                  <div>
+                    <p className="font-display text-xl text-ink">
+                      {/* The table is already held either way, but it is only
+                          named once an admin has approved the request — until
+                          then "Table 7" would read as a promise we haven't
+                          made yet. */}
+                      {approved
+                        ? `Table ${m.table_label}`
+                        : "Table to be confirmed"}{" "}
+                      &middot;{" "}
+                      {DGROUP_ROOMS.find((r) => r.slug === m.room_slug)?.name ?? m.room_slug}
+                    </p>
+                    <p className="mt-0.5 text-[0.9rem] text-ink-soft">
+                      {nightLabel(m.booked_on)},{" "}
+                      {DGROUP_SLOTS.find((s) => s.id === m.slot_id)?.label ?? m.slot_id} &middot;{" "}
+                      {m.group_size} {m.group_size === 1 ? "person" : "people"}
+                    </p>
+                    <p
+                      className={
+                        approved
+                          ? "label mt-2 inline-flex border border-moss/50 px-2 py-1 text-moss"
+                          : "label mt-2 inline-flex border border-clay/50 px-2 py-1 text-clay-deep"
+                      }
+                    >
+                      {approved ? "Approved" : "Waiting for approval"}
+                    </p>
+                  </div>
+                  <form action={cancelDgroupBooking}>
+                    <input type="hidden" name="id" value={m.id} />
+                    <button type="submit" className="label text-ink-mute transition-colors hover:text-sky">
+                      Cancel
+                    </button>
+                  </form>
+                </li>
+              );
+            })}
           </ul>
         </section>
       ) : null}

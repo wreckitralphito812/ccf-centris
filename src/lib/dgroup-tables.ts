@@ -2,11 +2,17 @@
  * Dgroup table reservations: the rooms, tables, nights and time slots, and the
  * rules for assigning a table.
  *
- * EVERYTHING IN THE CONFIGURATION BLOCK IS A PLACEHOLDER until CCF Centris
- * confirms the real setup. Table counts are sized to the table-layout
- * capacities the center gave (Dgroup Lounge 36, Welcome Center 68); nights and
- * time slots are guesses. The page, the form, and the assignment all read from
- * here, so changing a value here changes it everywhere.
+ * The TABLES are real — transcribed from the CCF Centris floor plans
+ * (DGROUP PLAN and WELCOME PLAN), including each table's seat count. Labels
+ * are the plain numbers printed on those plans, so a member told "Table 7"
+ * can match it against the drawing on the wall. Numbers repeat across the two
+ * rooms, which is fine: a table is identified by room + label everywhere (see
+ * tableKey), and the room name is always shown alongside.
+ *
+ * The NIGHTS and TIME SLOTS are still placeholders awaiting CCF Centris.
+ *
+ * The page, the form, and the assignment all read from here, so changing a
+ * value here changes it everywhere.
  */
 
 // --- Configuration (placeholders) -------------------------------------------
@@ -30,18 +36,32 @@ export interface DgroupSlot {
   end: string;
 }
 
-const run = (prefix: string, count: number, seats: number, first = 1): DgroupTable[] =>
-  Array.from({ length: count }, (_, i) => ({ label: `${prefix}${first + i}`, seats }));
+/** `count` consecutively numbered tables of the same size, starting at `first`. */
+const run = (count: number, seats: number, first: number): DgroupTable[] =>
+  Array.from({ length: count }, (_, i) => ({ label: String(first + i), seats }));
 
 /** Only these two rooms take Dgroup reservations for now. */
 export const DGROUP_ROOMS: DgroupRoom[] = [
-  // 6 tables of 6 = 36, the Lounge's table-layout capacity.
-  { slug: "dgroup-lounge", name: "Dgroup Lounge", tables: run("L", 6, 6) },
-  // 8 tables of 8 plus one of 4 = 68, the Welcome Center's.
   {
+    // DGROUP PLAN: 11 tables, 38 seats. One long 8-seater, then progressively
+    // smaller clusters down to four 2-seaters — so a pair gets a 2-seater and
+    // the 8-seater stays free for the group that actually needs it.
+    slug: "dgroup-lounge",
+    name: "Dgroup Lounge",
+    tables: [
+      ...run(1, 8, 1), // 1
+      ...run(4, 4, 2), // 2–5
+      ...run(2, 3, 6), // 6–7
+      ...run(4, 2, 8), // 8–11
+    ],
+  },
+  {
+    // WELCOME PLAN: 15 tables of 4, 60 seats. Tables 1–3 are the lounge-style
+    // groupings along the west wall and 4–15 the square clusters; the plan
+    // seats all fifteen at four, so they are one pool here.
     slug: "welcome-center",
     name: "Welcome Center",
-    tables: [...run("W", 8, 8), ...run("W", 1, 4, 9)],
+    tables: run(15, 4, 1),
   },
 ];
 

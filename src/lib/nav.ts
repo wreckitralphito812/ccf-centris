@@ -77,6 +77,7 @@ export const ADMIN_NAV: { section: string; items: NavItem[] }[] = [
       { label: "Events", href: "/admin/events" },
       { label: "Facilities", href: "/admin/facilities" },
       { label: "Reservations", href: "/admin/reservations" },
+      { label: "Dgroup tables", href: "/admin/dgroup-tables" },
       { label: "Sports", href: "/admin/sports" },
     ],
   },

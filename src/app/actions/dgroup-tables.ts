@@ -26,14 +26,20 @@ export interface DgroupBookingResult {
 const GENERIC = "Something went wrong on our end — try again in a moment.";
 
 /**
- * Book a table for a Dgroup. The site assigns the table; the member never
+ * Request a table for a Dgroup. The site assigns the table; the member never
  * picks one: it's the smallest free table that seats the group (see
- * candidateTables). The database allows one confirmed group per table per
- * slot, so if another leader takes a table between our read and our insert,
- * the insert fails and we move on to the next best table.
+ * candidateTables). The database allows one held group per table per slot, so
+ * if another leader takes a table between our read and our insert, the insert
+ * fails and we move on to the next best table.
  *
- * The confirmation is shown on screen. It isn't emailed yet: there's no mail
- * service until the site has its own domain.
+ * The request lands as `pending` and the table is held from that moment — see
+ * the 0007 migration for why holding beats assigning at approval time. An
+ * admin approves or declines it in /admin/dgroup-tables; declining frees the
+ * table.
+ *
+ * Nothing is emailed or texted: there's no mail or SMS service yet, so the
+ * table number reaches the leader on this page and on /my/reservations once
+ * the request is approved.
  */
 export async function reserveDgroupTable(
   _prev: DgroupBookingResult | null,
@@ -51,13 +57,14 @@ export async function reserveDgroupTable(
   const slot = DGROUP_SLOTS.find((s) => s.id === b.slotId)?.label ?? b.slotId;
   const db = supabaseAdmin();
 
+  // Pending counts as taken: a request awaiting approval holds its table.
   const { data: booked, error: readError } = await db
     .from("dgroup_table_bookings")
     .select("room_slug, table_label")
     .eq("satellite_id", SATELLITE_ID)
     .eq("booked_on", b.date)
     .eq("slot_id", b.slotId)
-    .eq("status", "confirmed");
+    .in("status", ["pending", "confirmed"]);
   if (readError) {
     console.error("reserveDgroupTable: read failed", readError);
     return { ok: false, formError: GENERIC };
@@ -82,10 +89,12 @@ export async function reserveDgroupTable(
       contact_mobile: b.contactMobile,
       group_size: b.groupSize,
       agreed_rules_at: new Date().toISOString(),
+      status: "pending",
     });
 
     if (!error) {
       revalidatePath("/reserve/dgroup");
+      revalidatePath("/admin/dgroup-tables");
       return {
         ok: true,
         booking: {
@@ -101,7 +110,7 @@ export async function reserveDgroupTable(
       return {
         ok: false,
         formError:
-          "You already have a table for that night and time. Cancel it below to book a different one.",
+          "You already have a table request for that night and time. Cancel it below to request a different one.",
       };
     }
     if (error.code !== "23505") {
@@ -119,6 +128,11 @@ export async function reserveDgroupTable(
   };
 }
 
+/**
+ * Cancel one of the caller's own table requests, whether it is still pending
+ * or already approved. Either way the hold is released and the table returns
+ * to the pool for that night and slot.
+ */
 export async function cancelDgroupBooking(formData: FormData): Promise<void> {
   if (!hasSupabase()) return;
   const user = await currentUser();
@@ -128,7 +142,8 @@ export async function cancelDgroupBooking(formData: FormData): Promise<void> {
     .update({ status: "cancelled", cancelled_at: new Date().toISOString() })
     .eq("id", String(formData.get("id") ?? ""))
     .eq("user_id", user.id)
-    .eq("status", "confirmed");
+    .in("status", ["pending", "confirmed"]);
   if (error) console.error("cancelDgroupBooking failed", error);
   revalidatePath("/reserve/dgroup");
+  revalidatePath("/admin/dgroup-tables");
 }

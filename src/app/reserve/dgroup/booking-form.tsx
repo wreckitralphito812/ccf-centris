@@ -32,27 +32,30 @@ function BookingAttempt({ nights, onAnother }: { nights: NightOption[]; onAnothe
   const e = state?.fieldErrors ?? {};
 
   if (state?.ok && state.booking) {
+    // The table is assigned and held at this point, but deliberately not
+    // named: the request still needs an admin's approval, and a number here
+    // would read as settled. It appears under "Your tables" once approved.
     const b = state.booking;
     return (
       <div role="status" className="border border-clay bg-paper-bright p-7">
-        <p className="label text-clay">Table reserved</p>
-        <p className="font-display mt-3 text-5xl leading-none text-ink">{b.table}</p>
-        <p className="mt-3 text-lg text-ink">
-          {b.roomName} &middot; seats {b.seats}
+        <p className="label text-clay">Request received</p>
+        <p className="font-display mt-3 text-3xl leading-tight text-ink">
+          We&rsquo;re holding a table for {b.seats} in the {b.roomName}.
         </p>
-        <p className="mt-1 text-ink-soft">
+        <p className="mt-3 text-lg text-ink">
           {b.night}, {b.slot}
         </p>
         <p className="mt-5 border-t border-hairline pt-4 text-[0.88rem] leading-relaxed text-ink-mute">
-          Confirmations aren&rsquo;t emailed yet. Your table is listed under
-          &ldquo;Your tables&rdquo; on this page.
+          A Centris admin reviews this and your table number appears under
+          &ldquo;Your tables&rdquo; below once it&rsquo;s approved. Nothing is
+          emailed or texted yet, so check back here.
         </p>
         <button
           type="button"
           onClick={onAnother}
           className="label mt-5 text-clay underline underline-offset-4 hover:text-clay-deep"
         >
-          Book another table
+          Request another table
         </button>
       </div>
     );

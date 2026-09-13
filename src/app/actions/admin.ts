@@ -32,6 +32,13 @@ const APPLICATION_STATUSES = [
   "accepted",
   "declined",
 ] as const;
+/** A Dgroup table request. 'confirmed' is the approved state; see 0007. */
+const DGROUP_TABLE_STATUSES = [
+  "pending",
+  "confirmed",
+  "declined",
+  "cancelled",
+] as const;
 
 type Enum<T extends readonly string[]> = T[number];
 
@@ -106,6 +113,51 @@ export async function setApplicationStatus(
     APPLICATION_STATUSES,
     "/admin/volunteers",
   );
+}
+
+/**
+ * Approve or decline a Dgroup table request.
+ *
+ * Declining releases the table: the unique indexes only hold on 'pending' and
+ * 'confirmed', so the moment this row goes to 'declined' the table is free for
+ * the next request that night. Stamps decided_at so the queue can show when.
+ *
+ * Approving can still fail, and should: if the table was freed and retaken
+ * while the request sat in the queue, the unique index rejects the update
+ * rather than double-booking the table. That surfaces as an "Update failed"
+ * note on the row.
+ */
+export async function setDgroupTableStatus(
+  id: string,
+  status: Enum<typeof DGROUP_TABLE_STATUSES>,
+): Promise<AdminActionResult> {
+  const blocked = await guard();
+  if (blocked) return blocked;
+  if (!DGROUP_TABLE_STATUSES.includes(status))
+    return { ok: false, formError: "Unknown status." };
+
+  const { error } = await supabaseAdmin()
+    .from("dgroup_table_bookings")
+    .update({
+      status,
+      decided_at: status === "pending" ? null : new Date().toISOString(),
+      ...(status === "cancelled" ? { cancelled_at: new Date().toISOString() } : {}),
+    })
+    .eq("id", id);
+
+  if (error) {
+    console.error("setDgroupTableStatus failed", error);
+    return {
+      ok: false,
+      formError:
+        error.code === "23505"
+          ? "That table was taken while this sat in the queue. Decline it and the leader can request again."
+          : "Update failed — try again.",
+    };
+  }
+  revalidatePath("/admin/dgroup-tables");
+  revalidatePath("/reserve/dgroup");
+  return { ok: true };
 }
 
 // --- Session ------------------------------------------------------------

@@ -604,6 +604,22 @@ export interface AdminReservation {
   created_at: string;
 }
 
+/** A Dgroup table request in the admin queue. */
+export interface AdminDgroupTable {
+  id: string;
+  leader_name: string;
+  contact_mobile: string;
+  group_size: number;
+  room_slug: string;
+  table_label: string;
+  table_seats: number;
+  booked_on: string;
+  slot_id: string;
+  status: string;
+  created_at: string;
+  decided_at: string | null;
+}
+
 export interface AdminInquiry {
   id: string;
   full_name: string;
@@ -617,6 +633,42 @@ export interface AdminInquiry {
 }
 
 /** Every reservation for the satellite, newest first. Empty offline. */
+/**
+ * Every Dgroup table request for the admin queue, newest first. Pending ones
+ * are holding their table, so this is a queue worth clearing promptly.
+ */
+export async function getDgroupTableBookings(): Promise<AdminDgroupTable[]> {
+  if (!hasSupabase()) return [];
+  const { data, error } = await supabaseAdmin()
+    .from("dgroup_table_bookings")
+    .select(
+      "id, leader_name, contact_mobile, group_size, room_slug, table_label, table_seats, booked_on, slot_id, status, created_at, decided_at",
+    )
+    .eq("satellite_id", SATELLITE_ID)
+    .order("booked_on", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("getDgroupTableBookings failed", error);
+    return [];
+  }
+
+  return (data ?? []).map((r) => ({
+    id: r.id as string,
+    leader_name: r.leader_name as string,
+    contact_mobile: r.contact_mobile as string,
+    group_size: r.group_size as number,
+    room_slug: r.room_slug as string,
+    table_label: r.table_label as string,
+    table_seats: r.table_seats as number,
+    booked_on: r.booked_on as string,
+    slot_id: r.slot_id as string,
+    status: r.status as string,
+    created_at: r.created_at as string,
+    decided_at: (r.decided_at as string | null) ?? null,
+  }));
+}
+
 export async function getReservations(): Promise<AdminReservation[]> {
   if (!hasSupabase()) return [];
   const { data, error } = await supabaseAdmin()
