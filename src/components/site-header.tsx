@@ -10,15 +10,12 @@ import { AccountMenu } from "./account-menu";
 
 export function SiteHeader() {
   const pathname = usePathname();
-  const [open, setOpen] = useState<string | null>(null);
   const [mobile, setMobile] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bar = useRef<HTMLDivElement>(null);
   const [barH, setBarH] = useState(0);
 
   useEffect(() => {
-    setOpen(null);
     setMobile(false);
   }, [pathname]);
 
@@ -46,10 +43,7 @@ export function SiteHeader() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setOpen(null);
-        setMobile(false);
-      }
+      if (e.key === "Escape") setMobile(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -62,16 +56,6 @@ export function SiteHeader() {
     };
   }, [mobile]);
 
-  const hoverOpen = (label: string) => {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    setOpen(label);
-  };
-
-  const hoverClose = () => {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    closeTimer.current = setTimeout(() => setOpen(null), 140);
-  };
-
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(`${href}/`);
 
@@ -83,7 +67,6 @@ export function SiteHeader() {
           ? "border-hairline bg-paper/95 backdrop-blur-sm"
           : "border-transparent bg-paper",
       )}
-      onMouseLeave={hoverClose}
     >
       <div
         ref={bar}
@@ -106,27 +89,25 @@ export function SiteHeader() {
           aria-label="Main"
           className="ml-3 hidden items-center gap-0.5 lg:flex xl:ml-4 xl:gap-1"
         >
-          {NAV.map((group) => {
-            // A group with no items is a plain link: hovering it closes any
-            // open panel rather than opening an empty one.
-            const hasMenu = group.items.length > 0;
-            const reveal = () => (hasMenu ? hoverOpen(group.label) : hoverClose());
-            return (
-              <div key={group.label} onMouseEnter={reveal}>
-                <Link
-                  href={group.href}
-                  aria-expanded={hasMenu ? open === group.label : undefined}
-                  onFocus={reveal}
-                  className={cx(
-                    "label whitespace-nowrap px-2 py-2 transition-colors xl:px-3",
-                    isActive(group.href) ? "text-clay" : "text-ink hover:text-clay",
-                  )}
-                >
-                  {group.label}
-                </Link>
-              </div>
-            );
-          })}
+          {/* Every group is a plain link to its own href — no hover panel.
+              A few groups (Visit, What's Happening) used to open a mega
+              panel on hover for their sub-pages while the rest were plain
+              links, which read as inconsistent: some nav items did
+              something on hover and some didn't. New here, Getting here,
+              Events, and Calendar are all still one click away from their
+              own parent page and from the footer. */}
+          {NAV.map((group) => (
+            <Link
+              key={group.label}
+              href={group.href}
+              className={cx(
+                "label whitespace-nowrap px-2 py-2 transition-colors xl:px-3",
+                isActive(group.href) ? "text-clay" : "text-ink hover:text-clay",
+              )}
+            >
+              {group.label}
+            </Link>
+          ))}
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
@@ -155,50 +136,6 @@ export function SiteHeader() {
           </button>
         </div>
       </div>
-
-      {/* Desktop mega panel */}
-      {open ? (
-        <div
-          className="absolute inset-x-0 top-full hidden border-y border-hairline bg-paper-bright shadow-[0_18px_40px_-28px_rgba(23,21,15,0.5)] lg:block"
-          onMouseEnter={() => hoverOpen(open)}
-          onMouseLeave={hoverClose}
-        >
-          <div className="mx-auto max-w-[110rem] px-8 py-6">
-            {NAV.filter((g) => g.label === open).map((group) => (
-              <div
-                key={group.label}
-                className="grid max-w-4xl gap-x-10 gap-y-4 md:grid-cols-[12rem_1fr]"
-              >
-                <div>
-                  <p className="label text-clay">{group.label}</p>
-                  <p className="font-display mt-2 text-lg leading-snug text-ink-soft">
-                    {MENU_BLURB[group.label]}
-                  </p>
-                </div>
-                <ul className="grid gap-x-8 gap-y-0 sm:grid-cols-2">
-                  {group.items.map((item) => (
-                    <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        className="group flex flex-col border-b border-hairline py-1.5 transition-colors hover:border-ink"
-                      >
-                        <span className="text-[0.9rem] font-semibold text-ink transition-colors group-hover:text-clay">
-                          {item.label}
-                        </span>
-                        {item.blurb ? (
-                          <span className="mt-0.5 text-[0.78rem] leading-snug text-ink-mute">
-                            {item.blurb}
-                          </span>
-                        ) : null}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
 
       {/* Mobile sheet */}
       {mobile ? (
@@ -268,11 +205,6 @@ export function SiteHeader() {
     </header>
   );
 }
-
-const MENU_BLURB: Record<string, string> = {
-  Visit: "Everything you need for your first Sunday.",
-  "What\u2019s Happening": "Events, happenings, and the month ahead at Centris.",
-};
 
 /* --- Icons. Inline so nothing blocks first paint. --- */
 
