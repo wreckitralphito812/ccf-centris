@@ -75,30 +75,41 @@ export default async function CentrisPage() {
               {[
                 ["Welcome Center", "First stop if it's your first Sunday. Staffed before and after every service.", "/centris/facilities/welcome-center"],
                 ["Main Worship Hall", "1,300 seats, accessible bays, and the room Sunday happens in.", "/centris/facilities/main-worship-hall"],
-                ["NXTGEN rooms", "Children's rooms by age band, with check-in just outside.", "/communities/nxtgen"],
+                // No community page to send this one to — see the note above
+                // Communities was pulled. Rendered as plain text below.
+                ["NXTGEN rooms", "Children's rooms by age band, with check-in just outside.", null],
                 ["Sports Hall", "Basketball, badminton, and pickleball, open to the community.", "/centris/facilities/sports-hall"],
                 ["Multipurpose Halls 1–4", "Flexible rooms for classes, trainings, and gatherings.", "/centris/facilities"],
                 ["Dgroup Lounge", "Soft seating built for the groups that meet through the week.", "/centris/facilities/dgroup-lounge"],
               ].map((row, i) => {
-                const [name, blurb, href] = row as [string, string, string];
+                const [name, blurb, href] = row as [string, string, string | null];
+                const body = (
+                  <>
+                    <span className="font-display shrink-0 text-3xl leading-none text-clay/30">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span>
+                      <span className="font-display block text-xl transition-colors group-hover:text-clay">
+                        {name}
+                      </span>
+                      <span className="mt-1 block text-[0.9rem] leading-relaxed text-ink-soft">
+                        {blurb}
+                      </span>
+                    </span>
+                  </>
+                );
                 return (
                   <li key={name}>
-                    <Link
-                      href={href}
-                      className="group flex gap-5 bg-paper-bright p-6 transition-colors hover:bg-bone"
-                    >
-                      <span className="font-display shrink-0 text-3xl leading-none text-clay/30">
-                        {String(i + 1).padStart(2, "0")}
-                      </span>
-                      <span>
-                        <span className="font-display block text-xl transition-colors group-hover:text-clay">
-                          {name}
-                        </span>
-                        <span className="mt-1 block text-[0.9rem] leading-relaxed text-ink-soft">
-                          {blurb}
-                        </span>
-                      </span>
-                    </Link>
+                    {href ? (
+                      <Link
+                        href={href}
+                        className="group flex gap-5 bg-paper-bright p-6 transition-colors hover:bg-bone"
+                      >
+                        {body}
+                      </Link>
+                    ) : (
+                      <div className="group flex gap-5 bg-paper-bright p-6">{body}</div>
+                    )}
                   </li>
                 );
               })}

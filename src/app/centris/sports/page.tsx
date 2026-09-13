@@ -57,7 +57,7 @@ export default async function SportsPage() {
               Reserve a court
             </ButtonLink>
             <ButtonLink
-              href="/communities/sports"
+              href="/connect"
               tone="ghost-on-dark"
               size="lg"
             >
@@ -96,10 +96,7 @@ export default async function SportsPage() {
                 welcome whether or not you share that aim.
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
-                <ButtonLink href="/communities/sports">Sports ministry</ButtonLink>
-                <ButtonLink href="/serve/sports-ministry" tone="outline">
-                  Volunteer
-                </ButtonLink>
+                <ButtonLink href="/connect">Join sports ministry</ButtonLink>
               </div>
             </div>
           </div>

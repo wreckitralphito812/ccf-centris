@@ -6,12 +6,17 @@ import { Wordmark } from "./wordmark";
  * Footer.
  *
  * Not a dump of the whole nav — the header already carries that. This is a
- * hand-picked set of five short columns a visitor might want at the end of a
+ * hand-picked set of short columns a visitor might want at the end of a
  * page, plus the brand block (address, contact, socials) and one last Sunday
  * nudge. Every href resolves to a real page.
  *
- * The five columns are real headings (h2), so a screen reader can jump
- * between them; the Organization JSON-LD lives here too.
+ * Communities, Serve & volunteer, Missions, Giving, and the whole Grow
+ * column (discipleship journey, GLC, resources, Intercede, Know Jesus) are
+ * pulled per CCF's request — those pages are gone until CCF is ready to add
+ * them back, not just unlinked.
+ *
+ * The columns are real headings (h2), so a screen reader can jump between
+ * them; the Organization JSON-LD lives here too.
  */
 
 type FooterColumn = {
@@ -46,29 +51,14 @@ const COLUMNS: FooterColumn[] = [
     id: "footer-connect",
     links: [
       { label: "Find a Dgroup", href: "/grow/find-a-dgroup" },
-      { label: "Communities", href: "/communities" },
-      { label: "Serve & volunteer", href: "/serve" },
-      { label: "Missions", href: "/serve/missions" },
       { label: "Events", href: "/events" },
     ],
   },
   {
-    heading: "Grow",
-    id: "footer-grow",
-    links: [
-      { label: "Discipleship journey", href: "/grow/journey" },
-      { label: "GLC classes", href: "/grow/glc" },
-      { label: "Resources", href: "/grow/resources" },
-      { label: "Intercede", href: "/intercede" },
-      { label: "Know Jesus", href: "/know-jesus" },
-    ],
-  },
-  {
-    heading: "Care & giving",
+    heading: "Care",
     id: "footer-care",
     links: [
       { label: "Prayer Wall", href: "/prayer-wall" },
-      { label: "Giving", href: "/giving" },
       { label: "Who we are", href: "/about" },
       { label: "Contact", href: "/contact" },
     ],
@@ -194,7 +184,7 @@ export function SiteFooter() {
           {/* Sitemap columns */}
           <nav
             aria-label="Footer"
-            className="grid gap-x-8 gap-y-10 min-[480px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-5"
+            className="grid gap-x-8 gap-y-10 min-[480px]:grid-cols-2 md:grid-cols-4"
           >
             {COLUMNS.map((col) => (
               <div key={col.id}>

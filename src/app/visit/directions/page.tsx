@@ -1,58 +1,46 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/page-header";
-import { ButtonLink, Container, Eyebrow, Section, SectionHead } from "@/components/ui";
+import { ButtonLink, Container, Eyebrow, Section } from "@/components/ui";
 import { MAPS_EMBED, MAPS_LINK, MAPS_PLACE, PARKING, SITE, WAZE_LINK } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Directions",
   description:
-    "How to reach CCF Centris on the 2nd floor of Centris Station, Eton Centris, EDSA corner Quezon Avenue: MRT, driving, parking, drop-off, and PWD access.",
+    "How to reach CCF Centris on the 2nd floor of Centris Station, Eton Centris, EDSA corner Quezon Avenue: by car or by train.",
 };
 
+/**
+ * Two ways in, on CCF's request — down from four. Grab/taxi folds into Car
+ * (same drop-off, same walk up) and Walking folds into Train (same
+ * concourse route, minus the ride) as a one-line note rather than being
+ * dropped outright, so nobody loses their instructions.
+ *
+ * Each route ends the same way: "walk to CCF Centris." Past versions spelled
+ * out "take the lifts or escalators, then follow signage" as two separate
+ * steps once you're already inside the building — CCF asked for that
+ * collapsed into the one plain instruction it actually is.
+ */
 const ROUTES = [
   {
-    id: "mrt",
-    label: "By MRT",
-    lead: "The simplest way in. Centris Station connects straight to the mall.",
-    steps: [
-      "Take MRT-3 to Quezon Avenue station.",
-      "Follow signs for Centris Station and walk through the connecting concourse.",
-      "Enter Eton Centris and take the escalator or lift to the second floor.",
-      "CCF Centris is signposted from the second-floor concourse. The Welcome Center is just inside the entrance.",
-    ],
-  },
-  {
     id: "car",
-    label: "Driving",
-    lead: `Park at ${PARKING.name}.`,
+    label: "By car",
     steps: [
-      "Enter Eton Centris from EDSA or from Quezon Avenue.",
-      `Follow the signs to ${PARKING.name}. Rates are set by the mall and posted at entry.`,
-      "Take the lifts or escalators to the second floor.",
-      "Follow signage for CCF Centris.",
+      "Enter Eton Centris from EDSA or Quezon Avenue.",
+      `Park at ${PARKING.name}. Rates are set by the mall.`,
+      "Walk to CCF Centris, second floor.",
     ],
-    note: "Parking fills quickly on Sunday mornings. Arriving 20 minutes before the 10:00 AM service gives you time to find a slot.",
+    note: "Arriving by Grab or taxi? Use the same drop-off, then walk up.",
     link: { label: "Open the parking pin in Google Maps", href: PARKING.mapsUrl },
   },
   {
-    id: "grab",
-    label: "Grab or taxi",
-    lead: "Set your destination to Eton Centris.",
+    id: "train",
+    label: "By train",
     steps: [
-      "Drop-off point: Eton Centris, EDSA corner Quezon Avenue, Quezon City.",
-      "Use the covered drop-off nearest the concourse entrance.",
-      "Head to the second floor and follow signage for CCF Centris.",
+      "Take MRT-3 to Quezon Avenue station.",
+      "Walk through the connecting concourse into Eton Centris.",
+      "Walk to CCF Centris, second floor.",
     ],
-  },
-  {
-    id: "walk",
-    label: "Walking",
-    lead: "From the Quezon Avenue and EDSA intersection.",
-    steps: [
-      "Use the footbridge or pedestrian crossing to reach the Eton Centris side.",
-      "Enter through the main concourse entrance.",
-      "Take the escalator or lift to the second floor.",
-    ],
+    note: "Walking in from the street? Cross at EDSA and Quezon Avenue and follow the same route from there.",
   },
 ];
 
@@ -61,8 +49,8 @@ export default function DirectionsPage() {
     <>
       <PageHeader
         eyebrow="Directions"
-        title="Right off the MRT at Quezon Avenue."
-        lead="CCF Centris is on the second floor of Centris Station, inside Eton Centris, at the corner of EDSA and Quezon Avenue."
+        title="Two ways to get here."
+        lead="Second floor of Centris Station, inside Eton Centris — by car or by train."
         actions={
           <>
             <ButtonLink href={MAPS_LINK} target="_blank" rel="noreferrer" size="lg">
@@ -137,20 +125,22 @@ export default function DirectionsPage() {
         </Container>
       </Section>
 
-      {/* Routes */}
+      {/* Routes — two buttons, not four write-ups */}
       <Section tone="deep">
         <Container>
-          <SectionHead eyebrow="Getting here" title="Pick your route" />
-          <div className="mt-10 grid gap-px border border-hairline bg-hairline sm:grid-cols-2">
+          <Eyebrow>Getting here</Eyebrow>
+          <h2 className="display-md mt-4 text-balance">Pick one.</h2>
+          <div className="mt-8 grid gap-px border border-hairline bg-hairline sm:grid-cols-2">
             {ROUTES.map((r) => (
               <div
                 key={r.id}
                 id={r.id}
-                className="scroll-mt-28 bg-paper-bright p-7"
+                className="scroll-mt-28 bg-paper-bright p-7 sm:p-9"
               >
-                <h3 className="font-display text-2xl">{r.label}</h3>
-                <p className="mt-2 text-[0.9rem] text-ink-soft">{r.lead}</p>
-                <ol className="mt-5 space-y-3">
+                <span className="label inline-flex border border-ink bg-ink px-4 py-2 text-paper-bright">
+                  {r.label}
+                </span>
+                <ol className="mt-6 space-y-3">
                   {r.steps.map((s, i) => (
                     <li key={s} className="flex gap-3 text-[0.9rem] leading-relaxed">
                       <span className="label shrink-0 text-clay">
@@ -160,11 +150,9 @@ export default function DirectionsPage() {
                     </li>
                   ))}
                 </ol>
-                {r.note ? (
-                  <p className="mt-5 border-l-2 border-clay pl-4 text-[0.85rem] leading-relaxed text-ink-mute">
-                    {r.note}
-                  </p>
-                ) : null}
+                <p className="mt-5 border-l-2 border-clay pl-4 text-[0.85rem] leading-relaxed text-ink-mute">
+                  {r.note}
+                </p>
                 {r.link ? (
                   <a
                     href={r.link.href}
@@ -177,42 +165,6 @@ export default function DirectionsPage() {
                 ) : null}
               </div>
             ))}
-          </div>
-        </Container>
-      </Section>
-
-      {/* Accessibility */}
-      <Section>
-        <Container>
-          <div className="grid gap-10 lg:grid-cols-[1fr_1.2fr]">
-            <div>
-              <Eyebrow>Accessibility</Eyebrow>
-              <h2 className="display-md mt-5">Getting in without stairs.</h2>
-              <p className="mt-5 leading-relaxed text-ink-soft">
-                If something here does not cover what you need, get in touch
-                ahead of time and someone will meet you at the drop-off.
-              </p>
-              <ButtonLink href="/contact" className="mt-7">
-                Tell us what you need
-              </ButtonLink>
-            </div>
-            <ul className="grid gap-px border border-hairline bg-hairline sm:grid-cols-2">
-              {[
-                ["Step-free route", "From the Centris Station concourse to the second floor, with lift access throughout."],
-                ["PWD drop-off", "Use the covered drop-off closest to the concourse entrance."],
-                ["Accessible seating", "Wheelchair spaces with companion seats at the rear and side bays of the worship hall."],
-                ["Washrooms", "Accessible washrooms on the same floor as the worship hall."],
-                ["Assisted listening", "Available at the Welcome Center before each service."],
-                ["Service animals", "Welcome throughout the center."],
-              ].map(([t, b]) => (
-                <li key={t} className="bg-paper-bright p-6">
-                  <h3 className="font-display text-lg">{t}</h3>
-                  <p className="mt-1.5 text-[0.88rem] leading-relaxed text-ink-soft">
-                    {b}
-                  </p>
-                </li>
-              ))}
-            </ul>
           </div>
         </Container>
       </Section>

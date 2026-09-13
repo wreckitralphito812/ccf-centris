@@ -21,17 +21,14 @@ export const metadata: Metadata = {
  */
 
 /**
- * The ways in, each jumping to its own write-up on the directions page.
- * Partitioned as buttons rather than run together as prose: arriving by train
- * and arriving by car have nothing to say to each other, and nobody needs both.
- * The MRT route leads — Centris Station connects straight to the mall, which
- * makes it the simplest way in for most people.
+ * Two ways in, each jumping to its own card on the directions page. On CCF's
+ * request: down from four routes (MRT, driving, Grab, walking) to the two
+ * that matter most — Grab/taxi and walking fold into whichever of these is
+ * closest to how they actually arrive.
  */
 const ROUTES = [
-  { id: "mrt", label: "By MRT", detail: "Quezon Avenue station, connected" },
-  { id: "car", label: "Driving", detail: "Parking on site at Eton Centris" },
-  { id: "grab", label: "Grab or taxi", detail: "Drop off at the concourse" },
-  { id: "walk", label: "Walking", detail: "From the EDSA crossing" },
+  { id: "car", label: "By car", detail: "Parking on site at Eton Centris" },
+  { id: "train", label: "By train", detail: "MRT-3 Quezon Avenue, connected" },
 ];
 
 export default function VisitPage() {
@@ -111,15 +108,15 @@ export default function VisitPage() {
       <Section tone="deep">
         <Container>
           <Eyebrow>Getting here</Eyebrow>
-          <h2 className="display-md mt-4 text-balance">Pick your route in.</h2>
-          <div className="mt-8 grid gap-px border border-hairline bg-hairline sm:grid-cols-2 lg:grid-cols-4">
+          <h2 className="display-md mt-4 text-balance">Two ways to get here.</h2>
+          <div className="mt-8 grid max-w-2xl gap-px border border-hairline bg-hairline sm:grid-cols-2">
             {ROUTES.map((r) => (
               <Link
                 key={r.id}
                 href={`/visit/directions#${r.id}`}
-                className="group flex min-h-28 flex-col justify-between bg-paper-bright p-6 transition-colors hover:bg-bone"
+                className="group flex min-h-32 flex-col justify-between bg-paper-bright p-7 transition-colors hover:bg-bone"
               >
-                <span className="font-display text-xl leading-tight transition-colors group-hover:text-clay">
+                <span className="font-display text-2xl leading-tight transition-colors group-hover:text-clay">
                   {r.label}
                 </span>
                 <span className="mt-3 block text-[0.85rem] leading-relaxed text-ink-soft">

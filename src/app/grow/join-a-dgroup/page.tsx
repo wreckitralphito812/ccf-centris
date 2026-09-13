@@ -134,15 +134,15 @@ export default async function JoinDgroupPage() {
               <h2 className="display-md">Ready to lead one?</h2>
               <p className="mt-4 max-w-xl leading-relaxed text-paper-bright/70">
                 Every group starts because someone decided to open their home.
-                GLC 3 trains new leaders each term, and you will be paired with
-                an experienced one for your first year.
+                New leaders train alongside an experienced one for their
+                first year.
               </p>
             </div>
             <ButtonLink
-              href="/grow/glc"
+              href="/contact"
                 tone="on-dark"
             >
-              Leader training
+              Ask about leading
             </ButtonLink>
           </div>
         </Container>

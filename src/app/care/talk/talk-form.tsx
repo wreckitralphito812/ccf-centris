@@ -101,12 +101,6 @@ export function TalkForm() {
         </p>
         <div className="mt-7 flex flex-wrap gap-3">
           <Link
-            href="/know-jesus"
-            className="label border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
-          >
-            Read about knowing Jesus
-          </Link>
-          <Link
             href="/"
             className="btn-press label border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
           >

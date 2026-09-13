@@ -13,7 +13,7 @@ import { globalSearch } from "@/lib/queries";
 export const metadata: Metadata = {
   title: "Search",
   description:
-    "Search everything at CCF Centris: messages, events, Dgroups, communities, facilities, GLC classes, and FAQs.",
+    "Search everything at CCF Centris: messages, events, Dgroups, and facilities.",
 };
 
 const SUGGESTIONS = [
@@ -23,7 +23,7 @@ const SUGGESTIONS = [
   "marriage",
   "parking",
   "NXTGEN",
-  "volunteer",
+  "court",
   "prayer",
 ];
 

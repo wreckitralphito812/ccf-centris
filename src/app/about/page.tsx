@@ -178,9 +178,6 @@ export default function AboutPage() {
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <ButtonLink href="/centris">Explore the center</ButtonLink>
-                <ButtonLink href="/grow/journey" tone="outline">
-                  The discipleship journey
-                </ButtonLink>
               </div>
             </div>
             <div className="border border-hairline bg-paper p-8">

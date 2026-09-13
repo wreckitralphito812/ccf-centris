@@ -10,10 +10,8 @@ import {
   announcements,
   dgroups,
   events,
-  faqs,
   glcClasses,
   glcPrograms,
-  resources,
   volunteerRoles,
 } from "@/data/community";
 import { buildServices } from "@/data/schedule";
@@ -743,8 +741,11 @@ export async function getActiveAnnouncement(): Promise<Announcement | null> {
       ends_at: intercede.campaign.endDate
         ? `${intercede.campaign.endDate}T23:59:59+08:00`
         : null,
-      link_href: "/intercede",
-      link_label: "How to join",
+      // /intercede is gone (pulled with the rest of the Grow section), so
+      // this banner — which can appear on any page whenever a campaign is
+      // synced in — no longer has a page of its own to send people to.
+      link_href: "/contact",
+      link_label: "Ask us about it",
     };
   }
 
@@ -757,14 +758,6 @@ export async function getActiveAnnouncement(): Promise<Announcement | null> {
         (!a.ends_at || new Date(a.ends_at).getTime() > t),
     ) ?? null
   );
-}
-
-export async function getFaqs(category?: string) {
-  return category ? faqs.filter((f) => f.category === category) : faqs;
-}
-
-export async function getResources() {
-  return resources;
 }
 
 // --- Synchronized CCF public content --------------------------------------
@@ -801,7 +794,7 @@ export type {
 // --- Global search ----------------------------------------------------------
 
 export interface SearchHit {
-  kind: "Message" | "Event" | "Dgroup" | "Community" | "Facility" | "GLC" | "FAQ" | "Serve";
+  kind: "Message" | "Event" | "Dgroup" | "Facility";
   title: string;
   excerpt: string;
   href: string;
@@ -835,29 +828,9 @@ export async function globalSearch(q: string): Promise<SearchHit[]> {
       hits.push({ kind: "Dgroup", title: d.name, excerpt: d.description ?? "", href: `/grow/find-a-dgroup` });
     }
   }
-  for (const c of await getCommunities()) {
-    if (match(c.name, c.tagline, c.description)) {
-      hits.push({ kind: "Community", title: c.name, excerpt: c.tagline ?? "", href: `/communities/${c.slug}` });
-    }
-  }
   for (const f of facilities) {
     if (match(f.name, f.description)) {
       hits.push({ kind: "Facility", title: f.name, excerpt: f.description ?? "", href: `/centris/facilities/${f.slug}` });
-    }
-  }
-  for (const p of glcPrograms) {
-    if (match(p.title, p.description, p.code)) {
-      hits.push({ kind: "GLC", title: `${p.code} — ${p.title}`, excerpt: p.description ?? "", href: "/grow/glc" });
-    }
-  }
-  for (const f of faqs) {
-    if (match(f.question, f.answer)) {
-      hits.push({ kind: "FAQ", title: f.question, excerpt: f.answer, href: "/visit/new-here" });
-    }
-  }
-  for (const r of volunteerRoles) {
-    if (match(r.title, r.description)) {
-      hits.push({ kind: "Serve", title: r.title, excerpt: r.description ?? "", href: `/serve/${r.slug}` });
     }
   }
 
