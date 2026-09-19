@@ -3,36 +3,46 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Section } from "@/components/ui";
-import { cancelDgroupBooking } from "@/app/actions/dgroup-tables";
+import { FloorPlanDrawing } from "@/components/floor-plan";
 import {
   bookableNights,
+  bookingOpen,
+  DGROUP_OPENS_ON,
+  DGROUP_POLICIES,
   DGROUP_ROOMS,
   DGROUP_SLOTS,
-  HOUSE_RULES,
+  longDateLabel,
   manilaMinutes,
   nightLabel,
   openSlots,
+  roomName,
+  slotLabel,
+  tablesLabel,
 } from "@/lib/dgroup-tables";
 import { manilaDateKey } from "@/lib/format";
 import { hasSupabase, SATELLITE_ID } from "@/lib/supabase/server";
 import { createSupabaseServer } from "@/lib/supabase/ssr";
 import { BookingForm, type NightOption } from "./booking-form";
+import { MyBooking } from "./my-booking";
 
 export const metadata: Metadata = {
   title: "Reserve a Dgroup table",
   description:
-    "Book a weeknight table for your Dgroup in the Dgroup Lounge or the Welcome Center at CCF Centris.",
+    "Book a table for your Dgroup in the Dgroup Lounge or the Welcome Center at CCF Centris, Monday to Friday.",
 };
 
-interface MyBooking {
+interface Row {
   id: string;
   room_slug: string;
-  table_label: string;
+  table_labels: string[];
   booked_on: string;
   slot_id: string;
   group_size: number;
-  status: string;
 }
+
+/** See bookingPreview() in the actions: pre-launch testing, never production. */
+const preview = () =>
+  process.env.DGROUP_BOOKING_PREVIEW === "1" && process.env.VERCEL_ENV !== "production";
 
 export default function DgroupTablesPage() {
   return (
@@ -40,7 +50,7 @@ export default function DgroupTablesPage() {
       <PageHeader
         eyebrow="Reserve · Dgroup meeting"
         title="Book a table for your Dgroup."
-        lead="Weeknight tables in the Dgroup Lounge and the Welcome Center. Tell us how many are coming and we'll assign a table that fits."
+        lead="Monday to Friday in the Dgroup Lounge and the Welcome Center. Tell us how many are coming and we'll assign your table."
       />
       <Section>
         <Container>
@@ -53,10 +63,10 @@ export default function DgroupTablesPage() {
                 <p className="label text-clay">How it works</p>
                 <ol className="mt-4 space-y-3 text-[0.92rem] leading-relaxed text-ink-soft">
                   {[
-                    "Pick a night and a time. Tables are booked in two-hour blocks.",
-                    "Give the leader's name, a contact number, and how many are coming.",
-                    "We hold the smallest free table that fits your group.",
-                    "A Centris admin approves it, and your table number appears here.",
+                    "Pick a day and one time slot. Book again for another slot.",
+                    "Tell us the leader's details and how many are coming, up to 12.",
+                    "Accept the policies. We assign your table, joining neighbouring tables for bigger groups.",
+                    "Your table number and a floor plan arrive by email.",
                   ].map((step, i) => (
                     <li key={step} className="flex gap-3">
                       <span className="label shrink-0 text-clay">{i + 1}</span>
@@ -65,10 +75,23 @@ export default function DgroupTablesPage() {
                   ))}
                 </ol>
               </div>
+              <div className="border border-hairline bg-paper-bright p-6">
+                <p className="label text-clay">Times</p>
+                <p className="mt-3 text-[0.92rem] text-ink-soft">Monday to Friday</p>
+                <ul className="mt-2 space-y-1 text-[0.95rem] text-ink">
+                  {DGROUP_SLOTS.map((s) => (
+                    <li key={s.id}>{s.label}</li>
+                  ))}
+                </ul>
+                <p className="mt-4 text-[0.85rem] leading-relaxed text-ink-mute">
+                  You can book the days left in the current week. Next week opens
+                  every Sunday.
+                </p>
+              </div>
               <div className="border-l-2 border-clay bg-paper-bright p-6">
-                <p className="label text-clay">House rules</p>
+                <p className="label text-clay">Policies</p>
                 <ul className="mt-4 space-y-4">
-                  {HOUSE_RULES.map((r) => (
+                  {DGROUP_POLICIES.map((r) => (
                     <li key={r.id}>
                       <p className="font-semibold text-ink">{r.title}</p>
                       <p className="mt-1 text-[0.88rem] leading-relaxed text-ink-soft">{r.body}</p>
@@ -76,10 +99,6 @@ export default function DgroupTablesPage() {
                   ))}
                 </ul>
               </div>
-              <p className="text-[0.82rem] leading-relaxed text-ink-mute">
-                The nights, times, and tables here are placeholders while CCF
-                Centris finalizes the schedule.
-              </p>
             </aside>
           </div>
         </Container>
@@ -91,6 +110,22 @@ export default function DgroupTablesPage() {
 async function Booking() {
   // Always render per visitor: this section shows members their own data.
   await connection();
+  const today = manilaDateKey();
+
+  if (!bookingOpen(today, preview())) {
+    return (
+      <div className="space-y-10">
+        <Notice label={`Opens ${longDateLabel(DGROUP_OPENS_ON)}`}>
+          <p>
+            Dgroup table reservations open on {longDateLabel(DGROUP_OPENS_ON)}, 2026, for
+            Dgroups meeting from Monday, October 5. Come back then to book.
+          </p>
+        </Notice>
+        <Rooms />
+      </div>
+    );
+  }
+
   if (!hasSupabase()) {
     return (
       <Notice label="Opening soon">
@@ -105,14 +140,19 @@ async function Booking() {
   } = await supabase.auth.getUser();
   if (!user) {
     return (
-      <Notice label="Sign in to book">
-        <p>You&rsquo;ll need a CCF Centris account so we can hold the table for you.</p>
-        <ButtonLink href="/sign-in?next=/reserve/dgroup">Sign in to book a table</ButtonLink>
-      </Notice>
+      <div className="space-y-10">
+        <Notice label="Sign in to book">
+          <p>
+            Sign in with your email so you can see, change, or cancel your bookings later. We
+            send you a link; there&rsquo;s no password.
+          </p>
+          <ButtonLink href="/sign-in?next=/reserve/dgroup">Sign in to book a table</ButtonLink>
+        </Notice>
+        <Rooms />
+      </div>
     );
   }
 
-  const today = manilaDateKey();
   const now = manilaMinutes();
   const nights: NightOption[] = bookableNights(today)
     .map((date) => ({
@@ -124,68 +164,73 @@ async function Booking() {
 
   const { data } = await supabase
     .from("dgroup_table_bookings")
-    .select("id, room_slug, table_label, booked_on, slot_id, group_size, status")
+    .select("id, room_slug, table_labels, booked_on, slot_id, group_size")
     .eq("satellite_id", SATELLITE_ID)
     .eq("user_id", user.id)
-    .in("status", ["pending", "confirmed"])
+    .eq("status", "confirmed")
     .gte("booked_on", today)
-    .order("booked_on");
-  const mine = (data ?? []) as MyBooking[];
+    .order("booked_on")
+    .order("slot_id");
+  const mine = (data ?? []) as Row[];
 
   return (
-    <div className="space-y-12">
-      <BookingForm nights={nights} />
-
+    <div className="space-y-14">
       {mine.length ? (
-        <section aria-labelledby="your-tables">
-          <h2 id="your-tables" className="label text-clay">
-            Your tables
+        <section aria-labelledby="your-tables-h" id="your-tables" className="scroll-mt-28">
+          <h2 id="your-tables-h" className="label text-clay">
+            Your bookings
           </h2>
-          <ul className="mt-4 divide-y divide-hairline border-y border-hairline">
-            {mine.map((m) => {
-              const approved = m.status === "confirmed";
-              return (
-                <li key={m.id} className="flex flex-wrap items-center justify-between gap-4 py-4">
-                  <div>
-                    <p className="font-display text-xl text-ink">
-                      {/* The table is already held either way, but it is only
-                          named once an admin has approved the request — until
-                          then "Table 7" would read as a promise we haven't
-                          made yet. */}
-                      {approved
-                        ? `Table ${m.table_label}`
-                        : "Table to be confirmed"}{" "}
-                      &middot;{" "}
-                      {DGROUP_ROOMS.find((r) => r.slug === m.room_slug)?.name ?? m.room_slug}
-                    </p>
-                    <p className="mt-0.5 text-[0.9rem] text-ink-soft">
-                      {nightLabel(m.booked_on)},{" "}
-                      {DGROUP_SLOTS.find((s) => s.id === m.slot_id)?.label ?? m.slot_id} &middot;{" "}
-                      {m.group_size} {m.group_size === 1 ? "person" : "people"}
-                    </p>
-                    <p
-                      className={
-                        approved
-                          ? "label mt-2 inline-flex border border-moss/50 px-2 py-1 text-moss"
-                          : "label mt-2 inline-flex border border-clay/50 px-2 py-1 text-clay-deep"
-                      }
-                    >
-                      {approved ? "Approved" : "Waiting for approval"}
-                    </p>
-                  </div>
-                  <form action={cancelDgroupBooking}>
-                    <input type="hidden" name="id" value={m.id} />
-                    <button type="submit" className="label text-ink-mute transition-colors hover:text-sky">
-                      Cancel
-                    </button>
-                  </form>
-                </li>
-              );
-            })}
+          <ul className="mt-4 space-y-4">
+            {mine.map((m) => (
+              <MyBooking
+                key={m.id}
+                id={m.id}
+                title={`${tablesLabel(m.table_labels)} · ${roomName(m.room_slug)}`}
+                when={`${nightLabel(m.booked_on)}, ${slotLabel(m.slot_id)}`}
+                groupSize={m.group_size}
+                date={m.booked_on}
+                slotId={m.slot_id}
+                nights={nights}
+                plan={<FloorPlanDrawing room={m.room_slug} highlight={m.table_labels} width={220} />}
+              />
+            ))}
           </ul>
         </section>
       ) : null}
+
+      <section aria-labelledby="book-h">
+        <h2 id="book-h" className="label text-clay">
+          {mine.length ? "Book another slot" : "Book a table"}
+        </h2>
+        <div className="mt-5">
+          <BookingForm nights={nights} email={user.email ?? ""} />
+        </div>
+      </section>
     </div>
+  );
+}
+
+/** Both rooms with every table numbered, so leaders know the space. */
+function Rooms() {
+  return (
+    <section aria-labelledby="rooms-h">
+      <h2 id="rooms-h" className="label text-clay">
+        The rooms
+      </h2>
+      <div className="mt-5 grid gap-6 sm:grid-cols-2">
+        {DGROUP_ROOMS.map((r) => (
+          <figure key={r.slug} className="border border-hairline bg-paper-bright p-5">
+            <figcaption className="font-display text-xl text-ink">{r.name}</figcaption>
+            <p className="mt-1 text-[0.85rem] text-ink-mute">
+              {r.tables.length} tables · {r.tables.reduce((n, t) => n + t.seats, 0)} seats
+            </p>
+            <div className="mt-4 overflow-hidden">
+              <FloorPlanDrawing room={r.slug} highlight={[]} width={260} />
+            </div>
+          </figure>
+        ))}
+      </div>
+    </section>
   );
 }
 

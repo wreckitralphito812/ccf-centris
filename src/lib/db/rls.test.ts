@@ -203,28 +203,90 @@ test("screen names are unique regardless of case, and renames follow past posts"
 
 // --- Dgroup table bookings ---------------------------------------------------
 
-const booking = (user: string, table: string, slot = "1800") => `
-  insert into dgroup_table_bookings
-    (satellite_id, user_id, room_slug, table_label, table_seats, booked_on, slot_id,
-     leader_name, contact_mobile, group_size, agreed_rules_at)
-  values ('${SAT}', '${user}', 'dgroup-lounge', '${table}', 6, '2026-09-14', '${slot}',
-          'Leader', '0917 123 4567', 5, now())`;
+const book = (user: string, labels: string[], slot = "1900", day = "2026-10-08") => `
+  select book_dgroup_tables('${SAT}', '${user}', 'welcome-center', array[${labels
+    .map((l) => `'${l}'`)
+    .join(",")}], ${labels.length * 4}, '${day}', '${slot}', 'Leader', '0917 123 4567',
+    'leader@example.com', 3) as id`;
 
-test("a table can be booked once per slot; a cancelled booking frees it", async () => {
-  await db.exec(booking(ANA, "L1"));
-  await assert.rejects(db.exec(booking(BEN, "L1")), /one_per_table/);
-  await db.exec(`update dgroup_table_bookings set status = 'cancelled' where user_id = '${ANA}' and table_label = 'L1'`);
-  await db.exec(booking(BEN, "L1"));
+const holds = async (id: string) =>
+  (
+    await db.query<{ table_label: string }>(
+      "select table_label from dgroup_table_holds where booking_id = $1 order by table_label",
+      [id],
+    )
+  ).rows.map((r) => r.table_label);
+
+test("a booking is confirmed at once and holds every table it was given", async () => {
+  const { rows } = await db.query<{ id: string }>(book(ANA, ["4", "5"]));
+  const [b] = (
+    await db.query<{ status: string; table_labels: string[] }>(
+      "select status, table_labels from dgroup_table_bookings where id = $1",
+      [rows[0].id],
+    )
+  ).rows;
+  assert.equal(b.status, "confirmed");
+  assert.deepEqual(b.table_labels, ["4", "5"]);
+  assert.deepEqual(await holds(rows[0].id), ["4", "5"]);
 });
 
-test("a member can hold only one table per slot", async () => {
-  await db.exec(booking(DAN, "L2"));
-  await assert.rejects(db.exec(booking(DAN, "L3")), /one_per_member/);
+test("a table in someone else's booking can't be taken, and nothing half-books", async () => {
+  await assert.rejects(db.query(book(BEN, ["5", "6"])), /dgroup_table_holds_one_per_table/);
+  const { rows } = await db.query<{ n: number }>(
+    "select count(*)::int as n from dgroup_table_bookings where user_id = $1",
+    [BEN],
+  );
+  assert.equal(rows[0].n, 0);
 });
 
-test("members see only their own bookings and can't write them directly", async () => {
+test("cancelling frees the tables; a member books each day and slot once", async () => {
+  const { rows } = await db.query<{ id: string }>(book(DAN, ["10"]));
+  await assert.rejects(db.query(book(DAN, ["11"])), /one_per_member/);
+  // Same member, another slot that day: allowed.
+  await db.query(book(DAN, ["11"], "1300"));
+  await db.exec(`update dgroup_table_bookings set status = 'cancelled' where id = '${rows[0].id}'`);
+  assert.deepEqual(await holds(rows[0].id), []);
+  await db.query(book(BEN, ["10"]));
+});
+
+test("moving a booking swaps its tables, and a failed move changes nothing", async () => {
+  const { rows } = await db.query<{ id: string }>(book(CAL, ["13"]));
+  const id = rows[0].id;
+  await db.query(
+    `select move_dgroup_booking('${id}', '${CAL}', 'welcome-center', array['14','15'], 8, '2026-10-09', '1300', 7)`,
+  );
+  assert.deepEqual(await holds(id), ["14", "15"]);
+  const [moved] = (
+    await db.query<{ booked_on: string; group_size: number }>(
+      "select booked_on::text, group_size from dgroup_table_bookings where id = $1",
+      [id],
+    )
+  ).rows;
+  assert.equal(moved.booked_on, "2026-10-09");
+  assert.equal(moved.group_size, 7);
+
+  // Table 4 is Ana's on the 8th at 7 PM: the move is refused whole.
+  await assert.rejects(
+    db.query(
+      `select move_dgroup_booking('${id}', '${CAL}', 'welcome-center', array['4'], 4, '2026-10-08', '1900', 3)`,
+    ),
+    /one_per_table/,
+  );
+  assert.deepEqual(await holds(id), ["14", "15"]);
+
+  // Only the owner can move it.
+  await assert.rejects(
+    db.query(
+      `select move_dgroup_booking('${id}', '${BEN}', 'welcome-center', array['1'], 4, '2026-10-09', '1600', 3)`,
+    ),
+    /booking not found/,
+  );
+});
+
+test("members see only their own bookings and can't book or read holds directly", async () => {
   const mine = await as<{ user_id: string }>(BEN, "select user_id from dgroup_table_bookings");
   assert.ok(mine.length >= 1);
   assert.ok(mine.every((r) => r.user_id === BEN));
-  await assert.rejects(as(BEN, booking(BEN, "L4", "2000")), /permission denied/);
+  await assert.rejects(as(BEN, book(BEN, ["9"], "1600")), /permission denied/);
+  await assert.rejects(as(BEN, "select * from dgroup_table_holds"), /permission denied/);
 });

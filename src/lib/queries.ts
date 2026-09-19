@@ -612,7 +612,9 @@ export interface AdminDgroupTable {
   group_size: number;
   room_slug: string;
   table_label: string;
+  table_labels: string[];
   table_seats: number;
+  leader_email: string | null;
   booked_on: string;
   slot_id: string;
   status: string;
@@ -642,7 +644,7 @@ export async function getDgroupTableBookings(): Promise<AdminDgroupTable[]> {
   const { data, error } = await supabaseAdmin()
     .from("dgroup_table_bookings")
     .select(
-      "id, leader_name, contact_mobile, group_size, room_slug, table_label, table_seats, booked_on, slot_id, status, created_at, decided_at",
+      "id, leader_name, contact_mobile, leader_email, group_size, room_slug, table_label, table_labels, table_seats, booked_on, slot_id, status, created_at, decided_at",
     )
     .eq("satellite_id", SATELLITE_ID)
     .order("booked_on", { ascending: true })
@@ -660,7 +662,9 @@ export async function getDgroupTableBookings(): Promise<AdminDgroupTable[]> {
     group_size: r.group_size as number,
     room_slug: r.room_slug as string,
     table_label: r.table_label as string,
+    table_labels: (r.table_labels as string[] | null) ?? [r.table_label as string],
     table_seats: r.table_seats as number,
+    leader_email: (r.leader_email as string | null) ?? null,
     booked_on: r.booked_on as string,
     slot_id: r.slot_id as string,
     status: r.status as string,

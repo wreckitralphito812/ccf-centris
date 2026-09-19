@@ -1,5 +1,7 @@
 "use server";
 
+import { bookingEmail } from "@/lib/emails/dgroup-booking";
+import { sendEmail, siteOrigin } from "@/lib/email";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -32,13 +34,8 @@ const APPLICATION_STATUSES = [
   "accepted",
   "declined",
 ] as const;
-/** A Dgroup table request. 'confirmed' is the approved state; see 0007. */
-const DGROUP_TABLE_STATUSES = [
-  "pending",
-  "confirmed",
-  "declined",
-  "cancelled",
-] as const;
+/** Dgroup table booking statuses; bookings confirm at once since 0008. */
+type DgroupTableStatus = "pending" | "confirmed" | "declined" | "cancelled";
 
 type Enum<T extends readonly string[]> = T[number];
 
@@ -116,44 +113,44 @@ export async function setApplicationStatus(
 }
 
 /**
- * Approve or decline a Dgroup table request.
- *
- * Declining releases the table: the unique indexes only hold on 'pending' and
- * 'confirmed', so the moment this row goes to 'declined' the table is free for
- * the next request that night. Stamps decided_at so the queue can show when.
- *
- * Approving can still fail, and should: if the table was freed and retaken
- * while the request sat in the queue, the unique index rejects the update
- * rather than double-booking the table. That surfaces as an "Update failed"
- * note on the row.
+ * Cancel a Dgroup table booking from the admin list, e.g. a no-show or a
+ * booking that breaks the policies. Its tables are released at once (a trigger
+ * deletes the holds) and the leader is emailed that it was cancelled.
  */
 export async function setDgroupTableStatus(
   id: string,
-  status: Enum<typeof DGROUP_TABLE_STATUSES>,
+  status: DgroupTableStatus,
 ): Promise<AdminActionResult> {
   const blocked = await guard();
   if (blocked) return blocked;
-  if (!DGROUP_TABLE_STATUSES.includes(status))
-    return { ok: false, formError: "Unknown status." };
+  if (status !== "cancelled") return { ok: false, formError: "Bookings can only be cancelled here." };
 
-  const { error } = await supabaseAdmin()
+  const { data, error } = await supabaseAdmin()
     .from("dgroup_table_bookings")
-    .update({
-      status,
-      decided_at: status === "pending" ? null : new Date().toISOString(),
-      ...(status === "cancelled" ? { cancelled_at: new Date().toISOString() } : {}),
-    })
-    .eq("id", id);
+    .update({ status, decided_at: new Date().toISOString(), cancelled_at: new Date().toISOString() })
+    .eq("id", id)
+    .in("status", ["pending", "confirmed"])
+    .select("leader_name, leader_email, room_slug, table_labels, booked_on, slot_id, group_size")
+    .maybeSingle();
 
   if (error) {
     console.error("setDgroupTableStatus failed", error);
-    return {
-      ok: false,
-      formError:
-        error.code === "23505"
-          ? "That table was taken while this sat in the queue. Decline it and the leader can request again."
-          : "Update failed — try again.",
-    };
+    return { ok: false, formError: "Update failed. Try again." };
+  }
+  if (data?.leader_email) {
+    await sendEmail({
+      to: data.leader_email as string,
+      ...bookingEmail({
+        kind: "cancelled",
+        origin: siteOrigin(),
+        leaderName: data.leader_name as string,
+        roomSlug: data.room_slug as string,
+        labels: data.table_labels as string[],
+        date: data.booked_on as string,
+        slotId: data.slot_id as string,
+        groupSize: data.group_size as number,
+      }),
+    });
   }
   revalidatePath("/admin/dgroup-tables");
   revalidatePath("/reserve/dgroup");

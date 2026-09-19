@@ -3,154 +3,146 @@ import test from "node:test";
 
 import {
   bookableNights,
+  bookingOpen,
   candidateTables,
+  DGROUP_POLICIES,
   DGROUP_ROOMS,
   MAX_GROUP_SIZE,
   openSlots,
   parseDgroupBooking,
+  parseDgroupChange,
+  tableGroups,
   tableKey,
+  tablesLabel,
 } from "./dgroup-tables";
 
 const none = new Set<string>();
-
 const room = (slug: string) => DGROUP_ROOMS.find((r) => r.slug === slug)!;
-const seatsOf = (slug: string) =>
-  room(slug).tables.reduce((n, t) => n + t.seats, 0);
+const seatsOf = (slug: string) => room(slug).tables.reduce((n, t) => n + t.seats, 0);
+const key = (c: { roomSlug: string; labels: string[] }) => `${c.roomSlug}:${c.labels.join("+")}`;
 
 test("the tables match the CCF Centris floor plans", () => {
-  // DGROUP PLAN: 1×8, 4×4, 2×3, 4×2 — eleven tables, 38 seats.
   const lounge = room("dgroup-lounge");
   assert.equal(lounge.tables.length, 11);
   assert.equal(seatsOf("dgroup-lounge"), 38);
   assert.equal(lounge.tables.find((t) => t.label === "1")?.seats, 8);
-  assert.equal(lounge.tables.find((t) => t.label === "5")?.seats, 4);
   assert.equal(lounge.tables.find((t) => t.label === "7")?.seats, 3);
   assert.equal(lounge.tables.find((t) => t.label === "11")?.seats, 2);
 
-  // WELCOME PLAN: fifteen tables of four, 60 seats.
   const welcome = room("welcome-center");
   assert.equal(welcome.tables.length, 15);
   assert.equal(seatsOf("welcome-center"), 60);
-  assert.ok(welcome.tables.every((t) => t.seats === 4));
-
-  // The single largest table caps the group size the form will accept.
-  assert.equal(MAX_GROUP_SIZE, 8);
 });
 
-test("assigns the smallest table that fits", () => {
-  // A pair gets a 2-seater, not the 8-seater.
-  assert.deepEqual(candidateTables(2, "either", none)[0], {
-    roomSlug: "dgroup-lounge",
-    roomName: "Dgroup Lounge",
-    label: "8",
-    seats: 2,
-  });
-  // Three fits the Lounge's 3-seaters before any 4-seater.
-  assert.equal(candidateTables(3, "either", none)[0]?.seats, 3);
-  // Five fits nothing but the 8-seater.
-  assert.equal(candidateTables(5, "either", none)[0]?.label, "1");
-  assert.equal(candidateTables(5, "either", none)[0]?.seats, 8);
-});
-
-test("large tables stay free while a smaller one fits", () => {
-  // The 8-seater is the last resort for a pair, never the first offer.
-  const forTwo = candidateTables(2, "either", none);
-  assert.equal(forTwo[0]?.seats, 2);
-  assert.equal(forTwo.at(-1)?.seats, 8);
-});
-
-test("skips tables already booked for the slot", () => {
-  // Both 3-seaters gone, so three people move up to a 4-seater.
-  const taken = new Set([
-    tableKey("dgroup-lounge", "6"),
-    tableKey("dgroup-lounge", "7"),
-  ]);
-  assert.equal(candidateTables(3, "dgroup-lounge", taken)[0]?.seats, 4);
-});
-
-test("a table in one room never blocks the same number in the other", () => {
-  // Both rooms have a table "2"; they are distinct bookings.
-  const taken = new Set([tableKey("dgroup-lounge", "2")]);
-  const picks = candidateTables(4, "either", taken);
-  assert.ok(picks.some((t) => t.roomSlug === "welcome-center" && t.label === "2"));
-  assert.ok(!picks.some((t) => t.roomSlug === "dgroup-lounge" && t.label === "2"));
-});
-
-test("keeps to the chosen room", () => {
-  const picks = candidateTables(2, "dgroup-lounge", none);
-  assert.ok(picks.length > 0);
-  assert.ok(picks.every((t) => t.roomSlug === "dgroup-lounge"));
-});
-
-test("offers nothing when no table is big enough", () => {
-  assert.deepEqual(candidateTables(MAX_GROUP_SIZE + 1, "either", none), []);
-});
-
-test("a full night never assigns the same table twice", () => {
-  // Walk a night's worth of groups through the assigner the way the server
-  // action does: take the best candidate, mark it taken, repeat. This is the
-  // double-booking guarantee in pure form — the database's unique index is
-  // the backstop, but the model should never propose a clash in the first
-  // place.
-  const taken = new Set<string>();
-  const sizes = [2, 4, 3, 4, 2, 4, 4, 3, 2, 4, 4, 2, 4, 4, 1, 4, 2, 4, 4, 4];
-  const assigned: string[] = [];
-
-  for (const size of sizes) {
-    const pick = candidateTables(size, "either", taken)[0];
-    if (!pick) continue;
-    const key = tableKey(pick.roomSlug, pick.label);
-    assert.ok(!taken.has(key), `${key} was handed out twice`);
-    assert.ok(pick.seats >= size, `${key} seats ${pick.seats}, group of ${size}`);
-    taken.add(key);
-    assigned.push(key);
+test("every join names two real tables in its room", () => {
+  for (const r of DGROUP_ROOMS) {
+    const labels = new Set(r.tables.map((t) => t.label));
+    for (const [a, b] of r.joins) assert.ok(labels.has(a) && labels.has(b), `${r.slug} ${a}-${b}`);
   }
-
-  assert.equal(new Set(assigned).size, assigned.length);
-  // Twenty groups of four or fewer all fit: there are 25 tables seating 4+.
-  assert.equal(assigned.length, sizes.length);
 });
 
-test("only one table in the whole center seats more than four", () => {
-  // Worth knowing, and worth asserting so it can't change silently: the
-  // Lounge's 8-seater is the only table a group of 5+ can use. Two such
-  // groups on the same night and slot means the second is turned away.
-  const big = DGROUP_ROOMS.flatMap((r) => r.tables).filter((t) => t.seats > 4);
-  assert.equal(big.length, 1);
-  assert.equal(big[0].seats, 8);
+test("the lounge 8-seater and the Welcome Center wall sets never join the rest", () => {
+  const groups = (slug: string) => tableGroups(room(slug)).filter((g) => g.length > 1);
+  assert.ok(groups("dgroup-lounge").every((g) => !g.includes("1")));
+  const wall = new Set(["1", "2", "3"]);
+  for (const g of groups("welcome-center")) {
+    const onWall = g.filter((l) => wall.has(l)).length;
+    assert.ok(onWall === 0 || onWall === g.length, `mixed group ${g}`);
+  }
+});
 
+test("joined tables are always neighbours", () => {
+  const welcome = room("welcome-center");
+  const groups = tableGroups(welcome).map((g) => g.join("+"));
+  assert.ok(groups.includes("4+5"));
+  assert.ok(groups.includes("4+10"));
+  assert.ok(groups.includes("4+5+6"));
+  assert.ok(!groups.includes("4+6"), "4 and 6 aren't next to each other");
+  assert.ok(!groups.includes("3+4"), "the wall sets don't join the clusters");
+});
+
+test("one table when one fits, the smallest one", () => {
+  assert.deepEqual(key(candidateTables(2, none)[0]), "dgroup-lounge:8");
+  assert.deepEqual(key(candidateTables(3, none)[0]), "dgroup-lounge:6");
+  assert.deepEqual(key(candidateTables(4, none)[0]), "dgroup-lounge:2");
+  assert.deepEqual(key(candidateTables(6, none)[0]), "dgroup-lounge:1");
+});
+
+test("joins neighbouring tables only when no single table fits", () => {
   const taken = new Set([tableKey("dgroup-lounge", "1")]);
-  assert.deepEqual(candidateTables(5, "either", taken), []);
+  const best = candidateTables(6, taken)[0];
+  assert.equal(best.labels.length, 2);
+  assert.ok(best.seats >= 6);
+
+  const twelve = candidateTables(12, none)[0];
+  assert.equal(twelve.seats, 12);
+  assert.equal(twelve.labels.length, 3);
 });
 
-test("best fit does not strand a large group behind small ones", () => {
-  // Fill every table a group of 8 could use, except the one 8-seater. Small
-  // groups took the small tables, so the 8-seater is still there.
+test("skips tables already booked, room by room", () => {
+  const taken = new Set([tableKey("dgroup-lounge", "8")]);
+  assert.equal(key(candidateTables(2, taken)[0]), "dgroup-lounge:9");
+  // Table 8 in the lounge doesn't block Table 8 in the Welcome Center.
+  const all = candidateTables(4, taken).map(key);
+  assert.ok(all.includes("welcome-center:8"));
+});
+
+test("a set is offered only when every table in it is free", () => {
+  const taken = new Set([tableKey("welcome-center", "5")]);
+  const sets = candidateTables(8, taken).filter((c) => c.roomSlug === "welcome-center");
+  assert.ok(sets.every((c) => !c.labels.includes("5")));
+});
+
+test("a full slot never hands the same table out twice", () => {
   const taken = new Set<string>();
-  for (let i = 0; i < 20; i++) {
-    const pick = candidateTables(2, "either", taken)[0];
-    if (pick) taken.add(tableKey(pick.roomSlug, pick.label));
+  const sizes = [2, 8, 5, 4, 12, 3, 6, 4, 4, 2, 10, 4, 7, 4, 4, 1, 3];
+  for (const size of sizes) {
+    const pick = candidateTables(size, taken)[0];
+    if (!pick) continue;
+    assert.ok(pick.seats >= size);
+    for (const l of pick.labels) {
+      const k = tableKey(pick.roomSlug, l);
+      assert.ok(!taken.has(k), `${k} handed out twice`);
+      taken.add(k);
+    }
   }
-  const forEight = candidateTables(8, "either", taken)[0];
-  assert.equal(forEight?.label, "1");
-  assert.equal(forEight?.roomSlug, "dgroup-lounge");
 });
 
-test("lists weeknights inside the booking window", () => {
-  // 2026-09-10 is a Thursday.
-  assert.deepEqual(bookableNights("2026-09-10", 7), [
-    "2026-09-10",
-    "2026-09-11",
-    "2026-09-14",
-    "2026-09-15",
-    "2026-09-16",
-    "2026-09-17",
+test("offers nothing past the group limit", () => {
+  assert.equal(MAX_GROUP_SIZE, 12);
+  assert.deepEqual(candidateTables(13, none), []);
+});
+
+test("closed until Sunday, October 4, 2026", () => {
+  assert.equal(bookingOpen("2026-10-03"), false);
+  assert.equal(bookingOpen("2026-10-04"), true);
+  assert.equal(bookingOpen("2026-09-20", true), true);
+});
+
+test("Sunday opens Monday to Friday of the week ahead", () => {
+  assert.deepEqual(bookableNights("2026-10-04"), [
+    "2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09",
   ]);
+});
+
+test("during the week, only the days left in that week", () => {
+  assert.deepEqual(bookableNights("2026-10-07"), ["2026-10-07", "2026-10-08", "2026-10-09"]);
+  assert.deepEqual(bookableNights("2026-10-09"), ["2026-10-09"]);
+  // Saturday: this week is done and next week opens tomorrow.
+  assert.deepEqual(bookableNights("2026-10-10"), []);
 });
 
 test("today's slots close once they start", () => {
-  assert.deepEqual(openSlots("2026-09-10", "2026-09-10", 19 * 60).map((s) => s.id), ["2000"]);
-  assert.equal(openSlots("2026-09-11", "2026-09-10", 23 * 60).length, 2);
+  const today = "2026-10-07";
+  assert.equal(openSlots(today, today, 12 * 60).length, 3);
+  assert.deepEqual(openSlots(today, today, 13 * 60 + 5).map((s) => s.id), ["1600", "1900"]);
+  assert.equal(openSlots(today, today, 19 * 60).length, 0);
+  assert.equal(openSlots("2026-10-08", today, 23 * 60).length, 3);
+});
+
+test("labels read naturally", () => {
+  assert.equal(tablesLabel(["4"]), "Table 4");
+  assert.equal(tablesLabel(["4", "5"]), "Tables 4 + 5");
 });
 
 const form = (fields: Record<string, string>) => {
@@ -158,38 +150,46 @@ const form = (fields: Record<string, string>) => {
   for (const [k, v] of Object.entries(fields)) f.set(k, v);
   return f;
 };
-
-const valid = {
-  date: "2026-09-11",
-  slot: "1800",
-  room: "either",
-  leader_name: "Ana Cruz",
+const complete = {
+  date: "2026-10-08",
+  slot: "1900",
+  leader_name: "  Ana   Cruz ",
   contact_mobile: "0917 123 4567",
+  leader_email: "Ana@Example.com",
   group_size: "6",
-  agree: "on",
+  ...Object.fromEntries(DGROUP_POLICIES.map((p) => [`policy_${p.id}`, "on"])),
 };
 
 test("a complete booking parses", () => {
-  const r = parseDgroupBooking(form(valid), "2026-09-10", 12 * 60);
-  assert.equal(r.ok, true);
-  if (r.ok) assert.equal(r.value.groupSize, 6);
+  const r = parseDgroupBooking(form(complete), "2026-10-07", 10 * 60);
+  assert.ok(r.ok);
+  if (r.ok) {
+    assert.equal(r.value.leaderName, "Ana Cruz");
+    assert.equal(r.value.leaderEmail, "ana@example.com");
+    assert.equal(r.value.groupSize, 6);
+  }
 });
 
-test("house rules must be agreed to", () => {
-  const r = parseDgroupBooking(form({ ...valid, agree: "" }), "2026-09-10", 12 * 60);
-  assert.equal(r.ok, false);
-  if (!r.ok) assert.ok(r.fieldErrors.agree);
+test("every policy must be accepted", () => {
+  const r = parseDgroupBooking(form({ ...complete, policy_claygo: "" }), "2026-10-07", 600);
+  assert.ok(!r.ok && r.fieldErrors.policies);
 });
 
-test("rejects a night outside the list and a group too big for any table", () => {
+test("rejects a day outside this week, a bad email, and a group over 12", () => {
   const r = parseDgroupBooking(
-    form({ ...valid, date: "2026-09-13", group_size: String(MAX_GROUP_SIZE + 1) }),
-    "2026-09-10",
-    12 * 60,
+    form({ ...complete, date: "2026-10-12", leader_email: "nope", group_size: "13" }),
+    "2026-10-07",
+    600,
   );
-  assert.equal(r.ok, false);
+  assert.ok(!r.ok);
   if (!r.ok) {
     assert.ok(r.fieldErrors.date);
+    assert.ok(r.fieldErrors.leaderEmail);
     assert.ok(r.fieldErrors.groupSize);
   }
+});
+
+test("a change needs only the day, time, and headcount", () => {
+  const r = parseDgroupChange(form({ date: "2026-10-09", slot: "1300", group_size: "3" }), "2026-10-07", 600);
+  assert.ok(r.ok);
 });
