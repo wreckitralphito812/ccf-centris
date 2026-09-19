@@ -3,10 +3,11 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui";
+import { FacebookGlyph } from "@/components/icons";
 import { createClient } from "@/lib/supabase/client";
 
 /**
- * One-click sign-in via Supabase's Google OAuth provider. `signInWithOAuth`
+ * One-click sign-in via a Supabase OAuth provider (Google or Facebook). `signInWithOAuth`
  * does a full-page redirect to Google, so there's no success state to render —
  * only a pending state while the redirect is being set up, and an error line
  * if that call itself fails (network, provider misconfigured).
@@ -14,7 +15,15 @@ import { createClient } from "@/lib/supabase/client";
  * The callback lands on `/auth/callback`, the same route the magic link uses;
  * it exchanges the `code` for a session and forwards to `next`.
  */
-export function GoogleButton({ next }: { next: string }) {
+const LABEL = { google: "Google", facebook: "Facebook" } as const;
+
+export function ProviderButton({
+  provider,
+  next,
+}: {
+  provider: keyof typeof LABEL;
+  next: string;
+}) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,14 +32,16 @@ export function GoogleButton({ next }: { next: string }) {
     setError(null);
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
+      provider,
       options: {
+        // Facebook only shares the email address when asked for it.
+        ...(provider === "facebook" ? { scopes: "email" } : {}),
         redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     });
     if (error) {
-      console.error("Google sign-in failed", error);
-      setError("Could not start Google sign-in — try again, or use email below.");
+      console.error(`${LABEL[provider]} sign-in failed`, error);
+      setError(`Could not start ${LABEL[provider]} sign-in. Try again, or use email below.`);
       setPending(false);
     }
     // On success the browser is already navigating away.
@@ -51,8 +62,12 @@ export function GoogleButton({ next }: { next: string }) {
         disabled={pending}
         onClick={signIn}
       >
-        <GoogleGlyph className="h-4 w-4" />
-        {pending ? "Redirecting…" : "Continue with Google"}
+        {provider === "google" ? (
+          <GoogleGlyph className="h-4 w-4" />
+        ) : (
+          <FacebookGlyph className="h-4 w-4 text-[#1877F2]" />
+        )}
+        {pending ? "Redirecting…" : `Continue with ${LABEL[provider]}`}
       </Button>
     </div>
   );

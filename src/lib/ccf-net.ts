@@ -21,6 +21,9 @@ import { CCF_NET } from "@/lib/site";
 
 const REVALIDATE_SECONDS = 60 * 30;
 
+/** Cache tag on every CCF Net fetch, so the admin can ask for a fresh look. */
+export const CCF_NET_TAG = "ccf-net";
+
 export interface Replay {
   videoId: string;
   /** The message title, e.g. "Who Are We Called To Love Today?" */
@@ -108,7 +111,7 @@ async function fetchText(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, {
       headers: { "User-Agent": "CCF-Centris-Site" },
-      next: { revalidate: REVALIDATE_SECONDS },
+      next: { revalidate: REVALIDATE_SECONDS, tags: [CCF_NET_TAG] },
     });
     return res.ok ? await res.text() : null;
   } catch {
@@ -118,7 +121,7 @@ async function fetchText(url: string): Promise<string | null> {
 
 async function fetchJson<T>(url: string): Promise<T | null> {
   try {
-    const res = await fetch(url, { next: { revalidate: REVALIDATE_SECONDS } });
+    const res = await fetch(url, { next: { revalidate: REVALIDATE_SECONDS, tags: [CCF_NET_TAG] } });
     return res.ok ? ((await res.json()) as T) : null;
   } catch {
     return null;

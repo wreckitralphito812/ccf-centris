@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Section } from "@/components/ui";
-import { getLatestReplay, type Replay } from "@/lib/ccf-net";
+import type { Replay } from "@/lib/ccf-net";
+import { getPastReplays, getWatchReplay } from "@/lib/watch";
+import { YouTubeThumb } from "@/components/youtube-thumb";
 import {
   getCurrentFourWsGuide,
   type FourWsCurrent,
@@ -15,16 +17,21 @@ export const metadata: Metadata = {
     "Last Sunday's message from CCF Net, with this week's 4Ws guide to study it in your Dgroup.",
 };
 
+/** Re-read CCF Net every half hour; admin changes refresh it at once. */
+export const revalidate = 1800;
+
 /**
- * Watch is one thing: last Sunday's replay, with the week's 4Ws beside it.
- * The replay comes from CCF Net (see lib/ccf-net); the 4Ws from the content
+ * Watch is one thing: last Sunday's replay, with the week's 4Ws beside it,
+ * then earlier Sundays. The replay follows CCF Net unless an admin pinned
+ * another (see lib/watch and /admin/watch); the 4Ws come from the content
  * snapshot. Older routes under /watch/* still resolve but aren't linked.
  */
 export default async function WatchPage() {
-  const [replay, current] = await Promise.all([
-    getLatestReplay(),
+  const [{ replay }, current] = await Promise.all([
+    getWatchReplay(),
     getCurrentFourWsGuide(),
   ]);
+  const past = await getPastReplays(replay?.videoId ?? null, 9);
 
   return (
     <>
@@ -44,6 +51,8 @@ export default async function WatchPage() {
             )}
             {current ? <FourWsPanel current={current} /> : null}
           </div>
+
+          {past.length ? <PastSundays replays={past} /> : null}
 
           <div className="mt-14 border-t border-hairline pt-8">
             <div className="max-w-3xl border-l-2 border-clay pl-5">
@@ -123,6 +132,40 @@ function ReplayPanel({
         </div>
       ) : null}
     </article>
+  );
+}
+
+/**
+ * Earlier Sundays from the replay library. CCF Net only ever shows the latest,
+ * and its videos are unlisted, so this is the only place to find them again.
+ */
+function PastSundays({ replays }: { replays: Replay[] }) {
+  return (
+    <section aria-labelledby="past-h" className="mt-16 border-t border-hairline pt-10">
+      <h2 id="past-h" className="display-md">Past Sundays</h2>
+      <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {replays.map((r) => (
+          <li key={r.videoId}>
+            <a
+              href={`https://www.youtube.com/watch?v=${r.videoId}`}
+              target="_blank"
+              rel="noreferrer"
+              className="group block"
+            >
+              <span className="relative block aspect-video overflow-hidden border border-hairline">
+                <YouTubeThumb videoId={r.videoId} alt={r.title} />
+              </span>
+              <span className="label mt-3 block text-clay">
+                {[r.speaker, r.dateLabel].filter(Boolean).join(" · ")}
+              </span>
+              <span className="font-display mt-1 block text-xl leading-snug text-ink group-hover:text-clay">
+                {r.title}
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

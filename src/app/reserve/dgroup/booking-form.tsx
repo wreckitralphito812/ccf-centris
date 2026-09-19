@@ -16,13 +16,25 @@ export const inputClass =
   "w-full border border-hairline bg-paper-bright px-4 py-3 text-[1rem] text-ink focus:border-clay";
 
 /** The form, remounted fresh for each new booking after a confirmation. */
-export function BookingForm({ nights, email }: { nights: NightOption[]; email: string }) {
+export function BookingForm({
+  nights,
+  email,
+  name = "",
+  mobile = "",
+}: {
+  nights: NightOption[];
+  email: string;
+  name?: string;
+  mobile?: string;
+}) {
   const [attempt, setAttempt] = useState(0);
   return (
     <BookingAttempt
       key={attempt}
       nights={nights}
       email={email}
+      name={name}
+      mobile={mobile}
       onAnother={() => setAttempt((a) => a + 1)}
     />
   );
@@ -31,10 +43,14 @@ export function BookingForm({ nights, email }: { nights: NightOption[]; email: s
 function BookingAttempt({
   nights,
   email,
+  name,
+  mobile,
   onAnother,
 }: {
   nights: NightOption[];
   email: string;
+  name: string;
+  mobile: string;
   onAnother: () => void;
 }) {
   const [state, action, pending] = useActionState<DgroupBookingResult | null, FormData>(
@@ -118,7 +134,7 @@ function BookingAttempt({
 
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Dleader name" error={e.leaderName}>
-          <input name="leader_name" required autoComplete="name" className={inputClass} />
+          <input name="leader_name" required autoComplete="name" defaultValue={name} className={inputClass} />
         </Field>
         <Field label="Dleader contact number" error={e.contactMobile}>
           <input
@@ -127,6 +143,7 @@ function BookingAttempt({
             required
             autoComplete="tel"
             inputMode="tel"
+            defaultValue={mobile}
             className={inputClass}
           />
         </Field>

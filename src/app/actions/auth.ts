@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { createSupabaseServer } from "@/lib/supabase/ssr";
 import { hasSupabase } from "@/lib/supabase/server";
+import { isDisposableEmail } from "@/lib/member";
 
 export interface AuthResult {
   ok: boolean;
@@ -33,6 +34,12 @@ export async function sendMagicLink(
 
   if (!EMAIL.test(email)) {
     return { ok: false, formError: "Enter a valid email address." };
+  }
+  if (isDisposableEmail(email)) {
+    return {
+      ok: false,
+      formError: "Please use an email address you'll keep. We use it for your bookings and to reach you.",
+    };
   }
 
   // Optional. Kept only if it holds phone-ish characters after a light clean;

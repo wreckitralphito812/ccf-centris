@@ -6,7 +6,7 @@ import { Container, Section } from "@/components/ui";
 import { currentUser } from "@/lib/supabase/ssr";
 import { enabledAuthProviders } from "@/lib/supabase/providers";
 import { hasSupabase } from "@/lib/supabase/server";
-import { GoogleButton } from "./google-button";
+import { ProviderButton } from "./provider-button";
 import { SignInForm } from "./sign-in-form";
 
 export const metadata: Metadata = {
@@ -34,7 +34,7 @@ export default async function SignInPage({
       <PageHeader
         eyebrow="Account"
         title="Sign in to CCF Centris."
-        lead="Reserving a court or a room needs an account, so you can see your bookings and cancel if plans change. No password — we email you a link."
+        lead="An account lets you book Dgroup tables, post on the Prayer Wall, and manage your bookings. There's no password: sign in with Google, Facebook, or a link we email you."
       />
       <Section>
         <Container className="max-w-md">
@@ -44,16 +44,18 @@ export default async function SignInPage({
               been used — request a fresh one.
             </p>
           ) : null}
-          {/* Only offered when the project actually has Google switched on.
-              Otherwise the button is a dead end: Supabase answers
-              "Unsupported provider: provider is not enabled" and the visitor
-              has to work out for themselves that email below still works. */}
-          {providers.google ? (
+          {/* Each provider is only offered when the project actually has it
+              switched on. Otherwise the button is a dead end: Supabase answers
+              "Unsupported provider: provider is not enabled". */}
+          {providers.google || providers.facebook ? (
             <>
-              <GoogleButton next={next} />
+              <div className="grid gap-3">
+                {providers.google ? <ProviderButton provider="google" next={next} /> : null}
+                {providers.facebook ? <ProviderButton provider="facebook" next={next} /> : null}
+              </div>
               <div className="my-6 flex items-center gap-4">
                 <span className="h-px flex-1 bg-hairline" />
-                <span className="label text-ink-mute">or</span>
+                <span className="label text-ink-mute">or with your email</span>
                 <span className="h-px flex-1 bg-hairline" />
               </div>
             </>

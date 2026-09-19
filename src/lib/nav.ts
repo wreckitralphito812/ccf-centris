@@ -57,6 +57,7 @@ export const ADMIN_NAV: { section: string; items: NavItem[] }[] = [
     section: "Sunday",
     items: [
       { label: "Services", href: "/admin/services" },
+      { label: "Watch", href: "/admin/watch" },
       { label: "Messages", href: "/admin/messages" },
       { label: "4Ws", href: "/admin/4ws" },
     ],

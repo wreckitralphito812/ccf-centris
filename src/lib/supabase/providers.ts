@@ -21,9 +21,10 @@ import { hasSupabase } from "./server";
  */
 export interface AuthProviders {
   google: boolean;
+  facebook: boolean;
 }
 
-const NONE: AuthProviders = { google: false };
+const NONE: AuthProviders = { google: false, facebook: false };
 
 export async function enabledAuthProviders(): Promise<AuthProviders> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -37,7 +38,10 @@ export async function enabledAuthProviders(): Promise<AuthProviders> {
     });
     if (!res.ok) return NONE;
     const body = (await res.json()) as { external?: Record<string, boolean> };
-    return { google: body.external?.google === true };
+    return {
+      google: body.external?.google === true,
+      facebook: body.external?.facebook === true,
+    };
   } catch {
     return NONE;
   }

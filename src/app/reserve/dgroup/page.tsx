@@ -162,6 +162,13 @@ async function Booking() {
     }))
     .filter((n) => n.slots.length > 0);
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("first_name, last_name, mobile")
+    .eq("id", user.id)
+    .maybeSingle();
+  const myName = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ");
+
   const { data } = await supabase
     .from("dgroup_table_bookings")
     .select("id, room_slug, table_labels, booked_on, slot_id, group_size")
@@ -203,7 +210,12 @@ async function Booking() {
           {mine.length ? "Book another slot" : "Book a table"}
         </h2>
         <div className="mt-5">
-          <BookingForm nights={nights} email={user.email ?? ""} />
+          <BookingForm
+            nights={nights}
+            email={user.email ?? ""}
+            name={myName}
+            mobile={profile?.mobile ?? ""}
+          />
         </div>
       </section>
     </div>

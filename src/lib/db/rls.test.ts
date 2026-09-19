@@ -290,3 +290,37 @@ test("members see only their own bookings and can't book or read holds directly"
   await assert.rejects(as(BEN, book(BEN, ["9"], "1600")), /permission denied/);
   await assert.rejects(as(BEN, "select * from dgroup_table_holds"), /permission denied/);
 });
+
+// --- Member names and the Watch library -------------------------------------
+
+test("a Google sign-up arrives with first name and surname filled in", async () => {
+  const id = "66666666-6666-4666-8666-666666666666";
+  await db.exec(`
+    insert into auth.users (id, email, raw_user_meta_data) values
+      ('${id}', 'eve@example.com', '{"given_name":"Eve","family_name":"Santos","full_name":"Eve Santos"}')`);
+  const { rows } = await db.query<{ first_name: string; last_name: string }>(
+    "select first_name, last_name from profiles where id = $1",
+    [id],
+  );
+  assert.deepEqual(rows[0], { first_name: "Eve", last_name: "Santos" });
+});
+
+test("members set only their own name", async () => {
+  await as(ANA, "select set_my_name('  Ana ', 'Dela  Cruz')");
+  const { rows } = await db.query<{ first_name: string; last_name: string; full_name: string }>(
+    "select first_name, last_name, full_name from profiles where id = $1",
+    [ANA],
+  );
+  assert.deepEqual(rows[0], { first_name: "Ana", last_name: "Dela Cruz", full_name: "Ana Dela Cruz" });
+  await assert.rejects(as(null, "select set_my_name('X', 'Y')"), /permission denied/);
+});
+
+test("the Watch library is server-only and holds one pinned video at most", async () => {
+  await assert.rejects(as(ANA, "select * from watch_replays"), /permission denied/);
+  await db.exec(`insert into watch_replays (video_id, title, pinned) values ('aaaaaaaaaaa', 'One', true)`);
+  await assert.rejects(
+    db.exec(`insert into watch_replays (video_id, title, pinned) values ('bbbbbbbbbbb', 'Two', true)`),
+    /watch_replays_one_pinned/,
+  );
+  await assert.rejects(db.exec(`insert into watch_replays (video_id, title) values ('bad id', 'X')`), /check/);
+});

@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getServiceWindow } from "@/lib/queries";
-import { getLatestReplay, type Replay } from "@/lib/ccf-net";
+import type { Replay } from "@/lib/ccf-net";
+import { getWatchReplay } from "@/lib/watch";
 import {
   getCurrentFourWsGuide,
   type FourWsCurrent,
@@ -42,9 +43,9 @@ export const revalidate = 1800;
  *   3. Last Sunday: the CCF Net replay and this week's 4Ws
  */
 export default async function HomePage() {
-  const [service, replay, fourWs] = await Promise.all([
+  const [service, { replay }, fourWs] = await Promise.all([
     getServiceWindow(),
-    getLatestReplay(),
+    getWatchReplay(),
     getCurrentFourWsGuide(),
   ]);
 
