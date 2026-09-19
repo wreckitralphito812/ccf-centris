@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Section } from "@/components/ui";
-import { CONNECT_LINKS, SOCIALS } from "@/lib/site";
+import { CONNECT_LINKS, SOCIALS, YOUTUBE } from "@/lib/site";
+import { FacebookGlyph, InstagramGlyph, YouTubeGlyph } from "@/components/icons";
 
 export const metadata: Metadata = {
   title: "Connect",
@@ -10,8 +11,9 @@ export const metadata: Metadata = {
 
 /** Center-owned accounts. A null URL renders as "coming soon". */
 const ACCOUNTS = [
-  { label: "Instagram", href: SOCIALS.instagram },
-  { label: "Facebook", href: SOCIALS.facebook },
+  { label: "Facebook", href: SOCIALS.facebook, Glyph: FacebookGlyph },
+  { label: "Instagram", href: SOCIALS.instagram, Glyph: InstagramGlyph },
+  { label: "YouTube", href: YOUTUBE.channelUrl, Glyph: YouTubeGlyph },
 ];
 
 export default function ConnectPage() {
@@ -52,8 +54,9 @@ export default function ConnectPage() {
                       href={a.href}
                       target="_blank"
                       rel="noreferrer"
-                      className="label tap border border-ink px-4 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+                      className="label tap gap-2 border border-ink px-4 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
                     >
+                      <a.Glyph className="h-4 w-4" />
                       {a.label}
                     </a>
                   ) : (

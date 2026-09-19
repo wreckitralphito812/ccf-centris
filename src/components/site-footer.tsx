@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SITE, MAPS_LINK, YOUTUBE, SOCIALS, SERVICE_TIMES, organizationJsonLd } from "@/lib/site";
 import { Wordmark } from "./wordmark";
+import { FacebookGlyph, InstagramGlyph, YouTubeGlyph } from "./icons";
 
 /**
  * Footer.
@@ -32,7 +33,7 @@ const COLUMNS: FooterColumn[] = [
     id: "footer-visit",
     links: [
       { label: "New here", href: "/visit/new-here" },
-      { label: "Getting here", href: "/visit/directions" },
+      { label: "Getting here", href: "/visit#getting-here" },
     ],
   },
   {
@@ -91,7 +92,7 @@ export function SiteFooter() {
                 inherited --clay is the lifted teal, and white on it failed
                 contrast. Matches the "on-dark" button tone in ui.tsx. */}
             <Link
-              href="/visit/directions"
+              href="/visit#getting-here"
               className="btn-press label tap border border-paper-bright bg-paper-bright px-4 py-2.5 text-night transition-colors hover:border-bone hover:bg-bone"
             >
               Getting here
@@ -148,7 +149,7 @@ export function SiteFooter() {
                   aria-label="CCF Centris on Instagram"
                   className="label tap gap-2 border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
                 >
-                  <InstagramGlyph />
+                  <InstagramGlyph className="h-4 w-4" />
                   Instagram
                 </a>
               ) : null}
@@ -160,6 +161,7 @@ export function SiteFooter() {
                   aria-label="CCF Centris on Facebook"
                   className="label tap gap-2 border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
                 >
+                  <FacebookGlyph className="h-4 w-4" />
                   Facebook
                 </a>
               ) : null}
@@ -170,7 +172,7 @@ export function SiteFooter() {
                 aria-label="CCF on YouTube"
                 className="label tap gap-2 border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
               >
-                <YouTubeGlyph />
+                <YouTubeGlyph className="h-4 w-4" />
                 YouTube
               </a>
             </div>
@@ -235,33 +237,5 @@ export function SiteFooter() {
         </div>
       </div>
     </footer>
-  );
-}
-
-/** Small YouTube glyph for the channel link. Inherits currentColor. */
-function YouTubeGlyph() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M23.5 6.5a3 3 0 0 0-2.1-2.1C19.5 4 12 4 12 4s-7.5 0-9.4.4A3 3 0 0 0 .5 6.5C0 8.4 0 12 0 12s0 3.6.5 5.5a3 3 0 0 0 2.1 2.1C4.5 20 12 20 12 20s7.5 0 9.4-.4a3 3 0 0 0 2.1-2.1C24 15.6 24 12 24 12s0-3.6-.5-5.5ZM9.6 15.6V8.4l6.3 3.6-6.3 3.6Z" />
-    </svg>
-  );
-}
-
-/** Small Instagram glyph. Inherits currentColor. */
-function InstagramGlyph() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <rect
-        x="3"
-        y="3"
-        width="18"
-        height="18"
-        rx="5"
-        stroke="currentColor"
-        strokeWidth="2"
-      />
-      <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="2" />
-      <circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" />
-    </svg>
   );
 }

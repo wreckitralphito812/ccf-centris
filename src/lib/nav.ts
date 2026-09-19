@@ -27,7 +27,7 @@ export const NAV: NavGroup[] = [
     href: "/visit",
     items: [
       { label: "New here", href: "/visit/new-here", blurb: "What to expect your first Sunday" },
-      { label: "Getting here & parking", href: "/visit/directions", blurb: "Directions and parking" },
+      { label: "Getting here & parking", href: "/visit#getting-here", blurb: "Directions and parking" },
     ],
   },
   { label: "Watch", href: "/watch", items: [] },

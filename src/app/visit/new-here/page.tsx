@@ -26,7 +26,7 @@ export default function NewHerePage() {
         title="Your first Sunday, without the guesswork."
         lead="We're putting together a video walkthrough of what to expect. In the meantime, here's how to find us."
         actions={
-          <ButtonLink href="/visit/directions" size="lg">
+          <ButtonLink href="/visit#getting-here" size="lg">
             Getting here
           </ButtonLink>
         }

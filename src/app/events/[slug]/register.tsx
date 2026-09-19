@@ -66,7 +66,7 @@ export function RegisterForm({
           whoever you like.
         </p>
         <Link
-          href="/visit/directions"
+          href="/visit#getting-here"
           className="label mt-5 inline-block text-clay underline underline-offset-4"
         >
           How to get here

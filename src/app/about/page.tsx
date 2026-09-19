@@ -189,7 +189,7 @@ export default function AboutPage() {
                   </span>
                 ))}
               </address>
-              <ButtonLink href="/visit/directions" tone="outline" className="mt-6">
+              <ButtonLink href="/visit#getting-here" tone="outline" className="mt-6">
                 Directions
               </ButtonLink>
             </div>

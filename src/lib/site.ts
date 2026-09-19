@@ -55,7 +55,7 @@ export const YOUTUBE = {
  */
 export const SOCIALS: Record<"instagram" | "facebook", string | null> = {
   instagram: "https://www.instagram.com/ccfcentris/",
-  facebook: null,
+  facebook: "https://www.facebook.com/profile.php?id=61591537230410",
 };
 
 /** Live embed for a channel. Falls back to the channel's current stream. */
@@ -175,7 +175,7 @@ export const CCF_NET = {
  * to null and the Contact page hides the row.
  */
 export const CONTACT = {
-  messageEmail: "adrian.camacho@ccf.org.ph",
+  messageEmail: "ccfcentris.admin@gmail.com",
   messageSubject: "[CCF Centris website] New message",
   officeHours: "10:00 AM – 9:00 PM" as string | null,
 } as const;
@@ -187,4 +187,11 @@ export const CONTACT = {
 export const PARKING = {
   name: "Eton Centris Elevated Parking 2",
   mapsUrl: "https://maps.app.goo.gl/sjFA6pVwzF5Bqk23A",
+  /** The place's own coordinates, read from that link, for the map preview. */
+  geo: { lat: 14.6418428, lng: 121.0410548 },
 } as const;
+
+/** Interactive map preview dropped on the parking pin. */
+export const PARKING_EMBED = `https://www.google.com/maps?q=${encodeURIComponent(
+  `${PARKING.geo.lat},${PARKING.geo.lng}`,
+)}&z=17&output=embed`;

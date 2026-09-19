@@ -305,7 +305,7 @@ export default async function WatchLivePage() {
             <p className="text-[0.85rem] text-ink-mute">
               Can&rsquo;t make it online? Come in person at {SITE.addressLines[0]},{" "}
               {SITE.addressLines[1]}.{" "}
-              <Link href="/visit/directions" className="text-clay underline underline-offset-4">
+              <Link href="/visit#getting-here" className="text-clay underline underline-offset-4">
                 Directions
               </Link>
             </p>

@@ -152,7 +152,7 @@ export function SiteHeader() {
                 Last Sunday
               </Link>
               <Link
-                href="/visit/directions"
+                href="/visit#getting-here"
                 className="label flex-1 border border-ink px-4 py-3 text-center text-ink"
               >
                 Getting here

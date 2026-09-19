@@ -66,7 +66,7 @@ export default function ContactPage() {
                   ))}
                 </address>
                 <ButtonLink
-                  href="/visit/directions"
+                  href="/visit#getting-here"
                   tone="outline"
                   full
                   className="mt-5"

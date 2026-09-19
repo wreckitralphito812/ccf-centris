@@ -33,7 +33,7 @@ export default function PrayerPage() {
                   The prayer team stays at the front after every service. You do
                   not need to explain much, or anything at all.
                 </p>
-                <ButtonLink href="/visit/directions" tone="outline" size="sm" full className="mt-5">
+                <ButtonLink href="/visit#getting-here" tone="outline" size="sm" full className="mt-5">
                   Getting here
                 </ButtonLink>
               </div>

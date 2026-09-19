@@ -10,15 +10,17 @@ import {
   CCF_NET,
   CONNECT_LINKS,
   MAPS_LINK,
-  PARKING,
   SERVICE_TIMES,
   SITE,
   SOCIALS,
+  YOUTUBE,
 } from "@/lib/site";
 import { ButtonLink, Container, LiveDot, Section } from "@/components/ui";
 import { HeroStage, Reveal, RevealHead, Stagger } from "@/components/motion";
 import {
+  FacebookGlyph,
   InstagramGlyph,
+  YouTubeGlyph,
   PlayGlyph,
   SectionIcon,
   type IconName,
@@ -191,14 +193,9 @@ function VisitCard({ live }: { live: boolean }) {
         <br />
         {SITE.addressLines.slice(2).join(", ")}
       </address>
-      <a
-        href={PARKING.mapsUrl}
-        target="_blank"
-        rel="noreferrer"
-        className="link label tap mt-1 text-clay underline underline-offset-4"
-      >
+      <Link href="/visit#car" className="link label tap mt-1 text-clay underline underline-offset-4">
         Where to park
-      </a>
+      </Link>
 
       {/* Straight into Google Maps navigation rather than via our own
           directions page: someone reading this card is usually already on the
@@ -218,21 +215,29 @@ function VisitCard({ live }: { live: boolean }) {
         <Link href="/contact" className="link label tap text-clay underline underline-offset-4">
           Contact us
         </Link>
-        {SOCIALS.instagram ? (
-          <a
-            href={SOCIALS.instagram}
-            target="_blank"
-            rel="noreferrer"
-            aria-label="CCF Centris on Instagram"
-            title="CCF Centris on Instagram"
-            /* The glyph alone, no label: it is the one item in this row people
-               recognise faster as a mark than as a word. Sized to the 44px
-               touch target the text links beside it already clear. */
-            className="-my-1 -ml-3 grid h-11 w-11 place-items-center text-clay transition-colors hover:text-clay-deep sm:-mr-2 sm:ml-auto"
-          >
-            <InstagramGlyph className="h-5 w-5" />
-          </a>
-        ) : null}
+        {/* The three accounts as marks, not words: people recognise them
+            faster that way. Each is a 44px touch target. */}
+        <span className="-my-1 flex items-center sm:ml-auto">
+          {[
+            { href: SOCIALS.facebook, label: "CCF Centris on Facebook", Glyph: FacebookGlyph },
+            { href: SOCIALS.instagram, label: "CCF Centris on Instagram", Glyph: InstagramGlyph },
+            { href: YOUTUBE.channelUrl, label: "CCF on YouTube", Glyph: YouTubeGlyph },
+          ].map(({ href, label, Glyph }) =>
+            href ? (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={label}
+                title={label}
+                className="grid h-11 w-11 place-items-center text-clay transition-colors hover:text-clay-deep"
+              >
+                <Glyph className="h-5 w-5" />
+              </a>
+            ) : null,
+          )}
+        </span>
       </p>
     </div>
   );

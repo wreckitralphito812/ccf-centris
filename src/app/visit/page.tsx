@@ -1,35 +1,53 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Eyebrow, Section } from "@/components/ui";
-import { MAPS_EMBED, MAPS_LINK, MAPS_PLACE, SITE, WAZE_LINK } from "@/lib/site";
+import {
+  MAPS_EMBED,
+  MAPS_LINK,
+  PARKING,
+  PARKING_EMBED,
+  SITE,
+  WAZE_LINK,
+} from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Visit",
   description:
-    "Find CCF Centris on the second floor of Centris Station, Eton Centris, EDSA corner Quezon Avenue. Open the map pin, get directions, or pick your route in.",
+    "Find CCF Centris on the second floor of Centris Station, Eton Centris, EDSA corner Quezon Avenue. How to get here by car or by train, and where to park.",
 };
 
 /**
- * The Visit page answers one question — where are you and how do I get there —
- * and answers it in that order: the pin, then directions, then the route in.
+ * The Visit page answers one question, where are you and how do I get there,
+ * on one page: the pin, then both routes in side by side, each spelled out in
+ * full. The routes used to be two buttons that sent people to a separate
+ * directions page; CCF asked for fewer page hops, so the directions page now
+ * redirects here.
  *
- * It used to open with a grid of cards pointing at New here, Getting here, and
- * Common questions, which restated the Visit menu directly under the Visit
- * menu. Those pages are unchanged and still sit in the nav; this page no longer
- * duplicates them.
- */
-
-/**
- * Two ways in, each jumping to its own card on the directions page. On CCF's
- * request: down from four routes (MRT, driving, Grab, walking) to the two
- * that matter most — Grab/taxi and walking fold into whichever of these is
- * closest to how they actually arrive.
+ * Two routes, on CCF's request. Grab/taxi folds into Car (same drop-off) and
+ * walking folds into Train (same concourse route), each as a one-line note.
  */
 const ROUTES = [
-  { id: "car", label: "By car", detail: "Parking on site at Eton Centris" },
-  { id: "train", label: "By train", detail: "MRT-3 Quezon Avenue, connected" },
-];
+  {
+    id: "car",
+    label: "By car",
+    steps: [
+      "Enter Eton Centris from EDSA or Quezon Avenue.",
+      `Park at ${PARKING.name}. Rates are set by the mall.`,
+      "Walk to CCF Centris, second floor of Centris Station.",
+    ],
+    note: "Arriving by Grab or taxi? Use the same drop-off, then walk up.",
+  },
+  {
+    id: "train",
+    label: "By train",
+    steps: [
+      "Take MRT-3 to Quezon Avenue station.",
+      "Walk through the connecting concourse into Eton Centris.",
+      "Walk to CCF Centris, second floor of Centris Station.",
+    ],
+    note: "Walking in from the street? Cross at EDSA and Quezon Avenue and follow the same route from there.",
+  },
+] as const;
 
 export default function VisitPage() {
   return (
@@ -70,13 +88,7 @@ export default function VisitPage() {
               </address>
 
               <div className="mt-7 grid gap-2 sm:max-w-sm">
-                <ButtonLink
-                  href={MAPS_LINK}
-                  target="_blank"
-                  rel="noreferrer"
-                  size="lg"
-                  full
-                >
+                <ButtonLink href={MAPS_LINK} target="_blank" rel="noreferrer" size="lg" full>
                   Get directions
                 </ButtonLink>
                 <ButtonLink
@@ -90,41 +102,69 @@ export default function VisitPage() {
                   Open in Waze
                 </ButtonLink>
               </div>
-
-              <a
-                href={MAPS_PLACE}
-                target="_blank"
-                rel="noreferrer"
-                className="link label tap mt-3 text-clay underline underline-offset-4"
-              >
-                Open the pin in Google Maps &#8599;
-              </a>
             </div>
           </div>
         </Container>
       </Section>
 
-      {/* Then the route in, once they know where they are heading. */}
-      <Section tone="deep">
+      {/* Both routes, in full, side by side. */}
+      <Section tone="deep" id="getting-here" className="scroll-mt-24">
         <Container>
           <Eyebrow>Getting here</Eyebrow>
           <h2 className="display-md mt-4 text-balance">Two ways to get here.</h2>
-          <div className="mt-8 grid max-w-2xl gap-px border border-hairline bg-hairline sm:grid-cols-2">
+          <div className="mt-8 grid gap-px border border-hairline bg-hairline md:grid-cols-2">
             {ROUTES.map((r) => (
-              <Link
-                key={r.id}
-                href={`/visit/directions#${r.id}`}
-                className="group flex min-h-32 flex-col justify-between bg-paper-bright p-7 transition-colors hover:bg-bone"
-              >
-                <span className="font-display text-2xl leading-tight transition-colors group-hover:text-clay">
-                  {r.label}
-                </span>
-                <span className="mt-3 block text-[0.85rem] leading-relaxed text-ink-soft">
-                  {r.detail}
-                </span>
-              </Link>
+              <div key={r.id} id={r.id} className="flex scroll-mt-28 flex-col bg-paper-bright p-7 sm:p-9">
+                <h3 className="font-display text-2xl leading-tight text-ink">{r.label}</h3>
+                <ol className="mt-6 space-y-3">
+                  {r.steps.map((s, i) => (
+                    <li key={s} className="flex gap-3 text-[0.95rem] leading-relaxed">
+                      <span className="label shrink-0 pt-0.5 text-clay">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <span className="text-ink-soft">{s}</span>
+                    </li>
+                  ))}
+                </ol>
+                <p className="mt-5 border-l-2 border-clay pl-4 text-[0.88rem] leading-relaxed text-ink-mute">
+                  {r.note}
+                </p>
+
+                {r.id === "car" ? (
+                  <figure className="mt-7">
+                    <figcaption className="label text-clay">Where to park</figcaption>
+                    <div className="mt-3 border border-hairline bg-paper p-1.5">
+                      <iframe
+                        title={`Map showing ${PARKING.name}`}
+                        src={PARKING_EMBED}
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        className="aspect-[4/3] w-full"
+                      />
+                    </div>
+                    <p className="mt-2 text-[0.85rem] text-ink-mute">{PARKING.name}</p>
+                  </figure>
+                ) : (
+                  <dl className="mt-7 divide-y divide-hairline border-y border-hairline">
+                    {[
+                      ["Nearest station", "MRT-3 Quezon Avenue"],
+                      ["From the platform", "Connected by a walkway"],
+                      ["Floor", "Second floor, Centris Station"],
+                    ].map(([k, v]) => (
+                      <div key={k} className="flex justify-between gap-4 py-3">
+                        <dt className="label text-ink-mute">{k}</dt>
+                        <dd className="text-right text-[0.95rem] text-ink">{v}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
+              </div>
             ))}
           </div>
+          <p className="mt-6 max-w-2xl text-[0.85rem] leading-relaxed text-ink-mute">
+            Mall parking rates and entrances can change. The Welcome Center can always point you
+            the right way.
+          </p>
         </Container>
       </Section>
     </>
