@@ -107,129 +107,13 @@ function iso(daysFromNow: number, hour: number, minute = 0): string {
   ).toISOString();
 }
 
-export const events: CcfEvent[] = [
-  {
-    id: "ev-1", slug: "pickleball-open-night", title: "Pickleball Open Night",
-    summary: "Open play for every level. Paddles available if you do not own one.",
-    description: "Show up, get matched, play. Our sports ministry team runs rotations so nobody sits out long. Beginners genuinely welcome. Stay after for merienda and conversation.",
-    category: "Sports", cover_image_url: null,
-    starts_at: iso(2, 19), ends_at: iso(2, 21), location_note: "Sports Hall, 2/F",
-    organizer: "Sports Ministry", capacity: 48, seats_taken: 31,
-    requires_registration: true, price_cents: 15000, currency: "PHP",
-    requirements: "Non-marking indoor shoes required.", community_slug: "sports",
-  },
-  {
-    id: "ev-2", slug: "dgroup-leaders-night", title: "Dgroup Leaders Night",
-    summary: "Training and encouragement for everyone leading a group this term.",
-    description: "A monthly gathering for Dgroup leaders and apprentices. We walk through the coming term's material, troubleshoot together, and pray for each other's groups.",
-    category: "Training", cover_image_url: null,
-    starts_at: iso(4, 19), ends_at: iso(4, 21), location_note: "Multipurpose Hall 2, 2/F",
-    organizer: "Discipleship Team", capacity: 90, seats_taken: 54,
-    requires_registration: true, price_cents: 0, currency: "PHP",
-    requirements: null, community_slug: null,
-  },
-  {
-    id: "ev-3", slug: "elevate-friday", title: "Elevate Friday Night",
-    summary: "Students gather for worship, teaching, and their Dgroups after.",
-    description: "Every Friday, high school and college students fill the hall for worship and a short message, then break into Dgroups. If you are new, come at 6:00 and someone will meet you at the door.",
-    category: "Gathering", cover_image_url: null,
-    starts_at: iso(3, 18, 30), ends_at: iso(3, 21), location_note: "Main Worship Hall, 2/F",
-    organizer: "Elevate", capacity: null, seats_taken: 0,
-    requires_registration: false, price_cents: 0, currency: "PHP",
-    requirements: null, community_slug: "elevate",
-  },
-  {
-    id: "ev-4", slug: "marriage-course-term-3", title: "Marriage Course, Term 3",
-    summary: "Eight weeks for couples at any stage, from engaged to forty years in.",
-    description: "A practical course on communication, conflict, money, and intimacy. Couples sit at their own table. Nothing is shared with the group unless you choose to.",
-    category: "Class", cover_image_url: null,
-    starts_at: iso(9, 19), ends_at: iso(9, 21), location_note: "Multipurpose Hall 1, 2/F",
-    organizer: "Families", capacity: 24, seats_taken: 24,
-    requires_registration: true, price_cents: 250000, currency: "PHP",
-    requirements: "Both partners must attend together.", community_slug: "families",
-  },
-  {
-    id: "ev-5", slug: "b1g-retreat", title: "B1G Retreat: Still Here",
-    summary: "A weekend away for single adults. Tagaytay, two nights.",
-    description: "Teaching, rest, and a lot of unstructured time with people you will still know in ten years. Transport from Centris included.",
-    category: "Retreat", cover_image_url: null,
-    starts_at: iso(24, 6), ends_at: iso(26, 16), location_note: "Tagaytay, transport from Centris",
-    organizer: "B1G", capacity: 120, seats_taken: 88,
-    requires_registration: true, price_cents: 450000, currency: "PHP",
-    requirements: "Valid ID required for check-in at the venue.", community_slug: "b1g",
-  },
-  {
-    id: "ev-6", slug: "nxtgen-family-sunday", title: "NXTGEN Family Sunday",
-    summary: "Kids stay with their parents in the main hall, then a shared lunch.",
-    description: "Once a term we bring the kids into the main service, and the message is built for the whole family. Lunch after in the multipurpose halls.",
-    category: "Gathering", cover_image_url: null,
-    starts_at: iso(12, 9), ends_at: iso(12, 13), location_note: "Main Worship Hall, 2/F",
-    organizer: "NXTGEN", capacity: null, seats_taken: 0,
-    requires_registration: false, price_cents: 0, currency: "PHP",
-    requirements: null, community_slug: "nxtgen",
-  },
-  {
-    id: "ev-7", slug: "basketball-league-season-1", title: "Centris Basketball League, Season 1",
-    summary: "Eight-week league in the Sports Hall. Teams of ten.",
-    description: "Open to the community, not just CCF. Games on Saturday afternoons. Each team is paired with a sports ministry volunteer who prays with them before tip-off.",
-    category: "Sports", cover_image_url: null,
-    starts_at: iso(17, 14), ends_at: iso(17, 18), location_note: "Sports Hall, 2/F",
-    organizer: "Sports Ministry", capacity: 12, seats_taken: 9,
-    requires_registration: true, price_cents: 800000, currency: "PHP",
-    requirements: "Register as a team. Roster due one week before opening day.",
-    community_slug: "sports",
-  },
-  {
-    id: "ev-8", slug: "womens-morning-study", title: "Women's Morning Study",
-    summary: "Weekly study through the book of Ruth. Childcare available.",
-    description: "Six weeks in Ruth, looking at loyalty, grief, and quiet providence. Bring your coffee.",
-    category: "Class", cover_image_url: null,
-    starts_at: iso(6, 9, 30), ends_at: iso(6, 11, 30), location_note: "Dgroup Lounge, 2/F",
-    organizer: "Women", capacity: 40, seats_taken: 27,
-    requires_registration: true, price_cents: 0, currency: "PHP",
-    requirements: null, community_slug: "women",
-  },
-  {
-    id: "ev-9", slug: "badminton-clinic", title: "Badminton Clinic for Beginners",
-    summary: "Four Saturdays of coaching for anyone starting out.",
-    description: "Grip, footwork, serve, and enough rules to play a real game by week four. Rackets provided.",
-    category: "Sports", cover_image_url: null,
-    starts_at: iso(10, 8), ends_at: iso(10, 10), location_note: "Sports Hall, 2/F",
-    organizer: "Sports Ministry", capacity: 32, seats_taken: 32,
-    requires_registration: true, price_cents: 120000, currency: "PHP",
-    requirements: "Non-marking indoor shoes required.", community_slug: "sports",
-  },
-  {
-    id: "ev-10", slug: "serve-team-orientation", title: "Serve Team Orientation",
-    summary: "One evening for anyone thinking about volunteering at Centris.",
-    description: "What each team does, what the commitment actually is, and how to try one out without signing up for a year. No pressure to decide on the night.",
-    category: "Volunteer", cover_image_url: null,
-    starts_at: iso(7, 19), ends_at: iso(7, 20, 30), location_note: "Multipurpose Hall 3, 2/F",
-    organizer: "Volunteer Team", capacity: 60, seats_taken: 22,
-    requires_registration: true, price_cents: 0, currency: "PHP",
-    requirements: null, community_slug: null,
-  },
-  {
-    id: "ev-11", slug: "community-outreach-day", title: "Community Outreach Day",
-    summary: "Serving families in the barangays around Centris.",
-    description: "A Saturday of practical help: feeding, medical checks, and games for kids. We partner with local barangay officials. Volunteers meet at the Welcome Center at 7:00.",
-    category: "Outreach", cover_image_url: null,
-    starts_at: iso(21, 7), ends_at: iso(21, 15), location_note: "Meet at Welcome Center, 2/F",
-    organizer: "Missions", capacity: 150, seats_taken: 63,
-    requires_registration: true, price_cents: 0, currency: "PHP",
-    requirements: null, community_slug: null,
-  },
-  {
-    id: "ev-12", slug: "night-of-worship", title: "Night of Worship",
-    summary: "Two hours of singing and prayer. No message, no program.",
-    description: "The band plays, we sing, people pray at the front if they want to. Come late, leave early, stay all night. Whatever you need.",
-    category: "Worship", cover_image_url: null,
-    starts_at: iso(14, 19), ends_at: iso(14, 21), location_note: "Main Worship Hall, 2/F",
-    organizer: "Worship Ministry", capacity: null, seats_taken: 0,
-    requires_registration: false, price_cents: 0, currency: "PHP",
-    requirements: null, community_slug: null,
-  },
-];
+/**
+ * Events shown on What's Happening. Empty for launch on CCF Centris's request:
+ * the sample events here were placeholders, and the site shouldn't advertise
+ * gatherings that aren't happening. Add real ones here as they are announced.
+ * `category` should be one of EVENT_CATEGORIES in src/lib/events.ts.
+ */
+export const events: CcfEvent[] = [];
 
 export const glcPrograms: GlcProgram[] = [
   { id: "glc-1", slug: "glc-1", code: "GLC 1", title: "Knowing God", description: "The foundations. Who God is, what the gospel says, and how a person actually becomes a follower of Jesus.", level: 1 },

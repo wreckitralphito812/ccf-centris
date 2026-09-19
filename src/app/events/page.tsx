@@ -12,11 +12,12 @@ import { PosterRail } from "@/components/poster-rail";
 import { getEventCategories, getUpcomingEvents } from "@/lib/queries";
 import { fmtDayShort, fmtMonthYear, fmtTime } from "@/lib/format";
 import type { CcfEvent } from "@/lib/types";
+import { EVENT_CATEGORIES } from "@/lib/events";
 
 export const metadata: Metadata = {
   title: "What’s Happening",
   description:
-    "What's on at CCF Centris: gatherings, classes, trainings, and community events, with the month at a glance.",
+    "What's on at CCF Centris: retreats, conferences, and gatherings, with the month at a glance.",
 };
 
 /**
@@ -48,10 +49,17 @@ export default async function EventsPage({
   // Categories in order of their soonest event, so the next thing up leads.
   // A category gets its own band only with two or more events: a band holding
   // one poster reads as empty, and a lone event already shows in Coming up.
+  // The fixed categories (EVENT_CATEGORIES) always keep their band, empty or
+  // not, so people know where big announcements will appear.
+  const fixed = new Set<string>(EVENT_CATEGORIES.map((c) => c.name));
   const rows = categories
     .map((c) => ({ name: c, list: events.filter((e) => e.category === c) }))
-    .filter((r) => r.list.length > 1)
-    .sort((a, b) => a.list[0].starts_at.localeCompare(b.list[0].starts_at));
+    .filter((r) => fixed.has(r.name) || r.list.length > 1)
+    .sort(
+      (a, b) =>
+        Number(fixed.has(b.name)) - Number(fixed.has(a.name)) ||
+        (a.list[0]?.starts_at ?? "").localeCompare(b.list[0]?.starts_at ?? ""),
+    );
 
   return (
     <>
@@ -62,8 +70,8 @@ export default async function EventsPage({
               What&rsquo;s Happening
             </h1>
             <p className="mt-4 text-[1.02rem] leading-relaxed text-ink-soft sm:text-[1.1rem]">
-              Gatherings, classes, trainings, and days out at CCF Centris.
-              Every event says plainly whether you need to register.
+              Retreats, conferences, and gatherings at CCF Centris. Every event
+              says plainly whether you need to register.
             </p>
             {rows.length > 1 ? (
               <nav aria-label="Jump to a category" className="mt-6 flex flex-wrap gap-2">
@@ -86,66 +94,21 @@ export default async function EventsPage({
       </header>
 
       {events.length ? (
-        <>
-          <section className="bg-paper-bright py-12 sm:py-16">
-            <Container>
-              <RowHead title="Coming up" href="/events?view=all" count={events.length} />
-              <PosterRail label="Coming up" className="mt-7">
-                {events.map((e) => (
-                  <li
-                    key={e.id}
-                    className="w-[82%] shrink-0 snap-start sm:w-[calc((100%-1.25rem)/2)] lg:w-[calc((100%-2.5rem)/3)]"
-                  >
-                    <PosterCard e={e} />
-                  </li>
-                ))}
-              </PosterRail>
-            </Container>
-          </section>
-
-          {rows.map((r, i) => {
-            const band = BANDS[i % BANDS.length];
-            return (
-              <section
-                key={r.name}
-                id={anchor(r.name)}
-                className={cx("scroll-mt-24 py-12 sm:py-16", band.cls)}
-              >
-                <Container className="grid gap-8 lg:grid-cols-[17rem_minmax(0,1fr)] lg:gap-12">
-                  <div>
-                    <h2 className="brand-face text-[2rem] sm:text-[2.5rem]">{r.name}</h2>
-                    {CATEGORY_BLURB[r.name] ? (
-                      <p className={cx("mt-4 leading-relaxed", band.dark ? "text-paper-bright/85" : "text-ink-soft")}>
-                        {CATEGORY_BLURB[r.name]}
-                      </p>
-                    ) : null}
-                    <Link
-                      href={`/events?category=${encodeURIComponent(r.name)}`}
-                      className={cx(
-                        "label tap mt-5 border px-3.5 py-2 transition-colors",
-                        band.dark
-                          ? "border-paper-bright/50 text-paper-bright hover:border-paper-bright hover:bg-paper-bright/10"
-                          : "border-ink/25 text-ink hover:border-ink",
-                      )}
-                    >
-                      View all {r.list.length}
-                    </Link>
-                  </div>
-                  <PosterRail label={r.name}>
-                    {r.list.map((e) => (
-                      <li
-                        key={e.id}
-                        className="w-[82%] shrink-0 snap-start sm:w-[calc((100%-1.25rem)/2)]"
-                      >
-                        <PosterCard e={e} dark={band.dark} />
-                      </li>
-                    ))}
-                  </PosterRail>
-                </Container>
-              </section>
-            );
-          })}
-        </>
+        <section className="bg-paper-bright py-12 sm:py-16">
+          <Container>
+            <RowHead title="Coming up" href="/events?view=all" count={events.length} />
+            <PosterRail label="Coming up" className="mt-7">
+              {events.map((e) => (
+                <li
+                  key={e.id}
+                  className="w-[82%] shrink-0 snap-start sm:w-[calc((100%-1.25rem)/2)] lg:w-[calc((100%-2.5rem)/3)]"
+                >
+                  <PosterCard e={e} />
+                </li>
+              ))}
+            </PosterRail>
+          </Container>
+        </section>
       ) : (
         <Section>
           <Container>
@@ -156,6 +119,64 @@ export default async function EventsPage({
           </Container>
         </Section>
       )}
+
+      {rows.map((r, i) => {
+        const band = BANDS[i % BANDS.length];
+        const info = EVENT_CATEGORIES.find((c) => c.name === r.name);
+        const blurb = info?.blurb ?? CATEGORY_BLURB[r.name];
+        return (
+          <section
+            key={r.name}
+            id={anchor(r.name)}
+            className={cx("scroll-mt-24 py-12 sm:py-16", band.cls)}
+          >
+            <Container className="grid gap-8 lg:grid-cols-[17rem_minmax(0,1fr)] lg:gap-12">
+              <div>
+                <h2 className="brand-face text-[2rem] sm:text-[2.5rem]">{r.name}</h2>
+                {blurb ? (
+                  <p className={cx("mt-4 leading-relaxed", band.dark ? "text-paper-bright/85" : "text-ink-soft")}>
+                    {blurb}
+                  </p>
+                ) : null}
+                {r.list.length ? (
+                  <Link
+                    href={`/events?category=${encodeURIComponent(r.name)}`}
+                    className={cx(
+                      "label tap mt-5 border px-3.5 py-2 transition-colors",
+                      band.dark
+                        ? "border-paper-bright/50 text-paper-bright hover:border-paper-bright hover:bg-paper-bright/10"
+                        : "border-ink/25 text-ink hover:border-ink",
+                    )}
+                  >
+                    View all {r.list.length}
+                  </Link>
+                ) : null}
+              </div>
+              {r.list.length ? (
+                <PosterRail label={r.name}>
+                  {r.list.map((e) => (
+                    <li
+                      key={e.id}
+                      className="w-[82%] shrink-0 snap-start sm:w-[calc((100%-1.25rem)/2)]"
+                    >
+                      <PosterCard e={e} dark={band.dark} />
+                    </li>
+                  ))}
+                </PosterRail>
+              ) : (
+                <div
+                  className={cx(
+                    "flex aspect-[16/5] items-center justify-center border border-dashed p-8 text-center",
+                    band.dark ? "border-paper-bright/35 text-paper-bright/85" : "border-hairline text-ink-mute",
+                  )}
+                >
+                  <p className="max-w-sm leading-relaxed">{info?.empty ?? "Nothing announced yet."}</p>
+                </div>
+              )}
+            </Container>
+          </section>
+        );
+      })}
     </>
   );
 }
@@ -165,9 +186,9 @@ export default async function EventsPage({
  * white type: 5.4:1 on --clay, 9:1 on maroon (--sky), 14:1 on --night.
  */
 const BANDS = [
-  { cls: "bg-night text-paper-bright", dark: true },
-  { cls: "bg-paper text-ink", dark: false },
   { cls: "bg-clay text-paper-bright", dark: true },
+  { cls: "bg-paper text-ink", dark: false },
+  { cls: "bg-night text-paper-bright", dark: true },
   { cls: "bg-paper-bright text-ink", dark: false },
   { cls: "bg-sky text-paper-bright", dark: true },
   { cls: "bg-paper-deep text-ink", dark: false },

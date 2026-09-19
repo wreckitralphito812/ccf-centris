@@ -1,5 +1,6 @@
 import "server-only";
 
+import { EVENT_CATEGORIES } from "@/lib/events";
 import { getTeaching } from "@/lib/teaching-live";
 import { getCurrentIntercede } from "@/lib/content/public-queries";
 import { hasSupabase, supabaseAdmin, SATELLITE_ID } from "@/lib/supabase/server";
@@ -253,8 +254,11 @@ export async function getEventsForCommunity(slug: string) {
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
 }
 
+/** The fixed categories first (see lib/events), then any others in use. */
 export async function getEventCategories() {
-  return [...new Set(events.map((e) => e.category).filter(Boolean))].sort() as string[];
+  const fixed = EVENT_CATEGORIES.map((c) => c.name as string);
+  const used = [...new Set(events.map((e) => e.category).filter(Boolean))].sort() as string[];
+  return [...fixed, ...used.filter((c) => !fixed.includes(c))];
 }
 
 // --- GLC --------------------------------------------------------------------
