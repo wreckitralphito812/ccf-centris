@@ -286,6 +286,16 @@ a.link,
   letter-spacing: -0.02em;
 }
 
+/* Inner-page title (PageHeader). Reading size, not poster size: big enough
+   to anchor the page, small enough that a two-line title never dominates. */
+.page-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2rem, 4.2vw, 3.25rem);
+  line-height: 1.08;
+  letter-spacing: -0.022em;
+}
+
 /* Heavier headline voice: Montserrat ExtraBold with tight tracking, for the
    hero and other moments that need more weight than .display-*. */
 .brand-face {

@@ -33,6 +33,11 @@ export default function AboutPage() {
         title="Part of Christ's Commission Fellowship."
         lead={IDENTITY}
         tone="ink"
+        image={{
+          src: "/photos/main-hall-cross.jpg",
+          alt: "The main hall at CCF Centris, rows of chairs facing the lit cross",
+          position: "center 45%",
+        }}
         actions={
           <>
             <ButtonLink

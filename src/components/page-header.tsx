@@ -1,11 +1,25 @@
 import type { ReactNode } from "react";
+import Image from "next/image";
 import { Container, Eyebrow, cx } from "./ui";
 
+export interface PageHeaderImage {
+  src: string;
+  alt: string;
+  /** CSS object-position, for keeping the subject in frame. */
+  position?: string;
+}
+
+/**
+ * The top of every inner page. Kept plain on purpose: a heading at reading
+ * size rather than poster size, no texture, and, where the Centris team has a
+ * good photo of the place, that photo beside the text (below it on phones).
+ */
 export function PageHeader({
   eyebrow,
   title,
   lead,
   actions,
+  image,
   tone = "deep",
   align = "left",
 }: {
@@ -13,6 +27,7 @@ export function PageHeader({
   title: ReactNode;
   lead?: ReactNode;
   actions?: ReactNode;
+  image?: PageHeaderImage;
   tone?: "deep" | "paper" | "ink" | "clay";
   align?: "left" | "center";
 }) {
@@ -24,37 +39,31 @@ export function PageHeader({
   } as const;
 
   const dark = tone === "ink" || tone === "clay";
+  const centered = align === "center" && !image;
 
   return (
-    <header className={cx("relative overflow-hidden border-b border-hairline", tones[tone])}>
-      <div
-        aria-hidden
-        className="absolute inset-0 opacity-[0.06]"
-        style={{
-          backgroundImage: `radial-gradient(${dark ? "#f4efe6" : "#17150f"} 1px, transparent 1.2px)`,
-          backgroundSize: "8px 8px",
-        }}
-      />
+    <header className={cx("border-b border-hairline", tones[tone])}>
       <Container
         className={cx(
-          "relative py-14 sm:py-20",
-          align === "center" && "text-center",
+          "py-12 sm:py-16",
+          image && "grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-14",
+          centered && "text-center",
         )}
       >
-        <div className={cx("max-w-3xl", align === "center" && "mx-auto")}>
+        <div className={cx("max-w-2xl", centered && "mx-auto")}>
           {eyebrow ? (
             <Eyebrow
               tone={dark ? "paper" : "clay"}
-              className={align === "center" ? "justify-center" : undefined}
+              className={centered ? "justify-center" : undefined}
             >
               {eyebrow}
             </Eyebrow>
           ) : null}
-          <h1 className="display-lg mt-5 text-balance">{title}</h1>
+          <h1 className="page-title mt-4 text-balance">{title}</h1>
           {lead ? (
             <p
               className={cx(
-                "mt-6 text-[1.05rem] leading-relaxed",
+                "mt-5 text-[1.05rem] leading-relaxed",
                 dark ? "text-current/75" : "text-ink-soft",
               )}
             >
@@ -65,13 +74,27 @@ export function PageHeader({
             <div
               className={cx(
                 "mt-8 flex flex-wrap gap-3",
-                align === "center" && "justify-center",
+                centered && "justify-center",
               )}
             >
               {actions}
             </div>
           ) : null}
         </div>
+
+        {image ? (
+          <div className="relative aspect-[4/3] overflow-hidden bg-paper">
+            <Image
+              src={image.src}
+              alt={image.alt}
+              fill
+              priority
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              className="object-cover"
+              style={image.position ? { objectPosition: image.position } : undefined}
+            />
+          </div>
+        ) : null}
       </Container>
     </header>
   );

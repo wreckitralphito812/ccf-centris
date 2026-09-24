@@ -30,6 +30,10 @@ export default function ContactPage() {
         eyebrow="Contact"
         title="Ask us anything."
         lead="Send us your questions about Sunday, Dgroups, serving, or using the center."
+        image={{
+          src: "/photos/welcome-center.jpg",
+          alt: "The Welcome Center at CCF Centris, with its glass front and seating inside",
+        }}
       />
 
       <Section>

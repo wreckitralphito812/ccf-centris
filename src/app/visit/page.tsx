@@ -55,13 +55,13 @@ export default function VisitPage() {
     <>
       <PageHeader
         eyebrow="Visit"
-        title={
-          <>
-            Come find us at{" "}
-            <span className="italic text-clay">Centris.</span>
-          </>
-        }
+        title="Come find us at Centris."
         lead="Second floor of Centris Station, inside Eton Centris, at the corner of EDSA and Quezon Avenue. You don't need to register, and there's no dress code."
+        image={{
+          src: "/photos/centris-station.jpg",
+          alt: "Centris Station building at Eton Centris, with its sign above the entrance",
+          position: "center 40%",
+        }}
       />
 
       {/* The pin first. Everything else on this page is a way of acting on it. */}
@@ -104,23 +104,6 @@ export default function VisitPage() {
                 </ButtonLink>
               </div>
 
-              {/* The building people are actually looking for from the road:
-                  the Centris Station sign sits above the entrance. Photo from
-                  the Centris comms team, 2026-09-13. */}
-              <figure className="mt-8 sm:max-w-sm">
-                <div className="relative aspect-[16/9] overflow-hidden border border-hairline bg-paper">
-                  <Image
-                    src="/photos/centris-station.jpg"
-                    alt="Centris Station building at Eton Centris, with its sign above the entrance"
-                    fill
-                    sizes="(min-width: 1024px) 24rem, 100vw"
-                    className="object-cover"
-                  />
-                </div>
-                <figcaption className="mt-2 text-[0.85rem] text-ink-mute">
-                  Look for the Centris Station sign. We&rsquo;re on the second floor.
-                </figcaption>
-              </figure>
             </div>
           </div>
         </Container>

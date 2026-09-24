@@ -21,11 +21,13 @@ export default function JoinDgroupPage() {
       <PageHeader
         eyebrow="Dgroups"
         title={
-          <>
-            Join a <span className="italic text-clay">Dgroup</span>.
-          </>
+"Join a Dgroup."
         }
         lead="A Dgroup is a small group that meets every week to read the Bible and pray together. It's how CCF makes disciples."
+        image={{
+          src: "/photos/dgroup-lounge.jpg",
+          alt: "The Dgroup Lounge at CCF Centris, seen through its glass front",
+        }}
         actions={
           <>
             <ButtonLink href={CONNECT_LINKS.dgroupSignup} target="_blank" rel="noreferrer" size="lg">
