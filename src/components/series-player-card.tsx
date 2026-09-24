@@ -124,7 +124,7 @@ export function SeriesPlayerCard(props: Props) {
         <div className="border-b border-hairline">
           <YouTubeEmbed
             playlistId={playlistId}
-            title={`${kindLabel} — ${series}`}
+            title={`${kindLabel}: ${series}`}
             thumbnail={cover}
             thumbnailFallback={coverFallback}
           />
@@ -140,7 +140,7 @@ export function SeriesPlayerCard(props: Props) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          aria-label={`Watch ${series} — ${videos.length} parts`}
+          aria-label={`Watch ${series}, ${videos.length} parts`}
           className="group relative block aspect-video w-full overflow-hidden border-b border-hairline bg-paper-deep"
         >
           <YouTubeThumb src={cover} fallbackSrc={coverFallback} alt={series} />
@@ -204,7 +204,7 @@ function SeriesTheatre({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={`${series} — ${kindLabel}`}
+      aria-label={`${series}: ${kindLabel}`}
       className="fixed inset-0 z-60 flex items-stretch justify-center bg-ink/55 backdrop-blur-sm sm:p-4 md:p-6"
     >
       <div className="flex w-full max-w-6xl flex-col overflow-hidden border border-hairline bg-paper-bright shadow-[0_40px_120px_-30px_rgba(23,21,15,0.55)] sm:rounded-lg">
@@ -235,7 +235,7 @@ function SeriesTheatre({
             <div className="relative aspect-video w-full max-w-[min(100%,calc((100vh-15rem)*1.7778))] overflow-hidden rounded-md bg-black shadow-[0_24px_60px_-24px_rgba(23,21,15,0.5)] ring-1 ring-ink/10">
               <iframe
                 key={selectedId}
-                title={`${series} — part ${selectedIndex + 1}`}
+                title={`${series}, part ${selectedIndex + 1}`}
                 src={`https://www.youtube-nocookie.com/embed/${selectedId}?autoplay=1&rel=0`}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen

@@ -32,9 +32,9 @@ export function InterestForm({
           Thanks. Someone will be in touch.
         </h2>
         <p className="mt-3 leading-relaxed text-ink-soft">
-          A member of the Dgroup team reads every note and usually replies
-          within a few days. They will introduce you to {dgroupName} and answer
-          anything before you go along.
+          Someone from the Dgroup team usually replies within a few days.
+          They&rsquo;ll introduce you to {dgroupName} and answer your questions
+          before you go.
         </p>
         {state.reference ? (
           <p className="mt-4 text-[0.88rem] text-ink-mute">
@@ -45,7 +45,7 @@ export function InterestForm({
           </p>
         ) : null}
         <p className="mt-4 text-[0.88rem] text-ink-mute">
-          You are never added to a group without a conversation first.
+          We&rsquo;ll always talk with you before adding you to a group.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link

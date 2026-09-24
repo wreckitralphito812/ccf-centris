@@ -30,7 +30,7 @@ export default function AboutPage() {
     <>
       <PageHeader
         eyebrow="Who we are"
-        title="A movement, not a building."
+        title="Part of Christ's Commission Fellowship."
         lead={IDENTITY}
         tone="ink"
         actions={
@@ -143,8 +143,7 @@ export default function AboutPage() {
 
           <p className="mt-8 max-w-2xl leading-relaxed text-ink-soft">
             CCF also publishes positions on marriage, gender, and the value of
-            human life. Those are read in CCF&rsquo;s own words rather than
-            summarised here.
+            human life. Read them in CCF&rsquo;s own words on ccf.org.ph.
           </p>
           <a
             href={POSITION_STATEMENTS_URL}
@@ -171,13 +170,12 @@ export default function AboutPage() {
                 400 people at the Asian Institute of Management in Makati.
               </p>
               <p className="mt-4 leading-relaxed text-ink-soft">
-                Everything here belongs to that larger mission. The worship
-                hall, the sports hall, the classrooms, and the lounge exist to
-                make Christ-committed followers who will make Christ-committed
-                followers.
+                The worship hall, sports hall, classrooms and lounge all serve
+                the same mission: to make Christ-committed followers who will
+                make Christ-committed followers.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <ButtonLink href="/centris">Explore the center</ButtonLink>
+                <ButtonLink href="/centris">See the center</ButtonLink>
               </div>
             </div>
             <div className="border border-hairline bg-paper p-8">

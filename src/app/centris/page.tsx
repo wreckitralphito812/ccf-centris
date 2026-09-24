@@ -13,9 +13,9 @@ import { getFacilities } from "@/lib/queries";
 import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Explore CCF Centris",
+  title: "The center",
   description:
-    "Explore CCF Centris: a 1,300-seat worship hall, an 800-capacity sports hall, four multipurpose halls, and a Dgroup lounge on the 2nd floor of Centris Station.",
+    "CCF Centris has a 1,300-seat worship hall, an 800-capacity sports hall, four multipurpose halls, and a Dgroup lounge on the 2nd floor of Centris Station.",
 };
 
 export default async function CentrisPage() {
@@ -25,8 +25,8 @@ export default async function CentrisPage() {
     <>
       <PageHeader
         eyebrow="CCF Centris"
-        title="3,200 square metres, built to be used."
-        lead="A center designed so that worship, discipleship, sport, and community all happen under one roof, on one floor, in the middle of Quezon City."
+        title="3,200 square metres on one floor."
+        lead="A worship hall, a sports hall, classrooms and a Dgroup lounge, all on the second floor of Centris Station in Quezon City."
         actions={
           <>
             <ButtonLink href="/centris/reserve" size="lg">
@@ -74,13 +74,13 @@ export default async function CentrisPage() {
             <ol className="space-y-px border border-hairline bg-hairline">
               {[
                 ["Welcome Center", "First stop if it's your first Sunday. Staffed before and after every service.", "/centris/facilities/welcome-center"],
-                ["Main Worship Hall", "1,300 seats, accessible bays, and the room Sunday happens in.", "/centris/facilities/main-worship-hall"],
+                ["Main Worship Hall", "1,300 seats, with accessible bays. Sunday service is held here.", "/centris/facilities/main-worship-hall"],
                 // No community page to send this one to — see the note above
                 // Communities was pulled. Rendered as plain text below.
                 ["NXTGEN rooms", "Children's rooms by age band, with check-in just outside.", null],
                 ["Sports Hall", "Basketball, badminton, and pickleball, open to the community.", "/centris/facilities/sports-hall"],
-                ["Multipurpose Halls 1–4", "Flexible rooms for classes, trainings, and gatherings.", "/centris/facilities"],
-                ["Dgroup Lounge", "Soft seating built for the groups that meet through the week.", "/centris/facilities/dgroup-lounge"],
+                ["Multipurpose Halls 1–4", "Rooms for classes, trainings, and meetings.", "/centris/facilities"],
+                ["Dgroup Lounge", "Soft seating for Dgroups that meet during the week.", "/centris/facilities/dgroup-lounge"],
               ].map((row, i) => {
                 const [name, blurb, href] = row as [string, string, string | null];
                 const body = (
@@ -151,7 +151,7 @@ export default async function CentrisPage() {
         <Container>
           <SectionHead
             eyebrow="Spaces at CCF Centris"
-            title="Every room, in detail"
+            title="The rooms"
             action={
               <ButtonLink href="/centris/facilities" tone="outline">
                 All facilities
@@ -176,9 +176,8 @@ export default async function CentrisPage() {
                 The Sports Hall is open to everyone.
               </h2>
               <p className="mt-5 leading-relaxed text-ink-soft">
-                Not just to CCF members. Book a court, come to an open night, or
-                join a league. Most people at open play have never been to a
-                Sunday service, and that is entirely the point.
+                You don&rsquo;t need to be a CCF member. Book a court, come to an
+                open night, or join a league.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <ButtonLink href="/centris/sports">Sports at Centris</ButtonLink>

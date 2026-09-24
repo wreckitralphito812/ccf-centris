@@ -262,7 +262,7 @@ export function DgroupCard({ d }: { d: Dgroup }) {
           href={`/grow/find-a-dgroup/${d.id}`}
           className="btn-press label border border-ink px-3.5 py-2 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
         >
-          I'm interested
+          I&rsquo;m interested
         </Link>
       </div>
     </article>

@@ -88,24 +88,13 @@
   --color-bone: var(--bone);
   --color-night: var(--night);
 
-  /* Typography follows the CCF Brand Book, which names two faces and no others.
-
-     PRIMARY — Futura Std Medium: the logo face, and the book's choice for print
-     headlines and sub-headlines. Adobe-licensed, so Jost ships in its place:
-     free, and metric-compatible enough that swapping in licensed Futura later
-     needs no layout changes.
-
-     SECONDARY — Proxima Nova: the book's face for web headlines, headers and
-     body. Listed first in --font-sans so an Adobe Fonts kit activates it with no
-     other edit (see ADOBE_FONTS_KIT_ID in layout.tsx). Montserrat carries body
-     copy until then — it already appears in ccf.org.ph's own font stack, so the
-     fallback still reads as CCF.
-
-     There is no third face. The book specifies none, so headline moments that
-     previously used a script accent now use the display face at display size,
-     which is exactly what the book intends the primary for. */
-  --font-display: var(--font-jost), Futura, "Century Gothic", "Trebuchet MS", sans-serif;
-  --font-sans: "proxima-nova", var(--font-montserrat), "Helvetica Neue", Arial, sans-serif;
+  /* One face, Montserrat, for display and body (chosen 2026-09-24). The CCF
+     Brand Book's Futura and Proxima Nova are Adobe-licensed; Montserrat is
+     already in ccf.org.ph's own font stack, so it still reads as CCF. Both
+     tokens are kept so a licensed display face can return with a one-line
+     change. */
+  --font-display: var(--font-montserrat), "Helvetica Neue", Arial, sans-serif;
+  --font-sans: var(--font-montserrat), "Helvetica Neue", Arial, sans-serif;
 }
 
 * {
@@ -265,50 +254,44 @@ a.link,
   font-optical-sizing: auto;
 }
 
-/* The display sizes below were tuned for a serif, which carries weight 700 and
-   heavy negative tracking without closing up. Futura is a geometric sans: its
-   round bowls need air, and the brand book names Futura Std MEDIUM specifically.
-   So weights drop to 500-600 and the tracking pulls back to roughly a third of
-   what the serif wanted. */
+/* Montserrat is wide with tall caps: display sizes run at 600 with tighter
+   tracking than a narrower face would want, and line-height sits near 1 so
+   descenders on a wrapped headline clear the next line. */
 
 /* Oversized editorial heading that may crop at the viewport edge. */
 .display-xl {
   font-family: var(--font-display);
-  font-weight: 500;
+  font-weight: 600;
   /* Bounded by both axes so two lines clear the fold on short viewports. The
      floor is kept modest so a two-word line fits a ~340px phone with the
      hero card's padding subtracted. */
   font-size: clamp(2.7rem, min(11vw, 15vh), 8rem);
-  line-height: 0.92;
-  letter-spacing: -0.012em;
+  line-height: 0.98;
+  letter-spacing: -0.03em;
 }
 
 .display-lg {
   font-family: var(--font-display);
-  font-weight: 500;
+  font-weight: 600;
   font-size: clamp(2.15rem, 6.5vw, 5rem);
-  line-height: 0.98;
-  letter-spacing: -0.01em;
+  line-height: 1.02;
+  letter-spacing: -0.025em;
 }
 
 .display-md {
   font-family: var(--font-display);
-  font-weight: 500;
+  font-weight: 600;
   font-size: clamp(1.7rem, 3.6vw, 3rem);
-  line-height: 1.08;
-  letter-spacing: -0.006em;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
 }
 
-/* Set a heading in the brand book's SECONDARY face (Proxima Nova, then
-   Montserrat) rather than the primary. The book explicitly allows this —
-   Proxima Nova is its choice for web headlines and sub-headlines — so this is
-   the sanctioned alternative voice to .display-*, not a departure. It carries a
-   heavier weight and tighter tracking than the primary to hold its own as a
-   title. */
+/* Heavier headline voice: Montserrat ExtraBold with tight tracking, for the
+   hero and other moments that need more weight than .display-*. */
 .brand-face {
   font-family: var(--font-sans);
   font-weight: 800;
-  line-height: 0.94;
+  line-height: 1;
   letter-spacing: -0.02em;
 }
 

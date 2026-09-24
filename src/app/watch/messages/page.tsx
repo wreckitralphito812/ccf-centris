@@ -41,8 +41,8 @@ export default async function MessagesPage({
     <>
       <PageHeader
         eyebrow="Messages"
-        title="Every message, whenever you need it."
-        lead="Search the archive, follow a series from the start, or find something on a specific topic."
+        title="All messages."
+        lead="Search by title, speaker, passage or topic, or follow a series from the start."
       />
 
       <Section>

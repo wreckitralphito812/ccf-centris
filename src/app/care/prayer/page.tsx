@@ -15,7 +15,7 @@ export default function PrayerPage() {
     <>
       <PageHeader
         eyebrow="Prayer"
-        title="Need prayer? We'd be glad to pray with you."
+        title="We'd be glad to pray for you."
         lead="Send it anonymously or with your name. Either way it stays between you and the prayer team."
       />
 
@@ -30,8 +30,8 @@ export default function PrayerPage() {
               <div className="border border-hairline bg-paper-bright p-6">
                 <p className="label text-clay">In person</p>
                 <p className="mt-3 leading-relaxed text-ink-soft">
-                  The prayer team stays at the front after every service. You do
-                  not need to explain much, or anything at all.
+                  The prayer team stays at the front after every service. You
+                  don&rsquo;t have to explain much, or anything at all.
                 </p>
                 <ButtonLink href="/visit#getting-here" tone="outline" size="sm" full className="mt-5">
                   Getting here
@@ -39,10 +39,10 @@ export default function PrayerPage() {
               </div>
 
               <div className="border border-hairline bg-paper-bright p-6">
-                <p className="label text-clay">Something heavier?</p>
+                <p className="label text-clay">Pastoral care</p>
                 <p className="mt-3 leading-relaxed text-ink-soft">
-                  If you need to talk to a person rather than send a note, the
-                  pastoral team handles that privately.
+                  If you&rsquo;d rather talk to a person than send a note, the
+                  pastoral team can meet with you privately.
                 </p>
                 <ButtonLink href="/care/talk" tone="outline" size="sm" full className="mt-5">
                   Talk to someone

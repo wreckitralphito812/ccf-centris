@@ -172,9 +172,8 @@ export default async function FacilityPage({
               ) : null}
 
               <p className="mt-12 max-w-2xl text-[0.85rem] leading-relaxed text-ink-mute">
-                Photography of this space will be published once the center has
-                been photographed. Rates, hours, and rules are managed by the
-                facilities team and can change.
+                Photos of this space are coming soon. Rates, hours and rules can
+                change.
               </p>
             </div>
 

@@ -263,14 +263,14 @@ const NEXT_STEPS: {
   {
     icon: "people",
     title: "Join a Dgroup",
-    body: "Find a small group to grow, laugh, and pray with every week.",
+    body: "Find a small group that meets every week.",
     href: CONNECT_LINKS.dgroupSignup,
     external: true,
   },
   {
     icon: "hands",
     title: "Serve on a team",
-    body: "Use your gifts to help make Sundays at Centris happen.",
+    body: "Help run Sundays at Centris.",
     href: CONNECT_LINKS.volunteerSignup,
     external: true,
   },
@@ -376,7 +376,7 @@ function LastSunday({
               Last Sunday
             </p>
             <h2 className="display-md mt-3 text-balance">
-              {replay ? replay.title : "Missed Sunday? Catch up here."}
+              {replay ? replay.title : "Catch up on Sunday's message"}
             </h2>
             {byline ? (
               <p className="mt-2 text-[0.95rem] text-ink-mute">{byline}</p>

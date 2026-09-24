@@ -15,7 +15,7 @@ export default function PrivacyPage() {
       <PageHeader
         eyebrow="Privacy"
         title="How we handle your information."
-        lead="Church membership data is sensitive. This page says plainly what we collect, why, and who can see it."
+        lead="What we collect, why we collect it, and who can see it."
       />
 
       <Section>
@@ -116,7 +116,7 @@ export default function PrivacyPage() {
             <p>
               For any question about your information, or to make a request,
               contact CCF Centris at {SITE.addressLines.join(", ")}, or through
-              the <a href="/contact">contact form</a>.
+              the <a href="/contact">contact page</a>.
             </p>
           </Prose>
         </Container>

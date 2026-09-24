@@ -45,7 +45,7 @@ export default async function SearchPage({
       <PageHeader
         eyebrow="Search"
         title="Find anything."
-        lead="Messages, events, Dgroups, communities, facilities, classes, and answers to practical questions."
+        lead="Search messages, events, Dgroups, facilities and more."
       />
 
       <Section>
@@ -87,10 +87,8 @@ export default async function SearchPage({
               </div>
 
               <p className="mt-12 max-w-2xl leading-relaxed text-ink-mute">
-                Search currently covers titles, descriptions, topics, and
-                passages. Once sermon transcripts are uploaded, it will also
-                search inside the messages themselves and point to the moment a
-                subject was discussed.
+                Search covers titles, descriptions, topics, and passages.
+                Sermon transcripts will be added later.
               </p>
             </div>
           ) : hits.length ? (
@@ -139,7 +137,7 @@ export default async function SearchPage({
             <div className="mt-10">
               <EmptyState
                 title={`Nothing matched "${q}".`}
-                body="Try a broader word, or browse from one of the main sections. If you are looking for something practical about visiting, the New here page probably covers it."
+                body="Try a broader word, or browse one of the main sections."
                 action={
                   <div className="flex flex-wrap justify-center gap-3">
                     <ButtonLink href="/visit/new-here" tone="outline">

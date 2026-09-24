@@ -8,7 +8,7 @@ import { fmtMonthYear, fmtTime, manilaDateKey } from "@/lib/format";
 export const metadata: Metadata = {
   title: "Calendar",
   description:
-    "A month view of everything happening at CCF Centris: worship services, classes, sports, and events.",
+    "Sunday services and events at CCF Centris, by month.",
 };
 
 /** Manila-local calendar date for an instant, as YYYY-MM-DD. */
@@ -83,7 +83,7 @@ export default async function CalendarPage({
       <PageHeader
         eyebrow="Calendar"
         title="A month at Centris."
-        lead="Worship services and everything else on one grid. Services repeat weekly, so most weeks look busier than they feel."
+        lead="Sunday services and events for the month."
         actions={
           <ButtonLink href="/events" tone="outline" size="lg">
             List view
@@ -201,8 +201,7 @@ export default async function CalendarPage({
           </div>
 
           <p className="mt-6 text-[0.85rem] text-ink-mute">
-            Times are Manila time. Service times are set by the CCF Centris team
-            in the admin.
+            All times are Manila time.
           </p>
         </Container>
       </Section>

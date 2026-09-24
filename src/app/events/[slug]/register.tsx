@@ -62,8 +62,7 @@ export function RegisterForm({
           Just turn up.
         </h2>
         <p className="mt-3 leading-relaxed text-ink-soft">
-          There is no list and no ticket for this one. Just turn up, and bring
-          whoever you like.
+          You don&rsquo;t need a ticket for this one. Bring whoever you like.
         </p>
         <Link
           href="/visit#getting-here"
@@ -111,8 +110,8 @@ export function RegisterForm({
           </>
         ) : (
           <p className="mt-3 leading-relaxed text-ink-soft">
-            Places open up regularly as plans change. You are not charged
-            anything unless a place opens and you confirm it.
+            You won&rsquo;t be charged unless a place opens and you confirm
+            it.
           </p>
         )}
 
@@ -143,7 +142,7 @@ export function RegisterForm({
             Join the waitlist
           </h2>
           <p className="mt-2 text-[0.9rem] leading-relaxed text-ink-soft">
-            Places open up regularly. We email in order, and nothing is
+            If a place opens, we email the waitlist in order. Nothing is
             confirmed until you accept.
           </p>
         </>

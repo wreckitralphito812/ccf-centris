@@ -18,7 +18,7 @@ import { YOUTUBE } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Sunday archive",
   description:
-    "Every CCF Sunday teaching series, with its Run Through, Fast Track, and Snippets. Years of Sunday messages in one archive.",
+    "Every CCF Sunday teaching series, with its Run Through, Fast Track, and Snippets.",
 };
 
 /**
@@ -43,7 +43,7 @@ export default async function ArchivePage() {
       <PageHeader
         eyebrow="Sunday archive"
         title="Every series CCF has taught."
-        lead="Sunday messages going back years, each with the Run Through, Fast Track, and Snippets that go alongside it. Pulled live from CCF's channel."
+        lead="Years of Sunday messages, each with its Run Through, Fast Track and Snippets, from CCF's YouTube channel."
         actions={
           <>
             <ButtonLink href="/watch/messages" size="lg">
@@ -67,7 +67,7 @@ export default async function ArchivePage() {
             <SectionHead
               eyebrow="Sunday services"
               title="Watch a past service"
-              lead="Finished livestreams from CCF's channel. A new one is added here automatically once Sunday's service ends."
+              lead="Past livestreams from CCF's channel. Each Sunday's service shows up here after it ends."
               action={
                 <a
                   href={`${YOUTUBE.channelUrl}/streams`}
@@ -127,7 +127,7 @@ export default async function ArchivePage() {
           <Container>
             <EmptyState
               title="The channel archive is unavailable right now."
-              body="This section reads CCF's YouTube channel directly. It will fill again as soon as the channel responds."
+              body="We couldn't reach CCF's YouTube channel. Please try again later."
               action={
                 <ButtonLink href="/watch/messages" tone="outline">
                   Browse messages instead
@@ -223,7 +223,7 @@ export default async function ArchivePage() {
           <Container>
             <SectionHead
               eyebrow="Specials and one-offs"
-              title="Beyond the Sunday series"
+              title="Other collections"
               lead="Holy Week, anniversaries, prayer and fasting, conferences, and everything else CCF has published as its own collection."
             />
             <ul className="mt-10 grid gap-px border border-hairline bg-hairline sm:grid-cols-2 lg:grid-cols-3">

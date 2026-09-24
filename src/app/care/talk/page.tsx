@@ -6,7 +6,7 @@ import { TalkForm } from "./talk-form";
 export const metadata: Metadata = {
   title: "Talk to someone",
   description:
-    "Need someone to talk to? Reach the CCF Centris pastoral team privately about faith, prayer, counselling, or anything you are carrying.",
+    "Reach the CCF Centris pastoral team privately about faith, prayer, counselling, or anything else.",
 };
 
 export default function TalkPage() {
@@ -14,8 +14,8 @@ export default function TalkPage() {
     <>
       <PageHeader
         eyebrow="Pastoral care"
-        title="Need someone to talk to?"
-        lead="Whatever it is, you can say it here. A real person from the pastoral team reads this, and nobody else does."
+        title="Talk to someone."
+        lead="Someone from the pastoral team reads every message, and no one else sees it."
       />
 
       <Section>
@@ -27,7 +27,7 @@ export default function TalkPage() {
 
             <aside className="space-y-6 lg:sticky lg:top-28">
               <div className="border-l-2 border-clay bg-paper-bright p-6">
-                <p className="label text-clay">If it's urgent</p>
+                <p className="label text-clay">If it&rsquo;s urgent</p>
                 <p className="mt-3 text-[0.9rem] leading-relaxed text-ink-soft">
                   This form is monitored during office hours. If you or someone
                   else is in immediate danger, please contact emergency services

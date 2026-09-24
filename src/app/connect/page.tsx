@@ -21,8 +21,8 @@ export default function ConnectPage() {
     <>
       <PageHeader
         eyebrow="Connect"
-        title="Find your place at CCF Centris."
-        lead="Join a Dgroup, serve on a team, and follow along for what's happening at the center."
+        title="Get connected."
+        lead="Sign up for a Dgroup or a serving team, and follow CCF Centris for updates."
       />
 
       <Section>
@@ -31,14 +31,14 @@ export default function ConnectPage() {
             <Pathway
               eyebrow="Find a Dgroup"
               title="Grow in a small group."
-              body="A Dgroup is a small group that meets every week to study the Word, pray, and follow Jesus together. Sign up through CCF's Dgroup form to get connected with one."
+              body="A Dgroup is a small group that meets every week to study the Bible and pray. Sign up through CCF's Dgroup form and we'll connect you with one."
               href={CONNECT_LINKS.dgroupSignup}
               cta="Find a Dgroup"
             />
             <Pathway
               eyebrow="#GoServe"
               title="Serve on a team."
-              body="There's a place at CCF Centris for every kind of gift. Sign up through CCF's volunteer portal and choose where you'd like to serve."
+              body="Sign up through CCF's volunteer portal and pick the team you'd like to serve on."
               href={CONNECT_LINKS.volunteerSignup}
               cta="Sign up to serve"
             />

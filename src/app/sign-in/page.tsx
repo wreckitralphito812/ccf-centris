@@ -34,14 +34,14 @@ export default async function SignInPage({
       <PageHeader
         eyebrow="Account"
         title="Sign in to CCF Centris."
-        lead="An account lets you book Dgroup tables, post on the Prayer Wall, and manage your bookings. There's no password: sign in with Google, Facebook, or a link we email you."
+        lead="With an account you can book and manage Dgroup tables and post on the Prayer Wall. There's no password to remember."
       />
       <Section>
         <Container className="max-w-md">
           {one(sp.error) === "link" ? (
             <p className="mb-6 border border-clay bg-clay/8 px-4 py-3 text-[0.85rem] font-semibold text-clay-deep">
               That sign-in link didn&rsquo;t work. It may have expired or already
-              been used — request a fresh one.
+              been used, so please request a new one.
             </p>
           ) : null}
           {/* Each provider is only offered when the project actually has it

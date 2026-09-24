@@ -18,7 +18,7 @@ export interface InquiryResult {
 }
 
 const NOT_WIRED = "Submissions aren't wired up in this environment yet.";
-const GENERIC = "Something went wrong on our end — try again in a moment.";
+const GENERIC = "Something went wrong on our end. Try again in a moment.";
 
 /** Dgroup interest → `dgroup_inquiries`, status `new`, anonymous. */
 export async function submitDgroupInquiry(

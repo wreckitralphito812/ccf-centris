@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { SITE } from "@/lib/site";
 
 export const runtime = "edge";
-export const alt = "CCF Centris — Christ's Commission Fellowship";
+export const alt = "CCF Centris, Christ's Commission Fellowship";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -65,7 +65,7 @@ export default function OpengraphImage() {
             CCF Centris
           </div>
           <div style={{ display: "flex", fontSize: 38, color: "#007682" }}>
-            worship, grow, connect, serve
+            Sunday service, 10:00 AM
           </div>
         </div>
 

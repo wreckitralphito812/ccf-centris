@@ -29,7 +29,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const guide = await getFourWsGuide(slug);
   return {
-    title: guide ? `4Ws — ${guide.title}` : "4Ws guide",
+    title: guide ? `4Ws: ${guide.title}` : "4Ws guide",
     description: guide
       ? `The 4Ws discussion guide for "${guide.title}"${
           guide.dateLabel ? `, ${guide.dateLabel}` : ""
@@ -309,7 +309,7 @@ export default async function FourWsGuidePage({ params }: { params: Params }) {
                 >
                   <h2 className="font-display text-2xl">Pray · Care · Share</h2>
                   <p className="mt-2 text-[0.85rem] text-ink-mute">
-                    One step in each direction, before the group meets again.
+                    One thing to do for each, before the group meets again.
                   </p>
                   <div className="mt-5 grid gap-3 sm:grid-cols-3">
                     {(

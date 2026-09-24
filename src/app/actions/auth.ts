@@ -65,7 +65,7 @@ export async function sendMagicLink(
 
   if (error) {
     console.error("sendMagicLink failed", error);
-    return { ok: false, formError: "Could not send the link — try again in a moment." };
+    return { ok: false, formError: "Could not send the link. Try again in a moment." };
   }
 
   return { ok: true, sent: true };
