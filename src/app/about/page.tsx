@@ -43,11 +43,11 @@ export default function AboutPage() {
               Plan your visit
             </ButtonLink>
             <ButtonLink
-              href="/grow/find-a-dgroup"
+              href="/grow/join-a-dgroup"
               tone="ghost-on-dark"
               size="lg"
             >
-              Find a Dgroup →
+              Join a Dgroup →
             </ButtonLink>
           </>
         }
@@ -165,8 +165,8 @@ export default function AboutPage() {
               <h2 className="display-md mt-5">CCF Centris</h2>
               <p className="mt-5 leading-relaxed text-ink-soft">
                 CCF Centris is a satellite center of Christ&rsquo;s Commission
-                Fellowship, opened in August 2026 alongside CCF&rsquo;s 42nd
-                anniversary. It is part of a movement that began in 1984 with
+                Fellowship. It held its soft opening on September 6, 2026, and
+                opens officially on October 4, 2026. It is part of a movement that began in 1984 with
                 400 people at the Asian Institute of Management in Makati.
               </p>
               <p className="mt-4 leading-relaxed text-ink-soft">

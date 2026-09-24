@@ -46,9 +46,6 @@ export default async function ArchivePage() {
         lead="Years of Sunday messages, each with its Run Through, Fast Track and Snippets, from CCF's YouTube channel."
         actions={
           <>
-            <ButtonLink href="/watch/messages" size="lg">
-              Search messages
-            </ButtonLink>
             <a
               href={`${YOUTUBE.channelUrl}/playlists`}
               target="_blank"
@@ -129,8 +126,8 @@ export default async function ArchivePage() {
               title="The channel archive is unavailable right now."
               body="We couldn't reach CCF's YouTube channel. Please try again later."
               action={
-                <ButtonLink href="/watch/messages" tone="outline">
-                  Browse messages instead
+                <ButtonLink href="/watch" tone="outline">
+                  Watch last Sunday instead
                 </ButtonLink>
               }
             />

@@ -78,7 +78,7 @@ export default async function FourWsGuidePage({ params }: { params: Params }) {
             : undefined
         }
         actions={
-          <ButtonLink href="/grow/find-a-dgroup" size="lg">
+          <ButtonLink href="/grow/join-a-dgroup" size="lg">
             Do this in a Dgroup
           </ButtonLink>
         }

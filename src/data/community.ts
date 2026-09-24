@@ -172,7 +172,7 @@ export const announcements: Announcement[] = [
   {
     id: "ann-1",
     title: "Centris is open",
-    body: "CCF Centris opened in August 2026 alongside CCF's 42nd anniversary. Come see the new center.",
+    body: "CCF Centris opens officially on Sunday, October 4, 2026. Come see the new center.",
     level: "info",
     is_sitewide: true,
     starts_at: new Date(Date.now() - 86_400_000).toISOString(),

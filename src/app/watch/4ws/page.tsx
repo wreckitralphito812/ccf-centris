@@ -29,11 +29,8 @@ export default async function FourWsPage() {
         lead="Welcome, Worship, Word, Works: CCF's weekly Dgroup guide, based on that Sunday's message."
         actions={
           <>
-            <ButtonLink href="/grow/find-a-dgroup" size="lg">
-              Find a Dgroup
-            </ButtonLink>
-            <ButtonLink href="/grow/join-a-dgroup" tone="outline" size="lg">
-              How Dgroups work
+            <ButtonLink href="/grow/join-a-dgroup" size="lg">
+              Join a Dgroup
             </ButtonLink>
           </>
         }

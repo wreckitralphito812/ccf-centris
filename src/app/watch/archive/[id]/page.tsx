@@ -98,10 +98,10 @@ export default async function ArchivedServicePage({
                 Open on YouTube
               </a>
               <Link
-                href="/watch/messages"
+                href="/watch/archive"
                 className="btn-press label tap border border-white/25 px-5 py-2.5 text-paper-bright transition-colors hover:bg-white/10"
               >
-                Browse messages →
+                Back to the archive
               </Link>
             </div>
           </div>

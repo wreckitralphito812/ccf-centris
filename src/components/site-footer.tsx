@@ -41,8 +41,6 @@ const COLUMNS: FooterColumn[] = [
     id: "footer-watch",
     links: [
       { label: "Last Sunday", href: "/watch" },
-      { label: "Latest message", href: "/watch/latest" },
-      { label: "Messages & series", href: "/watch/messages" },
       { label: "Sunday archive", href: "/watch/archive" },
       { label: "4Ws guides", href: "/watch/4ws" },
     ],
@@ -51,7 +49,7 @@ const COLUMNS: FooterColumn[] = [
     heading: "Connect",
     id: "footer-connect",
     links: [
-      { label: "Find a Dgroup", href: "/grow/find-a-dgroup" },
+      { label: "Join a Dgroup", href: "/grow/join-a-dgroup" },
       { label: "Events", href: "/events" },
     ],
   },
