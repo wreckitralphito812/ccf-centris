@@ -252,9 +252,12 @@ export async function getSundayServices(
   // the scheduled stream disappears from the search. So the archive of past
   // services is the sermon catalogue: the same service, correctly titled and
   // credited to the preacher.
-  if (!archive.length) {
-    const { messages } = await getTeaching();
-    archive = messages.slice(0, 12).map((m) => ({
+  // Only when the catalogue was read live from the channel: its offline seed
+  // is the template's demo data, whose invented titles would be pinned to
+  // real CCF video ids.
+  const teaching = archive.length ? null : await getTeaching();
+  if (teaching?.live) {
+    archive = teaching.messages.slice(0, 12).map((m) => ({
       videoId: m.sermon_video_key ?? "",
       title: m.title,
       description: m.description ?? "",
