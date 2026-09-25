@@ -61,7 +61,7 @@ export const facilities: Facility[] = [
     name: "Sports Hall",
     kind: "sports_hall",
     description:
-      "An 800-capacity hall built for play. A full-size basketball court that converts to badminton and pickleball, used for open play, leagues, clinics, and community outreach.",
+      "An 800-capacity hall with a full-size basketball court that converts to badminton and pickleball. Used for open play, leagues, clinics, and community outreach.",
     capacity: 800,
     floor_area_sqm: null,
     amenities: [
@@ -195,7 +195,7 @@ export const facilities: Facility[] = [
     name: "Dgroup Lounge",
     kind: "lounge",
     description:
-      "A soft-seating room built for the thing CCF cares most about. Groups of six to twelve meet here through the week.",
+      "A soft-seating room for Dgroups. Groups of six to twelve meet here during the week.",
     capacity: 60,
     floor_area_sqm: null,
     amenities: ["Lounge seating", "Coffee station", "Quiet corners", "Free wifi"],
@@ -352,7 +352,7 @@ export const communities: Community[] = [
     name: "Sports",
     tagline: "Transform lives and nations through sports",
     description:
-      "CCF's Sports Ministry exists to transform lives and nations for Jesus through sports. At Centris that means leagues, clinics, and open play in the Sports Hall, each one building friendships that outlast the season.",
+      "CCF's Sports Ministry exists to transform lives and nations for Jesus through sports. At Centris that means leagues, clinics, and open play in the Sports Hall.",
     life_stage: "All ages",
     hero_image_url: null,
     accent: "clay",

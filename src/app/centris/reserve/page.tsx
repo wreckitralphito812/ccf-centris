@@ -59,7 +59,7 @@ export default async function ReservePage({
       <PageHeader
         eyebrow="Reserve"
         title="Book a court or a room."
-        lead="The Sports Hall is open to the community, not just to CCF. Multipurpose halls are available for classes, trainings, and gatherings."
+        lead="Anyone can book the Sports Hall, CCF member or not. Multipurpose halls are for classes, trainings, and meetings."
       />
 
       <Section>
@@ -80,8 +80,8 @@ export default async function ReservePage({
                 Reserving needs an account
               </h2>
               <p className="mx-auto mt-3 max-w-md text-[0.92rem] leading-relaxed text-ink-soft">
-                So you can see your bookings and cancel if plans change. There
-                is no password — we email you a sign-in link.
+                Sign in so you can see your bookings and cancel if plans change.
+                There&rsquo;s no password. We email you a sign-in link.
               </p>
               <div className="mt-6">
                 <ButtonLink
@@ -109,18 +109,18 @@ export default async function ReservePage({
         <Container>
           <SectionHead
             eyebrow="Policies"
-            title="The rules, plainly"
-            lead="Nothing here is designed to catch you out. It exists so the center stays usable for everyone."
+            title="Booking rules"
+            lead="These keep the center fair for everyone."
           />
           <div className="mt-10 grid gap-px border border-hairline bg-hairline sm:grid-cols-2 lg:grid-cols-3">
             {[
               ["Cancelling", "Cancel at least 24 hours ahead and there is no penalty. Repeated no-shows affect future bookings."],
               ["Approval", "Courts are usually instant. Multipurpose halls are a request first, confirmed by the facilities team within a day."],
               ["Payment", "Rooms are free for ministries. Court rates will be posted soon. Nothing is charged through this site."],
-              ["Footwear", "Non-marking indoor shoes are required on the sport floor. No exceptions, it damages the surface."],
+              ["Footwear", "Non-marking indoor shoes are required on the sport floor. Other shoes damage the surface, so there are no exceptions."],
               ["Setup time", "Room bookings must include setup and packing-down time in the window you book."],
               ["Under 16s", "An adult must be present for anyone under 16 using the Sports Hall."],
-              ["Recurring bookings", "Weekly or monthly slots can be arranged, but need approval before they hold inventory."],
+              ["Recurring bookings", "Weekly or monthly slots can be arranged, but need approval first."],
               ["Blackout dates", "The center closes for some CCF-wide events and holidays. Those dates are blocked in advance."],
               ["Damage and lost property", "Report anything broken to the desk. Lost property is held at the Welcome Center."],
             ].map(([t, b]) => (

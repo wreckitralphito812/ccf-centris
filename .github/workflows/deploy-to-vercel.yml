@@ -45,8 +45,12 @@ jobs:
 
       - name: Deploy to Vercel
         id: deploy
+        # --archive=tgz uploads the build as one file. Without it the CLI
+        # uploads every build file separately, and a few deploys in one day
+        # hit Vercel's free-plan cap of 5,000 uploads ("api-upload-free"),
+        # which blocks deploys for 24 hours. Seen 2026-09-24.
         run: |
-          url=$(vercel deploy --prebuilt ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }})
+          url=$(vercel deploy --prebuilt --archive=tgz ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }})
           echo "url=$url" >> "$GITHUB_OUTPUT"
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}

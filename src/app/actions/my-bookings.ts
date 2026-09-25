@@ -37,7 +37,7 @@ export async function cancelMyBooking(id: string): Promise<CancelResult> {
 
   if (error) {
     console.error("cancelMyBooking failed", error);
-    return { ok: false, formError: "Could not cancel — try again in a moment." };
+    return { ok: false, formError: "Could not cancel. Try again in a moment." };
   }
   if (!data || data.length === 0) {
     return { ok: false, formError: "That booking can no longer be cancelled here." };

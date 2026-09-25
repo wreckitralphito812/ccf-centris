@@ -29,7 +29,11 @@ export default function ContactPage() {
       <PageHeader
         eyebrow="Contact"
         title="Ask us anything."
-        lead="Questions about Sunday, Dgroups, serving, or using the center — send them our way."
+        lead="Send us your questions about Sunday, Dgroups, serving, or using the center."
+        image={{
+          src: "/photos/welcome-center.jpg",
+          alt: "The Welcome Center at CCF Centris, with its glass front and seating inside",
+        }}
       />
 
       <Section>
@@ -88,8 +92,8 @@ export default function ContactPage() {
               <div className="border-l-2 border-clay bg-paper-bright p-6">
                 <p className="label text-clay">Need prayer?</p>
                 <p className="mt-3 text-[0.9rem] leading-relaxed text-ink-soft">
-                  The Prayer Wall is where the CCF Centris community prays for
-                  one another.
+                  Post a request on the Prayer Wall and the church will pray for
+                  you.
                 </p>
                 <ButtonLink href="/prayer-wall" tone="outline" full className="mt-4">
                   Go to the Prayer Wall
@@ -99,8 +103,8 @@ export default function ContactPage() {
               <div className="border border-hairline bg-paper-bright p-6">
                 <p className="label text-clay">CCF nationwide</p>
                 <p className="mt-3 text-[0.9rem] leading-relaxed text-ink-soft">
-                  For anything beyond this center, CCF&rsquo;s main site covers
-                  the wider movement.
+                  For other CCF centers and ministries, go to CCF&rsquo;s main
+                  site.
                 </p>
                 <a
                   href="https://www.ccf.org.ph"
@@ -139,9 +143,9 @@ async function LeaveAMessage() {
     return (
       <Gate title="Opening soon.">
         <p>
-          Leaving a message needs a CCF Centris account, and accounts switch on
-          together with the rest of the member area. The email address above
-          reaches the same team in the meantime.
+          You&rsquo;ll need a CCF Centris account to leave a message here, and
+          accounts aren&rsquo;t open yet. Until then, email us at the address
+          above.
         </p>
       </Gate>
     );
@@ -155,9 +159,8 @@ async function LeaveAMessage() {
     return (
       <Gate title="Sign in to leave a message.">
         <p>
-          Messages come from a CCF Centris account, so we always know who we are
-          talking with and have a way to write back. Signing in takes a moment
-          and needs no password.
+          We ask you to sign in so we know who we&rsquo;re talking to and can
+          write back. There&rsquo;s no password: we email you a link.
         </p>
         <ButtonLink href="/sign-in?next=/contact" size="lg" className="mt-6">
           Sign in to leave a message
@@ -170,10 +173,9 @@ async function LeaveAMessage() {
     <>
       <h2 className="display-md">Leave us a message.</h2>
       <p className="mt-4 max-w-xl text-[1.02rem] leading-relaxed text-ink-soft">
-        This opens your email app with a new message addressed to the CCF
-        Centris team. Send it from{" "}
-        <span className="text-ink">{user.email}</span> and your message and our
-        reply stay on the same thread.
+        This opens your email app with a message to the CCF Centris team. Send
+        it from <span className="text-ink">{user.email}</span> so our reply
+        lands in the same thread.
       </p>
       <ButtonLink href={MESSAGE_HREF} size="lg" className="mt-6">
         Leave a message

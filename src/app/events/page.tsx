@@ -17,7 +17,7 @@ import { EVENT_CATEGORIES } from "@/lib/events";
 export const metadata: Metadata = {
   title: "What’s Happening",
   description:
-    "What's on at CCF Centris: retreats, conferences, and gatherings, with the month at a glance.",
+    "Retreats, conferences and other events at CCF Centris, with a month view.",
 };
 
 /**
@@ -70,8 +70,8 @@ export default async function EventsPage({
               What&rsquo;s Happening
             </h1>
             <p className="mt-4 text-[1.02rem] leading-relaxed text-ink-soft sm:text-[1.1rem]">
-              Retreats, conferences, and gatherings at CCF Centris. Every event
-              says plainly whether you need to register.
+              Retreats, conferences and other events at CCF Centris. Each one
+              says whether you need to register.
             </p>
             {rows.length > 1 ? (
               <nav aria-label="Jump to a category" className="mt-6 flex flex-wrap gap-2">
@@ -114,7 +114,7 @@ export default async function EventsPage({
           <Container>
             <EmptyState
               title="Nothing on the calendar yet."
-              body="New gatherings and classes appear here as soon as they're announced."
+              body="Events show up here once they're announced."
             />
           </Container>
         </Section>
@@ -198,7 +198,7 @@ const BANDS = [
 const CATEGORY_BLURB: Record<string, string> = {
   Gathering: "Nights of worship and fellowship for the whole church.",
   Class: "Courses that meet over several weeks.",
-  Training: "Equipping for Dgroup leaders and volunteers.",
+  Training: "Training for Dgroup leaders and volunteers.",
   Sports: "Open play and leagues on the Centris court.",
 };
 
@@ -339,7 +339,7 @@ function EventGrid({
             <div className="mt-10">
               <EmptyState
                 title="Nothing in that category right now."
-                body="Try another category, or look at everything coming up over the next few months."
+                body="Try another category, or see everything coming up."
                 action={
                   <ButtonLink href="/events?view=all" tone="outline">
                     See everything

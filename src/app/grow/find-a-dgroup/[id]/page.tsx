@@ -97,9 +97,9 @@ export default async function DgroupPage({
                   concrete step each person takes before the next meeting.
                 </p>
                 <p className="mt-3 leading-relaxed text-ink-soft">
-                  You will not be asked to read aloud, pray aloud, or share
-                  anything you would rather keep to yourself. Turning up is
-                  enough for the first few weeks.
+                  Nobody will ask you to read or pray out loud, or to share
+                  anything you&rsquo;d rather keep to yourself. For the first
+                  few weeks, just come.
                 </p>
                 <Link
                   href="/grow/join-a-dgroup"

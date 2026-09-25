@@ -185,7 +185,7 @@ export default async function WatchLivePage() {
             <>
               {window.next ? (
                 <AddToCalendar
-                  title={`${window.next.title} — CCF Centris`}
+                  title={`${window.next.title} (CCF Centris)`}
                   start={window.next.starts_at}
                   end={window.next.ends_at}
                 />
@@ -252,7 +252,7 @@ export default async function WatchLivePage() {
                     </a>
                   )}
                   <AddToCalendar
-                    title={`${nextService.title} — CCF`}
+                    title={`${nextService.title} (CCF)`}
                     start={nextService.scheduledFor}
                     end={new Date(
                       Date.parse(nextService.scheduledFor) + 2 * 60 * 60 * 1000,
@@ -319,7 +319,7 @@ export default async function WatchLivePage() {
             <SectionHead
               eyebrow="Straight from the CCF channel"
               title="Recently published"
-              lead="Updates automatically as CCF publishes new services and messages."
+              lead="The latest services and messages from CCF's YouTube channel."
               action={
                 <a
                   href={YOUTUBE.channelUrl}

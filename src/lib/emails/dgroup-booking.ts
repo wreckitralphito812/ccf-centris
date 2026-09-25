@@ -62,7 +62,7 @@ export function bookingEmail(d: BookingEmailData): { subject: string; html: stri
   }[d.kind];
 
   const intro = {
-    confirmed: "Your Dgroup has a table at CCF Centris. See you there!",
+    confirmed: "Your Dgroup has a table at CCF Centris. See you there.",
     changed: "Here are your new booking details. Your old table has been released.",
     cancelled: "Your table has been released for another Dgroup. You can book again anytime a slot is open.",
   }[d.kind];
@@ -122,7 +122,7 @@ export function bookingEmail(d: BookingEmailData): { subject: string; html: stri
     ${
       cancelled
         ? ""
-        : `<p style="margin:14px auto 0;max-width:420px;font:400 13px/1.5 ${FONT};color:${MUTE};">Need to change how many are coming, or move to another time? Sign in and update it from your booking, or cancel so another Dgroup can use the table.</p>`
+        : `<p style="margin:14px auto 0;max-width:420px;font:400 13px/1.5 ${FONT};color:${MUTE};">To change the headcount or time, sign in and edit your booking. If you can't make it, please cancel so another Dgroup can use the table.</p>`
     }
   </td></tr>
 

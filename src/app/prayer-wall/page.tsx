@@ -53,7 +53,7 @@ export default function PrayerWallPage() {
       <PageHeader
         eyebrow="Prayer Wall"
         title="Pray for one another."
-        lead="Post a prayer request, and pray over the requests others have shared. The wall is for signed-in members of the CCF Centris community."
+        lead="Post a prayer request and pray for others. The wall is for signed-in CCF Centris members."
       />
       <Section>
         <Container>
@@ -70,7 +70,7 @@ async function Wall() {
   if (!hasSupabase()) {
     return (
       <Notice label="Opening soon">
-        <p>The Prayer Wall opens once member accounts are switched on for the site.</p>
+        <p>The Prayer Wall opens when member accounts go live.</p>
       </Notice>
     );
   }

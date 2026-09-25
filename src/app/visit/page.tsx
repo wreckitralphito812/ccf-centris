@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Eyebrow, Section } from "@/components/ui";
 import {
@@ -54,13 +55,13 @@ export default function VisitPage() {
     <>
       <PageHeader
         eyebrow="Visit"
-        title={
-          <>
-            Come find us at{" "}
-            <span className="italic text-clay">Centris.</span>
-          </>
-        }
-        lead="Second floor of Centris Station, inside Eton Centris, at the corner of EDSA and Quezon Avenue. No registration, no dress code, and nobody will ask you to stand up."
+        title="Come find us at Centris."
+        lead="Second floor of Centris Station, inside Eton Centris, at the corner of EDSA and Quezon Avenue. You don't need to register, and there's no dress code."
+        image={{
+          src: "/photos/centris-station.jpg",
+          alt: "Centris Station building at Eton Centris, with its sign above the entrance",
+          position: "center 40%",
+        }}
       />
 
       {/* The pin first. Everything else on this page is a way of acting on it. */}
@@ -102,6 +103,7 @@ export default function VisitPage() {
                   Open in Waze
                 </ButtonLink>
               </div>
+
             </div>
           </div>
         </Container>
@@ -111,7 +113,7 @@ export default function VisitPage() {
       <Section tone="deep" id="getting-here" className="scroll-mt-24">
         <Container>
           <Eyebrow>Getting here</Eyebrow>
-          <h2 className="display-md mt-4 text-balance">Two ways to get here.</h2>
+          <h2 className="display-md mt-4 text-balance">By car or by train.</h2>
           <div className="mt-8 grid gap-px border border-hairline bg-hairline md:grid-cols-2">
             {ROUTES.map((r) => (
               <div key={r.id} id={r.id} className="flex scroll-mt-28 flex-col bg-paper-bright p-7 sm:p-9">
@@ -145,6 +147,20 @@ export default function VisitPage() {
                     <p className="mt-2 text-[0.85rem] text-ink-mute">{PARKING.name}</p>
                   </figure>
                 ) : (
+                  <>
+                  <figure className="mt-7">
+                    <figcaption className="label text-clay">Quezon Avenue station</figcaption>
+                    <div className="relative mt-3 aspect-[4/3] overflow-hidden border border-hairline bg-paper">
+                      <Image
+                        src="/photos/mrt-quezon-avenue.jpg"
+                        alt="Inside MRT-3 Quezon Avenue station, under the Quezon Avenue sign"
+                        fill
+                        sizes="(min-width: 768px) 40vw, 100vw"
+                        className="object-cover"
+                        style={{ objectPosition: "center 35%" }}
+                      />
+                    </div>
+                  </figure>
                   <dl className="mt-7 divide-y divide-hairline border-y border-hairline">
                     {[
                       ["Nearest station", "MRT-3 Quezon Avenue"],
@@ -157,6 +173,7 @@ export default function VisitPage() {
                       </div>
                     ))}
                   </dl>
+                  </>
                 )}
               </div>
             ))}

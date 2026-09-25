@@ -20,7 +20,7 @@ export default async function FacilitiesPage() {
       <PageHeader
         eyebrow="Facilities"
         title="Every space at Centris."
-        lead="Capacities, layouts, amenities, and whether you can book it. Rates and rules are set by the CCF Centris team."
+        lead="Capacity, layout and amenities for each space, and whether you can book it."
         actions={
           <>
             <ButtonLink href="/centris/reserve" size="lg">

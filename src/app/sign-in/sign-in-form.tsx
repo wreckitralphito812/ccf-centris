@@ -17,9 +17,8 @@ export function SignInForm({ next }: { next: string }) {
       <FormSuccess>
         <p className="font-display text-xl">Check your email</p>
         <p className="mt-2 text-[0.92rem] leading-relaxed text-ink-soft">
-          We sent a sign-in link. Open it on this device and you&rsquo;ll be
-          signed in — no password needed. The link works once and expires
-          within the hour.
+          We sent you a sign-in link. Open it on this device to sign in. The
+          link works once and expires within the hour.
         </p>
       </FormSuccess>
     );
@@ -51,7 +50,7 @@ export function SignInForm({ next }: { next: string }) {
       <Field
         label="Phone"
         name="phone"
-        hint="Optional — so we can reach you about a booking."
+        hint="Optional. So we can reach you about a booking."
       >
         {(p) => (
           <input

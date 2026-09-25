@@ -41,7 +41,7 @@ export async function generateMetadata({
     title: m.title,
     description: m.description ?? undefined,
     openGraph: {
-      title: `${m.title} — CCF Centris`,
+      title: `${m.title} | CCF Centris`,
       description: m.description ?? undefined,
       type: "video.other",
     },
@@ -237,7 +237,7 @@ export default async function MessagePage({
             <SectionHead
               eyebrow="4Ws"
               title="Take this to your Dgroup"
-              lead="Every message comes with a discussion guide built around CCF's four movements: Welcome, Worship, Word, and Works."
+              lead="Each message has a 4Ws discussion guide: Welcome, Worship, Word, and Works."
               action={
                 <div className="flex flex-wrap gap-3">
                   <ButtonLink href="/grow/find-a-dgroup" tone="outline">
@@ -289,10 +289,9 @@ export default async function MessagePage({
               <h2 className="display-md mt-4">Follow along</h2>
               <div className="mt-6 border border-dashed border-hairline bg-paper-bright p-8">
                 <p className="leading-relaxed text-ink-soft">
-                  Notes and a searchable transcript are attached per message in
-                  the admin. Once a transcript is uploaded, its text becomes
-                  searchable across the whole archive, so someone looking for
-                  &ldquo;anxiety&rdquo; finds the exact minute it was discussed.
+                  Notes and a transcript for this message aren&rsquo;t up yet.
+                  Once they are, you&rsquo;ll be able to search them from the
+                  archive.
                 </p>
                 <ButtonLink href="/search" tone="outline" className="mt-6">
                   Try searching the archive
@@ -352,7 +351,7 @@ export default async function MessagePage({
       {related.length ? (
         <Section tone="deep">
           <Container>
-            <SectionHead eyebrow="Related" title="You might also want" />
+            <SectionHead eyebrow="Related" title="More messages" />
             <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {related.map((r) => (
                 <MessageCard key={r.id} m={r} />

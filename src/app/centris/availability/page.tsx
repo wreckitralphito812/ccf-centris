@@ -51,7 +51,7 @@ export default async function AvailabilityPage({
       <PageHeader
         eyebrow="Court availability"
         title="What&rsquo;s free in the Sports Hall."
-        lead="Live availability across every court. Booking details of other people are never shown."
+        lead="Live availability for every court. Other people's booking details are never shown."
         actions={
           <>
             <ButtonLink href="/centris/reserve" size="lg">
@@ -150,7 +150,7 @@ export default async function AvailabilityPage({
                     {slots.map((s) => (
                       <td key={s.start} className="border-b border-hairline p-0.5">
                         <span
-                          title={`${fmtTime(s.start)} — ${STATE_LABEL[s.state]}`}
+                          title={`${fmtTime(s.start)}: ${STATE_LABEL[s.state]}`}
                           className={`block h-9 border ${STATE_STYLE[s.state]}`}
                         >
                           <span className="sr-only">

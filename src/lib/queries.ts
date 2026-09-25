@@ -868,24 +868,9 @@ export async function globalSearch(q: string): Promise<SearchHit[]> {
   const match = (...parts: (string | null | undefined)[]) =>
     parts.filter(Boolean).join(" ").toLowerCase().includes(needle);
 
-  for (const m of await getMessages()) {
-    if (match(m.title, m.description, m.scripture, m.speaker?.name, ...m.topics)) {
-      hits.push({
-        kind: "Message",
-        title: m.title,
-        excerpt: m.description ?? "",
-        href: `/watch/messages/${m.slug}`,
-      });
-    }
-  }
   for (const e of await getEvents()) {
     if (match(e.title, e.summary, e.description, e.category)) {
       hits.push({ kind: "Event", title: e.title, excerpt: e.summary ?? "", href: `/events/${e.slug}` });
-    }
-  }
-  for (const d of dgroups) {
-    if (match(d.name, d.description, d.general_area)) {
-      hits.push({ kind: "Dgroup", title: d.name, excerpt: d.description ?? "", href: `/grow/find-a-dgroup` });
     }
   }
   for (const f of facilities) {

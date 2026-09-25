@@ -203,9 +203,9 @@ function FourWsPanel({ current }: { current: FourWsCurrent }) {
         <p className="mt-1 text-[0.85rem] text-ink-mute">{week.dateSpan}</p>
       ) : null}
       <p className="mt-4 text-[0.95rem] leading-relaxed text-ink-soft">
-        The 4Ws &mdash; Welcome, Worship, Word, Works &mdash; is CCF&rsquo;s
-        weekly guide for Dgroups. It turns Sunday&rsquo;s message into questions
-        to talk through together and one step to put into practice.
+        The 4Ws (Welcome, Worship, Word, Works) is CCF&rsquo;s weekly guide for
+        Dgroups. It turns Sunday&rsquo;s message into questions to talk through
+        and one thing to put into practice.
       </p>
       <div className="mt-5 flex flex-col gap-2">
         {pdf ? (

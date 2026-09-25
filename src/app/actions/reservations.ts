@@ -107,7 +107,7 @@ export async function createReservation(
     console.error("createReservation: insert failed", error);
     return {
       ok: false,
-      formError: "Something went wrong on our end — try again in a moment.",
+      formError: "Something went wrong on our end. Try again in a moment.",
     };
   }
 

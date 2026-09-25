@@ -41,7 +41,7 @@ export function InviteFriend({ message }: { message: string }) {
   return (
     <div>
       <Button type="button" tone="outline" full onClick={invite}>
-        {copied ? "Invite copied — paste it anywhere" : "Invite a friend"}
+        {copied ? "Invite copied. Paste it anywhere." : "Invite a friend"}
       </Button>
       {/* Announced without moving focus, so a screen reader hears the result of
           a press that otherwise changes nothing on screen. */}

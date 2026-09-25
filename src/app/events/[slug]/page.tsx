@@ -34,7 +34,7 @@ export async function generateMetadata({
   return {
     title: e.title,
     description: e.summary ?? undefined,
-    openGraph: { title: `${e.title} — CCF Centris`, type: "website" },
+    openGraph: { title: `${e.title} | CCF Centris`, type: "website" },
   };
 }
 
@@ -86,7 +86,7 @@ export default async function EventPage({
     const f = (v: string) => v.replace(/[-:]/g, "").replace(/\.\d{3}/, "");
     const p = new URLSearchParams({
       action: "TEMPLATE",
-      text: `${e.title} — CCF Centris`,
+      text: `${e.title} (CCF Centris)`,
       dates: `${f(e.starts_at)}/${f(e.ends_at ?? e.starts_at)}`,
       location: SITE.addressLines.join(", "),
       details: e.summary ?? "",

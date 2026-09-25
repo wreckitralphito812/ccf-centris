@@ -26,7 +26,7 @@ export interface WallResult {
   error?: string;
 }
 
-const GENERIC = "Something went wrong on our end — try again in a moment.";
+const GENERIC = "Something went wrong on our end. Try again in a moment.";
 
 async function memberSession() {
   if (!hasSupabase()) return null;

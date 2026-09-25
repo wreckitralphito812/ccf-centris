@@ -30,9 +30,14 @@ export default function AboutPage() {
     <>
       <PageHeader
         eyebrow="Who we are"
-        title="A movement, not a building."
+        title="Part of Christ's Commission Fellowship."
         lead={IDENTITY}
         tone="ink"
+        image={{
+          src: "/photos/main-hall-cross.jpg",
+          alt: "The main hall at CCF Centris, rows of chairs facing the lit cross",
+          position: "center 45%",
+        }}
         actions={
           <>
             <ButtonLink
@@ -43,11 +48,11 @@ export default function AboutPage() {
               Plan your visit
             </ButtonLink>
             <ButtonLink
-              href="/grow/find-a-dgroup"
+              href="/grow/join-a-dgroup"
               tone="ghost-on-dark"
               size="lg"
             >
-              Find a Dgroup →
+              Join a Dgroup →
             </ButtonLink>
           </>
         }
@@ -143,8 +148,7 @@ export default function AboutPage() {
 
           <p className="mt-8 max-w-2xl leading-relaxed text-ink-soft">
             CCF also publishes positions on marriage, gender, and the value of
-            human life. Those are read in CCF&rsquo;s own words rather than
-            summarised here.
+            human life. Read them in CCF&rsquo;s own words on ccf.org.ph.
           </p>
           <a
             href={POSITION_STATEMENTS_URL}
@@ -166,18 +170,17 @@ export default function AboutPage() {
               <h2 className="display-md mt-5">CCF Centris</h2>
               <p className="mt-5 leading-relaxed text-ink-soft">
                 CCF Centris is a satellite center of Christ&rsquo;s Commission
-                Fellowship, opened in August 2026 alongside CCF&rsquo;s 42nd
-                anniversary. It is part of a movement that began in 1984 with
+                Fellowship. It held its soft opening on September 6, 2026, and
+                opens officially on October 4, 2026. It is part of a movement that began in 1984 with
                 400 people at the Asian Institute of Management in Makati.
               </p>
               <p className="mt-4 leading-relaxed text-ink-soft">
-                Everything here belongs to that larger mission. The worship
-                hall, the sports hall, the classrooms, and the lounge exist to
-                make Christ-committed followers who will make Christ-committed
-                followers.
+                The worship hall, sports hall, classrooms and lounge all serve
+                the same mission: to make Christ-committed followers who will
+                make Christ-committed followers.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <ButtonLink href="/centris">Explore the center</ButtonLink>
+                <ButtonLink href="/centris">See the center</ButtonLink>
               </div>
             </div>
             <div className="border border-hairline bg-paper p-8">

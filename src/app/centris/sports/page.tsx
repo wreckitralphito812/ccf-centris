@@ -41,11 +41,9 @@ export default async function SportsPage() {
       <PageHeader
         eyebrow="Sports at Centris"
         title={
-          <>
-            Play, then <span className="italic text-clay">stay</span>.
-          </>
+          "Come and play."
         }
-        lead="An 800-capacity hall with a full basketball court that converts for badminton and pickleball. Open to the community, not just to CCF."
+        lead="An 800-capacity hall with a full basketball court that converts for badminton and pickleball. Open to everyone, CCF member or not."
         tone="ink"
         actions={
           <>
@@ -75,8 +73,8 @@ export default async function SportsPage() {
               <Eyebrow>Play</Eyebrow>
               <h2 className="display-md mt-4">Book a court</h2>
               <p className="mt-3 leading-relaxed text-ink-soft">
-                Turn up with your own group and play. Hourly bookings, open to
-                anyone, no membership and no questions about what you believe.
+                Bring your own group. Courts are booked by the hour, and anyone
+                can book.
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
                 <ButtonLink href="/centris/reserve?facility=sports-hall">
@@ -92,8 +90,8 @@ export default async function SportsPage() {
               <h2 className="display-md mt-4">Sports ministry</h2>
               <p className="mt-3 leading-relaxed text-ink-soft">
                 Leagues, clinics, and open nights run by volunteers whose aim is
-                to transform lives and nations for Jesus through sports. You are
-                welcome whether or not you share that aim.
+                to transform lives and nations for Jesus through sports. You&rsquo;re
+                welcome to join even if you don&rsquo;t share that aim.
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
                 <ButtonLink href="/connect">Join sports ministry</ButtonLink>
@@ -167,17 +165,17 @@ export default async function SportsPage() {
         <Container>
           <SectionHead
             eyebrow="Programmes"
-            title="More than court time"
-            lead="Everything here is open to people outside CCF, and most participants are."
+            title="Leagues, clinics and more"
+            lead="All of these are open to people outside CCF."
           />
           <div className="mt-10 grid gap-px border border-hairline bg-hairline sm:grid-cols-2 lg:grid-cols-3">
             {[
-              ["Open play", "Most weeknights. Show up alone, get matched, play. Equipment available at the desk."],
+              ["Open play", "Most weeknights. Come on your own and we'll put you in a game. Equipment is available at the desk."],
               ["Leagues", "Eight-week seasons in basketball. Register as a team, roster due a week before opening day."],
-              ["Clinics", "Four-week coaching blocks for beginners. Most people arrive having never held a racket."],
+              ["Clinics", "Four-week coaching blocks for beginners. No experience needed."],
               ["Sports camps", "School-holiday camps for children and teenagers, run with NXTGEN and Elevate."],
-              ["Community games", "Days out with the barangays around Centris, using sport as the reason to meet."],
-              ["Ministry nights", "Play first, then a short talk and a Dgroup on the court. Stay or go, entirely your call."],
+              ["Community games", "Games with the barangays around Centris."],
+              ["Ministry nights", "Play first, then a short talk and a Dgroup on the court. You can stay or go."],
             ].map(([t, b]) => (
               <div key={t} className="bg-paper-bright p-7">
                 <h3 className="font-display text-xl">{t}</h3>
@@ -214,8 +212,8 @@ export default async function SportsPage() {
           <div className="grid gap-8 sm:grid-cols-3">
             {[
               ["What to bring", "Non-marking indoor shoes are required on the sport floor. Rackets, paddles, and balls can be rented at the desk."],
-              ["Do I need to be a member?", "No. The Sports Hall is open to everyone, and most people at open play are not CCF members."],
-              ["Will I be preached at?", "No. You will be invited to things and you can say no and keep playing. That happens constantly."],
+              ["Do I need to be a member?", "No. The Sports Hall is open to everyone."],
+              ["Will I be preached at?", "No. We might invite you to things, and you're free to say no and keep playing."],
             ].map(([q, a]) => (
               <div key={q}>
                 <h3 className="font-display text-lg">{q}</h3>

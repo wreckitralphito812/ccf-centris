@@ -1,5 +1,6 @@
 import { connection } from "next/server";
 import type { Metadata } from "next";
+import Image from "next/image";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Section } from "@/components/ui";
@@ -59,6 +60,18 @@ export default function DgroupTablesPage() {
               <Booking />
             </div>
             <aside className="space-y-6 lg:sticky lg:top-28">
+              <figure>
+                <div className="relative aspect-[16/9] overflow-hidden border border-hairline bg-paper">
+                  <Image
+                    src="/photos/dgroup-lounge.jpg"
+                    alt="The Dgroup Lounge at CCF Centris, seen through its glass front"
+                    fill
+                    sizes="(min-width: 1024px) 22rem, 100vw"
+                    className="object-cover"
+                  />
+                </div>
+                <figcaption className="mt-2 text-[0.85rem] text-ink-mute">The Dgroup Lounge</figcaption>
+              </figure>
               <div className="border border-hairline bg-paper-bright p-6">
                 <p className="label text-clay">How it works</p>
                 <ol className="mt-4 space-y-3 text-[0.92rem] leading-relaxed text-ink-soft">
@@ -129,7 +142,7 @@ async function Booking() {
   if (!hasSupabase()) {
     return (
       <Notice label="Opening soon">
-        <p>Table reservations open once member accounts are switched on for the site.</p>
+        <p>Table reservations open when member accounts go live.</p>
       </Notice>
     );
   }

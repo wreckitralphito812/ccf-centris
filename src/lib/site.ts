@@ -1,7 +1,10 @@
 export const SITE = {
   name: "CCF Centris",
   parent: "Christ's Commission Fellowship",
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://ccfcentris.example.org",
+  /* The live address until CCF's own domain is connected; then set
+     NEXT_PUBLIC_SITE_URL on Vercel. Link previews (og:image) and the sitemap
+     are built from this, so a placeholder here breaks shared links. */
+  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://ccf-centris.vercel.app",
   addressLines: [
     "2/F Centris Station",
     "Eton Centris",

@@ -23,8 +23,13 @@ export default function NewHerePage() {
     <>
       <PageHeader
         eyebrow="New here"
-        title="Your first Sunday, without the guesswork."
+        title="Your first Sunday at CCF Centris."
         lead="We're putting together a video walkthrough of what to expect. In the meantime, here's how to find us."
+        image={{
+          src: "/photos/arriving-sunday.jpg",
+          alt: "Guests walking into CCF Centris on a Sunday, greeted at the door",
+          position: "center 65%",
+        }}
         actions={
           <ButtonLink href="/visit#getting-here" size="lg">
             Getting here
@@ -40,9 +45,8 @@ export default function NewHerePage() {
             </span>
             <h2 className="font-display mt-6 text-2xl">Video coming soon</h2>
             <p className="mt-3 max-w-md leading-relaxed text-ink-soft">
-              A walkthrough of your first Sunday at CCF Centris is on its way.
-              Until then, the Welcome Center team will walk you through
-              everything in person.
+              Until it&rsquo;s ready, look for the Welcome Center team on
+              Sunday. They&rsquo;ll show you around.
             </p>
             <ButtonLink href="/contact" tone="outline" className="mt-7">
               Ask a question

@@ -13,7 +13,7 @@ export default function AccessibilityPage() {
     <>
       <PageHeader
         eyebrow="Accessibility"
-        title="Getting in, and getting around."
+        title="Getting around the center."
         lead="What the center provides, what this website does, and how to tell us if something is not working for you."
         actions={
           <ButtonLink href="/contact" size="lg">
@@ -89,12 +89,11 @@ export default function AccessibilityPage() {
                 indicator.
               </li>
               <li>
-                Semantic HTML throughout, so screen readers get real structure
-                rather than a wall of unlabelled containers.
+                Proper headings and page landmarks, so screen readers can find
+                their way around.
               </li>
               <li>
-                Text contrast meeting or exceeding 4.5 to 1, checked rather than
-                assumed.
+                Text contrast of at least 4.5 to 1.
               </li>
               <li>
                 Alternative text on meaningful images, and decorative graphics
@@ -105,10 +104,9 @@ export default function AccessibilityPage() {
                 colour alone.
               </li>
               <li>
-                Motion respecting the reduced-motion setting, including the
-                video on the home page.
+                Animations switch off if your device is set to reduce motion.
               </li>
-              <li>Tap targets sized for a thumb, not a mouse pointer.</li>
+              <li>Buttons and links big enough to tap easily.</li>
             </ul>
 
             <h2>Where we fall short</h2>
@@ -121,10 +119,10 @@ export default function AccessibilityPage() {
 
             <h2>Tell us</h2>
             <p>
-              If something on this site or in the building does not work for
-              you, we would genuinely rather know. Use the{" "}
-              <a href="/contact">contact form</a>, or tell anyone at the Welcome
-              Center. You do not need to explain why you need something.
+              If something on this site or in the building doesn&rsquo;t work
+              for you, please tell us. Use the{" "}
+              <a href="/contact">contact page</a>, or tell anyone at the Welcome
+              Center. You don&rsquo;t need to explain why you need something.
             </p>
           </Prose>
         </Container>

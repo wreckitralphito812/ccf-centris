@@ -25,15 +25,12 @@ export default async function FourWsPage() {
     <>
       <PageHeader
         eyebrow="4Ws"
-        title="The guide your Dgroup opens each week."
-        lead="Welcome, Worship, Word, Works. Four movements that shape how CCF groups meet, tied to the message from that Sunday."
+        title="The 4Ws guide for your Dgroup."
+        lead="Welcome, Worship, Word, Works: CCF's weekly Dgroup guide, based on that Sunday's message."
         actions={
           <>
-            <ButtonLink href="/grow/find-a-dgroup" size="lg">
-              Find a Dgroup
-            </ButtonLink>
-            <ButtonLink href="/grow/join-a-dgroup" tone="outline" size="lg">
-              How Dgroups work
+            <ButtonLink href="/grow/join-a-dgroup" size="lg">
+              Join a Dgroup
             </ButtonLink>
           </>
         }

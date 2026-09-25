@@ -398,7 +398,7 @@ function fourWsFor(m: RawMessage, id: string): FourWs {
   return {
     id: `4ws-${id}`,
     message_id: id,
-    title: `${m.title} — 4Ws`,
+    title: `${m.title}: 4Ws`,
     week_of: m.preached_on,
     welcome_md:
       "Share one place this week where you felt genuinely at ease, and one where you did not.",

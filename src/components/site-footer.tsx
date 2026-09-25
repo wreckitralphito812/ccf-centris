@@ -41,8 +41,6 @@ const COLUMNS: FooterColumn[] = [
     id: "footer-watch",
     links: [
       { label: "Last Sunday", href: "/watch" },
-      { label: "Latest message", href: "/watch/latest" },
-      { label: "Messages & series", href: "/watch/messages" },
       { label: "Sunday archive", href: "/watch/archive" },
       { label: "4Ws guides", href: "/watch/4ws" },
     ],
@@ -51,7 +49,7 @@ const COLUMNS: FooterColumn[] = [
     heading: "Connect",
     id: "footer-connect",
     links: [
-      { label: "Find a Dgroup", href: "/grow/find-a-dgroup" },
+      { label: "Join a Dgroup", href: "/grow/join-a-dgroup" },
       { label: "Events", href: "/events" },
     ],
   },
@@ -85,7 +83,7 @@ export function SiteFooter() {
       <div className="border-b border-white/15">
         <div className="mx-auto flex max-w-[110rem] flex-col gap-4 px-5 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <p className="font-display text-xl leading-snug sm:text-2xl">
-            We&rsquo;d love to see you this Sunday at {SERVICE_TIMES[0].time}.
+            Sunday service is at {SERVICE_TIMES[0].time}. See you there.
           </p>
           <div className="flex flex-wrap gap-3">
             {/* Solid cream, not teal: under the footer's .bg-night the

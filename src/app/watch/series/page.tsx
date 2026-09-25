@@ -17,7 +17,7 @@ import { YOUTUBE } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Series",
   description:
-    "Every CCF teaching series, pulled live from the channel. Open a series to watch its messages without leaving the page.",
+    "Every CCF teaching series, from CCF's YouTube channel.",
 };
 
 /**
@@ -78,8 +78,8 @@ export default async function SeriesIndexPage() {
     <>
       <PageHeader
         eyebrow="Series"
-        title="Teaching in sequence."
-        lead="Every series CCF has taught, pulled live from its channel. Open one to watch its messages here, or jump out to the full playlist on YouTube."
+        title="Teaching series."
+        lead="Every series CCF has taught, from its YouTube channel. Open one to watch it here, or go to the full playlist on YouTube."
         actions={
           <a
             href={`${YOUTUBE.channelUrl}/playlists`}
@@ -97,7 +97,7 @@ export default async function SeriesIndexPage() {
           <Container>
             <EmptyState
               title="The series archive is unavailable right now."
-              body="This reads CCF's YouTube channel directly and will fill again as soon as the channel responds."
+              body="We couldn't reach CCF's YouTube channel. Please try again later."
             />
           </Container>
         </Section>
@@ -109,7 +109,7 @@ export default async function SeriesIndexPage() {
             <SectionHead
               eyebrow="Start here"
               title="Featured series"
-              lead="A few of the most recent series. Open one to watch straight away."
+              lead="The most recent series."
             />
             <div className="mt-10 space-y-5">
               {featured.map((row) => (
