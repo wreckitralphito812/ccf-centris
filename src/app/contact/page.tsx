@@ -157,13 +157,14 @@ async function LeaveAMessage() {
 
   if (!user) {
     return (
-      <Gate title="Sign in to leave a message.">
+      <Gate title="Sign in to send us a message.">
         <p>
-          We ask you to sign in so we know who we&rsquo;re talking to and can
-          write back. There&rsquo;s no password: we email you a link.
+          Anyone can write to us. We ask you to sign in first so every message
+          comes with a real name and email address, and we can reply to you
+          directly. There&rsquo;s no password: we email you a link.
         </p>
         <ButtonLink href="/sign-in?next=/contact" size="lg" className="mt-6">
-          Sign in to leave a message
+          Sign in to continue
         </ButtonLink>
       </Gate>
     );
@@ -184,12 +185,12 @@ async function LeaveAMessage() {
   );
 }
 
-/** The members-only panel shown in place of the message button. */
+/** The sign-in panel shown in place of the message button. */
 function Gate({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="border-l-2 border-clay bg-paper-bright p-6 sm:p-7">
-      <p className="label text-clay">Members only</p>
-      <h2 className="display-md mt-3">{title}</h2>
+      <p className="label text-clay">Before you write</p>
+      <h2 className="font-display mt-3 text-2xl leading-tight sm:text-3xl">{title}</h2>
       <div className="mt-4 max-w-xl text-[1.02rem] leading-relaxed text-ink-soft">
         {children}
       </div>

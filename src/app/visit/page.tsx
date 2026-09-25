@@ -37,6 +37,12 @@ const ROUTES = [
       "Walk to CCF Centris, second floor of Centris Station.",
     ],
     note: "Arriving by Grab or taxi? Use the same drop-off, then walk up.",
+    media: { label: "Where to park" },
+    facts: [
+      ["Parking", PARKING.name],
+      ["Rates", "Set by the mall"],
+      ["Floor", "Second floor, Centris Station"],
+    ],
   },
   {
     id: "train",
@@ -47,6 +53,12 @@ const ROUTES = [
       "Walk to CCF Centris, second floor of Centris Station.",
     ],
     note: "Walking in from the street? Cross at EDSA and Quezon Avenue and follow the same route from there.",
+    media: { label: "Quezon Avenue station" },
+    facts: [
+      ["Nearest station", "MRT-3 Quezon Avenue"],
+      ["From the platform", "Connected by a walkway"],
+      ["Floor", "Second floor, Centris Station"],
+    ],
   },
 ] as const;
 
@@ -114,43 +126,42 @@ export default function VisitPage() {
         <Container>
           <Eyebrow>Getting here</Eyebrow>
           <h2 className="display-md mt-4 text-balance">By car or by train.</h2>
-          <div className="mt-8 grid gap-px border border-hairline bg-hairline md:grid-cols-2">
+          {/* One grid for both routes, with each card on a subgrid, so the
+              heading, steps, note, picture and facts sit on the same line in
+              both columns even when one note wraps and the other doesn't. */}
+          <div className="mt-8 grid gap-px border border-hairline bg-hairline md:grid-cols-2 md:grid-rows-[repeat(5,auto)]">
             {ROUTES.map((r) => (
-              <div key={r.id} id={r.id} className="flex scroll-mt-28 flex-col bg-paper-bright p-7 sm:p-9">
+              <div
+                key={r.id}
+                id={r.id}
+                className="flex scroll-mt-28 flex-col gap-6 bg-paper-bright p-7 sm:p-9 md:row-span-5 md:grid md:grid-rows-subgrid md:gap-y-6"
+              >
                 <h3 className="font-display text-2xl leading-tight text-ink">{r.label}</h3>
-                <ol className="mt-6 space-y-3">
+                <ol className="space-y-3">
                   {r.steps.map((s, i) => (
-                    <li key={s} className="flex gap-3 text-[0.95rem] leading-relaxed">
-                      <span className="label shrink-0 pt-0.5 text-clay">
+                    <li key={s} className="grid grid-cols-[2rem_1fr] text-[0.95rem] leading-relaxed">
+                      <span className="label pt-0.5 text-clay tabular">
                         {String(i + 1).padStart(2, "0")}
                       </span>
                       <span className="text-ink-soft">{s}</span>
                     </li>
                   ))}
                 </ol>
-                <p className="mt-5 border-l-2 border-clay pl-4 text-[0.88rem] leading-relaxed text-ink-mute">
+                <p className="self-start border-l-2 border-clay pl-4 text-[0.88rem] leading-relaxed text-ink-mute">
                   {r.note}
                 </p>
-
-                {r.id === "car" ? (
-                  <figure className="mt-7">
-                    <figcaption className="label text-clay">Where to park</figcaption>
-                    <div className="mt-3 border border-hairline bg-paper p-1.5">
+                <figure>
+                  <figcaption className="label text-clay">{r.media.label}</figcaption>
+                  <div className="relative mt-3 aspect-[4/3] overflow-hidden border border-hairline bg-paper">
+                    {r.id === "car" ? (
                       <iframe
                         title={`Map showing ${PARKING.name}`}
                         src={PARKING_EMBED}
                         loading="lazy"
                         referrerPolicy="no-referrer-when-downgrade"
-                        className="aspect-[4/3] w-full"
+                        className="absolute inset-0 h-full w-full"
                       />
-                    </div>
-                    <p className="mt-2 text-[0.85rem] text-ink-mute">{PARKING.name}</p>
-                  </figure>
-                ) : (
-                  <>
-                  <figure className="mt-7">
-                    <figcaption className="label text-clay">Quezon Avenue station</figcaption>
-                    <div className="relative mt-3 aspect-[4/3] overflow-hidden border border-hairline bg-paper">
+                    ) : (
                       <Image
                         src="/photos/mrt-quezon-avenue.jpg"
                         alt="Inside MRT-3 Quezon Avenue station, under the Quezon Avenue sign"
@@ -159,22 +170,17 @@ export default function VisitPage() {
                         className="object-cover"
                         style={{ objectPosition: "center 35%" }}
                       />
+                    )}
+                  </div>
+                </figure>
+                <dl className="divide-y divide-hairline border-y border-hairline">
+                  {r.facts.map(([k, v]) => (
+                    <div key={k} className="flex justify-between gap-4 py-3">
+                      <dt className="label text-ink-mute">{k}</dt>
+                      <dd className="text-right text-[0.95rem] text-ink">{v}</dd>
                     </div>
-                  </figure>
-                  <dl className="mt-7 divide-y divide-hairline border-y border-hairline">
-                    {[
-                      ["Nearest station", "MRT-3 Quezon Avenue"],
-                      ["From the platform", "Connected by a walkway"],
-                      ["Floor", "Second floor, Centris Station"],
-                    ].map(([k, v]) => (
-                      <div key={k} className="flex justify-between gap-4 py-3">
-                        <dt className="label text-ink-mute">{k}</dt>
-                        <dd className="text-right text-[0.95rem] text-ink">{v}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                  </>
-                )}
+                  ))}
+                </dl>
               </div>
             ))}
           </div>
