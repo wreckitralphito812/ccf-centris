@@ -2,9 +2,9 @@
 
 import { useActionState, useMemo, useState, startTransition } from "react";
 import Link from "next/link";
-import type { Facility, Slot } from "@/lib/types";
-import { fmtDayLong, fmtPeso, fmtTime } from "@/lib/format";
-import { Button, Pill, cx } from "@/components/ui";
+import type { Facility } from "@/lib/types";
+import { fmtDayLong, fmtTime } from "@/lib/format";
+import { Button, cx } from "@/components/ui";
 import { Field, FormSuccess, controlClass } from "@/components/form";
 import {
   createReservation,
@@ -12,44 +12,47 @@ import {
 } from "@/app/actions/reservations";
 
 /**
- * Court and room booking.
+ * Room request for ministry gatherings.
  *
- * Two shapes behind one flow: a court is booked by the hour from a live
- * availability grid, a room is a request with setup, layout, and equipment
- * that a facilities admin approves. The step list adapts rather than showing
- * irrelevant questions.
+ * Rooms only: the page hands in facilities without courts, so there is no
+ * court grid here. Court booking will be its own flow once the Sports Hall
+ * setup and rates are settled. The server action still accepts `court_id`;
+ * this flow just never sends one.
  *
- * Nothing is charged and no total is shown. Rooms are free for ministries, and
- * court rates aren't set yet, so any price here would be invented. A court
- * booking ends "reserved" and a room ends "pending approval".
+ * Every request lands as `pending` and a facilities admin approves it before
+ * it goes on the calendar. Nothing is charged and no price or capacity is
+ * shown, because rooms are free for ministries and room capacities aren't
+ * confirmed yet.
  */
 
 type Step = 1 | 2 | 3 | 4;
 
+/** The action accepts up to 8 hours per request. */
+const MAX_HOURS = 8;
+
 export function BookingFlow({
   facilities,
-  slotsByCourt,
   initialFacility,
-  initialCourt,
-  date,
-  dateOptions,
+  initialDate,
+  today,
 }: {
   facilities: Facility[];
-  slotsByCourt: Record<string, Slot[]>;
   initialFacility: string | null;
-  initialCourt: string | null;
-  date: string;
-  dateOptions: string[];
+  initialDate: string | null;
+  today: string;
 }) {
   const [step, setStep] = useState<Step>(1);
-  const [facilitySlug, setFacilitySlug] = useState<string | null>(initialFacility);
-  const [courtId, setCourtId] = useState<string | null>(initialCourt);
-  const [chosenDate, setChosenDate] = useState(date);
-  const [startIso, setStartIso] = useState<string | null>(null);
+  const [facilitySlug, setFacilitySlug] = useState<string | null>(
+    facilities.some((f) => f.slug === initialFacility) ? initialFacility : null,
+  );
+  const [chosenDate, setChosenDate] = useState(initialDate ?? "");
+  const [startTime, setStartTime] = useState<string | null>(null);
   const [hours, setHours] = useState(1);
-  const [participants, setParticipants] = useState(4);
+  const [participants, setParticipants] = useState("");
   const [layout, setLayout] = useState("");
   const [accepted, setAccepted] = useState(false);
+  // Captured once so start times already past today can be greyed out.
+  const [loadedAt] = useState(() => Date.now());
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -70,42 +73,42 @@ export function BookingFlow({
     [facilitySlug, facilities],
   );
 
-  const isCourt = Boolean(facility?.courts.length);
-  const slots = courtId ? (slotsByCourt[courtId] ?? []) : [];
+  const times = useMemo(() => startTimes(facility), [facility]);
+  const startIso =
+    chosenDate && startTime ? `${chosenDate}T${startTime}:00+08:00` : null;
 
-  /** Consecutive availability from the chosen start, capped at 4 hours. */
+  /** Hours left before the room closes, capped at what the action accepts. */
   const maxHours = useMemo(() => {
-    if (!startIso) return 1;
-    const i = slots.findIndex((s) => s.start === startIso);
-    if (i < 0) return 1;
-    let n = 0;
-    while (n < 4 && slots[i + n]?.state === "available") n++;
-    return Math.max(1, n);
-  }, [startIso, slots]);
+    if (!facility || !startTime) return 1;
+    const close = Number(facility.close_time.slice(0, 2));
+    const start = Number(startTime.slice(0, 2));
+    return Math.max(1, Math.min(MAX_HOURS, close - start));
+  }, [facility, startTime]);
+
+  const headcount = Number(participants);
+  const headcountOk = Number.isInteger(headcount) && headcount >= 1;
 
   const canContinue1 = Boolean(facility);
-  const canContinue2 = isCourt ? Boolean(courtId && startIso) : Boolean(chosenDate && startIso);
+  const canContinue2 = Boolean(chosenDate && startTime);
+  const canContinue3 = Boolean(form.activity.trim()) && headcountOk;
 
-  // 24h HH:MM in Manila, for the hidden start_time field the action parses.
-  const start24 = startIso
-    ? new Intl.DateTimeFormat("en-GB", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-        timeZone: "Asia/Manila",
-      }).format(new Date(startIso))
-    : "";
+  // Problems the server found with earlier steps, shown on the last step.
+  const earlierErrors = [
+    errors.facility_slug,
+    errors.date,
+    errors.start_time,
+    errors.hours,
+    errors.participants,
+  ].filter(Boolean);
 
   if (result?.ok) {
     return (
       <Confirmation
         reference={result.reference ?? "—"}
         facility={facility}
-        courtId={courtId}
         startIso={startIso}
         hours={hours}
-        isCourt={isCourt}
-        participants={participants}
+        participants={headcount}
       />
     );
   }
@@ -113,16 +116,16 @@ export function BookingFlow({
   return (
     <div className="grid gap-10 lg:grid-cols-[1fr_21rem] lg:items-start">
       <div>
-        <Steps step={step} isCourt={isCourt} />
+        <Steps step={step} />
 
-        {/* 1. Space */}
+        {/* 1. Room */}
         {step === 1 ? (
           <Panel
-            title="What do you need?"
-            body="Courts are booked by the hour. Rooms are a request, and the facilities team confirms them."
+            title="Which room?"
+            body="Pick the room that fits your group best. If you're not sure, choose the closest one and tell us in your request."
           >
             <fieldset className="mt-6">
-              <legend className="sr-only">Choose a space</legend>
+              <legend className="sr-only">Choose a room</legend>
               <div className="space-y-px border border-hairline bg-hairline">
                 {facilities.map((f) => (
                   <label
@@ -138,8 +141,8 @@ export function BookingFlow({
                       checked={facilitySlug === f.slug}
                       onChange={() => {
                         setFacilitySlug(f.slug);
-                        setCourtId(null);
-                        setStartIso(null);
+                        setStartTime(null);
+                        setHours(1);
                         setLayout("");
                       }}
                       className="mt-1 h-4 w-4 accent-clay"
@@ -153,28 +156,22 @@ export function BookingFlow({
                           {f.description}
                         </span>
                       ) : null}
-                      <span className="mt-2 flex flex-wrap gap-2">
-                        {f.capacity ? (
-                          <Pill tone="muted">Up to {f.capacity}</Pill>
-                        ) : null}
-                        {f.hourly_rate_cents === 0 ? (
-                          <Pill tone="moss">No charge</Pill>
-                        ) : f.hourly_rate_cents === null ? (
-                          <Pill tone="muted">Rates to be posted</Pill>
-                        ) : (
-                          <Pill tone="muted">
-                            {fmtPeso(f.hourly_rate_cents)}/hr
-                          </Pill>
-                        )}
-                        {f.requires_approval ? (
-                          <Pill tone="clay">Needs approval</Pill>
-                        ) : null}
-                      </span>
                     </span>
                   </label>
                 ))}
               </div>
             </fieldset>
+
+            <p className="mt-4 text-[0.85rem] text-ink-mute">
+              Meeting as a Dgroup?{" "}
+              <Link
+                href="/reserve/dgroup"
+                className="text-clay underline underline-offset-4"
+              >
+                Book a Dgroup table
+              </Link>{" "}
+              instead.
+            </p>
 
             <Nav onNext={() => setStep(2)} nextDisabled={!canContinue1} />
           </Panel>
@@ -184,109 +181,75 @@ export function BookingFlow({
         {step === 2 ? (
           <Panel
             title="When?"
-            body={
-              isCourt
-                ? "Pick a court, then an hour. Grey slots are already taken."
-                : "Choose a date and a start time. Include your setup and packing-down time."
-            }
+            body="Choose a date, a start time and how long you need the room. Include your setup and pack-down time."
           >
-            {isCourt && facility ? (
-              <fieldset className="mt-6">
-                <legend className="label text-ink-mute">Court</legend>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {facility.courts.map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      aria-pressed={courtId === c.id}
-                      onClick={() => {
-                        setCourtId(c.id);
-                        setStartIso(null);
-                      }}
-                      className={cx(
-                        "btn-press label border px-3.5 py-2 transition-colors",
-                        courtId === c.id
-                          ? "border-clay bg-clay text-paper-bright"
-                          : "border-ink/25 text-ink hover:border-ink",
-                      )}
-                    >
-                      {c.name}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-            ) : null}
-
-            <fieldset className="mt-7">
-              <legend className="label text-ink-mute">Date</legend>
-              <div className="no-bar mt-3 flex gap-2 overflow-x-auto pb-1">
-                {dateOptions.map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    aria-pressed={chosenDate === d}
-                    onClick={() => {
-                      setChosenDate(d);
-                      setStartIso(null);
+            <div className="mt-6 max-w-xs">
+              <Field label="Date" name="date" required>
+                {(p) => (
+                  <input
+                    {...p}
+                    type="date"
+                    min={today}
+                    value={chosenDate}
+                    onChange={(e) => {
+                      setChosenDate(e.target.value);
+                      setStartTime(null);
+                      setHours(1);
                     }}
-                    className={cx(
-                      "btn-press label shrink-0 border px-3.5 py-2 transition-colors",
-                      chosenDate === d
-                        ? "border-clay bg-clay text-paper-bright"
-                        : "border-ink/25 text-ink hover:border-ink",
-                    )}
-                  >
-                    {fmtDayLong(`${d}T12:00:00+08:00`).split(",")[0].slice(0, 3)}
-                    <span className="ml-1.5 opacity-60">{d.slice(8)}</span>
-                  </button>
-                ))}
-              </div>
-              {chosenDate !== date ? (
-                <p className="mt-2 text-[0.8rem] text-ink-mute">
-                  Showing availability for {fmtDayLong(`${date}T12:00:00+08:00`)}.
-                  Other dates are confirmed by the facilities team.
+                    className={controlClass}
+                  />
+                )}
+              </Field>
+              {chosenDate ? (
+                <p className="mt-2 text-[0.85rem] text-ink-mute">
+                  {fmtDayLong(`${chosenDate}T12:00:00+08:00`)}
                 </p>
               ) : null}
-            </fieldset>
+            </div>
 
-            {(isCourt && courtId) || !isCourt ? (
+            {chosenDate ? (
               <fieldset className="mt-7">
                 <legend className="label text-ink-mute">Start time</legend>
                 <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
-                  {(isCourt ? slots : genericSlots(facility)).map((s) => {
-                    const taken = s.state !== "available";
-                    const on = startIso === s.start;
+                  {times.map((t) => {
+                    const iso = `${chosenDate}T${t}:00+08:00`;
+                    const past =
+                      chosenDate === today &&
+                      new Date(iso).getTime() < loadedAt;
+                    const on = startTime === t;
                     return (
                       <button
-                        key={s.start}
+                        key={t}
                         type="button"
-                        disabled={taken}
+                        disabled={past}
                         aria-pressed={on}
                         onClick={() => {
-                          setStartIso(s.start);
+                          setStartTime(t);
                           setHours(1);
                         }}
                         className={cx(
                           "btn-press border px-2 py-2.5 text-[0.82rem] font-semibold transition-colors",
-                          taken &&
+                          past &&
                             "cursor-not-allowed border-transparent bg-ink/5 text-ink-mute/50 line-through",
-                          !taken &&
-                            on &&
-                            "border-clay bg-clay text-paper-bright",
-                          !taken &&
+                          !past && on && "border-clay bg-clay text-paper-bright",
+                          !past &&
                             !on &&
                             "border-ink/25 text-ink hover:border-ink",
                         )}
                       >
-                        {fmtTime(s.start)}
+                        {fmtTime(iso)}
                       </button>
                     );
                   })}
                 </div>
+                <p className="mt-2 text-[0.8rem] text-ink-mute">
+                  The facilities team checks the calendar and confirms the time
+                  with you.
+                </p>
               </fieldset>
             ) : null}
 
-            {startIso ? (
+            {startTime ? (
               <fieldset className="mt-7">
                 <legend className="label text-ink-mute">How long?</legend>
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -307,12 +270,6 @@ export function BookingFlow({
                     </button>
                   ))}
                 </div>
-                {maxHours < 4 ? (
-                  <p className="mt-2 text-[0.8rem] text-ink-mute">
-                    The next slot is taken, so this booking can run up to{" "}
-                    {maxHours} {maxHours === 1 ? "hour" : "hours"}.
-                  </p>
-                ) : null}
               </fieldset>
             ) : null}
 
@@ -328,123 +285,114 @@ export function BookingFlow({
         {step === 3 ? (
           <Panel
             title="Details"
-            body={
-              isCourt
-                ? "Who's playing, and anything you need from the equipment desk."
-                : "Tell us what the room is for so the team can set it up properly."
-            }
+            body="Tell us what the room is for so the team can set it up properly."
           >
-            {!isCourt ? (
-              <div className="mt-6 space-y-5">
-                <Field label="Activity or event name" name="activity" required>
-                  {(p) => (
-                    <input
-                      {...p}
-                      type="text"
-                      value={form.activity}
-                      onChange={(e) =>
-                        setForm({ ...form, activity: e.target.value })
-                      }
-                      className={controlClass}
-                    />
-                  )}
-                </Field>
+            <div className="mt-6 space-y-5">
+              <Field label="Activity or event name" name="activity" required>
+                {(p) => (
+                  <input
+                    {...p}
+                    type="text"
+                    value={form.activity}
+                    onChange={(e) =>
+                      setForm({ ...form, activity: e.target.value })
+                    }
+                    className={controlClass}
+                  />
+                )}
+              </Field>
+              <Field label="Ministry or group" name="org" hint="Optional">
+                {(p) => (
+                  <input
+                    {...p}
+                    type="text"
+                    value={form.org}
+                    onChange={(e) => setForm({ ...form, org: e.target.value })}
+                    className={controlClass}
+                  />
+                )}
+              </Field>
+              <div className="max-w-xs">
                 <Field
-                  label="Organisation or ministry"
-                  name="org"
-                  hint="Optional"
+                  label="How many people?"
+                  name="participants"
+                  required
+                  hint="Your best guess is fine"
                 >
                   {(p) => (
                     <input
                       {...p}
-                      type="text"
-                      value={form.org}
-                      onChange={(e) => setForm({ ...form, org: e.target.value })}
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      step={1}
+                      value={participants}
+                      onChange={(e) => setParticipants(e.target.value)}
                       className={controlClass}
                     />
                   )}
                 </Field>
-                <Field label="What's it for?" name="purpose">
-                  {(p) => (
-                    <textarea
-                      {...p}
-                      rows={3}
-                      value={form.purpose}
-                      onChange={(e) =>
-                        setForm({ ...form, purpose: e.target.value })
-                      }
-                      className={controlClass}
-                      placeholder="A GLC class, a team training, a Dgroup leaders' meeting. Mention any chairs, tables, or AV you'll need."
-                    />
-                  )}
-                </Field>
-
-                {facility?.layouts.length ? (
-                  <fieldset>
-                    <legend className="label text-ink-mute">Seating layout</legend>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {facility.layouts.map((l) => (
-                        <button
-                          key={l}
-                          type="button"
-                          aria-pressed={layout === l}
-                          onClick={() => setLayout(layout === l ? "" : l)}
-                          className={cx(
-                            "btn-press label border px-3.5 py-2 transition-colors",
-                            layout === l
-                              ? "border-clay bg-clay text-paper-bright"
-                              : "border-ink/25 text-ink hover:border-ink",
-                          )}
-                        >
-                          {l}
-                        </button>
-                      ))}
-                    </div>
-                  </fieldset>
-                ) : null}
               </div>
-            ) : null}
+              <Field
+                label="Anything else we should know?"
+                name="purpose"
+                hint="Optional"
+              >
+                {(p) => (
+                  <textarea
+                    {...p}
+                    rows={3}
+                    value={form.purpose}
+                    onChange={(e) =>
+                      setForm({ ...form, purpose: e.target.value })
+                    }
+                    className={controlClass}
+                    placeholder="A GLC class, a team training, a Dgroup leaders' meeting. Mention any chairs, tables or AV you'll need, or if this repeats weekly or monthly."
+                  />
+                )}
+              </Field>
 
-            <div className="mt-6 flex items-center justify-between border border-hairline px-4 py-3">
-              <span className="label text-ink-mute">
-                {isCourt ? "Players" : "Expected participants"}
-              </span>
-              <span className="flex items-center gap-4">
-                <button
-                  type="button"
-                  aria-label="Fewer"
-                  onClick={() => setParticipants((p) => Math.max(1, p - 1))}
-                  className="btn-press flex h-8 w-8 items-center justify-center border border-ink/25 transition-colors hover:border-ink"
-                >
-                  −
-                </button>
-                <span className="font-display w-8 text-center text-xl tabular-nums">
-                  {participants}
-                </span>
-                <button
-                  type="button"
-                  aria-label="More"
-                  onClick={() =>
-                    setParticipants((p) =>
-                      Math.min(facility?.capacity ?? 200, p + 1),
-                    )
-                  }
-                  className="btn-press flex h-8 w-8 items-center justify-center border border-ink/25 transition-colors hover:border-ink"
-                >
-                  +
-                </button>
-              </span>
+              {facility?.layouts.length ? (
+                <fieldset>
+                  <legend className="label text-ink-mute">
+                    Seating layout{" "}
+                    <span className="normal-case tracking-normal">(optional)</span>
+                  </legend>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {facility.layouts.map((l) => (
+                      <button
+                        key={l}
+                        type="button"
+                        aria-pressed={layout === l}
+                        onClick={() => setLayout(layout === l ? "" : l)}
+                        className={cx(
+                          "btn-press label border px-3.5 py-2 transition-colors",
+                          layout === l
+                            ? "border-clay bg-clay text-paper-bright"
+                            : "border-ink/25 text-ink hover:border-ink",
+                        )}
+                      >
+                        {l}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+              ) : null}
             </div>
 
-            <Nav onBack={() => setStep(2)} onNext={() => setStep(4)} />
+            <Nav
+              onBack={() => setStep(2)}
+              onNext={() => setStep(4)}
+              nextDisabled={!canContinue3}
+            />
           </Panel>
         ) : null}
 
-        {/* 4. Confirm */}
+        {/* 4. Send */}
         {step === 4 ? (
           <Panel
             title="Nearly there"
-            body="We need a name and an email so the facilities team can reach you."
+            body="We need a name and an email so the facilities team can reach you about this request."
           >
             <form
               className="mt-6 space-y-5"
@@ -453,11 +401,10 @@ export function BookingFlow({
                 e.preventDefault();
                 const fd = new FormData();
                 fd.set("facility_slug", facilitySlug ?? "");
-                if (isCourt && courtId) fd.set("court_id", courtId);
                 fd.set("date", chosenDate);
-                fd.set("start_time", start24);
+                fd.set("start_time", startTime ?? "");
                 fd.set("hours", String(hours));
-                fd.set("participants", String(participants));
+                fd.set("participants", String(headcount));
                 if (layout) fd.set("layout", layout);
                 fd.set("activity", form.activity);
                 fd.set("org", form.org);
@@ -469,10 +416,13 @@ export function BookingFlow({
                 startTransition(() => submit(fd));
               }}
             >
-              {result?.formError ? (
-                <p className="border border-clay bg-clay/8 px-4 py-3 text-[0.85rem] font-semibold text-clay-deep">
-                  {result.formError}
-                </p>
+              {result?.formError || earlierErrors.length ? (
+                <div className="border border-clay bg-clay/8 px-4 py-3 text-[0.85rem] font-semibold text-clay-deep">
+                  {result?.formError ? <p>{result.formError}</p> : null}
+                  {earlierErrors.map((m) => (
+                    <p key={m}>{m} Go back to fix it.</p>
+                  ))}
+                </div>
               ) : null}
 
               <Field label="Your name" name="name" required error={errors.name}>
@@ -521,22 +471,18 @@ export function BookingFlow({
               </div>
 
               <div className="border border-hairline bg-paper-bright p-5">
-                <p className="label text-ink-mute">Before you confirm</p>
+                <p className="label text-ink-mute">Before you send</p>
                 <ul className="mt-3 space-y-2 text-[0.88rem] leading-relaxed text-ink-soft">
-                  {(facility?.rules
-                    ? [facility.rules]
-                    : ["Please leave the space as you found it."]
-                  ).map((r) => (
+                  {[
+                    "Include setup and pack-down in the time you asked for.",
+                    "Leave the room as you found it.",
+                    "If plans change, tell us as early as you can.",
+                  ].map((r) => (
                     <li key={r} className="flex gap-3">
                       <span aria-hidden className="mt-2 h-1 w-3 shrink-0 bg-clay" />
                       {r}
                     </li>
                   ))}
-                  <li className="flex gap-3">
-                    <span aria-hidden className="mt-2 h-1 w-3 shrink-0 bg-clay" />
-                    Cancel at least 24 hours ahead, or the slot is held against
-                    your booking history.
-                  </li>
                 </ul>
 
                 <label className="mt-5 flex items-start gap-3">
@@ -550,8 +496,14 @@ export function BookingFlow({
                     className="mt-1 h-4 w-4 accent-clay"
                   />
                   <span className="text-[0.9rem] text-ink-soft">
-                    I have read the rules and accept them on behalf of everyone
-                    in my group.
+                    I&rsquo;ve read the{" "}
+                    <Link
+                      href="/centris/reserve#policies"
+                      className="text-clay underline underline-offset-4"
+                    >
+                      room policies
+                    </Link>{" "}
+                    and will pass them on to my group.
                   </span>
                 </label>
                 {errors.accept ? (
@@ -570,11 +522,7 @@ export function BookingFlow({
                   Back
                 </Button>
                 <Button type="submit" size="lg" disabled={pending}>
-                  {pending
-                    ? "Sending…"
-                    : facility?.requires_approval
-                      ? "Send request"
-                      : "Confirm booking"}
+                  {pending ? "Sending…" : "Send request"}
                 </Button>
               </div>
             </form>
@@ -584,48 +532,38 @@ export function BookingFlow({
 
       {/* Running summary */}
       <aside className="border border-hairline bg-paper-bright p-6 lg:sticky lg:top-28">
-        <p className="label text-clay">Your booking</p>
+        <p className="label text-clay">Your request</p>
         <dl className="mt-5 space-y-4 text-[0.9rem]">
-          <Row label="Space" value={facility?.name ?? "Not chosen"} />
-          {isCourt ? (
-            <Row
-              label="Court"
-              value={
-                facility?.courts.find((c) => c.id === courtId)?.name ??
-                "Not chosen"
-              }
-            />
-          ) : null}
+          <Row label="Room" value={facility?.name ?? "Not chosen"} />
           <Row
             label="When"
             value={
               startIso
                 ? `${fmtDayLong(startIso)}, ${fmtTime(startIso)}`
-                : "Not chosen"
+                : chosenDate
+                  ? fmtDayLong(`${chosenDate}T12:00:00+08:00`)
+                  : "Not chosen"
             }
           />
           <Row
             label="Length"
             value={`${hours} ${hours === 1 ? "hour" : "hours"}`}
           />
-          <Row
-            label={isCourt ? "Players" : "Participants"}
-            value={String(participants)}
-          />
+          {headcountOk ? (
+            <Row label="People" value={String(headcount)} />
+          ) : null}
           {layout ? <Row label="Layout" value={layout} /> : null}
         </dl>
 
         <p className="mt-6 border-t border-hairline pt-5 text-[0.8rem] leading-relaxed text-ink-mute">
-          {isCourt
-            ? "Court rates will be posted soon. Nothing is charged online."
-            : "Rooms are free for ministries. Nothing is charged online."}{" "}
-          Keep your reference.
+          Rooms are free for ministries. The facilities team confirms each
+          request before it goes on the calendar.
         </p>
         <Link
           href="/centris/reserve#policies"
           className="label mt-3 inline-block text-clay underline underline-offset-4"
         >
-          Booking policies
+          Room policies
         </Link>
       </aside>
     </div>
@@ -637,62 +575,46 @@ export function BookingFlow({
 function Confirmation({
   reference,
   facility,
-  courtId,
   startIso,
   hours,
-  isCourt,
   participants,
 }: {
   reference: string;
   facility: Facility | null;
-  courtId: string | null;
   startIso: string | null;
   hours: number;
-  isCourt: boolean;
   participants: number;
 }) {
-  const pending = facility?.requires_approval ?? false;
-  const ref = reference;
-
   return (
     <div className="mx-auto max-w-2xl">
       <FormSuccess className="p-8">
-        <p className="label text-clay">
-          {pending ? "Request sent" : "Booking confirmed"}
-        </p>
-        <h2 className="display-md mt-3">
-          {pending ? "We'll confirm within a day." : "You're booked."}
-        </h2>
+        <p className="label text-clay">Request sent</p>
+        <h2 className="display-md mt-3">Thanks. We got your request.</h2>
         <p className="mt-4 leading-relaxed text-ink-soft">
-          {pending
-            ? "The facilities team reviews room requests and will email you once it is confirmed. Nothing is held until then."
-            : "Your court is held. Come to the Sports Hall desk a few minutes early and give your reference."}
+          The facilities team will check the calendar and email you once your
+          room is confirmed. The room isn&rsquo;t held until then, so please
+          wait for that email before announcing it to your group.
         </p>
 
         <div className="mt-7 border border-dashed border-ink/25 bg-paper-bright p-6 text-center">
           <p className="label text-ink-mute">Reference</p>
           <p className="font-display mt-1 text-3xl tracking-wider tabular">
-            {ref}
+            {reference}
+          </p>
+          <p className="mt-2 text-[0.8rem] text-ink-mute">
+            Mention this if you need to ask about your request.
           </p>
         </div>
 
         <dl className="mt-7 divide-y divide-hairline border-y border-hairline">
           {[
-            ["Space", facility?.name ?? "—"],
-            ...(isCourt
-              ? [[
-                  "Court",
-                  facility?.courts.find((c) => c.id === courtId)?.name ?? "—",
-                ] as [string, string]]
-              : []),
+            ["Room", facility?.name ?? "—"],
             [
               "When",
-              startIso
-                ? `${fmtDayLong(startIso)}, ${fmtTime(startIso)}`
-                : "—",
+              startIso ? `${fmtDayLong(startIso)}, ${fmtTime(startIso)}` : "—",
             ],
             ["Length", `${hours} ${hours === 1 ? "hour" : "hours"}`],
-            [isCourt ? "Players" : "Participants", String(participants)],
+            ["People", String(participants)],
           ].map(([k, v]) => (
             <div key={k} className="flex justify-between gap-4 py-3">
               <dt className="label text-ink-mute">{k}</dt>
@@ -702,23 +624,21 @@ function Confirmation({
         </dl>
 
         <p className="mt-5 text-[0.85rem] leading-relaxed text-ink-mute">
-          {isCourt
-            ? "Court rates will be posted soon. Nothing was charged online."
-            : "There is no charge. Rooms are free for ministries."}
+          There is no charge. Rooms are free for ministries.
         </p>
 
         <div className="mt-7 flex flex-wrap gap-3">
           <Link
-            href="/centris/availability"
+            href="/my/reservations"
             className="btn-press label border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
           >
-            Book another
+            See my requests
           </Link>
           <Link
-            href="/centris/sports"
+            href="/reserve"
             className="btn-press label border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
           >
-            Sports at Centris
+            Back to Reserve
           </Link>
         </div>
       </FormSuccess>
@@ -728,8 +648,8 @@ function Confirmation({
 
 /* --- Bits ------------------------------------------------------------------ */
 
-function Steps({ step, isCourt }: { step: Step; isCourt: boolean }) {
-  const labels = ["Space", "When", isCourt ? "Players" : "Details", "Confirm"];
+function Steps({ step }: { step: Step }) {
+  const labels = ["Room", "When", "Details", "Send"];
   return (
     <ol className="flex flex-wrap gap-x-6 gap-y-2 border-b border-hairline pb-5">
       {labels.map((l, i) => {
@@ -813,20 +733,15 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-/** Rooms have no live grid, so offer the facility's opening hours. */
-function genericSlots(f: Facility | null): Slot[] {
+/**
+ * Hourly start times ("HH:MM", Manila) within the room's listed hours. Rooms
+ * have no live grid; the facilities team checks the calendar on approval.
+ */
+function startTimes(f: Facility | null): string[] {
   if (!f) return [];
   const open = Number(f.open_time.slice(0, 2));
   const close = Number(f.close_time.slice(0, 2));
-  const base = new Date();
-  base.setHours(0, 0, 0, 0);
-  return Array.from({ length: Math.max(0, close - open) }, (_, i) => {
-    const d = new Date(base);
-    d.setHours(open + i);
-    return {
-      start: d.toISOString(),
-      end: new Date(d.getTime() + 3600_000).toISOString(),
-      state: "available" as const,
-    };
-  });
+  return Array.from({ length: Math.max(0, close - open) }, (_, i) =>
+    `${String(open + i).padStart(2, "0")}:00`,
+  );
 }

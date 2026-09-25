@@ -79,7 +79,7 @@ export function parseReservation(fd: FormData): Parsed<ReservationInput> {
   else if (!EMAIL.test(contact_email))
     fieldErrors.email = "That does not look like an email address.";
 
-  if (!accepted) fieldErrors.accept = "Please read and accept the rules first.";
+  if (!accepted) fieldErrors.accept = "Please read and accept the policies first.";
 
   let starts_at = "";
   let ends_at = "";

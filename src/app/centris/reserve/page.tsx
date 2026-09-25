@@ -1,25 +1,45 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Eyebrow, Section, SectionHead } from "@/components/ui";
-import {
-  getCourtSlots,
-  getFacility,
-  getReservableFacilities,
-} from "@/lib/queries";
+import { getReservableFacilities } from "@/lib/queries";
 import { currentUser } from "@/lib/supabase/ssr";
 import { hasSupabase } from "@/lib/supabase/server";
-import { addDaysKey, manilaDateKey } from "@/lib/format";
+import { manilaDateKey } from "@/lib/format";
+import type { Facility } from "@/lib/types";
 import { BookingFlow } from "./booking";
 
 export const metadata: Metadata = {
-  title: "Reserve a space",
+  title: "Request a room",
   description:
-    "Book the basketball or pickleball court, or request a multipurpose hall at CCF Centris. Rooms are free for ministries.",
+    "Request a room at CCF Centris for ministry meetings, trainings and events. Rooms are free, and the facilities team confirms each request.",
 };
 
-/** Availability is live, so this page is never cached. */
+/** Sign-in state and today's date change per request, so never cache. */
 export const dynamic = "force-dynamic";
+
+/**
+ * Rooms a ministry can request here. The Sports Hall (anything with courts)
+ * waits for its own booking flow, and the Dgroup Lounge is booked through
+ * Dgroup tables at /reserve/dgroup.
+ */
+function isRequestableRoom(f: Facility): boolean {
+  return (
+    f.courts.length === 0 &&
+    f.kind !== "sports_hall" &&
+    f.kind !== "court" &&
+    f.kind !== "lounge"
+  );
+}
+
+const POLICIES: [string, string][] = [
+  ["Approval", "Every request is checked by the facilities team. We'll email you to confirm before your date. The room isn't yours until then."],
+  ["Free for ministries", "Rooms are free for ministry use. Nothing is charged through this site."],
+  ["Setup time", "Include setup and pack-down in the time you request, so the room is ready when your people arrive."],
+  ["Weekly or monthly use", "Meeting regularly? Mention it in your request and the team will talk it through with you."],
+  ["Cancelling", "If plans change, tell us as early as you can so another group can use the room."],
+  ["Blackout dates", "The center closes for some CCF-wide events and holidays. Requests on those dates can't be confirmed."],
+  ["Damage and lost property", "If something breaks, let the Welcome Center know. Lost items are kept there too."],
+];
 
 export default async function ReservePage({
   searchParams,
@@ -30,76 +50,65 @@ export default async function ReservePage({
 
   const today = manilaDateKey();
   const rawDate = one(sp.date);
-  const date = rawDate && /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? rawDate : today;
+  const initialDate =
+    rawDate && /^\d{4}-\d{2}-\d{2}$/.test(rawDate) && rawDate >= today
+      ? rawDate
+      : null;
 
-  // Booking needs an account. When Supabase isn't configured there are no
+  // Requests need an account. When Supabase isn't configured there are no
   // accounts, so the flow stays open (it just can't actually write).
   const signedIn = !hasSupabase() || Boolean(await currentUser());
 
-  const [facilities, hall] = await Promise.all([
-    getReservableFacilities(),
-    getFacility("sports-hall"),
-  ]);
+  const rooms = (await getReservableFacilities()).filter(isRequestableRoom);
+  const rawFacility = one(sp.facility);
+  const initialFacility = rooms.some((r) => r.slug === rawFacility)
+    ? rawFacility
+    : null;
 
-  // Preload every court's grid so the flow never waits on a click.
-  const slotsByCourt: Record<string, Awaited<ReturnType<typeof getCourtSlots>>> =
-    {};
-  if (hall) {
-    await Promise.all(
-      hall.courts.map(async (c) => {
-        slotsByCourt[c.id] = await getCourtSlots("sports-hall", c.id, date);
-      }),
-    );
-  }
-
-  const dateOptions = Array.from({ length: 14 }, (_, i) => addDaysKey(today, i));
+  const returnTo = (() => {
+    const q = new URLSearchParams();
+    if (initialFacility) q.set("facility", initialFacility);
+    if (initialDate) q.set("date", initialDate);
+    const s = q.toString();
+    return `/centris/reserve${s ? `?${s}` : ""}`;
+  })();
 
   return (
     <>
       <PageHeader
         eyebrow="Reserve"
-        title="Book a court or a room."
-        lead="Anyone can book the Sports Hall, CCF member or not. Multipurpose halls are for classes, trainings, and meetings."
+        title="Request a room."
+        lead="For ministry meetings, trainings and events. Rooms are free. Send a request and the facilities team will confirm it."
       />
 
       <Section>
         <Container>
           {signedIn ? (
             <BookingFlow
-              facilities={facilities}
-              slotsByCourt={slotsByCourt}
-              initialFacility={one(sp.facility)}
-              initialCourt={one(sp.court)}
-              date={date}
-              dateOptions={dateOptions}
+              facilities={rooms}
+              initialFacility={initialFacility}
+              initialDate={initialDate}
+              today={today}
             />
           ) : (
             <div className="mx-auto max-w-xl border border-hairline bg-paper-bright p-8 text-center">
               <Eyebrow>Sign in</Eyebrow>
               <h2 className="mt-3 font-display text-2xl">
-                Reserving needs an account
+                Please sign in first
               </h2>
               <p className="mx-auto mt-3 max-w-md text-[0.92rem] leading-relaxed text-ink-soft">
-                Sign in so you can see your bookings and cancel if plans change.
-                There&rsquo;s no password. We email you a sign-in link.
+                We ask you to sign in so each request has a real name and email,
+                and we can confirm the room with you. There&rsquo;s no password.
+                We email you a link to sign in.
               </p>
               <div className="mt-6">
                 <ButtonLink
-                  href={`/sign-in?next=${encodeURIComponent(
-                    `/centris/reserve${rawDate ? `?date=${date}` : ""}`,
-                  )}`}
+                  href={`/sign-in?next=${encodeURIComponent(returnTo)}`}
                   size="lg"
                 >
                   Sign in to continue
                 </ButtonLink>
               </div>
-              <p className="mt-6 text-[0.85rem] text-ink-mute">
-                Just browsing?{" "}
-                <Link href="/centris/availability" className="text-clay underline underline-offset-4">
-                  Check court availability
-                </Link>{" "}
-                without signing in.
-              </p>
             </div>
           )}
         </Container>
@@ -109,38 +118,17 @@ export default async function ReservePage({
         <Container>
           <SectionHead
             eyebrow="Policies"
-            title="Booking rules"
-            lead="These keep the center fair for everyone."
+            title="Room policies"
+            lead="A few things that help every ministry share the rooms well."
           />
-          <div className="mt-10 grid gap-px border border-hairline bg-hairline sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              ["Cancelling", "Cancel at least 24 hours ahead and there is no penalty. Repeated no-shows affect future bookings."],
-              ["Approval", "Courts are usually instant. Multipurpose halls are a request first, confirmed by the facilities team within a day."],
-              ["Payment", "Rooms are free for ministries. Court rates will be posted soon. Nothing is charged through this site."],
-              ["Footwear", "Non-marking indoor shoes are required on the sport floor. Other shoes damage the surface, so there are no exceptions."],
-              ["Setup time", "Room bookings must include setup and packing-down time in the window you book."],
-              ["Under 16s", "An adult must be present for anyone under 16 using the Sports Hall."],
-              ["Recurring bookings", "Weekly or monthly slots can be arranged, but need approval first."],
-              ["Blackout dates", "The center closes for some CCF-wide events and holidays. Those dates are blocked in advance."],
-              ["Damage and lost property", "Report anything broken to the desk. Lost property is held at the Welcome Center."],
-            ].map(([t, b]) => (
-              <div key={t} className="bg-paper-bright p-6">
-                <h3 className="font-display text-lg">{t}</h3>
-                <p className="mt-1.5 text-[0.88rem] leading-relaxed text-ink-soft">
-                  {b}
-                </p>
-              </div>
+          <ul className="mt-8 divide-y divide-hairline border-y border-hairline">
+            {POLICIES.map(([t, b]) => (
+              <li key={t} className="grid gap-1 py-4 sm:grid-cols-[12rem_1fr] sm:gap-6">
+                <span className="font-semibold text-ink">{t}</span>
+                <span className="leading-relaxed text-ink-soft">{b}</span>
+              </li>
             ))}
-          </div>
-
-          <div className="mt-10 border-l-2 border-clay bg-paper-bright py-4 pl-5 pr-4">
-            <Eyebrow>Note</Eyebrow>
-            <p className="mt-2 max-w-2xl leading-relaxed text-ink-soft">
-              Hours and policies shown here are placeholders and will be set by
-              the CCF Centris facilities team before the booking system opens
-              to the public.
-            </p>
-          </div>
+          </ul>
         </Container>
       </Section>
     </>
