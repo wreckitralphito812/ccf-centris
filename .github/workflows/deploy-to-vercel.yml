@@ -1,8 +1,14 @@
 name: Deploy to Vercel
 
-# Lets any collaborator's push or PR trigger a Vercel deploy without needing
-# their own Vercel account: pushes to main go to production, everything else
-# (PRs, other branches) gets a preview deployment with a URL posted back.
+# Preview deployments only: every PR gets a preview URL posted back, without
+# the author needing their own Vercel account.
+#
+# Production is NOT deployed from here. Vercel's own Git integration builds
+# main on Vercel with the real environment. This job builds after
+# `vercel pull`, which can't read Secret-typed variables and writes
+# "[SENSITIVE]" in their place, so a production build from here ships pages
+# prerendered without those values (seen 2026-09-25: every YouTube call
+# failed at build time). It also doubled every production deploy.
 #
 # Requires these repo secrets (Settings -> Secrets and variables -> Actions):
 #   VERCEL_TOKEN      - from https://vercel.com/account/tokens
@@ -10,8 +16,6 @@ name: Deploy to Vercel
 #   VERCEL_PROJECT_ID - from .vercel/project.json after `vercel link` locally
 
 on:
-  push:
-    branches: [main]
   pull_request: {}
   workflow_dispatch: {}
 
@@ -32,13 +36,13 @@ jobs:
         run: npm install --global vercel@latest
 
       - name: Pull Vercel environment
-        run: vercel pull --yes --environment=${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }} --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Build project
-        run: vercel build ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -50,7 +54,7 @@ jobs:
         # hit Vercel's free-plan cap of 5,000 uploads ("api-upload-free"),
         # which blocks deploys for 24 hours. Seen 2026-09-24.
         run: |
-          url=$(vercel deploy --prebuilt --archive=tgz ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }})
+          url=$(vercel deploy --prebuilt --archive=tgz --token=${{ secrets.VERCEL_TOKEN }})
           echo "url=$url" >> "$GITHUB_OUTPUT"
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
