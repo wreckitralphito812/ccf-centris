@@ -41,9 +41,7 @@ export default async function SportsPage() {
       <PageHeader
         eyebrow="Sports at Centris"
         title={
-          <>
-            Come and <span className="italic text-clay">play</span>.
-          </>
+          "Come and play."
         }
         lead="An 800-capacity hall with a full basketball court that converts for badminton and pickleball. Open to everyone, CCF member or not."
         tone="ink"
