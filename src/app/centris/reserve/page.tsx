@@ -64,48 +64,51 @@ export default async function ReservePage() {
         </Container>
       </Section>
 
-      <Section tone="deep">
-        <Container>
-          <SectionHead eyebrow="Rooms" title="Rooms and hours" />
-          <div className="mt-8 grid gap-10 lg:grid-cols-2">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[26rem] border-y border-hairline text-left text-[0.95rem]">
-                <thead>
-                  <tr className="border-b border-hairline">
-                    <th className="label py-3 pr-4 font-normal text-ink-mute">Room</th>
-                    {SETUPS.map((s) => (
-                      <th key={s.id} className="label py-3 pr-4 text-right font-normal text-ink-mute">
-                        {s.label}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-hairline">
-                  {MINISTRY_ROOMS.map((r) => (
-                    <tr key={r.slug}>
-                      <td className="py-3 pr-4 font-semibold text-ink">{r.name}</td>
+      {/* Signed-in members see all of this on the room board itself. */}
+      {user ? null : (
+        <Section tone="deep">
+          <Container>
+            <SectionHead eyebrow="Rooms" title="Rooms and hours" />
+            <div className="mt-8 grid gap-10 lg:grid-cols-2">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[26rem] border-y border-hairline text-left text-[0.95rem]">
+                  <thead>
+                    <tr className="border-b border-hairline">
+                      <th className="label py-3 pr-4 font-normal text-ink-mute">Room</th>
                       {SETUPS.map((s) => (
-                        <td key={s.id} className="py-3 pr-4 text-right tabular-nums text-ink-soft">
-                          {r.capacity[s.id] ?? "—"}
-                        </td>
+                        <th key={s.id} className="label py-3 pr-4 text-right font-normal text-ink-mute">
+                          {s.label}
+                        </th>
                       ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-              <p className="mt-3 text-[0.85rem] text-ink-mute">People per set-up.</p>
+                  </thead>
+                  <tbody className="divide-y divide-hairline">
+                    {MINISTRY_ROOMS.map((r) => (
+                      <tr key={r.slug}>
+                        <td className="py-3 pr-4 font-semibold text-ink">{r.name}</td>
+                        {SETUPS.map((s) => (
+                          <td key={s.id} className="py-3 pr-4 text-right tabular-nums text-ink-soft">
+                            {r.capacity[s.id] ?? "—"}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <p className="mt-3 text-[0.85rem] text-ink-mute">People per set-up.</p>
+              </div>
+              <ul className="divide-y divide-hairline border-y border-hairline">
+                {HOURS_SUMMARY.map(([t, b]) => (
+                  <li key={t} className="py-3">
+                    <span className="block font-semibold text-ink">{t}</span>
+                    <span className="mt-0.5 block leading-relaxed text-ink-soft">{b}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <ul className="divide-y divide-hairline border-y border-hairline">
-              {HOURS_SUMMARY.map(([t, b]) => (
-                <li key={t} className="py-3">
-                  <span className="block font-semibold text-ink">{t}</span>
-                  <span className="mt-0.5 block leading-relaxed text-ink-soft">{b}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </Container>
-      </Section>
+          </Container>
+        </Section>
+      )}
 
       {user ? null : (
         <Section id="policies" className="scroll-mt-24">

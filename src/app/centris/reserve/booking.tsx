@@ -84,6 +84,30 @@ const manilaNow = () => {
 
 const HATCH = "repeating-linear-gradient(135deg, var(--paper-deep) 0 6px, transparent 6px 12px)";
 
+/** One look for "chosen" everywhere: a teal outline with a light teal fill. */
+const CHOICE_ON = "bg-clay/[0.07] font-semibold text-clay shadow-[inset_0_0_0_2px_var(--clay)]";
+const CHOICE_OFF = "bg-paper-bright text-ink shadow-[inset_0_0_0_1px_var(--hairline)] hover:shadow-[inset_0_0_0_1px_var(--ink-mute)]";
+const CHOICE = "min-h-11 cursor-pointer px-4 py-2.5 text-[0.95rem] transition-[box-shadow,background-color] duration-150";
+
+const smoothTop = () =>
+  window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+
+function CheckIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
+  return (
+    <svg aria-hidden viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M3.5 8.5l3 3 6-7" />
+    </svg>
+  );
+}
+
+function ChevronIcon({ dir }: { dir: "left" | "right" }) {
+  return (
+    <svg aria-hidden viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+      <path d={dir === "left" ? "M10 3.5L5.5 8l4.5 4.5" : "M6 3.5L10.5 8 6 12.5"} />
+    </svg>
+  );
+}
+
 export function BookingFlow(props: { today: string; name: string; email: string; mobile: string }) {
   const [attempt, setAttempt] = useState(0);
   return <Request key={attempt} {...props} onAnother={() => setAttempt((a) => a + 1)} />;
@@ -180,7 +204,7 @@ function Request({
     return null;
   };
 
-  const picked = timed ? rooms.filter((slug) => !blocked(slug)) : [];
+  const picked = rooms.filter((slug) => !blocked(slug));
   const seats = picked.reduce((n, slug) => n + (MINISTRY_ROOMS.find((r) => r.slug === slug)!.capacity[setup] ?? 0), 0);
   const ministryName = ministry === "Other" ? ministryOther.trim() : ministry;
 
@@ -208,7 +232,7 @@ function Request({
   const toggleRoom = (slug: string) => setRooms((r) => (r.includes(slug) ? r.filter((s) => s !== slug) : [...r, slug]));
 
   const missingByStep: Record<StepId, string[]> = {
-    1: [!timed && "a time", timed && !picked.length && "a room"].filter(Boolean) as string[],
+    1: [!timed && "a time", !picked.length && "a room"].filter(Boolean) as string[],
     2: [!activity.trim() && "an event name", !ministryName && "your ministry"].filter(Boolean) as string[],
     3: [!name.trim() && "your name", mobile.replace(/\D/g, "").length < 7 && "a mobile number", !agreed && "the policies"].filter(
       Boolean,
@@ -235,7 +259,7 @@ function Request({
 
   const goTo = (s: StepId) => {
     setStep(s);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    smoothTop();
   };
 
   const prevWeek = addDays(week, -7);
@@ -277,10 +301,10 @@ function Request({
                 </p>
                 <div className="flex gap-2">
                   <ArrowButton label="Previous week" disabled={!canPrev} onClick={() => setWeek(prevWeek)}>
-                    &larr;
+                    <ChevronIcon dir="left" />
                   </ArrowButton>
                   <ArrowButton label="Next week" onClick={() => setWeek(addDays(week, 7))}>
-                    &rarr;
+                    <ChevronIcon dir="right" />
                   </ArrowButton>
                 </div>
               </div>
@@ -312,12 +336,12 @@ function Request({
                 })}
               </div>
 
-              <div className="mt-6 flex flex-wrap items-end gap-3">
+              <div className="mt-6 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-end">
                 <Labelled label="Starts">
                   <select
                     value={start === null ? "" : String(start)}
                     onChange={(ev) => pickStart(ev.target.value ? Number(ev.target.value) : null)}
-                    className={`${INPUT} w-40`}
+                    className={`${INPUT} sm:w-40`}
                   >
                     <option value="">Choose</option>
                     {starts.map((m) => (
@@ -327,13 +351,13 @@ function Request({
                     ))}
                   </select>
                 </Labelled>
-                <span className="pb-3.5 text-ink-mute">to</span>
+                <span className="hidden pb-3.5 text-ink-mute sm:inline">to</span>
                 <Labelled label="Ends">
                   <select
                     value={end === null ? "" : String(end)}
                     disabled={start === null}
                     onChange={(ev) => setEnd(ev.target.value ? Number(ev.target.value) : null)}
-                    className={`${INPUT} w-40 disabled:text-ink-mute`}
+                    className={`${INPUT} disabled:text-ink-mute sm:w-40`}
                   >
                     <option value="">{start === null ? "—" : "Choose"}</option>
                     {ends.map((m) => (
@@ -343,7 +367,7 @@ function Request({
                     ))}
                   </select>
                 </Labelled>
-                {timed ? <span className="pb-3.5 text-[0.95rem] text-ink-mute">{duration(start!, end!)}</span> : null}
+                {timed ? <span className="col-span-2 text-[0.95rem] text-ink-mute sm:pb-3.5">{duration(start!, end!)}</span> : null}
               </div>
               {e.date || e.time ? <Err>{e.date ?? e.time}</Err> : null}
             </Block>
@@ -375,11 +399,7 @@ function Request({
                       role="radio"
                       aria-checked={setup === s.id}
                       onClick={() => setSetup(s.id)}
-                      className={`px-4 py-2.5 text-[0.95rem] transition-colors ${
-                        setup === s.id
-                          ? "bg-ink font-semibold text-paper-bright"
-                          : "bg-paper-bright text-ink shadow-[inset_0_0_0_1px_var(--hairline)] hover:shadow-[inset_0_0_0_1px_var(--ink)]"
-                      }`}
+                      className={`${CHOICE} ${setup === s.id ? CHOICE_ON : CHOICE_OFF}`}
                     >
                       {s.label}
                     </button>
@@ -392,11 +412,7 @@ function Request({
 
             <Block
               title="Choose a room"
-              hint={
-                timed
-                  ? `Showing ${dateLong(date)}. Tick a room, or tap a free time on it to move your booking there.`
-                  : `Showing ${dateLong(date)}. Tap a free time on any room to start.`
-              }
+              hint={`${dateLong(date)}. Tick the rooms you need, or tap a free time on a room to pick both at once.`}
             >
               <RoomBoard
                 date={date}
@@ -407,6 +423,7 @@ function Request({
                 heldFor={heldFor}
                 blocked={blocked}
                 timed={timed}
+                loading={!loaded}
                 onToggle={toggleRoom}
                 onPick={pickFromTimeline}
               />
@@ -472,11 +489,7 @@ function Request({
                     type="button"
                     aria-pressed={food === f.id}
                     onClick={() => setFood(f.id)}
-                    className={`px-4 py-2.5 text-[0.95rem] transition-colors ${
-                      food === f.id
-                        ? "bg-ink font-semibold text-paper-bright"
-                        : "bg-paper-bright text-ink shadow-[inset_0_0_0_1px_var(--hairline)] hover:shadow-[inset_0_0_0_1px_var(--ink)]"
-                    }`}
+                    className={`${CHOICE} ${food === f.id ? CHOICE_ON : CHOICE_OFF}`}
                   >
                     {f.label}
                   </button>
@@ -573,15 +586,16 @@ function Request({
       </div>
 
       {/* The request so far and the next step, pinned to the bottom of the screen */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-paper-bright/95 shadow-[0_-8px_24px_-12px_rgba(20,32,33,0.18)] backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-paper-bright/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-12px_rgba(20,32,33,0.18)] backdrop-blur">
         <div className="mx-auto flex max-w-[82rem] items-center gap-4 px-5 py-3.5 sm:px-8">
           {step > 1 ? (
             <button
               type="button"
               onClick={() => goTo((step - 1) as StepId)}
-              className="hidden shrink-0 px-2 text-[0.95rem] font-semibold text-ink-mute hover:text-ink sm:block"
+              className="hidden min-h-11 shrink-0 cursor-pointer items-center gap-1.5 px-2 text-[0.95rem] font-semibold text-ink-mute hover:text-ink sm:flex"
             >
-              &larr; Back
+              <ChevronIcon dir="left" />
+              Back
             </button>
           ) : null}
           {step > 1 ? (
@@ -591,15 +605,17 @@ function Request({
               aria-label="Back"
               className="flex h-11 w-11 shrink-0 items-center justify-center text-ink shadow-[inset_0_0_0_1px_var(--hairline)] sm:hidden"
             >
-              &larr;
+              <ChevronIcon dir="left" />
             </button>
           ) : null}
           <div className="min-w-0 flex-1 leading-snug">
-            {timed && picked.length ? (
+            {picked.length || timed ? (
               <>
-                <span className="block truncate text-[0.98rem] font-semibold text-ink">{picked.map(shortName).join(" + ")}</span>
+                <span className="block truncate text-[0.98rem] font-semibold text-ink">
+                  {picked.length ? picked.map(shortName).join(" + ") : "Choose a room"}
+                </span>
                 <span className="block truncate text-[0.88rem] text-ink-mute">
-                  {dateShort(date)} · {timeLabel(start!)} to {timeLabel(end!)} · {people} people
+                  {dateShort(date)} · {timed ? `${timeLabel(start!)} to ${timeLabel(end!)}` : "choose a time"} · {people} people
                 </span>
               </>
             ) : (
@@ -662,6 +678,7 @@ function RoomBoard({
   heldFor,
   blocked,
   timed,
+  loading,
   onToggle,
   onPick,
 }: {
@@ -673,6 +690,7 @@ function RoomBoard({
   heldFor: (slug: string) => [Minutes, Minutes][];
   blocked: (slug: string) => string | null;
   timed: boolean;
+  loading: boolean;
   onToggle: (slug: string) => void;
   onPick: (slug: string, at: Minutes) => void;
 }) {
@@ -719,27 +737,32 @@ function RoomBoard({
               <li key={r.slug} className="grid gap-3 py-5 md:grid-cols-[16rem_minmax(0,1fr)] md:items-center md:gap-x-8">
                 <button
                   type="button"
-                  disabled={Boolean(why) || !timed}
+                  disabled={Boolean(why)}
                   aria-pressed={on}
                   onClick={() => onToggle(r.slug)}
-                  className="group flex items-center gap-4 text-left disabled:cursor-default"
+                  className="group flex min-h-11 cursor-pointer items-center gap-4 text-left disabled:cursor-not-allowed"
                 >
                   <span
                     aria-hidden
-                    className={`flex h-6 w-6 shrink-0 items-center justify-center text-[0.8rem] font-bold transition-colors ${
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center transition-colors duration-150 ${
                       on
                         ? "bg-clay text-paper-bright"
-                        : why || !timed
+                        : why
                           ? "bg-paper-deep/70"
                           : "bg-paper-bright shadow-[inset_0_0_0_1.5px_var(--ink-mute)] group-hover:shadow-[inset_0_0_0_1.5px_var(--ink)]"
                     }`}
                   >
-                    {on ? "✓" : ""}
+                    {on ? <CheckIcon /> : null}
                   </span>
                   <span className="min-w-0">
                     <span className={`block text-[1.05rem] font-semibold ${why ? "text-ink-mute" : "text-ink"}`}>{r.name}</span>
-                    <span className={`mt-0.5 block text-[0.88rem] ${on ? "text-clay" : "text-ink-mute"}`}>
-                      {why ?? `Seats ${cap}${timed ? " · Free" : ""}`}
+                    <span className="mt-0.5 block text-[0.88rem] text-ink-mute">
+                      {why ?? (
+                        <>
+                          Seats {cap}
+                          {timed && !loading ? <span className="text-moss"> · Free then</span> : null}
+                        </>
+                      )}
                     </span>
                   </span>
                 </button>
@@ -752,7 +775,9 @@ function RoomBoard({
                     const at = DAY_START + ((ev.clientX - box.left) / box.width) * SPAN;
                     onPick(r.slug, Math.floor(at / STEP_MINUTES) * STEP_MINUTES);
                   }}
-                  className={`relative h-10 overflow-hidden ${usable ? "cursor-pointer bg-paper-bright hover:bg-paper-bright/70" : "bg-paper-deep/40"}`}
+                  className={`relative h-10 overflow-hidden ${usable ? "cursor-pointer bg-paper-bright hover:bg-paper-bright/70" : "bg-paper-deep/40"} ${
+                    loading ? "motion-safe:animate-pulse" : ""
+                  }`}
                 >
                   {past > DAY_START ? <span className="absolute inset-y-0 bg-paper-deep/80" style={spanStyle(DAY_START, past)} /> : null}
                   {closed
@@ -857,7 +882,7 @@ function ArrowButton({ label, onClick, disabled, children }: { label: string; on
       aria-label={label}
       onClick={onClick}
       disabled={disabled}
-      className="flex h-10 w-10 shrink-0 items-center justify-center bg-paper-bright text-lg text-ink shadow-[inset_0_0_0_1px_var(--hairline)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--ink)] disabled:bg-transparent disabled:text-ink-mute/40 disabled:hover:shadow-[inset_0_0_0_1px_var(--hairline)]"
+      className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center bg-paper-bright text-lg text-ink shadow-[inset_0_0_0_1px_var(--hairline)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--ink)] disabled:bg-transparent disabled:text-ink-mute/40 disabled:hover:shadow-[inset_0_0_0_1px_var(--hairline)]"
     >
       {children}
     </button>
@@ -871,23 +896,19 @@ function EquipmentChip({ label, max, count, onChange }: { label: string; max: nu
         type="button"
         aria-pressed={Boolean(count)}
         onClick={() => onChange(count ? 0 : 1)}
-        className={`px-4 py-2.5 text-[0.95rem] transition-colors ${
-          count
-            ? "bg-ink font-semibold text-paper-bright"
-            : "bg-paper-bright text-ink shadow-[inset_0_0_0_1px_var(--hairline)] hover:shadow-[inset_0_0_0_1px_var(--ink)]"
-        }`}
+        className={`${CHOICE} inline-flex items-center gap-2 ${count ? CHOICE_ON : CHOICE_OFF}`}
       >
-        {count ? "✓ " : ""}
+        {count ? <CheckIcon /> : null}
         {label}
       </button>
     );
   }
   return (
-    <span className="inline-flex items-stretch bg-ink text-[0.95rem] font-semibold text-paper-bright">
-      <button type="button" aria-label={`One fewer ${label.toLowerCase()}`} onClick={() => onChange(count - 1)} className="px-3 hover:bg-paper-bright/15">
+    <span className={`inline-flex min-h-11 items-stretch text-[0.95rem] ${CHOICE_ON}`}>
+      <button type="button" aria-label={`One fewer ${label.toLowerCase()}`} onClick={() => onChange(count - 1)} className="w-10 cursor-pointer hover:bg-clay/10">
         &minus;
       </button>
-      <span aria-live="polite" className="px-1 py-2.5 tabular-nums">
+      <span aria-live="polite" className="flex items-center px-1 tabular-nums">
         {count} × {label}
       </span>
       <button
@@ -895,7 +916,7 @@ function EquipmentChip({ label, max, count, onChange }: { label: string; max: nu
         aria-label={`One more ${label.toLowerCase()}`}
         onClick={() => onChange(Math.min(max, count + 1))}
         disabled={count >= max}
-        className="px-3 hover:bg-paper-bright/15 disabled:text-paper-bright/30"
+        className="w-10 cursor-pointer hover:bg-clay/10 disabled:cursor-not-allowed disabled:text-clay/30"
       >
         +
       </button>
@@ -962,8 +983,8 @@ function Sent({
   return (
     <div role="status" className="grid gap-12 bg-paper-bright p-8 shadow-[inset_0_0_0_1px_var(--hairline)] sm:p-12 lg:grid-cols-2">
       <div>
-        <span aria-hidden className="flex h-12 w-12 items-center justify-center bg-clay text-xl font-bold text-paper-bright">
-          ✓
+        <span aria-hidden className="flex h-12 w-12 items-center justify-center bg-clay text-paper-bright">
+          <CheckIcon className="h-6 w-6" />
         </span>
         <h2 className="font-display mt-6 text-3xl leading-tight text-ink sm:text-4xl">Request sent.</h2>
         <p className="mt-2 text-ink-mute">
@@ -989,7 +1010,7 @@ function Sent({
                   done ? "bg-clay text-paper-bright" : "text-ink-mute shadow-[inset_0_0_0_1px_var(--hairline)]"
                 }`}
               >
-                {done ? "✓" : i + 1}
+                {done ? <CheckIcon /> : i + 1}
               </span>
               <span>
                 <span className="block font-semibold text-ink">{t}</span>
