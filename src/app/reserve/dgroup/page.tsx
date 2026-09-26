@@ -51,10 +51,6 @@ export default function DgroupTablesPage() {
         eyebrow="Reserve · Dgroup meeting"
         title="Book a table for your Dgroup."
         lead="Monday to Friday in the Dgroup Lounge and the Welcome Center. Tell us how many are coming and we'll assign a table that fits."
-        image={{
-          src: "/photos/dgroup-lounge.jpg",
-          alt: "The Dgroup Lounge at CCF Centris, seen through its glass front",
-        }}
       />
       <AtAGlance />
       <Section>
