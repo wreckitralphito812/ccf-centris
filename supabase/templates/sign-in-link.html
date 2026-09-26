@@ -1,0 +1,36 @@
+<!--
+  Sign-in email for CCF Centris. Supabase doesn't read this file: paste it into
+  Supabase → Authentication → Emails, under BOTH "Magic link" and "Confirm
+  sign up" (first-time sign-ins get the second one). Subject for both:
+  Your CCF Centris sign-in link
+-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7fafa;padding:32px 16px;font-family:Montserrat,Helvetica,Arial,sans-serif;color:#1d2b2d;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border:1px solid #e1e8e9;">
+        <tr>
+          <td style="padding:32px 32px 8px;">
+            <p style="margin:0;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#007682;">CCF Centris</p>
+            <h1 style="margin:16px 0 0;font-size:24px;line-height:1.3;font-weight:600;">Sign in to CCF Centris</h1>
+            <p style="margin:16px 0 0;font-size:15px;line-height:1.6;color:#4a5b5e;">
+              Tap the button below to sign in. The link works once and expires soon, so use it now.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:24px 32px;">
+            <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#007682;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:14px 28px;">Sign in</a>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0 32px 32px;font-size:13px;line-height:1.6;color:#7b8d90;">
+            If you didn't ask to sign in, you can ignore this email. Nobody can get into your account without this link.
+          </td>
+        </tr>
+      </table>
+      <p style="margin:16px 0 0;font-size:12px;line-height:1.6;color:#7b8d90;">
+        CCF Centris · Eton Centris, EDSA corner Quezon Avenue, Quezon City
+      </p>
+    </td>
+  </tr>
+</table>

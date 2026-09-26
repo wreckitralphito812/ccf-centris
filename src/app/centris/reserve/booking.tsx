@@ -1,759 +1,854 @@
 "use client";
 
-import { useActionState, useMemo, useState, startTransition } from "react";
 import Link from "next/link";
-import type { Facility, Slot } from "@/lib/types";
-import { fmtDayLong, fmtPeso, fmtTime } from "@/lib/format";
-import { Button, Pill, cx } from "@/components/ui";
-import { Field, FormSuccess, controlClass } from "@/components/form";
+import { useActionState, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { createRoomRequest, roomBusyTimes, type RoomRequestResult } from "@/app/actions/reservations";
 import {
-  createReservation,
-  type ReservationResult,
-} from "@/app/actions/reservations";
+  EQUIPMENT,
+  FOOD,
+  MINISTRIES,
+  MINISTRY_ROOMS,
+  SETUPS,
+  STEP_MINUTES,
+  closedReason,
+  equipmentSummary,
+  ministryWindow,
+  timeLabel,
+  toHHMM,
+  toMinutes,
+  weekdayOf,
+  type Minutes,
+  type Setup,
+} from "@/lib/ministry-rooms";
+import { ROOM_POLICIES } from "./policies";
 
 /**
- * Court and room booking.
+ * A ministry's room request, in three steps, the way booking sites do it:
  *
- * Two shapes behind one flow: a court is booked by the hour from a live
- * availability grid, a room is a request with setup, layout, and equipment
- * that a facilities admin approves. The step list adapts rather than showing
- * irrelevant questions.
+ *   1. Find a room: when (a week of days, then start and end), how many, and
+ *      every room on one shared timeline, so what's free, closed or taken is
+ *      visible at a glance. Tapping a free spot on a room picks that room and
+ *      time at once.
+ *   2. Event details: name, ministry, equipment, food.
+ *   3. Review and send: the whole request with Edit links, contact details
+ *      from the account, and one tick for the policies.
  *
- * Nothing is charged and no total is shown. Rooms are free for ministries, and
- * court rates aren't set yet, so any price here would be invented. A court
- * booking ends "reserved" and a room ends "pending approval".
+ * The request so far and the next button live in a bar pinned to the bottom
+ * of the screen, so the steps get the full width. Every rule is checked again
+ * on the server.
  */
 
-type Step = 1 | 2 | 3 | 4;
+type Busy = Record<string, [Minutes, Minutes][]>;
+type StepId = 1 | 2 | 3;
 
-export function BookingFlow({
-  facilities,
-  slotsByCourt,
-  initialFacility,
-  initialCourt,
-  date,
-  dateOptions,
-}: {
-  facilities: Facility[];
-  slotsByCourt: Record<string, Slot[]>;
-  initialFacility: string | null;
-  initialCourt: string | null;
-  date: string;
-  dateOptions: string[];
-}) {
-  const [step, setStep] = useState<Step>(1);
-  const [facilitySlug, setFacilitySlug] = useState<string | null>(initialFacility);
-  const [courtId, setCourtId] = useState<string | null>(initialCourt);
-  const [chosenDate, setChosenDate] = useState(date);
-  const [startIso, setStartIso] = useState<string | null>(null);
-  const [hours, setHours] = useState(1);
-  const [participants, setParticipants] = useState(4);
-  const [layout, setLayout] = useState("");
-  const [accepted, setAccepted] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    mobile: "",
-    org: "",
-    activity: "",
-    purpose: "",
-  });
+const DAY_START = toMinutes("09:00");
+const DAY_END = toMinutes("21:30");
+const SPAN = DAY_END - DAY_START;
+const HOURS: [Minutes, string][] = [
+  [9 * 60, "9 AM"],
+  [12 * 60, "12 NN"],
+  [15 * 60, "3 PM"],
+  [18 * 60, "6 PM"],
+  [21 * 60, "9 PM"],
+];
 
-  const [result, submit, pending] = useActionState<
-    ReservationResult | null,
-    FormData
-  >(createReservation, null);
-  const errors = result?.fieldErrors ?? {};
+const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WEEKDAY_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTH_LONG = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-  const facility = useMemo(
-    () => facilities.find((f) => f.slug === facilitySlug) ?? null,
-    [facilitySlug, facilities],
+const addDays = (date: string, n: number) => {
+  const [y, m, d] = date.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+};
+const mondayOf = (date: string) => addDays(date, -((weekdayOf(date) + 6) % 7));
+const dayNum = (date: string) => Number(date.slice(8));
+const monthOf = (date: string) => MONTH[Number(date.slice(5, 7)) - 1];
+const dateLong = (date: string) => `${WEEKDAY_LONG[weekdayOf(date)]}, ${dayNum(date)} ${MONTH_LONG[Number(date.slice(5, 7)) - 1]}`;
+const dateShort = (date: string) => `${WEEKDAY[weekdayOf(date)]} ${dayNum(date)} ${monthOf(date)}`;
+const frac = (m: Minutes) => (Math.min(Math.max(m, DAY_START), DAY_END) - DAY_START) / SPAN;
+const pct = (m: Minutes) => `${frac(m) * 100}%`;
+const spanStyle = (a: Minutes, b: Minutes) => ({ left: pct(a), width: `${(frac(b) - frac(a)) * 100}%` });
+const roomName = (slug: string) => MINISTRY_ROOMS.find((r) => r.slug === slug)?.name ?? slug;
+const shortName = (slug: string) => roomName(slug).split(" (")[0];
+const duration = (a: Minutes, b: Minutes) => {
+  const h = (b - a) / 60;
+  return h === 1 ? "1 hour" : `${h % 1 ? h.toFixed(1) : h} hours`;
+};
+
+/** Minutes after midnight in Manila right now. */
+const manilaNow = () => {
+  const d = new Date();
+  return (d.getUTCHours() * 60 + d.getUTCMinutes() + 8 * 60) % 1440;
+};
+
+const HATCH = "repeating-linear-gradient(135deg, var(--paper-deep) 0 6px, transparent 6px 12px)";
+
+/** One look for "chosen" everywhere: a teal outline with a light teal fill. */
+const CHOICE_ON = "bg-clay/[0.07] font-semibold text-clay shadow-[inset_0_0_0_2px_var(--clay)]";
+const CHOICE_OFF = "bg-paper-bright text-ink shadow-[inset_0_0_0_1px_var(--hairline)] hover:shadow-[inset_0_0_0_1px_var(--ink-mute)]";
+const CHOICE = "min-h-11 cursor-pointer px-4 py-2.5 text-[0.95rem] transition-[box-shadow,background-color] duration-150";
+
+const smoothTop = () =>
+  window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+
+function CheckIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
+  return (
+    <svg aria-hidden viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M3.5 8.5l3 3 6-7" />
+    </svg>
   );
+}
 
-  const isCourt = Boolean(facility?.courts.length);
-  const slots = courtId ? (slotsByCourt[courtId] ?? []) : [];
+function ChevronIcon({ dir }: { dir: "left" | "right" }) {
+  return (
+    <svg aria-hidden viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+      <path d={dir === "left" ? "M10 3.5L5.5 8l4.5 4.5" : "M6 3.5L10.5 8 6 12.5"} />
+    </svg>
+  );
+}
 
-  /** Consecutive availability from the chosen start, capped at 4 hours. */
-  const maxHours = useMemo(() => {
-    if (!startIso) return 1;
-    const i = slots.findIndex((s) => s.start === startIso);
-    if (i < 0) return 1;
-    let n = 0;
-    while (n < 4 && slots[i + n]?.state === "available") n++;
-    return Math.max(1, n);
-  }, [startIso, slots]);
+export function BookingFlow(props: { today: string; name: string; email: string; mobile: string }) {
+  const [attempt, setAttempt] = useState(0);
+  return <Request key={attempt} {...props} onAnother={() => setAttempt((a) => a + 1)} />;
+}
 
-  const canContinue1 = Boolean(facility);
-  const canContinue2 = isCourt ? Boolean(courtId && startIso) : Boolean(chosenDate && startIso);
+function Request({
+  today,
+  name: initialName,
+  email,
+  mobile: initialMobile,
+  onAnother,
+}: {
+  today: string;
+  name: string;
+  email: string;
+  mobile: string;
+  onAnother: () => void;
+}) {
+  const [state, action, sending] = useActionState<RoomRequestResult | null, FormData>(createRoomRequest, null);
+  const e = state?.fieldErrors ?? {};
 
-  // 24h HH:MM in Manila, for the hidden start_time field the action parses.
-  const start24 = startIso
-    ? new Intl.DateTimeFormat("en-GB", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-        timeZone: "Asia/Manila",
-      }).format(new Date(startIso))
-    : "";
+  const [step, setStep] = useState<StepId>(1);
 
-  if (result?.ok) {
+  // 1. Find a room
+  const [nowMinutes] = useState(manilaNow);
+  const [date, setDate] = useState(() => firstOpenDay(today));
+  const [week, setWeek] = useState(() => mondayOf(firstOpenDay(today)));
+  const [start, setStart] = useState<Minutes | null>(null);
+  const [end, setEnd] = useState<Minutes | null>(null);
+  const [people, setPeople] = useState(20);
+  const [setup, setSetup] = useState<Setup>("classroom");
+  const [rooms, setRooms] = useState<string[]>([]);
+  const [busy, setBusy] = useState<{ date: string; times: Busy } | null>(null);
+
+  // 2. Event details
+  const [activity, setActivity] = useState("");
+  const [ministry, setMinistry] = useState("");
+  const [ministryOther, setMinistryOther] = useState("");
+  const [equipment, setEquipment] = useState<Record<string, number>>({});
+  const [food, setFood] = useState("none");
+  const [notes, setNotes] = useState("");
+
+  // 3. Review
+  const [name, setName] = useState(initialName);
+  const [mobile, setMobile] = useState(initialMobile);
+  const [agreed, setAgreed] = useState(false);
+
+  // What's already held on the chosen date. Refetched after a failed send,
+  // in case someone else took a room in the meantime.
+  useEffect(() => {
+    let live = true;
+    roomBusyTimes(date).then((times) => live && setBusy({ date, times }));
+    return () => {
+      live = false;
+    };
+  }, [date, state]);
+
+  // A failed send goes back to the step that needs fixing.
+  const [seenState, setSeenState] = useState(state);
+  if (state !== seenState) {
+    setSeenState(state);
+    const f = state?.fieldErrors;
+    if (f && (f.rooms || f.date || f.time || f.setup || f.participants)) setStep(1);
+    else if (f && (f.activity || f.ministry || f.food)) setStep(2);
+  }
+
+  const loaded = busy?.date === date;
+  const timed = start !== null && end !== null;
+  const earliest = date === today ? Math.ceil((nowMinutes + 1) / STEP_MINUTES) * STEP_MINUTES : DAY_START;
+
+  const starts = useMemo(() => {
+    const out: Minutes[] = [];
+    for (let m = Math.max(DAY_START, earliest); m < DAY_END; m += STEP_MINUTES) out.push(m);
+    return out;
+  }, [earliest]);
+  const ends = useMemo(() => {
+    const out: Minutes[] = [];
+    if (start === null) return out;
+    for (let m = start + STEP_MINUTES; m <= DAY_END; m += STEP_MINUTES) out.push(m);
+    return out;
+  }, [start]);
+
+  const heldFor = (slug: string) => (loaded ? busy!.times[slug] ?? [] : []);
+  const setupInfo = SETUPS.find((s) => s.id === setup)!;
+
+  /** Why a room can't be picked for the chosen time, or null when it can. */
+  const blocked = (slug: string): string | null => {
+    const cap = MINISTRY_ROOMS.find((r) => r.slug === slug)!.capacity[setup];
+    if (!cap) return `No ${setupInfo.label.toLowerCase()} set-up`;
+    if (!timed) return null;
+    const why = closedReason(slug, date, start!, end!);
+    if (why) return why;
+    if (heldFor(slug).some(([a, b]) => a < end! && b > start!)) return "Taken at this time";
+    return null;
+  };
+
+  const picked = rooms.filter((slug) => !blocked(slug));
+  const seats = picked.reduce((n, slug) => n + (MINISTRY_ROOMS.find((r) => r.slug === slug)!.capacity[setup] ?? 0), 0);
+  const ministryName = ministry === "Other" ? ministryOther.trim() : ministry;
+
+  const pickDate = (d: string) => {
+    setDate(d);
+    if (d === today && start !== null && start < nowMinutes) {
+      setStart(null);
+      setEnd(null);
+    }
+  };
+  const pickStart = (s: Minutes | null) => {
+    setStart(s);
+    if (s !== null && (end === null || end <= s)) setEnd(Math.min(s + 120, DAY_END));
+  };
+  /** Tapping a room's timeline: that room, from that half hour, keeping the length already chosen (two hours to start). */
+  const pickFromTimeline = (slug: string, at: Minutes) => {
+    const w = ministryWindow(slug, date);
+    if (!w) return;
+    const s = Math.max(w.from, earliest, Math.min(at, w.to - STEP_MINUTES));
+    const keep = timed ? end! - start! : 120;
+    setStart(s);
+    setEnd(Math.min(s + keep, w.to));
+    setRooms((r) => (r.includes(slug) ? r : [...r, slug]));
+  };
+  const toggleRoom = (slug: string) => setRooms((r) => (r.includes(slug) ? r.filter((s) => s !== slug) : [...r, slug]));
+
+  const missingByStep: Record<StepId, string[]> = {
+    1: [!timed && "a time", !picked.length && "a room"].filter(Boolean) as string[],
+    2: [!activity.trim() && "an event name", !ministryName && "your ministry"].filter(Boolean) as string[],
+    3: [!name.trim() && "your name", mobile.replace(/\D/g, "").length < 7 && "a mobile number", !agreed && "the policies"].filter(
+      Boolean,
+    ) as string[],
+  };
+  const missing = missingByStep[step];
+
+  if (state?.ok) {
     return (
-      <Confirmation
-        reference={result.reference ?? "—"}
-        facility={facility}
-        courtId={courtId}
-        startIso={startIso}
-        hours={hours}
-        isCourt={isCourt}
-        participants={participants}
+      <Sent
+        reference={state.reference ?? "—"}
+        email={email}
+        emailed={Boolean(state.emailed)}
+        rows={[
+          ["Event", activity],
+          ["When", timed ? `${dateLong(date)}, ${timeLabel(start!)} to ${timeLabel(end!)}` : "—"],
+          [picked.length > 1 ? "Rooms" : "Room", picked.map(roomName).join(", ")],
+          ["People", String(people)],
+        ]}
+        onAnother={onAnother}
       />
     );
   }
 
+  const goTo = (s: StepId) => {
+    setStep(s);
+    smoothTop();
+  };
+
+  const prevWeek = addDays(week, -7);
+  const canPrev = addDays(prevWeek, 5) >= today;
+  const days = Array.from({ length: 6 }, (_, i) => addDays(week, i));
+
   return (
-    <div className="grid gap-10 lg:grid-cols-[1fr_21rem] lg:items-start">
+    <form action={action} className="pb-36">
+      {/* Everything the server needs, whichever step is showing. */}
+      <input type="hidden" name="participants" value={people} />
+      <input type="hidden" name="setup" value={setup} />
+      <input type="hidden" name="date" value={date} />
+      <input type="hidden" name="start" value={start === null ? "" : toHHMM(start)} />
+      <input type="hidden" name="end" value={end === null ? "" : toHHMM(end)} />
+      {picked.map((r) => (
+        <input key={r} type="hidden" name="room" value={r} />
+      ))}
+      <input type="hidden" name="activity" value={activity} />
+      <input type="hidden" name="ministry" value={ministry} />
+      <input type="hidden" name="ministry_other" value={ministryOther} />
+      {EQUIPMENT.map((item) => (
+        <input key={item.id} type="hidden" name={`eq_${item.id}`} value={equipment[item.id] ?? 0} />
+      ))}
+      <input type="hidden" name="food" value={food} />
+      <input type="hidden" name="notes" value={notes} />
+      <input type="hidden" name="name" value={name} />
+      <input type="hidden" name="mobile" value={mobile} />
+      {agreed ? <input type="hidden" name="accept" value="on" /> : null}
+
       <div>
-        <Steps step={step} isCourt={isCourt} />
+        <Progress step={step} onGo={goTo} />
 
-        {/* 1. Space */}
         {step === 1 ? (
-          <Panel
-            title="What do you need?"
-            body="Courts are booked by the hour. Rooms are a request, and the facilities team confirms them."
-          >
-            <fieldset className="mt-6">
-              <legend className="sr-only">Choose a space</legend>
-              <div className="space-y-px border border-hairline bg-hairline">
-                {facilities.map((f) => (
-                  <label
-                    key={f.slug}
-                    className={cx(
-                      "flex cursor-pointer items-start gap-4 bg-paper-bright p-5 transition-colors",
-                      facilitySlug === f.slug ? "bg-bone" : "hover:bg-bone/50",
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      name="facility"
-                      checked={facilitySlug === f.slug}
-                      onChange={() => {
-                        setFacilitySlug(f.slug);
-                        setCourtId(null);
-                        setStartIso(null);
-                        setLayout("");
-                      }}
-                      className="mt-1 h-4 w-4 accent-clay"
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="font-display block text-xl leading-tight">
-                        {f.name}
-                      </span>
-                      {f.description ? (
-                        <span className="mt-1 block text-[0.88rem] leading-relaxed text-ink-soft">
-                          {f.description}
-                        </span>
-                      ) : null}
-                      <span className="mt-2 flex flex-wrap gap-2">
-                        {f.capacity ? (
-                          <Pill tone="muted">Up to {f.capacity}</Pill>
-                        ) : null}
-                        {f.hourly_rate_cents === 0 ? (
-                          <Pill tone="moss">No charge</Pill>
-                        ) : f.hourly_rate_cents === null ? (
-                          <Pill tone="muted">Rates to be posted</Pill>
-                        ) : (
-                          <Pill tone="muted">
-                            {fmtPeso(f.hourly_rate_cents)}/hr
-                          </Pill>
-                        )}
-                        {f.requires_approval ? (
-                          <Pill tone="clay">Needs approval</Pill>
-                        ) : null}
-                      </span>
-                    </span>
-                  </label>
-                ))}
+          <div className="mt-12 space-y-14">
+            <Block title="When is it?" hint="Rooms can be requested Monday to Saturday. Include time to set up and pack up.">
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-[0.95rem] font-semibold text-ink">
+                  {dayNum(days[0])} {monthOf(days[0])} to {dayNum(days[5])} {monthOf(days[5])}
+                </p>
+                <div className="flex gap-2">
+                  <ArrowButton label="Previous week" disabled={!canPrev} onClick={() => setWeek(prevWeek)}>
+                    <ChevronIcon dir="left" />
+                  </ArrowButton>
+                  <ArrowButton label="Next week" onClick={() => setWeek(addDays(week, 7))}>
+                    <ChevronIcon dir="right" />
+                  </ArrowButton>
+                </div>
               </div>
-            </fieldset>
-
-            <Nav onNext={() => setStep(2)} nextDisabled={!canContinue1} />
-          </Panel>
-        ) : null}
-
-        {/* 2. When */}
-        {step === 2 ? (
-          <Panel
-            title="When?"
-            body={
-              isCourt
-                ? "Pick a court, then an hour. Grey slots are already taken."
-                : "Choose a date and a start time. Include your setup and packing-down time."
-            }
-          >
-            {isCourt && facility ? (
-              <fieldset className="mt-6">
-                <legend className="label text-ink-mute">Court</legend>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {facility.courts.map((c) => (
+              <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-6 sm:gap-3">
+                {days.map((d) => {
+                  const past = d < today;
+                  const on = d === date;
+                  return (
                     <button
-                      key={c.id}
+                      key={d}
                       type="button"
-                      aria-pressed={courtId === c.id}
-                      onClick={() => {
-                        setCourtId(c.id);
-                        setStartIso(null);
-                      }}
-                      className={cx(
-                        "btn-press label border px-3.5 py-2 transition-colors",
-                        courtId === c.id
-                          ? "border-clay bg-clay text-paper-bright"
-                          : "border-ink/25 text-ink hover:border-ink",
-                      )}
+                      disabled={past}
+                      aria-pressed={on}
+                      onClick={() => pickDate(d)}
+                      className={`flex flex-col items-center py-4 transition-colors ${
+                        on
+                          ? "bg-clay text-paper-bright"
+                          : past
+                            ? "cursor-not-allowed bg-paper-deep/50 text-ink-mute/50"
+                            : "bg-paper-bright text-ink shadow-[inset_0_0_0_1px_var(--hairline)] hover:shadow-[inset_0_0_0_1px_var(--ink)]"
+                      }`}
                     >
-                      {c.name}
+                      <span className={`text-[0.8rem] font-semibold ${on ? "text-paper-bright/85" : "text-ink-mute"}`}>
+                        {d === today ? "Today" : WEEKDAY[weekdayOf(d)]}
+                      </span>
+                      <span className="font-display mt-1 text-3xl leading-none">{dayNum(d)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-6 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-end">
+                <Labelled label="Starts">
+                  <select
+                    value={start === null ? "" : String(start)}
+                    onChange={(ev) => pickStart(ev.target.value ? Number(ev.target.value) : null)}
+                    className={`${INPUT} sm:w-40`}
+                  >
+                    <option value="">Choose</option>
+                    {starts.map((m) => (
+                      <option key={m} value={m}>
+                        {timeLabel(m)}
+                      </option>
+                    ))}
+                  </select>
+                </Labelled>
+                <span className="hidden pb-3.5 text-ink-mute sm:inline">to</span>
+                <Labelled label="Ends">
+                  <select
+                    value={end === null ? "" : String(end)}
+                    disabled={start === null}
+                    onChange={(ev) => setEnd(ev.target.value ? Number(ev.target.value) : null)}
+                    className={`${INPUT} disabled:text-ink-mute sm:w-40`}
+                  >
+                    <option value="">{start === null ? "—" : "Choose"}</option>
+                    {ends.map((m) => (
+                      <option key={m} value={m}>
+                        {timeLabel(m)}
+                      </option>
+                    ))}
+                  </select>
+                </Labelled>
+                {timed ? <span className="col-span-2 text-[0.95rem] text-ink-mute sm:pb-3.5">{duration(start!, end!)}</span> : null}
+              </div>
+              {e.date || e.time ? <Err>{e.date ?? e.time}</Err> : null}
+            </Block>
+
+            <Block title="How many people?" hint="Everyone: your team, volunteers, speakers and guests.">
+              <div className="flex flex-wrap items-center gap-x-10 gap-y-5">
+                <div className="flex items-center gap-3">
+                  <ArrowButton label="Five fewer people" disabled={people <= 1} onClick={() => setPeople((p) => Math.max(1, p - 5))}>
+                    &minus;
+                  </ArrowButton>
+                  <input
+                    aria-label="Number of people"
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    value={people}
+                    onChange={(ev) => setPeople(Math.max(1, Math.floor(Number(ev.target.value) || 1)))}
+                    className="font-display w-20 bg-transparent text-center text-3xl tabular-nums text-ink [appearance:textfield] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                  <ArrowButton label="Five more people" onClick={() => setPeople((p) => p + 5)}>
+                    +
+                  </ArrowButton>
+                </div>
+                <div role="radiogroup" aria-label="Set-up" className="flex flex-wrap gap-2">
+                  {SETUPS.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={setup === s.id}
+                      onClick={() => setSetup(s.id)}
+                      className={`${CHOICE} ${setup === s.id ? CHOICE_ON : CHOICE_OFF}`}
+                    >
+                      {s.label}
                     </button>
                   ))}
                 </div>
-              </fieldset>
-            ) : null}
+              </div>
+              <p className="mt-3 text-[0.9rem] text-ink-mute">{setupInfo.hint}.</p>
+              {e.participants || e.setup ? <Err>{e.participants ?? e.setup}</Err> : null}
+            </Block>
 
-            <fieldset className="mt-7">
-              <legend className="label text-ink-mute">Date</legend>
-              <div className="no-bar mt-3 flex gap-2 overflow-x-auto pb-1">
-                {dateOptions.map((d) => (
+            <Block
+              title="Choose a room"
+              hint={`${dateLong(date)}. Tick the rooms you need, or tap a free time on a room to pick both at once.`}
+            >
+              <RoomBoard
+                date={date}
+                setup={setup}
+                selection={timed ? [start!, end!] : null}
+                picked={picked}
+                past={date === today ? earliest : DAY_START}
+                heldFor={heldFor}
+                blocked={blocked}
+                timed={timed}
+                loading={!loaded}
+                onToggle={toggleRoom}
+                onPick={pickFromTimeline}
+              />
+              {e.rooms ? <Err>{e.rooms}</Err> : null}
+              {picked.length ? (
+                <p className={`mt-5 text-[0.95rem] ${seats < people ? "text-sky" : "text-ink-soft"}`}>
+                  {seats < people
+                    ? `${picked.length > 1 ? "These rooms seat" : "This room seats"} ${seats} with a ${setupInfo.label.toLowerCase()} set-up, fewer than your ${people}. Tick another room or change the set-up.`
+                    : `${picked.length > 1 ? "These rooms seat" : "This room seats"} ${seats}, enough for your ${people}.`}
+                </p>
+              ) : null}
+            </Block>
+          </div>
+        ) : null}
+
+        {step === 2 ? (
+          <div className="mt-12 max-w-2xl space-y-14">
+            <Block title="About your event" hint="So the facilities team can get the room ready for you.">
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <TextField label="Event name" error={e.activity}>
+                    <input value={activity} onChange={(ev) => setActivity(ev.target.value)} placeholder="e.g. Elevate core huddle" className={INPUT} />
+                  </TextField>
+                </div>
+                <TextField label="Ministry" hint="The lead ministry, if several are involved." error={e.ministry}>
+                  <select value={ministry} onChange={(ev) => setMinistry(ev.target.value)} className={INPUT}>
+                    <option value="" disabled>
+                      Choose your ministry
+                    </option>
+                    {MINISTRIES.map((m) => (
+                      <option key={m}>{m}</option>
+                    ))}
+                    <option value="Other">Other</option>
+                  </select>
+                </TextField>
+                {ministry === "Other" ? (
+                  <TextField label="Ministry name">
+                    <input value={ministryOther} onChange={(ev) => setMinistryOther(ev.target.value)} className={INPUT} />
+                  </TextField>
+                ) : null}
+              </div>
+            </Block>
+
+            <Block title="Equipment" hint="Optional. Tap what you'd like set up. We'll tell you if something isn't available on your date.">
+              <div className="flex flex-wrap gap-2">
+                {EQUIPMENT.map((item) => (
+                  <EquipmentChip
+                    key={item.id}
+                    label={item.label}
+                    max={item.max}
+                    count={equipment[item.id] ?? 0}
+                    onChange={(n) => setEquipment((eq) => ({ ...eq, [item.id]: n }))}
+                  />
+                ))}
+              </div>
+            </Block>
+
+            <Block title="Food">
+              <div className="flex flex-wrap gap-2">
+                {FOOD.map((f) => (
                   <button
-                    key={d}
+                    key={f.id}
                     type="button"
-                    aria-pressed={chosenDate === d}
-                    onClick={() => {
-                      setChosenDate(d);
-                      setStartIso(null);
-                    }}
-                    className={cx(
-                      "btn-press label shrink-0 border px-3.5 py-2 transition-colors",
-                      chosenDate === d
-                        ? "border-clay bg-clay text-paper-bright"
-                        : "border-ink/25 text-ink hover:border-ink",
-                    )}
+                    aria-pressed={food === f.id}
+                    onClick={() => setFood(f.id)}
+                    className={`${CHOICE} ${food === f.id ? CHOICE_ON : CHOICE_OFF}`}
                   >
-                    {fmtDayLong(`${d}T12:00:00+08:00`).split(",")[0].slice(0, 3)}
-                    <span className="ml-1.5 opacity-60">{d.slice(8)}</span>
+                    {f.label}
                   </button>
                 ))}
               </div>
-              {chosenDate !== date ? (
-                <p className="mt-2 text-[0.8rem] text-ink-mute">
-                  Showing availability for {fmtDayLong(`${date}T12:00:00+08:00`)}.
-                  Other dates are confirmed by the facilities team.
-                </p>
+              {FOOD.find((f) => f.id === food)?.hint ? (
+                <p className="mt-3 text-[0.9rem] text-ink-mute">{FOOD.find((f) => f.id === food)!.hint}</p>
               ) : null}
-            </fieldset>
+              {e.food ? <Err>{e.food}</Err> : null}
 
-            {(isCourt && courtId) || !isCourt ? (
-              <fieldset className="mt-7">
-                <legend className="label text-ink-mute">Start time</legend>
-                <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
-                  {(isCourt ? slots : genericSlots(facility)).map((s) => {
-                    const taken = s.state !== "available";
-                    const on = startIso === s.start;
-                    return (
-                      <button
-                        key={s.start}
-                        type="button"
-                        disabled={taken}
-                        aria-pressed={on}
-                        onClick={() => {
-                          setStartIso(s.start);
-                          setHours(1);
-                        }}
-                        className={cx(
-                          "btn-press border px-2 py-2.5 text-[0.82rem] font-semibold transition-colors",
-                          taken &&
-                            "cursor-not-allowed border-transparent bg-ink/5 text-ink-mute/50 line-through",
-                          !taken &&
-                            on &&
-                            "border-clay bg-clay text-paper-bright",
-                          !taken &&
-                            !on &&
-                            "border-ink/25 text-ink hover:border-ink",
-                        )}
-                      >
-                        {fmtTime(s.start)}
-                      </button>
-                    );
-                  })}
-                </div>
-              </fieldset>
-            ) : null}
-
-            {startIso ? (
-              <fieldset className="mt-7">
-                <legend className="label text-ink-mute">How long?</legend>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {Array.from({ length: maxHours }, (_, i) => i + 1).map((h) => (
-                    <button
-                      key={h}
-                      type="button"
-                      aria-pressed={hours === h}
-                      onClick={() => setHours(h)}
-                      className={cx(
-                        "btn-press label border px-3.5 py-2 transition-colors",
-                        hours === h
-                          ? "border-clay bg-clay text-paper-bright"
-                          : "border-ink/25 text-ink hover:border-ink",
-                      )}
-                    >
-                      {h} {h === 1 ? "hour" : "hours"}
-                    </button>
-                  ))}
-                </div>
-                {maxHours < 4 ? (
-                  <p className="mt-2 text-[0.8rem] text-ink-mute">
-                    The next slot is taken, so this booking can run up to{" "}
-                    {maxHours} {maxHours === 1 ? "hour" : "hours"}.
-                  </p>
-                ) : null}
-              </fieldset>
-            ) : null}
-
-            <Nav
-              onBack={() => setStep(1)}
-              onNext={() => setStep(3)}
-              nextDisabled={!canContinue2}
-            />
-          </Panel>
+              <div className="mt-8">
+                <TextField label="Anything else?" hint="Optional. A special set-up, a repeating schedule, or anything the team should know.">
+                  <textarea value={notes} onChange={(ev) => setNotes(ev.target.value)} rows={3} className={INPUT} />
+                </TextField>
+              </div>
+            </Block>
+          </div>
         ) : null}
 
-        {/* 3. Details */}
         {step === 3 ? (
-          <Panel
-            title="Details"
-            body={
-              isCourt
-                ? "Who's playing, and anything you need from the equipment desk."
-                : "Tell us what the room is for so the team can set it up properly."
-            }
-          >
-            {!isCourt ? (
-              <div className="mt-6 space-y-5">
-                <Field label="Activity or event name" name="activity" required>
-                  {(p) => (
-                    <input
-                      {...p}
-                      type="text"
-                      value={form.activity}
-                      onChange={(e) =>
-                        setForm({ ...form, activity: e.target.value })
-                      }
-                      className={controlClass}
-                    />
-                  )}
-                </Field>
-                <Field
-                  label="Organisation or ministry"
-                  name="org"
-                  hint="Optional"
-                >
-                  {(p) => (
-                    <input
-                      {...p}
-                      type="text"
-                      value={form.org}
-                      onChange={(e) => setForm({ ...form, org: e.target.value })}
-                      className={controlClass}
-                    />
-                  )}
-                </Field>
-                <Field label="What's it for?" name="purpose">
-                  {(p) => (
-                    <textarea
-                      {...p}
-                      rows={3}
-                      value={form.purpose}
-                      onChange={(e) =>
-                        setForm({ ...form, purpose: e.target.value })
-                      }
-                      className={controlClass}
-                      placeholder="A GLC class, a team training, a Dgroup leaders' meeting. Mention any chairs, tables, or AV you'll need."
-                    />
-                  )}
-                </Field>
+          <div className="mt-12 max-w-2xl space-y-14">
+            <Block title="Review your request" hint="The facilities team confirms by email.">
+              <dl className="divide-y divide-hairline border-y border-hairline">
+                {(
+                  [
+                    ["When", timed ? `${dateLong(date)}\n${timeLabel(start!)} to ${timeLabel(end!)}` : "—", 1],
+                    [picked.length > 1 ? "Rooms" : "Room", `${picked.map(roomName).join(", ")}\nSeats ${seats}`, 1],
+                    ["People", `${people}, ${setupInfo.label.toLowerCase()} set-up`, 1],
+                    ["Event", `${activity}\n${ministryName}`, 2],
+                    ["Equipment", equipmentSummary(equipment), 2],
+                    ["Food", FOOD.find((f) => f.id === food)!.label, 2],
+                    ...(notes.trim() ? [["Notes", notes.trim(), 2]] : []),
+                  ] as [string, string, StepId][]
+                ).map(([k, v, s]) => (
+                  <div key={k} className="grid grid-cols-[6rem_minmax(0,1fr)_auto] items-start gap-4 py-4 sm:grid-cols-[8rem_minmax(0,1fr)_auto]">
+                    <dt className="text-[0.95rem] text-ink-mute">{k}</dt>
+                    <dd className="whitespace-pre-line text-[1rem] leading-relaxed text-ink">{v}</dd>
+                    <button type="button" onClick={() => goTo(s)} className="text-[0.9rem] font-semibold text-clay underline underline-offset-4">
+                      Edit
+                    </button>
+                  </div>
+                ))}
+              </dl>
+            </Block>
 
-                {facility?.layouts.length ? (
-                  <fieldset>
-                    <legend className="label text-ink-mute">Seating layout</legend>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {facility.layouts.map((l) => (
-                        <button
-                          key={l}
-                          type="button"
-                          aria-pressed={layout === l}
-                          onClick={() => setLayout(layout === l ? "" : l)}
-                          className={cx(
-                            "btn-press label border px-3.5 py-2 transition-colors",
-                            layout === l
-                              ? "border-clay bg-clay text-paper-bright"
-                              : "border-ink/25 text-ink hover:border-ink",
-                          )}
-                        >
-                          {l}
-                        </button>
-                      ))}
-                    </div>
-                  </fieldset>
-                ) : null}
-              </div>
-            ) : null}
-
-            <div className="mt-6 flex items-center justify-between border border-hairline px-4 py-3">
-              <span className="label text-ink-mute">
-                {isCourt ? "Players" : "Expected participants"}
-              </span>
-              <span className="flex items-center gap-4">
-                <button
-                  type="button"
-                  aria-label="Fewer"
-                  onClick={() => setParticipants((p) => Math.max(1, p - 1))}
-                  className="btn-press flex h-8 w-8 items-center justify-center border border-ink/25 transition-colors hover:border-ink"
-                >
-                  −
-                </button>
-                <span className="font-display w-8 text-center text-xl tabular-nums">
-                  {participants}
-                </span>
-                <button
-                  type="button"
-                  aria-label="More"
-                  onClick={() =>
-                    setParticipants((p) =>
-                      Math.min(facility?.capacity ?? 200, p + 1),
-                    )
-                  }
-                  className="btn-press flex h-8 w-8 items-center justify-center border border-ink/25 transition-colors hover:border-ink"
-                >
-                  +
-                </button>
-              </span>
-            </div>
-
-            <Nav onBack={() => setStep(2)} onNext={() => setStep(4)} />
-          </Panel>
-        ) : null}
-
-        {/* 4. Confirm */}
-        {step === 4 ? (
-          <Panel
-            title="Nearly there"
-            body="We need a name and an email so the facilities team can reach you."
-          >
-            <form
-              className="mt-6 space-y-5"
-              noValidate
-              onSubmit={(e) => {
-                e.preventDefault();
-                const fd = new FormData();
-                fd.set("facility_slug", facilitySlug ?? "");
-                if (isCourt && courtId) fd.set("court_id", courtId);
-                fd.set("date", chosenDate);
-                fd.set("start_time", start24);
-                fd.set("hours", String(hours));
-                fd.set("participants", String(participants));
-                if (layout) fd.set("layout", layout);
-                fd.set("activity", form.activity);
-                fd.set("org", form.org);
-                fd.set("purpose", form.purpose);
-                fd.set("name", form.name);
-                fd.set("email", form.email);
-                fd.set("mobile", form.mobile);
-                fd.set("accept", accepted ? "true" : "");
-                startTransition(() => submit(fd));
-              }}
-            >
-              {result?.formError ? (
-                <p className="border border-clay bg-clay/8 px-4 py-3 text-[0.85rem] font-semibold text-clay-deep">
-                  {result.formError}
-                </p>
-              ) : null}
-
-              <Field label="Your name" name="name" required error={errors.name}>
-                {(p) => (
-                  <input
-                    {...p}
-                    type="text"
-                    autoComplete="name"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className={controlClass}
-                  />
-                )}
-              </Field>
+            <Block title="Your details" hint={`The confirmation goes to ${email}.`}>
               <div className="grid gap-5 sm:grid-cols-2">
-                <Field label="Email" name="email" required error={errors.email}>
-                  {(p) => (
-                    <input
-                      {...p}
-                      type="email"
-                      inputMode="email"
-                      autoComplete="email"
-                      value={form.email}
-                      onChange={(e) =>
-                        setForm({ ...form, email: e.target.value })
-                      }
-                      className={controlClass}
-                    />
-                  )}
-                </Field>
-                <Field label="Mobile" name="mobile" hint="For same-day changes">
-                  {(p) => (
-                    <input
-                      {...p}
-                      type="tel"
-                      inputMode="tel"
-                      autoComplete="tel"
-                      value={form.mobile}
-                      onChange={(e) =>
-                        setForm({ ...form, mobile: e.target.value })
-                      }
-                      className={controlClass}
-                    />
-                  )}
-                </Field>
+                <TextField label="Name" error={e.name}>
+                  <input value={name} onChange={(ev) => setName(ev.target.value)} autoComplete="name" className={INPUT} />
+                </TextField>
+                <TextField label="Mobile number" hint="For same-day changes." error={e.mobile}>
+                  <input
+                    value={mobile}
+                    onChange={(ev) => setMobile(ev.target.value)}
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    placeholder="0917 123 4567"
+                    className={INPUT}
+                  />
+                </TextField>
               </div>
+            </Block>
 
-              <div className="border border-hairline bg-paper-bright p-5">
-                <p className="label text-ink-mute">Before you confirm</p>
-                <ul className="mt-3 space-y-2 text-[0.88rem] leading-relaxed text-ink-soft">
-                  {(facility?.rules
-                    ? [facility.rules]
-                    : ["Please leave the space as you found it."]
-                  ).map((r) => (
-                    <li key={r} className="flex gap-3">
-                      <span aria-hidden className="mt-2 h-1 w-3 shrink-0 bg-clay" />
-                      {r}
+            <Block title="Room policies">
+              <details className="group bg-paper-bright shadow-[inset_0_0_0_1px_var(--hairline)]">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-[0.98rem] text-ink [&::-webkit-details-marker]:hidden">
+                  <span>Approval, priority, food, set-up time and more</span>
+                  <span className="shrink-0 text-[0.9rem] font-semibold text-clay group-open:hidden">Read all {ROOM_POLICIES.length}</span>
+                  <span className="hidden shrink-0 text-[0.9rem] font-semibold text-clay group-open:inline">Hide</span>
+                </summary>
+                <ul className="divide-y divide-hairline border-t border-hairline px-5">
+                  {ROOM_POLICIES.map(([t, b]) => (
+                    <li key={t} className="grid gap-1 py-3.5 sm:grid-cols-[9rem_1fr] sm:gap-4">
+                      <span className="text-[0.92rem] font-semibold text-ink">{t}</span>
+                      <span className="text-[0.92rem] leading-relaxed text-ink-soft">{b}</span>
                     </li>
                   ))}
-                  <li className="flex gap-3">
-                    <span aria-hidden className="mt-2 h-1 w-3 shrink-0 bg-clay" />
-                    Cancel at least 24 hours ahead, or the slot is held against
-                    your booking history.
-                  </li>
                 </ul>
-
-                <label className="mt-5 flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    name="accept"
-                    checked={accepted}
-                    onChange={(e) => setAccepted(e.target.checked)}
-                    aria-invalid={errors.accept ? true : undefined}
-                    aria-describedby={errors.accept ? "accept-err" : undefined}
-                    className="mt-1 h-4 w-4 accent-clay"
-                  />
-                  <span className="text-[0.9rem] text-ink-soft">
-                    I have read the rules and accept them on behalf of everyone
-                    in my group.
-                  </span>
-                </label>
-                {errors.accept ? (
-                  <p
-                    id="accept-err"
-                    className="mt-1.5 flex items-center gap-1.5 text-[0.8rem] font-semibold text-clay-deep"
-                  >
-                    <span aria-hidden>!</span>
-                    {errors.accept}
-                  </p>
-                ) : null}
-              </div>
-
-              <div className="flex flex-wrap justify-between gap-3">
-                <Button type="button" tone="ghost" onClick={() => setStep(3)}>
-                  Back
-                </Button>
-                <Button type="submit" size="lg" disabled={pending}>
-                  {pending
-                    ? "Sending…"
-                    : facility?.requires_approval
-                      ? "Send request"
-                      : "Confirm booking"}
-                </Button>
-              </div>
-            </form>
-          </Panel>
+              </details>
+              <label className="mt-3 flex cursor-pointer items-start gap-3 bg-paper-bright p-5 text-[0.98rem] text-ink shadow-[inset_0_0_0_1px_var(--hairline)] has-[:checked]:shadow-[inset_0_0_0_2px_var(--clay)]">
+                <input
+                  type="checkbox"
+                  checked={agreed}
+                  onChange={(ev) => setAgreed(ev.target.checked)}
+                  className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--clay)]"
+                />
+                <span>I&rsquo;ve read the room policies and accept them on behalf of my ministry.</span>
+              </label>
+              {e.accept ? <Err>{e.accept}</Err> : null}
+            </Block>
+          </div>
         ) : null}
       </div>
 
-      {/* Running summary */}
-      <aside className="border border-hairline bg-paper-bright p-6 lg:sticky lg:top-28">
-        <p className="label text-clay">Your booking</p>
-        <dl className="mt-5 space-y-4 text-[0.9rem]">
-          <Row label="Space" value={facility?.name ?? "Not chosen"} />
-          {isCourt ? (
-            <Row
-              label="Court"
-              value={
-                facility?.courts.find((c) => c.id === courtId)?.name ??
-                "Not chosen"
-              }
-            />
+      {/* The request so far and the next step, pinned to the bottom of the screen */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-paper-bright/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-12px_rgba(20,32,33,0.18)] backdrop-blur">
+        <div className="mx-auto flex max-w-[82rem] items-center gap-4 px-5 py-3.5 sm:px-8">
+          {step > 1 ? (
+            <button
+              type="button"
+              onClick={() => goTo((step - 1) as StepId)}
+              className="hidden min-h-11 shrink-0 cursor-pointer items-center gap-1.5 px-2 text-[0.95rem] font-semibold text-ink-mute hover:text-ink sm:flex"
+            >
+              <ChevronIcon dir="left" />
+              Back
+            </button>
           ) : null}
-          <Row
-            label="When"
-            value={
-              startIso
-                ? `${fmtDayLong(startIso)}, ${fmtTime(startIso)}`
-                : "Not chosen"
-            }
-          />
-          <Row
-            label="Length"
-            value={`${hours} ${hours === 1 ? "hour" : "hours"}`}
-          />
-          <Row
-            label={isCourt ? "Players" : "Participants"}
-            value={String(participants)}
-          />
-          {layout ? <Row label="Layout" value={layout} /> : null}
-        </dl>
-
-        <p className="mt-6 border-t border-hairline pt-5 text-[0.8rem] leading-relaxed text-ink-mute">
-          {isCourt
-            ? "Court rates will be posted soon. Nothing is charged online."
-            : "Rooms are free for ministries. Nothing is charged online."}{" "}
-          Keep your reference.
-        </p>
-        <Link
-          href="/centris/reserve#policies"
-          className="label mt-3 inline-block text-clay underline underline-offset-4"
-        >
-          Booking policies
-        </Link>
-      </aside>
-    </div>
+          {step > 1 ? (
+            <button
+              type="button"
+              onClick={() => goTo((step - 1) as StepId)}
+              aria-label="Back"
+              className="flex h-11 w-11 shrink-0 items-center justify-center text-ink shadow-[inset_0_0_0_1px_var(--hairline)] sm:hidden"
+            >
+              <ChevronIcon dir="left" />
+            </button>
+          ) : null}
+          <div className="min-w-0 flex-1 leading-snug">
+            {picked.length || timed ? (
+              <>
+                <span className="block truncate text-[0.98rem] font-semibold text-ink">
+                  {picked.length ? picked.map(shortName).join(" + ") : "Choose a room"}
+                </span>
+                <span className="block truncate text-[0.88rem] text-ink-mute">
+                  {dateShort(date)} · {timed ? `${timeLabel(start!)} to ${timeLabel(end!)}` : "choose a time"} · {people} people
+                </span>
+              </>
+            ) : (
+              <span className="block truncate text-[0.92rem] text-ink-mute">
+                {missing.length ? `Choose ${missing.join(" and ")}` : ""}
+              </span>
+            )}
+            <Messages state={state} />
+          </div>
+          <div className="shrink-0">
+            {step === 3 ? (
+              <button type="submit" disabled={sending || missing.length > 0} className={PRIMARY}>
+                {sending ? "Sending…" : "Send request"}
+              </button>
+            ) : (
+              <button type="button" onClick={() => !missing.length && goTo((step + 1) as StepId)} disabled={missing.length > 0} className={PRIMARY}>
+                Continue
+              </button>
+            )}
+          </div>
+        </div>
+        {missing.length && step > 1 ? (
+          <p className="mx-auto max-w-[82rem] px-5 pb-2.5 text-[0.8rem] text-ink-mute sm:px-8">Still needed: {missing.join(", ")}.</p>
+        ) : null}
+      </div>
+    </form>
   );
 }
 
-/* --- Confirmation ---------------------------------------------------------- */
+/** Today, unless it's Sunday or the rooms are about to close; else the next open day. */
+function firstOpenDay(today: string): string {
+  if (weekdayOf(today) !== 0 && manilaNow() < DAY_END - 60) return today;
+  let d = today;
+  for (let i = 0; i < 7; i++) {
+    d = addDays(d, 1);
+    if (weekdayOf(d) !== 0) return d;
+  }
+  return d;
+}
 
-function Confirmation({
-  reference,
-  facility,
-  courtId,
-  startIso,
-  hours,
-  isCourt,
-  participants,
+const INPUT =
+  "w-full bg-paper-bright px-4 py-3 text-[1rem] text-ink shadow-[inset_0_0_0_1px_var(--hairline)] focus:shadow-[inset_0_0_0_2px_var(--clay)] focus:outline-none";
+const PRIMARY =
+  "btn-press label bg-clay px-6 py-3.5 text-paper-bright transition-colors hover:bg-clay-deep disabled:cursor-not-allowed disabled:opacity-40 sm:px-10";
+
+/* --- The room board --------------------------------------------------------- */
+
+/**
+ * Every room on one shared timeline, 9:00 AM to 9:30 PM. One hour scale on
+ * top; the chosen time runs down all the rooms as a single soft column; each
+ * room's bar only shows what matters: closed (hatched), taken (grey), and the
+ * time you've picked for it (teal). On phones each room stacks its own bar.
+ */
+function RoomBoard({
+  date,
+  setup,
+  selection,
+  picked,
+  past,
+  heldFor,
+  blocked,
+  timed,
+  loading,
+  onToggle,
+  onPick,
 }: {
-  reference: string;
-  facility: Facility | null;
-  courtId: string | null;
-  startIso: string | null;
-  hours: number;
-  isCourt: boolean;
-  participants: number;
+  date: string;
+  setup: Setup;
+  selection: [Minutes, Minutes] | null;
+  picked: string[];
+  past: Minutes;
+  heldFor: (slug: string) => [Minutes, Minutes][];
+  blocked: (slug: string) => string | null;
+  timed: boolean;
+  loading: boolean;
+  onToggle: (slug: string) => void;
+  onPick: (slug: string, at: Minutes) => void;
 }) {
-  const pending = facility?.requires_approval ?? false;
-  const ref = reference;
-
   return (
-    <div className="mx-auto max-w-2xl">
-      <FormSuccess className="p-8">
-        <p className="label text-clay">
-          {pending ? "Request sent" : "Booking confirmed"}
-        </p>
-        <h2 className="display-md mt-3">
-          {pending ? "We'll confirm within a day." : "You're booked."}
-        </h2>
-        <p className="mt-4 leading-relaxed text-ink-soft">
-          {pending
-            ? "The facilities team reviews room requests and will email you once it is confirmed. Nothing is held until then."
-            : "Your court is held. Come to the Sports Hall desk a few minutes early and give your reference."}
-        </p>
-
-        <div className="mt-7 border border-dashed border-ink/25 bg-paper-bright p-6 text-center">
-          <p className="label text-ink-mute">Reference</p>
-          <p className="font-display mt-1 text-3xl tracking-wider tabular">
-            {ref}
-          </p>
-        </div>
-
-        <dl className="mt-7 divide-y divide-hairline border-y border-hairline">
-          {[
-            ["Space", facility?.name ?? "—"],
-            ...(isCourt
-              ? [[
-                  "Court",
-                  facility?.courts.find((c) => c.id === courtId)?.name ?? "—",
-                ] as [string, string]]
-              : []),
-            [
-              "When",
-              startIso
-                ? `${fmtDayLong(startIso)}, ${fmtTime(startIso)}`
-                : "—",
-            ],
-            ["Length", `${hours} ${hours === 1 ? "hour" : "hours"}`],
-            [isCourt ? "Players" : "Participants", String(participants)],
-          ].map(([k, v]) => (
-            <div key={k} className="flex justify-between gap-4 py-3">
-              <dt className="label text-ink-mute">{k}</dt>
-              <dd className="text-right text-[0.95rem]">{v}</dd>
-            </div>
+    <div>
+      {/* Hour scale, once */}
+      <div className="grid md:grid-cols-[16rem_minmax(0,1fr)] md:gap-x-8">
+        <span className="hidden md:block" />
+        <div className="relative mb-2 h-5 text-[0.8rem] text-ink-mute">
+          {HOURS.map(([m, t], i) => (
+            <span
+              key={t}
+              className={`absolute whitespace-nowrap ${i === 0 ? "" : i === HOURS.length - 1 ? "-translate-x-3/4" : "-translate-x-1/2"}`}
+              style={{ left: pct(m) }}
+            >
+              {t}
+            </span>
           ))}
-        </dl>
-
-        <p className="mt-5 text-[0.85rem] leading-relaxed text-ink-mute">
-          {isCourt
-            ? "Court rates will be posted soon. Nothing was charged online."
-            : "There is no charge. Rooms are free for ministries."}
-        </p>
-
-        <div className="mt-7 flex flex-wrap gap-3">
-          <Link
-            href="/centris/availability"
-            className="btn-press label border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
-          >
-            Book another
-          </Link>
-          <Link
-            href="/centris/sports"
-            className="btn-press label border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
-          >
-            Sports at Centris
-          </Link>
         </div>
-      </FormSuccess>
+      </div>
+
+      <div className="relative">
+        {/* The chosen time, one column down every room (wide screens) */}
+        {selection ? (
+          <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 hidden md:left-[18rem] md:block">
+            <span className="absolute inset-y-0 bg-clay/[0.07] shadow-[inset_1px_0_0_rgba(0,118,130,0.35),inset_-1px_0_0_rgba(0,118,130,0.35)]" style={spanStyle(selection[0], selection[1])} />
+          </div>
+        ) : null}
+
+        <ul className="divide-y divide-hairline border-y border-hairline">
+          {MINISTRY_ROOMS.map((r) => {
+            const cap = r.capacity[setup];
+            const why = blocked(r.slug);
+            const on = picked.includes(r.slug);
+            const open = ministryWindow(r.slug, date);
+            const closed: [Minutes, Minutes][] = open
+              ? [
+                  [DAY_START, open.from],
+                  [open.to, DAY_END],
+                ]
+              : [[DAY_START, DAY_END]];
+            const usable = Boolean(cap) && Boolean(open);
+            return (
+              <li key={r.slug} className="grid gap-3 py-5 md:grid-cols-[16rem_minmax(0,1fr)] md:items-center md:gap-x-8">
+                <button
+                  type="button"
+                  disabled={Boolean(why)}
+                  aria-pressed={on}
+                  onClick={() => onToggle(r.slug)}
+                  className="group flex min-h-11 cursor-pointer items-center gap-4 text-left disabled:cursor-not-allowed"
+                >
+                  <span
+                    aria-hidden
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center transition-colors duration-150 ${
+                      on
+                        ? "bg-clay text-paper-bright"
+                        : why
+                          ? "bg-paper-deep/70"
+                          : "bg-paper-bright shadow-[inset_0_0_0_1.5px_var(--ink-mute)] group-hover:shadow-[inset_0_0_0_1.5px_var(--ink)]"
+                    }`}
+                  >
+                    {on ? <CheckIcon /> : null}
+                  </span>
+                  <span className="min-w-0">
+                    <span className={`block text-[1.05rem] font-semibold ${why ? "text-ink-mute" : "text-ink"}`}>{r.name}</span>
+                    <span className="mt-0.5 block text-[0.88rem] text-ink-mute">
+                      {why ?? (
+                        <>
+                          Seats {cap}
+                          {timed && !loading ? <span className="text-moss"> · Free then</span> : null}
+                        </>
+                      )}
+                    </span>
+                  </span>
+                </button>
+
+                <div
+                  aria-hidden
+                  onClick={(ev) => {
+                    if (!usable) return;
+                    const box = ev.currentTarget.getBoundingClientRect();
+                    const at = DAY_START + ((ev.clientX - box.left) / box.width) * SPAN;
+                    onPick(r.slug, Math.floor(at / STEP_MINUTES) * STEP_MINUTES);
+                  }}
+                  className={`relative h-10 overflow-hidden ${usable ? "cursor-pointer bg-paper-bright hover:bg-paper-bright/70" : "bg-paper-deep/40"} ${
+                    loading ? "motion-safe:animate-pulse" : ""
+                  }`}
+                >
+                  {past > DAY_START ? <span className="absolute inset-y-0 bg-paper-deep/80" style={spanStyle(DAY_START, past)} /> : null}
+                  {closed
+                    .filter(([a, b]) => b > a)
+                    .map(([a, b]) => (
+                      <span key={`c${a}`} className="absolute inset-y-0" style={{ ...spanStyle(a, b), background: HATCH }} />
+                    ))}
+                  {heldFor(r.slug).map(([a, b]) => (
+                    <span key={`h${a}`} className="absolute inset-y-2 bg-ink/25" style={spanStyle(a, b)} />
+                  ))}
+                  {on && selection ? <span className="absolute inset-y-0 bg-clay" style={spanStyle(selection[0], selection[1])} /> : null}
+                  {/* On phones, the chosen time as an outline on each free room */}
+                  {!on && !why && selection ? (
+                    <span className="absolute inset-y-0 shadow-[inset_0_0_0_1.5px_var(--clay)] md:hidden" style={spanStyle(selection[0], selection[1])} />
+                  ) : null}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+
+      <p className="mt-4 flex flex-wrap gap-x-6 gap-y-1.5 text-[0.85rem] text-ink-mute">
+        <Swatch className="bg-paper-bright shadow-[inset_0_0_0_1px_var(--hairline)]">Free</Swatch>
+        <Swatch className="bg-ink/25">Taken</Swatch>
+        <Swatch style={{ background: HATCH }} className="shadow-[inset_0_0_0_1px_var(--hairline)]">
+          Closed
+        </Swatch>
+        <Swatch className="bg-clay">Your booking</Swatch>
+      </p>
     </div>
   );
 }
 
-/* --- Bits ------------------------------------------------------------------ */
-
-function Steps({ step, isCourt }: { step: Step; isCourt: boolean }) {
-  const labels = ["Space", "When", isCourt ? "Players" : "Details", "Confirm"];
+function Swatch({ className = "", style, children }: { className?: string; style?: CSSProperties; children: ReactNode }) {
   return (
-    <ol className="flex flex-wrap gap-x-6 gap-y-2 border-b border-hairline pb-5">
-      {labels.map((l, i) => {
-        const n = (i + 1) as Step;
-        const state = n === step ? "current" : n < step ? "done" : "todo";
+    <span className="inline-flex items-center gap-2">
+      <span aria-hidden className={`h-3.5 w-5 ${className}`} style={style} />
+      {children}
+    </span>
+  );
+}
+
+/* --- Pieces ----------------------------------------------------------------- */
+
+function Progress({ step, onGo }: { step: StepId; onGo: (s: StepId) => void }) {
+  const steps: [StepId, string][] = [
+    [1, "Find a room"],
+    [2, "Event details"],
+    [3, "Review and send"],
+  ];
+  return (
+    <ol className="grid grid-cols-3 gap-3">
+      {steps.map(([n, label]) => {
+        const done = n < step;
+        const current = n === step;
         return (
-          <li key={l} className="flex items-center gap-2">
-            <span
-              aria-hidden
-              className={cx(
-                "label flex h-6 w-6 items-center justify-center border",
-                state === "current" && "border-clay bg-clay text-paper-bright",
-                state === "done" && "border-ink bg-ink text-paper-bright",
-                state === "todo" && "border-hairline text-ink-mute",
-              )}
+          <li key={n}>
+            <button
+              type="button"
+              disabled={!done}
+              onClick={() => onGo(n)}
+              aria-current={current ? "step" : undefined}
+              className="w-full text-left disabled:cursor-default"
             >
-              {n}
-            </span>
-            <span
-              aria-current={state === "current" ? "step" : undefined}
-              className={cx("label", state === "todo" ? "text-ink-mute" : "text-ink")}
-            >
-              {l}
-            </span>
+              <span className={`block h-[3px] ${done || current ? "bg-clay" : "bg-hairline"}`} />
+              <span className={`mt-3 block text-[0.95rem] ${current ? "font-semibold text-ink" : done ? "text-ink" : "text-ink-mute"}`}>
+                <span className={`mr-1.5 tabular-nums ${current || done ? "text-clay" : ""}`}>{n}.</span>
+                {label}
+              </span>
+            </button>
           </li>
         );
       })}
@@ -761,72 +856,178 @@ function Steps({ step, isCourt }: { step: Step; isCourt: boolean }) {
   );
 }
 
-function Panel({
-  title,
-  body,
-  children,
-}: {
-  title: string;
-  body: string;
-  children: React.ReactNode;
-}) {
+function Block({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
   return (
-    <div className="rise pt-10">
-      <h2 className="display-md">{title}</h2>
-      <p className="mt-3 max-w-xl leading-relaxed text-ink-soft">{body}</p>
+    <section>
+      <h2 className="font-display text-2xl text-ink">{title}</h2>
+      {hint ? <p className="mt-1.5 max-w-2xl text-[0.95rem] leading-relaxed text-ink-mute">{hint}</p> : null}
+      <div className="mt-6">{children}</div>
+    </section>
+  );
+}
+
+function Labelled({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="block">
+      <span className="block text-[0.85rem] font-semibold text-ink-mute">{label}</span>
+      <span className="mt-1.5 block">{children}</span>
+    </label>
+  );
+}
+
+function ArrowButton({ label, onClick, disabled, children }: { label: string; onClick: () => void; disabled?: boolean; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      disabled={disabled}
+      className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center bg-paper-bright text-lg text-ink shadow-[inset_0_0_0_1px_var(--hairline)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--ink)] disabled:bg-transparent disabled:text-ink-mute/40 disabled:hover:shadow-[inset_0_0_0_1px_var(--hairline)]"
+    >
       {children}
-    </div>
+    </button>
   );
 }
 
-function Nav({
-  onBack,
-  onNext,
-  nextDisabled,
+function EquipmentChip({ label, max, count, onChange }: { label: string; max: number; count: number; onChange: (n: number) => void }) {
+  if (!count || max === 1) {
+    return (
+      <button
+        type="button"
+        aria-pressed={Boolean(count)}
+        onClick={() => onChange(count ? 0 : 1)}
+        className={`${CHOICE} inline-flex items-center gap-2 ${count ? CHOICE_ON : CHOICE_OFF}`}
+      >
+        {count ? <CheckIcon /> : null}
+        {label}
+      </button>
+    );
+  }
+  return (
+    <span className={`inline-flex min-h-11 items-stretch text-[0.95rem] ${CHOICE_ON}`}>
+      <button type="button" aria-label={`One fewer ${label.toLowerCase()}`} onClick={() => onChange(count - 1)} className="w-10 cursor-pointer hover:bg-clay/10">
+        &minus;
+      </button>
+      <span aria-live="polite" className="flex items-center px-1 tabular-nums">
+        {count} × {label}
+      </span>
+      <button
+        type="button"
+        aria-label={`One more ${label.toLowerCase()}`}
+        onClick={() => onChange(Math.min(max, count + 1))}
+        disabled={count >= max}
+        className="w-10 cursor-pointer hover:bg-clay/10 disabled:cursor-not-allowed disabled:text-clay/30"
+      >
+        +
+      </button>
+    </span>
+  );
+}
+
+function Messages({ state }: { state: RoomRequestResult | null }) {
+  if (!state || state.ok) return null;
+  const text = state.formError ?? (state.fieldErrors ? "Something needs fixing. It's marked above." : null);
+  if (!text) return null;
+  return (
+    <span role="alert" className="mt-0.5 block text-[0.85rem] text-sky">
+      {text}
+      {state.needsAuth ? (
+        <>
+          {" "}
+          <Link href="/sign-in?next=/centris/reserve" className="underline underline-offset-4">
+            Sign in
+          </Link>
+        </>
+      ) : null}
+    </span>
+  );
+}
+
+function TextField({ label, hint, error, children }: { label: string; hint?: string; error?: string; children: ReactNode }) {
+  return (
+    <label className="block">
+      <span className="block text-[0.9rem] font-semibold text-ink">{label}</span>
+      <span className="mt-2 block">{children}</span>
+      {hint ? <span className="mt-1.5 block text-[0.85rem] text-ink-mute">{hint}</span> : null}
+      {error ? <Err>{error}</Err> : null}
+    </label>
+  );
+}
+
+function Err({ children }: { children: ReactNode }) {
+  return (
+    <span role="alert" className="mt-2 block text-[0.9rem] text-sky">
+      {children}
+    </span>
+  );
+}
+
+function Sent({
+  reference,
+  email,
+  emailed,
+  rows,
+  onAnother,
 }: {
-  onBack?: () => void;
-  onNext: () => void;
-  nextDisabled?: boolean;
+  reference: string;
+  email: string;
+  emailed: boolean;
+  rows: [string, string][];
+  onAnother: () => void;
 }) {
+  const steps: [string, string, boolean][] = [
+    ["Request sent", emailed ? `A copy is in ${email}.` : "Saved under My reservations.", true],
+    ["The facilities team reviews it", "Your rooms are held for you while they check.", false],
+    ["You get a confirmation email", "Then it's safe to announce your event.", false],
+  ];
   return (
-    <div className="mt-8 flex justify-between gap-3">
-      {onBack ? (
-        <Button tone="ghost" onClick={onBack}>
-          Back
-        </Button>
-      ) : (
-        <span />
-      )}
-      <Button onClick={onNext} disabled={nextDisabled}>
-        Continue
-      </Button>
+    <div role="status" className="grid gap-12 bg-paper-bright p-8 shadow-[inset_0_0_0_1px_var(--hairline)] sm:p-12 lg:grid-cols-2">
+      <div>
+        <span aria-hidden className="flex h-12 w-12 items-center justify-center bg-clay text-paper-bright">
+          <CheckIcon className="h-6 w-6" />
+        </span>
+        <h2 className="font-display mt-6 text-3xl leading-tight text-ink sm:text-4xl">Request sent.</h2>
+        <p className="mt-2 text-ink-mute">
+          Reference <span className="font-semibold tabular-nums text-ink">{reference}</span>
+        </p>
+        <dl className="mt-7 divide-y divide-hairline border-y border-hairline text-[0.98rem]">
+          {rows.map(([k, v]) => (
+            <div key={k} className="flex justify-between gap-6 py-3">
+              <dt className="text-ink-mute">{k}</dt>
+              <dd className="text-right text-ink">{v}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+      <div>
+        <h3 className="font-display text-xl text-ink">What happens next</h3>
+        <ol className="mt-5 space-y-6">
+          {steps.map(([t, b, done], i) => (
+            <li key={t} className="flex gap-4">
+              <span
+                aria-hidden
+                className={`flex h-8 w-8 shrink-0 items-center justify-center text-[0.85rem] font-bold ${
+                  done ? "bg-clay text-paper-bright" : "text-ink-mute shadow-[inset_0_0_0_1px_var(--hairline)]"
+                }`}
+              >
+                {done ? <CheckIcon /> : i + 1}
+              </span>
+              <span>
+                <span className="block font-semibold text-ink">{t}</span>
+                <span className="mt-0.5 block text-[0.92rem] text-ink-mute">{b}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+        <div className="mt-9 flex flex-wrap gap-6">
+          <Link href="/my/reservations" className="text-[0.95rem] font-semibold text-clay underline underline-offset-4">
+            See my requests
+          </Link>
+          <button type="button" onClick={onAnother} className="text-[0.95rem] font-semibold text-clay underline underline-offset-4">
+            Request another room
+          </button>
+        </div>
+      </div>
     </div>
   );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt className="text-ink-mute">{label}</dt>
-      <dd className="mt-0.5 font-semibold text-ink">{value}</dd>
-    </div>
-  );
-}
-
-/** Rooms have no live grid, so offer the facility's opening hours. */
-function genericSlots(f: Facility | null): Slot[] {
-  if (!f) return [];
-  const open = Number(f.open_time.slice(0, 2));
-  const close = Number(f.close_time.slice(0, 2));
-  const base = new Date();
-  base.setHours(0, 0, 0, 0);
-  return Array.from({ length: Math.max(0, close - open) }, (_, i) => {
-    const d = new Date(base);
-    d.setHours(open + i);
-    return {
-      start: d.toISOString(),
-      end: new Date(d.getTime() + 3600_000).toISOString(),
-      state: "available" as const,
-    };
-  });
 }

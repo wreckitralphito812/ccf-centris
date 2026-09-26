@@ -1,148 +1,130 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Eyebrow, Section, SectionHead } from "@/components/ui";
-import {
-  getCourtSlots,
-  getFacility,
-  getReservableFacilities,
-} from "@/lib/queries";
-import { currentUser } from "@/lib/supabase/ssr";
+import { currentUser, createSupabaseServer } from "@/lib/supabase/ssr";
 import { hasSupabase } from "@/lib/supabase/server";
-import { addDaysKey, manilaDateKey } from "@/lib/format";
+import { manilaDateKey } from "@/lib/format";
+import { HOURS_SUMMARY, MINISTRY_ROOMS, SETUPS } from "@/lib/ministry-rooms";
 import { BookingFlow } from "./booking";
+import { ROOM_POLICIES } from "./policies";
 
 export const metadata: Metadata = {
-  title: "Reserve a space",
+  title: "Request a room",
   description:
-    "Book the basketball or pickleball court, or request a multipurpose hall at CCF Centris. Rooms are free for ministries.",
+    "Request a room at CCF Centris for ministry meetings, trainings and events. Rooms are free, and the facilities team confirms each request.",
 };
 
-/** Availability is live, so this page is never cached. */
+/** Sign-in state and today's date change per request, so never cache. */
 export const dynamic = "force-dynamic";
 
-export default async function ReservePage({
-  searchParams,
-}: PageProps<"/centris/reserve">) {
-  const sp = await searchParams;
-  const one = (v: string | string[] | undefined) =>
-    (Array.isArray(v) ? v[0] : v) ?? null;
+export default async function ReservePage() {
+  const user = hasSupabase() ? await currentUser() : null;
 
-  const today = manilaDateKey();
-  const rawDate = one(sp.date);
-  const date = rawDate && /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? rawDate : today;
-
-  // Booking needs an account. When Supabase isn't configured there are no
-  // accounts, so the flow stays open (it just can't actually write).
-  const signedIn = !hasSupabase() || Boolean(await currentUser());
-
-  const [facilities, hall] = await Promise.all([
-    getReservableFacilities(),
-    getFacility("sports-hall"),
-  ]);
-
-  // Preload every court's grid so the flow never waits on a click.
-  const slotsByCourt: Record<string, Awaited<ReturnType<typeof getCourtSlots>>> =
-    {};
-  if (hall) {
-    await Promise.all(
-      hall.courts.map(async (c) => {
-        slotsByCourt[c.id] = await getCourtSlots("sports-hall", c.id, date);
-      }),
-    );
+  let name = "";
+  let mobile = "";
+  if (user) {
+    const { data: profile } = await (await createSupabaseServer())
+      .from("profiles")
+      .select("first_name, last_name, full_name, mobile")
+      .eq("id", user.id)
+      .maybeSingle();
+    name = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || profile?.full_name || "";
+    mobile = profile?.mobile ?? "";
   }
-
-  const dateOptions = Array.from({ length: 14 }, (_, i) => addDaysKey(today, i));
 
   return (
     <>
       <PageHeader
         eyebrow="Reserve"
-        title="Book a court or a room."
-        lead="Anyone can book the Sports Hall, CCF member or not. Multipurpose halls are for classes, trainings, and meetings."
+        title="Request a room."
+        lead="For ministry meetings, trainings and events. Rooms are free. Send a request and the facilities team will confirm it by email."
       />
 
       <Section>
         <Container>
-          {signedIn ? (
-            <BookingFlow
-              facilities={facilities}
-              slotsByCourt={slotsByCourt}
-              initialFacility={one(sp.facility)}
-              initialCourt={one(sp.court)}
-              date={date}
-              dateOptions={dateOptions}
-            />
+          {user?.email ? (
+            <BookingFlow today={manilaDateKey()} name={name} email={user.email} mobile={mobile} />
           ) : (
-            <div className="mx-auto max-w-xl border border-hairline bg-paper-bright p-8 text-center">
-              <Eyebrow>Sign in</Eyebrow>
-              <h2 className="mt-3 font-display text-2xl">
-                Reserving needs an account
-              </h2>
-              <p className="mx-auto mt-3 max-w-md text-[0.92rem] leading-relaxed text-ink-soft">
-                Sign in so you can see your bookings and cancel if plans change.
-                There&rsquo;s no password. We email you a sign-in link.
-              </p>
-              <div className="mt-6">
-                <ButtonLink
-                  href={`/sign-in?next=${encodeURIComponent(
-                    `/centris/reserve${rawDate ? `?date=${date}` : ""}`,
-                  )}`}
-                  size="lg"
-                >
-                  Sign in to continue
-                </ButtonLink>
+            <div className="grid gap-8 border border-hairline bg-paper-bright p-7 sm:p-9 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+              <div>
+                <Eyebrow>Sign in to request</Eyebrow>
+                <p className="font-display mt-3 text-2xl leading-tight text-ink sm:text-3xl">
+                  Requests come from a signed-in account.
+                </p>
+                <p className="mt-3 max-w-xl leading-relaxed text-ink-soft">
+                  So each request has a real name and email, and we can confirm the room with you. There&rsquo;s no
+                  password: we email you a link.
+                </p>
               </div>
-              <p className="mt-6 text-[0.85rem] text-ink-mute">
-                Just browsing?{" "}
-                <Link href="/centris/availability" className="text-clay underline underline-offset-4">
-                  Check court availability
-                </Link>{" "}
-                without signing in.
-              </p>
+              <ButtonLink href="/sign-in?next=/centris/reserve" size="lg">
+                Sign in to continue
+              </ButtonLink>
             </div>
           )}
         </Container>
       </Section>
 
-      <Section id="policies" tone="deep" className="scroll-mt-24">
-        <Container>
-          <SectionHead
-            eyebrow="Policies"
-            title="Booking rules"
-            lead="These keep the center fair for everyone."
-          />
-          <div className="mt-10 grid gap-px border border-hairline bg-hairline sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              ["Cancelling", "Cancel at least 24 hours ahead and there is no penalty. Repeated no-shows affect future bookings."],
-              ["Approval", "Courts are usually instant. Multipurpose halls are a request first, confirmed by the facilities team within a day."],
-              ["Payment", "Rooms are free for ministries. Court rates will be posted soon. Nothing is charged through this site."],
-              ["Footwear", "Non-marking indoor shoes are required on the sport floor. Other shoes damage the surface, so there are no exceptions."],
-              ["Setup time", "Room bookings must include setup and packing-down time in the window you book."],
-              ["Under 16s", "An adult must be present for anyone under 16 using the Sports Hall."],
-              ["Recurring bookings", "Weekly or monthly slots can be arranged, but need approval first."],
-              ["Blackout dates", "The center closes for some CCF-wide events and holidays. Those dates are blocked in advance."],
-              ["Damage and lost property", "Report anything broken to the desk. Lost property is held at the Welcome Center."],
-            ].map(([t, b]) => (
-              <div key={t} className="bg-paper-bright p-6">
-                <h3 className="font-display text-lg">{t}</h3>
-                <p className="mt-1.5 text-[0.88rem] leading-relaxed text-ink-soft">
-                  {b}
-                </p>
+      {/* Signed-in members see all of this on the room board itself. */}
+      {user ? null : (
+        <Section tone="deep">
+          <Container>
+            <SectionHead eyebrow="Rooms" title="Rooms and hours" />
+            <div className="mt-8 grid gap-10 lg:grid-cols-2">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[26rem] border-y border-hairline text-left text-[0.95rem]">
+                  <thead>
+                    <tr className="border-b border-hairline">
+                      <th className="label py-3 pr-4 font-normal text-ink-mute">Room</th>
+                      {SETUPS.map((s) => (
+                        <th key={s.id} className="label py-3 pr-4 text-right font-normal text-ink-mute">
+                          {s.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-hairline">
+                    {MINISTRY_ROOMS.map((r) => (
+                      <tr key={r.slug}>
+                        <td className="py-3 pr-4 font-semibold text-ink">{r.name}</td>
+                        {SETUPS.map((s) => (
+                          <td key={s.id} className="py-3 pr-4 text-right tabular-nums text-ink-soft">
+                            {r.capacity[s.id] ?? "—"}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <p className="mt-3 text-[0.85rem] text-ink-mute">People per set-up.</p>
               </div>
-            ))}
-          </div>
+              <ul className="divide-y divide-hairline border-y border-hairline">
+                {HOURS_SUMMARY.map(([t, b]) => (
+                  <li key={t} className="py-3">
+                    <span className="block font-semibold text-ink">{t}</span>
+                    <span className="mt-0.5 block leading-relaxed text-ink-soft">{b}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Container>
+        </Section>
+      )}
 
-          <div className="mt-10 border-l-2 border-clay bg-paper-bright py-4 pl-5 pr-4">
-            <Eyebrow>Note</Eyebrow>
-            <p className="mt-2 max-w-2xl leading-relaxed text-ink-soft">
-              Hours and policies shown here are placeholders and will be set by
-              the CCF Centris facilities team before the booking system opens
-              to the public.
-            </p>
-          </div>
-        </Container>
-      </Section>
+      {user ? null : (
+        <Section id="policies" className="scroll-mt-24">
+          <Container>
+            <SectionHead eyebrow="Policies" title="Room policies" />
+            <ul className="mt-8 divide-y divide-hairline border-y border-hairline">
+              {ROOM_POLICIES.map(([t, b]) => (
+                <li key={t} className="grid gap-1 py-4 sm:grid-cols-[12rem_1fr] sm:gap-6">
+                  <span className="font-semibold text-ink">{t}</span>
+                  <span className="leading-relaxed text-ink-soft">{b}</span>
+                </li>
+              ))}
+            </ul>
+          </Container>
+        </Section>
+      )}
     </>
   );
 }

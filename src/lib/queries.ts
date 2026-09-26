@@ -606,6 +606,11 @@ export interface AdminReservation {
   ends_at: string;
   status: string;
   created_at: string;
+  /** Shared by every room in one ministry request; null for older rows. */
+  request_group: string | null;
+  layout: string | null;
+  equipment: Record<string, number> | null;
+  food: string | null;
 }
 
 /** A Dgroup table request in the admin queue. */
@@ -682,7 +687,7 @@ export async function getReservations(): Promise<AdminReservation[]> {
   const { data, error } = await supabaseAdmin()
     .from("reservations")
     .select(
-      "id, contact_name, contact_email, contact_mobile, organization, activity_name, purpose, participants, during, status, created_at, facilities(name), courts(name)",
+      "id, contact_name, contact_email, contact_mobile, organization, activity_name, purpose, participants, during, status, created_at, request_group, layout, equipment, food, facilities(name), courts(name)",
     )
     .eq("satellite_id", SATELLITE_ID)
     .order("created_at", { ascending: false });
@@ -711,6 +716,10 @@ export async function getReservations(): Promise<AdminReservation[]> {
       ends_at,
       status: r.status as string,
       created_at: r.created_at as string,
+      request_group: (r.request_group as string | null) ?? null,
+      layout: (r.layout as string | null) ?? null,
+      equipment: (r.equipment as Record<string, number> | null) ?? null,
+      food: (r.food as string | null) ?? null,
     };
   });
 }

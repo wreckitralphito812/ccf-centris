@@ -8,7 +8,7 @@ import {
   Section,
   SectionHead,
 } from "@/components/ui";
-import { FacilityCard, MessageArt } from "@/components/cards";
+import { FacilityCard } from "@/components/cards";
 import { getFacilities } from "@/lib/queries";
 import { SITE } from "@/lib/site";
 
@@ -30,10 +30,7 @@ export default async function CentrisPage() {
         actions={
           <>
             <ButtonLink href="/centris/reserve" size="lg">
-              Reserve a space
-            </ButtonLink>
-            <ButtonLink href="/centris/availability" tone="outline" size="lg">
-              Check availability
+              Request a room
             </ButtonLink>
           </>
         }
@@ -79,7 +76,7 @@ export default async function CentrisPage() {
                 // Communities was pulled. Rendered as plain text below.
                 ["NXTGEN rooms", "Children's rooms by age band, with check-in just outside.", null],
                 ["Sports Hall", "Basketball, badminton, and pickleball, open to the community.", "/centris/facilities/sports-hall"],
-                ["Multipurpose Halls 1–4", "Rooms for classes, trainings, and meetings.", "/centris/facilities"],
+                ["John, Luke, Matthew and Mark", "Four halls for classes, trainings and meetings.", "/centris/facilities"],
                 ["Dgroup Lounge", "Soft seating for Dgroups that meet during the week.", "/centris/facilities/dgroup-lounge"],
               ].map((row, i) => {
                 const [name, blurb, href] = row as [string, string, string | null];
@@ -162,33 +159,6 @@ export default async function CentrisPage() {
             {facilities.slice(0, 6).map((f) => (
               <FacilityCard key={f.id} f={f} />
             ))}
-          </div>
-        </Container>
-      </Section>
-
-      {/* Play */}
-      <Section>
-        <Container>
-          <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
-            <div>
-              <Eyebrow>Play at Centris</Eyebrow>
-              <h2 className="display-md mt-5">
-                The Sports Hall is open to everyone.
-              </h2>
-              <p className="mt-5 leading-relaxed text-ink-soft">
-                You don&rsquo;t need to be a CCF member. Book a court, come to an
-                open night, or join a league.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <ButtonLink href="/centris/sports">Sports at Centris</ButtonLink>
-                <ButtonLink href="/centris/availability" tone="outline">
-                  What&rsquo;s free today
-                </ButtonLink>
-              </div>
-            </div>
-            <div className="aspect-[4/3] overflow-hidden border border-hairline">
-              <MessageArt seed="sports-hall" label="Play" className="h-full w-full" />
-            </div>
           </div>
         </Container>
       </Section>
