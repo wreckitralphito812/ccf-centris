@@ -36,11 +36,11 @@ const OPTIONS: {
   {
     eyebrow: "Ministries",
     title: "Request a room",
-    body: "A multipurpose hall for a ministry meeting, training or event.",
+    body: "John, Luke, Matthew or Mark, the Welcome Center or the Dgroup Lounge, for a ministry meeting, training or event.",
     facts: [
+      ["When", "Monday to Saturday, from 9:00 AM"],
       ["Cost", "Free for ministries"],
-      ["Confirmation", "Reviewed by the facilities team"],
-      ["Tip", "Request well ahead of your date"],
+      ["Confirmation", "By email, once the facilities team approves"],
     ],
     href: "/centris/reserve",
     cta: "Request a room",

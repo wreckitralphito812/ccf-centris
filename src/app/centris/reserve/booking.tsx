@@ -1,747 +1,588 @@
 "use client";
 
-import { useActionState, useMemo, useState, startTransition } from "react";
 import Link from "next/link";
-import type { Facility } from "@/lib/types";
-import { fmtDayLong, fmtTime } from "@/lib/format";
-import { Button, cx } from "@/components/ui";
-import { Field, FormSuccess, controlClass } from "@/components/form";
+import { useActionState, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createRoomRequest, roomBusyTimes, type RoomRequestResult } from "@/app/actions/reservations";
+import { Err, Field, inputClass } from "@/app/reserve/dgroup/booking-form";
 import {
-  createReservation,
-  type ReservationResult,
-} from "@/app/actions/reservations";
+  EQUIPMENT,
+  FOOD,
+  MINISTRIES,
+  MINISTRY_ROOMS,
+  SETUPS,
+  STEP_MINUTES,
+  closedReason,
+  dayWindow,
+  equipmentSummary,
+  timeLabel,
+  toHHMM,
+  weekdayOf,
+  type Minutes,
+  type Setup,
+} from "@/lib/ministry-rooms";
+import { ROOM_POLICIES } from "./policies";
 
 /**
- * Room request for ministry gatherings.
+ * A ministry's room request, rebuilt from CCF Centris's Venue Reservation
+ * Form. What it does differently: the requester's name and email come from
+ * their account; it asks for headcount and set-up first, so each room shows
+ * the seats it has for that set-up; it only offers times the rooms are open
+ * and greys out rooms already held; equipment is a count, not a list of
+ * near-duplicate boxes; and one tick accepts the policies.
  *
- * Rooms only: the page hands in facilities without courts, so there is no
- * court grid here. Court booking will be its own flow once the Sports Hall
- * setup and rates are settled. The server action still accepts `court_id`;
- * this flow just never sends one.
- *
- * Every request lands as `pending` and a facilities admin approves it before
- * it goes on the calendar. Nothing is charged and no price or capacity is
- * shown, because rooms are free for ministries and room capacities aren't
- * confirmed yet.
+ * One page, numbered sections, and a summary beside the Send button, like the
+ * Dgroup table form. Every rule is checked again on the server.
  */
 
-type Step = 1 | 2 | 3 | 4;
+type Busy = Record<string, [Minutes, Minutes][]>;
 
-/** The action accepts up to 8 hours per request. */
-const MAX_HOURS = 8;
+const WEEKDAY = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const MONTH = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-export function BookingFlow({
-  facilities,
-  initialFacility,
-  initialDate,
+function dateLabel(date: string) {
+  const [, m, d] = date.split("-").map(Number);
+  return `${WEEKDAY[weekdayOf(date)]}, ${d} ${MONTH[m - 1]}`;
+}
+
+export function BookingFlow(props: { today: string; name: string; email: string; mobile: string }) {
+  const [attempt, setAttempt] = useState(0);
+  return <Request key={attempt} {...props} onAnother={() => setAttempt((a) => a + 1)} />;
+}
+
+function Request({
   today,
+  name,
+  email,
+  mobile,
+  onAnother,
 }: {
-  facilities: Facility[];
-  initialFacility: string | null;
-  initialDate: string | null;
   today: string;
+  name: string;
+  email: string;
+  mobile: string;
+  onAnother: () => void;
 }) {
-  const [step, setStep] = useState<Step>(1);
-  const [facilitySlug, setFacilitySlug] = useState<string | null>(
-    facilities.some((f) => f.slug === initialFacility) ? initialFacility : null,
-  );
-  const [chosenDate, setChosenDate] = useState(initialDate ?? "");
-  const [startTime, setStartTime] = useState<string | null>(null);
-  const [hours, setHours] = useState(1);
-  const [participants, setParticipants] = useState("");
-  const [layout, setLayout] = useState("");
-  const [accepted, setAccepted] = useState(false);
-  // Captured once so start times already past today can be greyed out.
-  const [loadedAt] = useState(() => Date.now());
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    mobile: "",
-    org: "",
-    activity: "",
-    purpose: "",
+  const [state, action, sending] = useActionState<RoomRequestResult | null, FormData>(createRoomRequest, null);
+  const e = state?.fieldErrors ?? {};
+
+  const [activity, setActivity] = useState("");
+  const [ministry, setMinistry] = useState("");
+  const [ministryOther, setMinistryOther] = useState("");
+  const [people, setPeople] = useState("");
+  const [setup, setSetup] = useState<Setup>("classroom");
+  const [date, setDate] = useState("");
+  const [start, setStart] = useState<Minutes | null>(null);
+  const [end, setEnd] = useState<Minutes | null>(null);
+  const [rooms, setRooms] = useState<string[]>([]);
+  const [equipment, setEquipment] = useState<Record<string, number>>({});
+  const [food, setFood] = useState("none");
+  const [agreed, setAgreed] = useState(false);
+  const [busy, setBusy] = useState<{ date: string; times: Busy } | null>(null);
+
+  // What's already held on the chosen date. Refetched after a failed send,
+  // in case someone else took a room in the meantime.
+  useEffect(() => {
+    if (!date) return;
+    let live = true;
+    roomBusyTimes(date).then((times) => live && setBusy({ date, times }));
+    return () => {
+      live = false;
+    };
+  }, [date, state]);
+
+  const open = useMemo(() => (date ? dayWindow(date) : null), [date]);
+  const sunday = Boolean(date) && !open;
+  const headcount = Number(people);
+  const headcountOk = Number.isInteger(headcount) && headcount > 0;
+
+  const starts = useMemo(() => {
+    if (!open) return [];
+    const out: Minutes[] = [];
+    for (let m = open.from; m < open.to; m += STEP_MINUTES) out.push(m);
+    return out;
+  }, [open]);
+  const ends = useMemo(() => {
+    if (!open || start === null) return [];
+    const out: Minutes[] = [];
+    for (let m = start + STEP_MINUTES; m <= open.to; m += STEP_MINUTES) out.push(m);
+    return out;
+  }, [open, start]);
+
+  const timed = Boolean(date && open && start !== null && end !== null);
+  const loaded = busy?.date === date;
+
+  /** Why each room can't be picked right now, or null when it can. */
+  const blocked = (slug: string, cap: number | undefined): string | null => {
+    if (!cap) return "Doesn't offer this set-up";
+    if (!timed) return null;
+    const why = closedReason(slug, date, start!, end!);
+    if (why) return why;
+    if (loaded && (busy!.times[slug] ?? []).some(([a, b]) => a < end! && b > start!)) return "Already requested for this time";
+    return null;
+  };
+
+  // Drop rooms that stop fitting when the set-up, date or time changes.
+  const picked = rooms.filter((slug) => {
+    const r = MINISTRY_ROOMS.find((x) => x.slug === slug)!;
+    return !blocked(slug, r.capacity[setup]);
   });
+  const seats = picked.reduce((n, slug) => n + (MINISTRY_ROOMS.find((x) => x.slug === slug)!.capacity[setup] ?? 0), 0);
 
-  const [result, submit, pending] = useActionState<
-    ReservationResult | null,
-    FormData
-  >(createReservation, null);
-  const errors = result?.fieldErrors ?? {};
+  const ministryName = ministry === "Other" ? ministryOther.trim() : ministry;
+  const missing = [
+    !activity.trim() && "event name",
+    !ministryName && "ministry",
+    !headcountOk && "headcount",
+    !timed && "date and time",
+    !picked.length && "a room",
+    !agreed && "the policies",
+  ].filter(Boolean) as string[];
 
-  const facility = useMemo(
-    () => facilities.find((f) => f.slug === facilitySlug) ?? null,
-    [facilitySlug, facilities],
-  );
-
-  const times = useMemo(() => startTimes(facility), [facility]);
-  const startIso =
-    chosenDate && startTime ? `${chosenDate}T${startTime}:00+08:00` : null;
-
-  /** Hours left before the room closes, capped at what the action accepts. */
-  const maxHours = useMemo(() => {
-    if (!facility || !startTime) return 1;
-    const close = Number(facility.close_time.slice(0, 2));
-    const start = Number(startTime.slice(0, 2));
-    return Math.max(1, Math.min(MAX_HOURS, close - start));
-  }, [facility, startTime]);
-
-  const headcount = Number(participants);
-  const headcountOk = Number.isInteger(headcount) && headcount >= 1;
-
-  const canContinue1 = Boolean(facility);
-  const canContinue2 = Boolean(chosenDate && startTime);
-  const canContinue3 = Boolean(form.activity.trim()) && headcountOk;
-
-  // Problems the server found with earlier steps, shown on the last step.
-  const earlierErrors = [
-    errors.facility_slug,
-    errors.date,
-    errors.start_time,
-    errors.hours,
-    errors.participants,
-  ].filter(Boolean);
-
-  if (result?.ok) {
+  if (state?.ok) {
     return (
-      <Confirmation
-        reference={result.reference ?? "—"}
-        facility={facility}
-        startIso={startIso}
-        hours={hours}
-        participants={headcount}
-      />
+      <div role="status" className="border border-clay bg-paper-bright p-7 sm:p-9">
+        <p className="label text-clay">Request sent</p>
+        <h2 className="font-display mt-3 text-3xl leading-tight text-ink sm:text-4xl">We have your request.</h2>
+        <p className="mt-4 max-w-2xl leading-relaxed text-ink-soft">
+          The facilities team will check it and email you at <span className="text-ink">{email}</span> when
+          it&rsquo;s confirmed. The {picked.length > 1 ? "rooms are" : "room is"} held for you while they look,
+          but please wait for the confirmation before announcing it.
+          {state.emailed ? " We've emailed you a copy of this request." : ""}
+        </p>
+        <dl className="mt-7 max-w-xl divide-y divide-hairline border-y border-hairline text-[0.95rem]">
+          <SummaryRow label="Reference" value={state.reference ?? "—"} />
+          <SummaryRow label="Event" value={activity} />
+          <SummaryRow label="When" value={timed ? `${dateLabel(date)}, ${timeLabel(start!)} to ${timeLabel(end!)}` : "—"} />
+          <SummaryRow label={picked.length > 1 ? "Rooms" : "Room"} value={picked.map(roomName).join(", ")} />
+          <SummaryRow label="People" value={String(headcount)} />
+        </dl>
+        <div className="mt-7 flex flex-wrap gap-5">
+          <Link href="/my/reservations" className="label text-clay underline underline-offset-4">
+            See my requests
+          </Link>
+          <button type="button" onClick={onAnother} className="label text-clay underline underline-offset-4 hover:text-clay-deep">
+            Request another room
+          </button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[1fr_21rem] lg:items-start">
-      <div>
-        <Steps step={step} />
-
-        {/* 1. Room */}
-        {step === 1 ? (
-          <Panel
-            title="Which room?"
-            body="Pick the room that fits your group best. If you're not sure, choose the closest one and tell us in your request."
-          >
-            <fieldset className="mt-6">
-              <legend className="sr-only">Choose a room</legend>
-              <div className="space-y-px border border-hairline bg-hairline">
-                {facilities.map((f) => (
-                  <label
-                    key={f.slug}
-                    className={cx(
-                      "flex cursor-pointer items-start gap-4 bg-paper-bright p-5 transition-colors",
-                      facilitySlug === f.slug ? "bg-bone" : "hover:bg-bone/50",
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      name="facility"
-                      checked={facilitySlug === f.slug}
-                      onChange={() => {
-                        setFacilitySlug(f.slug);
-                        setStartTime(null);
-                        setHours(1);
-                        setLayout("");
-                      }}
-                      className="mt-1 h-4 w-4 accent-clay"
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="font-display block text-xl leading-tight">
-                        {f.name}
-                      </span>
-                      {f.description ? (
-                        <span className="mt-1 block text-[0.88rem] leading-relaxed text-ink-soft">
-                          {f.description}
-                        </span>
-                      ) : null}
-                    </span>
-                  </label>
+    <form action={action} className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+      <div className="space-y-12">
+        <Step n={1} title="Your event">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <Field label="Event name" error={e.activity}>
+                <input
+                  name="activity"
+                  value={activity}
+                  onChange={(ev) => setActivity(ev.target.value)}
+                  placeholder="e.g. Elevate core huddle"
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+            <Field label="Ministry" hint="The lead ministry, if several are involved." error={e.ministry}>
+              <select name="ministry" value={ministry} onChange={(ev) => setMinistry(ev.target.value)} className={inputClass}>
+                <option value="" disabled>
+                  Choose one
+                </option>
+                {MINISTRIES.map((m) => (
+                  <option key={m}>{m}</option>
                 ))}
+                <option value="Other">Other</option>
+              </select>
+            </Field>
+            <Field label="How many people?" hint="Everyone: team, volunteers, speakers and guests." error={e.participants}>
+              <input
+                name="participants"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                value={people}
+                onChange={(ev) => setPeople(ev.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            {ministry === "Other" ? (
+              <div className="sm:col-span-2">
+                <Field label="Ministry name">
+                  <input
+                    name="ministry_other"
+                    value={ministryOther}
+                    onChange={(ev) => setMinistryOther(ev.target.value)}
+                    className={inputClass}
+                  />
+                </Field>
               </div>
-            </fieldset>
+            ) : null}
+          </div>
 
-            <p className="mt-4 text-[0.85rem] text-ink-mute">
-              Meeting as a Dgroup?{" "}
-              <Link
-                href="/reserve/dgroup"
-                className="text-clay underline underline-offset-4"
+          <fieldset className="mt-6">
+            <legend className="label text-clay">Set-up</legend>
+            <div className="mt-2 grid gap-2 sm:grid-cols-3">
+              {SETUPS.map((s) => (
+                <Choice key={s.id} name="setup" value={s.id} checked={setup === s.id} onChange={() => setSetup(s.id)}>
+                  <span className="text-[1.02rem] font-semibold">{s.label}</span>
+                  <span className="mt-0.5 text-[0.82rem] leading-snug text-ink-mute">{s.hint}</span>
+                </Choice>
+              ))}
+            </div>
+            {e.setup ? <Err>{e.setup}</Err> : null}
+          </fieldset>
+        </Step>
+
+        <Step
+          n={2}
+          title="Date and time"
+          hint="Include time to set up before and pack up after. Rooms can be requested Monday to Saturday."
+          error={e.date ?? e.time}
+        >
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field label="Date">
+              <input
+                name="date"
+                type="date"
+                min={today}
+                value={date}
+                onChange={(ev) => setDate(ev.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Start">
+              <select
+                name="start"
+                value={start === null ? "" : toHHMM(start)}
+                disabled={!open}
+                onChange={(ev) => {
+                  const s = ev.target.value ? Number(ev.target.value.slice(0, 2)) * 60 + Number(ev.target.value.slice(3)) : null;
+                  setStart(s);
+                  if (s !== null && (end === null || end <= s)) setEnd(Math.min(s + 120, open!.to));
+                }}
+                className={inputClass}
               >
-                Book a Dgroup table
-              </Link>{" "}
-              instead.
+                <option value="">{open ? "Choose" : "Pick a date"}</option>
+                {starts.map((m) => (
+                  <option key={m} value={toHHMM(m)}>
+                    {timeLabel(m)}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="End">
+              <select
+                name="end"
+                value={end === null ? "" : toHHMM(end)}
+                disabled={start === null}
+                onChange={(ev) => setEnd(ev.target.value ? Number(ev.target.value.slice(0, 2)) * 60 + Number(ev.target.value.slice(3)) : null)}
+                className={inputClass}
+              >
+                <option value="">{start === null ? "Pick a start" : "Choose"}</option>
+                {ends.map((m) => (
+                  <option key={m} value={toHHMM(m)}>
+                    {timeLabel(m)}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          {date && !sunday ? <p className="mt-2 text-[0.88rem] text-ink-mute">{dateLabel(date)}</p> : null}
+          {sunday ? (
+            <p className="mt-3 border-l-2 border-clay pl-3 text-[0.92rem] text-ink-soft">
+              Sundays are for the services, so rooms can&rsquo;t be requested. Pick a day from Monday to Saturday.
             </p>
+          ) : null}
+        </Step>
 
-            <Nav onNext={() => setStep(2)} nextDisabled={!canContinue1} />
-          </Panel>
-        ) : null}
-
-        {/* 2. When */}
-        {step === 2 ? (
-          <Panel
-            title="When?"
-            body="Choose a date, a start time and how long you need the room. Include your setup and pack-down time."
-          >
-            <div className="mt-6 max-w-xs">
-              <Field label="Date" name="date" required>
-                {(p) => (
-                  <input
-                    {...p}
-                    type="date"
-                    min={today}
-                    value={chosenDate}
-                    onChange={(e) => {
-                      setChosenDate(e.target.value);
-                      setStartTime(null);
-                      setHours(1);
-                    }}
-                    className={controlClass}
-                  />
-                )}
-              </Field>
-              {chosenDate ? (
-                <p className="mt-2 text-[0.85rem] text-ink-mute">
-                  {fmtDayLong(`${chosenDate}T12:00:00+08:00`)}
-                </p>
-              ) : null}
-            </div>
-
-            {chosenDate ? (
-              <fieldset className="mt-7">
-                <legend className="label text-ink-mute">Start time</legend>
-                <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
-                  {times.map((t) => {
-                    const iso = `${chosenDate}T${t}:00+08:00`;
-                    const past =
-                      chosenDate === today &&
-                      new Date(iso).getTime() < loadedAt;
-                    const on = startTime === t;
-                    return (
-                      <button
-                        key={t}
-                        type="button"
-                        disabled={past}
-                        aria-pressed={on}
-                        onClick={() => {
-                          setStartTime(t);
-                          setHours(1);
-                        }}
-                        className={cx(
-                          "btn-press border px-2 py-2.5 text-[0.82rem] font-semibold transition-colors",
-                          past &&
-                            "cursor-not-allowed border-transparent bg-ink/5 text-ink-mute/50 line-through",
-                          !past && on && "border-clay bg-clay text-paper-bright",
-                          !past &&
-                            !on &&
-                            "border-ink/25 text-ink hover:border-ink",
-                        )}
-                      >
-                        {fmtTime(iso)}
-                      </button>
-                    );
-                  })}
-                </div>
-                <p className="mt-2 text-[0.8rem] text-ink-mute">
-                  The facilities team checks the calendar and confirms the time
-                  with you.
-                </p>
-              </fieldset>
-            ) : null}
-
-            {startTime ? (
-              <fieldset className="mt-7">
-                <legend className="label text-ink-mute">How long?</legend>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {Array.from({ length: maxHours }, (_, i) => i + 1).map((h) => (
-                    <button
-                      key={h}
-                      type="button"
-                      aria-pressed={hours === h}
-                      onClick={() => setHours(h)}
-                      className={cx(
-                        "btn-press label border px-3.5 py-2 transition-colors",
-                        hours === h
-                          ? "border-clay bg-clay text-paper-bright"
-                          : "border-ink/25 text-ink hover:border-ink",
-                      )}
-                    >
-                      {h} {h === 1 ? "hour" : "hours"}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-            ) : null}
-
-            <Nav
-              onBack={() => setStep(1)}
-              onNext={() => setStep(3)}
-              nextDisabled={!canContinue2}
-            />
-          </Panel>
-        ) : null}
-
-        {/* 3. Details */}
-        {step === 3 ? (
-          <Panel
-            title="Details"
-            body="Tell us what the room is for so the team can set it up properly."
-          >
-            <div className="mt-6 space-y-5">
-              <Field label="Activity or event name" name="activity" required>
-                {(p) => (
-                  <input
-                    {...p}
-                    type="text"
-                    value={form.activity}
-                    onChange={(e) =>
-                      setForm({ ...form, activity: e.target.value })
-                    }
-                    className={controlClass}
-                  />
-                )}
-              </Field>
-              <Field label="Ministry or group" name="org" hint="Optional">
-                {(p) => (
-                  <input
-                    {...p}
-                    type="text"
-                    value={form.org}
-                    onChange={(e) => setForm({ ...form, org: e.target.value })}
-                    className={controlClass}
-                  />
-                )}
-              </Field>
-              <div className="max-w-xs">
-                <Field
-                  label="How many people?"
-                  name="participants"
-                  required
-                  hint="Your best guess is fine"
+        <Step
+          n={3}
+          title="Rooms"
+          hint={
+            timed
+              ? "Rooms that are free and open for your time. Tick more than one if you need the space."
+              : "Seats shown are for the set-up you chose. Pick a date and time to see what's free."
+          }
+          error={e.rooms}
+        >
+          <div className="grid gap-2 sm:grid-cols-2">
+            {MINISTRY_ROOMS.map((r) => {
+              const cap = r.capacity[setup];
+              const why = blocked(r.slug, cap);
+              const on = picked.includes(r.slug);
+              return (
+                <label
+                  key={r.slug}
+                  className={`flex items-start gap-3 border p-4 transition-colors ${
+                    why
+                      ? "cursor-not-allowed border-hairline bg-paper-deep/50 text-ink-mute"
+                      : on
+                        ? "cursor-pointer border-clay bg-clay/5"
+                        : "cursor-pointer border-hairline bg-paper-bright hover:border-ink"
+                  }`}
                 >
-                  {(p) => (
-                    <input
-                      {...p}
-                      type="number"
-                      inputMode="numeric"
-                      min={1}
-                      step={1}
-                      value={participants}
-                      onChange={(e) => setParticipants(e.target.value)}
-                      className={controlClass}
-                    />
-                  )}
-                </Field>
-              </div>
-              <Field
-                label="Anything else we should know?"
-                name="purpose"
-                hint="Optional"
-              >
-                {(p) => (
-                  <textarea
-                    {...p}
-                    rows={3}
-                    value={form.purpose}
-                    onChange={(e) =>
-                      setForm({ ...form, purpose: e.target.value })
-                    }
-                    className={controlClass}
-                    placeholder="A GLC class, a team training, a Dgroup leaders' meeting. Mention any chairs, tables or AV you'll need, or if this repeats weekly or monthly."
-                  />
-                )}
-              </Field>
-
-              {facility?.layouts.length ? (
-                <fieldset>
-                  <legend className="label text-ink-mute">
-                    Seating layout{" "}
-                    <span className="normal-case tracking-normal">(optional)</span>
-                  </legend>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {facility.layouts.map((l) => (
-                      <button
-                        key={l}
-                        type="button"
-                        aria-pressed={layout === l}
-                        onClick={() => setLayout(layout === l ? "" : l)}
-                        className={cx(
-                          "btn-press label border px-3.5 py-2 transition-colors",
-                          layout === l
-                            ? "border-clay bg-clay text-paper-bright"
-                            : "border-ink/25 text-ink hover:border-ink",
-                        )}
-                      >
-                        {l}
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
-              ) : null}
-            </div>
-
-            <Nav
-              onBack={() => setStep(2)}
-              onNext={() => setStep(4)}
-              nextDisabled={!canContinue3}
-            />
-          </Panel>
-        ) : null}
-
-        {/* 4. Send */}
-        {step === 4 ? (
-          <Panel
-            title="Nearly there"
-            body="We need a name and an email so the facilities team can reach you about this request."
-          >
-            <form
-              className="mt-6 space-y-5"
-              noValidate
-              onSubmit={(e) => {
-                e.preventDefault();
-                const fd = new FormData();
-                fd.set("facility_slug", facilitySlug ?? "");
-                fd.set("date", chosenDate);
-                fd.set("start_time", startTime ?? "");
-                fd.set("hours", String(hours));
-                fd.set("participants", String(headcount));
-                if (layout) fd.set("layout", layout);
-                fd.set("activity", form.activity);
-                fd.set("org", form.org);
-                fd.set("purpose", form.purpose);
-                fd.set("name", form.name);
-                fd.set("email", form.email);
-                fd.set("mobile", form.mobile);
-                fd.set("accept", accepted ? "true" : "");
-                startTransition(() => submit(fd));
-              }}
-            >
-              {result?.formError || earlierErrors.length ? (
-                <div className="border border-clay bg-clay/8 px-4 py-3 text-[0.85rem] font-semibold text-clay-deep">
-                  {result?.formError ? <p>{result.formError}</p> : null}
-                  {earlierErrors.map((m) => (
-                    <p key={m}>{m} Go back to fix it.</p>
-                  ))}
-                </div>
-              ) : null}
-
-              <Field label="Your name" name="name" required error={errors.name}>
-                {(p) => (
-                  <input
-                    {...p}
-                    type="text"
-                    autoComplete="name"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className={controlClass}
-                  />
-                )}
-              </Field>
-              <div className="grid gap-5 sm:grid-cols-2">
-                <Field label="Email" name="email" required error={errors.email}>
-                  {(p) => (
-                    <input
-                      {...p}
-                      type="email"
-                      inputMode="email"
-                      autoComplete="email"
-                      value={form.email}
-                      onChange={(e) =>
-                        setForm({ ...form, email: e.target.value })
-                      }
-                      className={controlClass}
-                    />
-                  )}
-                </Field>
-                <Field label="Mobile" name="mobile" hint="For same-day changes">
-                  {(p) => (
-                    <input
-                      {...p}
-                      type="tel"
-                      inputMode="tel"
-                      autoComplete="tel"
-                      value={form.mobile}
-                      onChange={(e) =>
-                        setForm({ ...form, mobile: e.target.value })
-                      }
-                      className={controlClass}
-                    />
-                  )}
-                </Field>
-              </div>
-
-              <div className="border border-hairline bg-paper-bright p-5">
-                <p className="label text-ink-mute">Before you send</p>
-                <ul className="mt-3 space-y-2 text-[0.88rem] leading-relaxed text-ink-soft">
-                  {[
-                    "Include setup and pack-down in the time you asked for.",
-                    "Leave the room as you found it.",
-                    "If plans change, tell us as early as you can.",
-                  ].map((r) => (
-                    <li key={r} className="flex gap-3">
-                      <span aria-hidden className="mt-2 h-1 w-3 shrink-0 bg-clay" />
-                      {r}
-                    </li>
-                  ))}
-                </ul>
-
-                <label className="mt-5 flex items-start gap-3">
                   <input
                     type="checkbox"
-                    name="accept"
-                    checked={accepted}
-                    onChange={(e) => setAccepted(e.target.checked)}
-                    aria-invalid={errors.accept ? true : undefined}
-                    aria-describedby={errors.accept ? "accept-err" : undefined}
-                    className="mt-1 h-4 w-4 accent-clay"
+                    name="room"
+                    value={r.slug}
+                    checked={on}
+                    disabled={Boolean(why)}
+                    onChange={(ev) => setRooms(ev.target.checked ? [...picked, r.slug] : picked.filter((s) => s !== r.slug))}
+                    className="mt-1 h-4 w-4 shrink-0 accent-[var(--clay)]"
                   />
-                  <span className="text-[0.9rem] text-ink-soft">
-                    I&rsquo;ve read the{" "}
-                    <Link
-                      href="/centris/reserve#policies"
-                      className="text-clay underline underline-offset-4"
-                    >
-                      room policies
-                    </Link>{" "}
-                    and will pass them on to my group.
+                  <span className="min-w-0 flex-1">
+                    <span className={`block text-[1.02rem] font-semibold ${why ? "" : "text-ink"}`}>{r.name}</span>
+                    <span className="mt-0.5 block text-[0.85rem]">
+                      {why ?? (
+                        <span className={on ? "text-clay" : "text-ink-mute"}>
+                          Seats {cap}
+                          {timed && loaded ? " · Free" : ""}
+                        </span>
+                      )}
+                    </span>
                   </span>
                 </label>
-                {errors.accept ? (
-                  <p
-                    id="accept-err"
-                    className="mt-1.5 flex items-center gap-1.5 text-[0.8rem] font-semibold text-clay-deep"
-                  >
-                    <span aria-hidden>!</span>
-                    {errors.accept}
-                  </p>
-                ) : null}
-              </div>
+              );
+            })}
+          </div>
+          {picked.length && headcountOk ? (
+            <p className={`mt-3 text-[0.9rem] ${seats < headcount ? "text-sky" : "text-ink-soft"}`}>
+              {seats < headcount
+                ? `These seat ${seats}, fewer than your ${headcount}. Add a room or choose another set-up.`
+                : `These seat ${seats} for your ${headcount}.`}
+            </p>
+          ) : null}
+        </Step>
 
-              <div className="flex flex-wrap justify-between gap-3">
-                <Button type="button" tone="ghost" onClick={() => setStep(3)}>
-                  Back
-                </Button>
-                <Button type="submit" size="lg" disabled={pending}>
-                  {pending ? "Sending…" : "Send request"}
-                </Button>
-              </div>
-            </form>
-          </Panel>
-        ) : null}
+        <Step n={4} title="Equipment and food" hint="Equipment is optional. We'll tell you if something you need isn't available on your date." error={e.food}>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {EQUIPMENT.filter((item) => item.max > 1).map((item) => {
+              const n = equipment[item.id] ?? 0;
+              const set = (v: number) => setEquipment({ ...equipment, [item.id]: v });
+              return (
+                <div
+                  key={item.id}
+                  className={`flex items-center justify-between gap-4 border px-4 py-2 ${n ? "border-clay bg-clay/5" : "border-hairline bg-paper-bright"}`}
+                >
+                  <span className={n ? "font-semibold text-clay" : "text-ink"}>{item.label}s</span>
+                  <div className="inline-flex items-stretch border border-hairline bg-paper-bright">
+                    <button
+                      type="button"
+                      onClick={() => set(Math.max(0, n - 1))}
+                      disabled={!n}
+                      aria-label={`One fewer ${item.label.toLowerCase()}`}
+                      className="w-9 text-xl text-ink transition-colors hover:bg-paper-deep disabled:text-ink-mute/40"
+                    >
+                      &minus;
+                    </button>
+                    <output aria-live="polite" className="flex w-9 items-center justify-center border-x border-hairline font-semibold tabular-nums">
+                      {n}
+                    </output>
+                    <button
+                      type="button"
+                      onClick={() => set(Math.min(item.max, n + 1))}
+                      disabled={n >= item.max}
+                      aria-label={`One more ${item.label.toLowerCase()}`}
+                      className="w-9 text-xl text-ink transition-colors hover:bg-paper-deep disabled:text-ink-mute/40"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {EQUIPMENT.filter((item) => item.max === 1).map((item) => {
+              const on = Boolean(equipment[item.id]);
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setEquipment({ ...equipment, [item.id]: on ? 0 : 1 })}
+                  className={`border px-4 py-2 text-[0.95rem] transition-colors ${
+                    on ? "border-clay bg-clay/5 font-semibold text-clay" : "border-hairline bg-paper-bright text-ink hover:border-ink"
+                  }`}
+                >
+                  {on ? "✓ " : ""}
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+          {EQUIPMENT.map((item) => (
+            <input key={item.id} type="hidden" name={`eq_${item.id}`} value={equipment[item.id] ?? 0} />
+          ))}
+
+          <fieldset className="mt-6">
+            <legend className="label text-clay">Food</legend>
+            <div className="mt-2 grid gap-2 sm:grid-cols-3">
+              {FOOD.map((f) => (
+                <Choice key={f.id} name="food" value={f.id} checked={food === f.id} onChange={() => setFood(f.id)}>
+                  <span className="text-[1.02rem] font-semibold">{f.label}</span>
+                  {f.hint ? <span className="mt-0.5 text-[0.82rem] leading-snug text-ink-mute">{f.hint}</span> : null}
+                </Choice>
+              ))}
+            </div>
+          </fieldset>
+
+          <div className="mt-6">
+            <Field label="Anything else?" hint="Optional. Special set-up, a repeating schedule, or anything the team should know.">
+              <textarea name="notes" rows={3} className={inputClass} />
+            </Field>
+          </div>
+        </Step>
+
+        <Step n={5} title="Your details" hint={`The confirmation goes to ${email}.`}>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Name" error={e.name}>
+              <input name="name" required autoComplete="name" defaultValue={name} className={inputClass} />
+            </Field>
+            <Field label="Mobile number" hint="For same-day changes." error={e.mobile}>
+              <input
+                name="mobile"
+                type="tel"
+                required
+                autoComplete="tel"
+                inputMode="tel"
+                defaultValue={mobile}
+                placeholder="0917 123 4567"
+                className={inputClass}
+              />
+            </Field>
+          </div>
+        </Step>
+
+        <Step n={6} title="Room policies" error={e.accept}>
+          <ul className="divide-y divide-hairline border-y border-hairline">
+            {ROOM_POLICIES.map(([t, b]) => (
+              <li key={t} className="grid gap-1 py-3 sm:grid-cols-[11rem_1fr] sm:gap-4">
+                <span className="font-semibold text-ink">{t}</span>
+                <span className="text-[0.92rem] leading-relaxed text-ink-soft">{b}</span>
+              </li>
+            ))}
+          </ul>
+          <label className="mt-4 flex cursor-pointer items-start gap-3 border border-hairline bg-paper-bright p-4 text-[0.95rem] text-ink has-[:checked]:border-clay">
+            <input
+              type="checkbox"
+              name="accept"
+              checked={agreed}
+              onChange={(ev) => setAgreed(ev.target.checked)}
+              className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--clay)]"
+            />
+            <span>I accept these policies on behalf of my ministry.</span>
+          </label>
+        </Step>
       </div>
 
-      {/* Running summary */}
       <aside className="border border-hairline bg-paper-bright p-6 lg:sticky lg:top-28">
         <p className="label text-clay">Your request</p>
-        <dl className="mt-5 space-y-4 text-[0.9rem]">
-          <Row label="Room" value={facility?.name ?? "Not chosen"} />
-          <Row
-            label="When"
-            value={
-              startIso
-                ? `${fmtDayLong(startIso)}, ${fmtTime(startIso)}`
-                : chosenDate
-                  ? fmtDayLong(`${chosenDate}T12:00:00+08:00`)
-                  : "Not chosen"
-            }
-          />
-          <Row
-            label="Length"
-            value={`${hours} ${hours === 1 ? "hour" : "hours"}`}
-          />
-          {headcountOk ? (
-            <Row label="People" value={String(headcount)} />
-          ) : null}
-          {layout ? <Row label="Layout" value={layout} /> : null}
+        <dl className="mt-4 divide-y divide-hairline border-y border-hairline text-[0.95rem]">
+          <SummaryRow label="Event" value={activity.trim() || "—"} muted={!activity.trim()} />
+          <SummaryRow label="Ministry" value={ministryName || "—"} muted={!ministryName} />
+          <SummaryRow label="Date" value={date && !sunday ? dateLabel(date) : "—"} muted={!date || sunday} />
+          <SummaryRow label="Time" value={timed ? `${timeLabel(start!)} to ${timeLabel(end!)}` : "—"} muted={!timed} />
+          <SummaryRow label={picked.length > 1 ? "Rooms" : "Room"} value={picked.length ? picked.map(roomName).join(", ") : "—"} muted={!picked.length} />
+          <SummaryRow label="People" value={headcountOk ? String(headcount) : "—"} muted={!headcountOk} />
+          <SummaryRow label="Equipment" value={equipmentSummary(equipment)} muted={equipmentSummary(equipment) === "None"} />
         </dl>
 
-        <p className="mt-6 border-t border-hairline pt-5 text-[0.8rem] leading-relaxed text-ink-mute">
-          Rooms are free for ministries. The facilities team confirms each
-          request before it goes on the calendar.
-        </p>
-        <Link
-          href="/centris/reserve#policies"
-          className="label mt-3 inline-block text-clay underline underline-offset-4"
+        {state?.formError ? (
+          <p role="alert" className="mt-4 border-l-2 border-sky pl-3 text-[0.9rem] text-sky">
+            {state.formError}
+            {state.needsAuth ? (
+              <>
+                {" "}
+                <Link href="/sign-in?next=/centris/reserve" className="underline underline-offset-4">
+                  Sign in
+                </Link>
+              </>
+            ) : null}
+          </p>
+        ) : null}
+        {Object.keys(e).length ? (
+          <p role="alert" className="mt-4 border-l-2 border-sky pl-3 text-[0.9rem] text-sky">
+            Something needs fixing above.
+          </p>
+        ) : null}
+
+        <button
+          type="submit"
+          disabled={sending || missing.length > 0}
+          className="btn-press label mt-5 w-full border border-clay bg-clay px-6 py-4 text-paper-bright transition-colors hover:bg-clay-deep disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Room policies
-        </Link>
+          {sending ? "Sending…" : "Send request"}
+        </button>
+        <p className="mt-3 text-[0.82rem] leading-relaxed text-ink-mute">
+          {missing.length
+            ? `Still needed: ${missing.join(", ")}.`
+            : "Rooms are free for ministries. The facilities team confirms each request by email."}
+        </p>
       </aside>
-    </div>
+    </form>
   );
 }
 
-/* --- Confirmation ---------------------------------------------------------- */
+const roomName = (slug: string) => MINISTRY_ROOMS.find((r) => r.slug === slug)?.name ?? slug;
 
-function Confirmation({
-  reference,
-  facility,
-  startIso,
-  hours,
-  participants,
-}: {
-  reference: string;
-  facility: Facility | null;
-  startIso: string | null;
-  hours: number;
-  participants: number;
-}) {
-  return (
-    <div className="mx-auto max-w-2xl">
-      <FormSuccess className="p-8">
-        <p className="label text-clay">Request sent</p>
-        <h2 className="display-md mt-3">Thanks. We got your request.</h2>
-        <p className="mt-4 leading-relaxed text-ink-soft">
-          The facilities team will check the calendar and email you once your
-          room is confirmed. The room isn&rsquo;t held until then, so please
-          wait for that email before announcing it to your group.
-        </p>
-
-        <div className="mt-7 border border-dashed border-ink/25 bg-paper-bright p-6 text-center">
-          <p className="label text-ink-mute">Reference</p>
-          <p className="font-display mt-1 text-3xl tracking-wider tabular">
-            {reference}
-          </p>
-          <p className="mt-2 text-[0.8rem] text-ink-mute">
-            Mention this if you need to ask about your request.
-          </p>
-        </div>
-
-        <dl className="mt-7 divide-y divide-hairline border-y border-hairline">
-          {[
-            ["Room", facility?.name ?? "—"],
-            [
-              "When",
-              startIso ? `${fmtDayLong(startIso)}, ${fmtTime(startIso)}` : "—",
-            ],
-            ["Length", `${hours} ${hours === 1 ? "hour" : "hours"}`],
-            ["People", String(participants)],
-          ].map(([k, v]) => (
-            <div key={k} className="flex justify-between gap-4 py-3">
-              <dt className="label text-ink-mute">{k}</dt>
-              <dd className="text-right text-[0.95rem]">{v}</dd>
-            </div>
-          ))}
-        </dl>
-
-        <p className="mt-5 text-[0.85rem] leading-relaxed text-ink-mute">
-          There is no charge. Rooms are free for ministries.
-        </p>
-
-        <div className="mt-7 flex flex-wrap gap-3">
-          <Link
-            href="/my/reservations"
-            className="btn-press label border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
-          >
-            See my requests
-          </Link>
-          <Link
-            href="/reserve"
-            className="btn-press label border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
-          >
-            Back to Reserve
-          </Link>
-        </div>
-      </FormSuccess>
-    </div>
-  );
-}
-
-/* --- Bits ------------------------------------------------------------------ */
-
-function Steps({ step }: { step: Step }) {
-  const labels = ["Room", "When", "Details", "Send"];
-  return (
-    <ol className="flex flex-wrap gap-x-6 gap-y-2 border-b border-hairline pb-5">
-      {labels.map((l, i) => {
-        const n = (i + 1) as Step;
-        const state = n === step ? "current" : n < step ? "done" : "todo";
-        return (
-          <li key={l} className="flex items-center gap-2">
-            <span
-              aria-hidden
-              className={cx(
-                "label flex h-6 w-6 items-center justify-center border",
-                state === "current" && "border-clay bg-clay text-paper-bright",
-                state === "done" && "border-ink bg-ink text-paper-bright",
-                state === "todo" && "border-hairline text-ink-mute",
-              )}
-            >
-              {n}
-            </span>
-            <span
-              aria-current={state === "current" ? "step" : undefined}
-              className={cx("label", state === "todo" ? "text-ink-mute" : "text-ink")}
-            >
-              {l}
-            </span>
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
-
-function Panel({
-  title,
-  body,
+function Choice({
+  name,
+  value,
+  checked,
+  onChange,
   children,
 }: {
-  title: string;
-  body: string;
-  children: React.ReactNode;
+  name: string;
+  value: string;
+  checked: boolean;
+  onChange: () => void;
+  children: ReactNode;
 }) {
   return (
-    <div className="rise pt-10">
-      <h2 className="display-md">{title}</h2>
-      <p className="mt-3 max-w-xl leading-relaxed text-ink-soft">{body}</p>
+    <label
+      className={`flex cursor-pointer flex-col border px-4 py-3 transition-colors ${
+        checked ? "border-clay bg-clay/5 text-clay" : "border-hairline bg-paper-bright text-ink hover:border-ink"
+      }`}
+    >
+      <input type="radio" name={name} value={value} checked={checked} onChange={onChange} className="sr-only" />
       {children}
-    </div>
+    </label>
   );
 }
 
-function Nav({
-  onBack,
-  onNext,
-  nextDisabled,
+function Step({
+  n,
+  title,
+  hint,
+  error,
+  children,
 }: {
-  onBack?: () => void;
-  onNext: () => void;
-  nextDisabled?: boolean;
+  n: number;
+  title: string;
+  hint?: string;
+  error?: string;
+  children: ReactNode;
 }) {
   return (
-    <div className="mt-8 flex justify-between gap-3">
-      {onBack ? (
-        <Button tone="ghost" onClick={onBack}>
-          Back
-        </Button>
-      ) : (
-        <span />
-      )}
-      <Button onClick={onNext} disabled={nextDisabled}>
-        Continue
-      </Button>
-    </div>
+    <section>
+      <h3 className="flex items-baseline gap-3">
+        <span className="label tabular text-clay">{String(n).padStart(2, "0")}</span>
+        <span className="font-display text-xl text-ink">{title}</span>
+      </h3>
+      {hint ? <p className="mt-1 text-[0.88rem] leading-relaxed text-ink-mute">{hint}</p> : null}
+      <div className="mt-4">{children}</div>
+      {error ? <Err>{error}</Err> : null}
+    </section>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function SummaryRow({ label, value, muted = false }: { label: string; value: string; muted?: boolean }) {
   return (
-    <div>
-      <dt className="text-ink-mute">{label}</dt>
-      <dd className="mt-0.5 font-semibold text-ink">{value}</dd>
+    <div className="flex justify-between gap-4 py-2.5">
+      <dt className="label text-ink-mute">{label}</dt>
+      <dd className={`text-right ${muted ? "text-ink-mute" : "text-ink"}`}>{value}</dd>
     </div>
-  );
-}
-
-/**
- * Hourly start times ("HH:MM", Manila) within the room's listed hours. Rooms
- * have no live grid; the facilities team checks the calendar on approval.
- */
-function startTimes(f: Facility | null): string[] {
-  if (!f) return [];
-  const open = Number(f.open_time.slice(0, 2));
-  const close = Number(f.close_time.slice(0, 2));
-  return Array.from({ length: Math.max(0, close - open) }, (_, i) =>
-    `${String(open + i).padStart(2, "0")}:00`,
   );
 }

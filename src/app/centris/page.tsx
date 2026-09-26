@@ -76,7 +76,7 @@ export default async function CentrisPage() {
                 // Communities was pulled. Rendered as plain text below.
                 ["NXTGEN rooms", "Children's rooms by age band, with check-in just outside.", null],
                 ["Sports Hall", "Basketball, badminton, and pickleball, open to the community.", "/centris/facilities/sports-hall"],
-                ["Multipurpose Halls 1–4", "Rooms for classes, trainings, and meetings.", "/centris/facilities"],
+                ["John, Luke, Matthew and Mark", "Four halls for classes, trainings and meetings.", "/centris/facilities"],
                 ["Dgroup Lounge", "Soft seating for Dgroups that meet during the week.", "/centris/facilities/dgroup-lounge"],
               ].map((row, i) => {
                 const [name, blurb, href] = row as [string, string, string | null];
