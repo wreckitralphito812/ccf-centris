@@ -5,7 +5,7 @@ import { getReservableFacilities } from "@/lib/queries";
 import { currentUser } from "@/lib/supabase/ssr";
 import { hasSupabase } from "@/lib/supabase/server";
 import { manilaDateKey } from "@/lib/format";
-import type { Facility } from "@/lib/types";
+import { isRequestableRoom } from "@/lib/requestable-rooms";
 import { BookingFlow } from "./booking";
 
 export const metadata: Metadata = {
@@ -16,20 +16,6 @@ export const metadata: Metadata = {
 
 /** Sign-in state and today's date change per request, so never cache. */
 export const dynamic = "force-dynamic";
-
-/**
- * Rooms a ministry can request here. The Sports Hall (anything with courts)
- * waits for its own booking flow, and the Dgroup Lounge is booked through
- * Dgroup tables at /reserve/dgroup.
- */
-function isRequestableRoom(f: Facility): boolean {
-  return (
-    f.courts.length === 0 &&
-    f.kind !== "sports_hall" &&
-    f.kind !== "court" &&
-    f.kind !== "lounge"
-  );
-}
 
 const POLICIES: [string, string][] = [
   ["Approval", "Every request is checked by the facilities team. We'll email you to confirm before your date. The room isn't yours until then."],

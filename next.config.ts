@@ -20,6 +20,9 @@ const PARKED: { source: string; destination: string }[] = [
   { source: "/grow/find-a-dgroup/:path*", destination: "/grow/join-a-dgroup" },
   { source: "/care/prayer", destination: "/prayer-wall" },
   { source: "/care/talk", destination: "/contact" },
+  // Court booking isn't offered yet, and these pages were built around it.
+  { source: "/centris/sports", destination: "/centris" },
+  { source: "/centris/availability", destination: "/centris" },
 ];
 
 const nextConfig: NextConfig = {
