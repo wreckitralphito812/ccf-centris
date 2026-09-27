@@ -3,22 +3,25 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { currentUser, memberHasRole } from "@/lib/auth/session";
+import { setMemberScreenName } from "@/lib/auth/profile";
 import {
   bodyProblem,
   cleanBody,
+  MODERATOR_ROLES,
   normalizeScreenName,
   safeNext,
   SCREEN_NAME_RULE,
   screenNameProblem,
 } from "@/lib/prayer-wall";
-import { hasSupabase, SATELLITE_ID } from "@/lib/supabase/server";
-import { createSupabaseServer } from "@/lib/supabase/ssr";
+import { SATELLITE_ID, supabaseAdmin } from "@/lib/supabase/server";
 
 /**
- * Prayer Wall writes. Every call runs under the member's own session, so the
- * row-level security in 0005_screen_names_and_prayer_wall.sql decides what
- * lands: the author is always the caller, names and expiry are stamped by the
- * database, and only moderators can hide anything.
+ * Prayer Wall writes. They run with the service role, so this file holds the
+ * rules the member policies in 0005_screen_names_and_prayer_wall.sql used to:
+ * the author is always the signed-in member, members delete only their own
+ * posts, and only moderators hide anything. Names and expiry are still stamped
+ * by the database's triggers.
  */
 
 export interface WallResult {
@@ -29,12 +32,8 @@ export interface WallResult {
 const GENERIC = "Something went wrong on our end. Try again in a moment.";
 
 async function memberSession() {
-  if (!hasSupabase()) return null;
-  const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user ? { supabase, user } : null;
+  const user = await currentUser();
+  return user ? { db: supabaseAdmin(), user } : null;
 }
 
 function wallError(error: { code?: string; message?: string }, where: string): string {
@@ -64,15 +63,10 @@ export async function setScreenName(
   const problem = screenNameProblem(raw);
   if (problem) return { ok: false, error: problem };
 
-  const { error } = await s.supabase.rpc("set_screen_name", {
-    new_name: normalizeScreenName(raw),
-  });
-  if (error) {
-    if (error.code === "23505") return { ok: false, error: "That screen name is taken. Try another." };
-    if (error.code === "23514") return { ok: false, error: SCREEN_NAME_RULE };
-    console.error("setScreenName failed", error);
-    return { ok: false, error: GENERIC };
-  }
+  const error = await setMemberScreenName(s.user.id, normalizeScreenName(raw));
+  if (error === "taken") return { ok: false, error: "That screen name is taken. Try another." };
+  if (error === "format") return { ok: false, error: SCREEN_NAME_RULE };
+  if (error) return { ok: false, error: GENERIC };
 
   revalidatePath("/prayer-wall");
   redirect(safeNext(formData.get("next")));
@@ -89,7 +83,7 @@ export async function postPrayerRequest(
   const problem = bodyProblem(body);
   if (problem) return { ok: false, error: problem };
 
-  const { error } = await s.supabase
+  const { error } = await s.db
     .from("prayer_wall_posts")
     .insert({ satellite_id: SATELLITE_ID, author_id: s.user.id, body });
   if (error) return { ok: false, error: wallError(error, "postPrayerRequest") };
@@ -112,7 +106,7 @@ export async function replyToPrayer(
   if (!postId) return { ok: false, error: GENERIC };
   if (problem) return { ok: false, error: problem };
 
-  const { error } = await s.supabase
+  const { error } = await s.db
     .from("prayer_wall_replies")
     .insert({ post_id: postId, author_id: s.user.id, kind, body });
   if (error) return { ok: false, error: wallError(error, "replyToPrayer") };
@@ -129,7 +123,7 @@ export async function reportPrayerItem(
   const target = parseTarget(formData.get("target"));
   if (!s || !target) return { ok: false, error: GENERIC };
 
-  const { error } = await s.supabase.from("prayer_wall_reports").insert({
+  const { error } = await s.db.from("prayer_wall_reports").insert({
     reporter_id: s.user.id,
     post_id: target.kind === "post" ? target.id : null,
     reply_id: target.kind === "reply" ? target.id : null,
@@ -147,7 +141,7 @@ export async function reportPrayerItem(
 export async function deletePrayerPost(formData: FormData): Promise<void> {
   const s = await memberSession();
   if (!s) return;
-  const { error } = await s.supabase
+  const { error } = await s.db
     .from("prayer_wall_posts")
     .delete()
     .eq("id", String(formData.get("id") ?? ""))
@@ -156,14 +150,17 @@ export async function deletePrayerPost(formData: FormData): Promise<void> {
   revalidatePath("/prayer-wall");
 }
 
-/** Hide or unhide a post or reply. Row-level security limits this to moderators. */
+/** Hide or unhide a post or reply. Moderators of the item's satellite only. */
 export async function setPrayerItemHidden(formData: FormData): Promise<void> {
   const s = await memberSession();
   const target = parseTarget(formData.get("target"));
   if (!s || !target) return;
+  const table = target.kind === "post" ? "prayer_wall_posts" : "prayer_wall_replies";
+  const { data: item } = await s.db.from(table).select("satellite_id").eq("id", target.id).maybeSingle();
+  if (!item || !(await memberHasRole(s.user.id, item.satellite_id as string, MODERATOR_ROLES))) return;
   const hide = formData.get("hide") === "1";
-  const { error } = await s.supabase
-    .from(target.kind === "post" ? "prayer_wall_posts" : "prayer_wall_replies")
+  const { error } = await s.db
+    .from(table)
     .update({
       hidden_at: hide ? new Date().toISOString() : null,
       hidden_by: hide ? s.user.id : null,

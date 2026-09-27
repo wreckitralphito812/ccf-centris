@@ -1,17 +1,19 @@
 "use client";
 
-import { useActionState, useState, type ReactNode } from "react";
+import { startTransition, useActionState, useState, type ReactNode } from "react";
 import {
   cancelDgroupBooking,
   changeDgroupBooking,
   type DgroupChangeResult,
 } from "@/app/actions/dgroup-tables";
-import { MAX_GROUP_SIZE } from "@/lib/dgroup-tables";
-import { Err, Field, inputClass, type NightOption } from "./booking-form";
+import { Chip, ChoiceGroup } from "@/components/booking";
+import { Field, controlClass } from "@/components/form";
+import { MAX_GROUP_SIZE, type NightOption } from "@/lib/dgroup-tables";
+import { shortNight } from "./booking-form";
 
 /**
- * One of the member's upcoming bookings: its tables and plan, and ways to
- * change the headcount or time, or cancel.
+ * One of the member's upcoming Dgroup tables: what and when up front, the
+ * floor plan and the change form a tap away, and cancel with a confirm.
  */
 export function MyBooking({
   id,
@@ -32,55 +34,51 @@ export function MyBooking({
   nights: NightOption[];
   plan: ReactNode;
 }) {
-  const [editing, setEditing] = useState(false);
+  const [open, setOpen] = useState<"plan" | "change" | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const toggle = (p: "plan" | "change") => setOpen((o) => (o === p ? null : p));
+
+  const link = "label text-clay underline underline-offset-4 hover:text-clay-deep";
 
   return (
     <li className="border border-hairline bg-paper-bright p-5">
-      <div className="flex flex-wrap items-start justify-between gap-5">
-        <div>
-          <p className="font-display text-2xl text-ink">{title}</p>
-          <p className="mt-1 text-[0.95rem] text-ink-soft">
-            {when} · {groupSize} {groupSize === 1 ? "person" : "people"}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-5">
-            <button
-              type="button"
-              onClick={() => setEditing((v) => !v)}
-              aria-expanded={editing}
-              className="label text-clay underline underline-offset-4"
-            >
-              {editing ? "Close" : "Change"}
+      <p className="label text-clay">Dgroup table</p>
+      <p className="font-display mt-1 text-2xl text-ink">{title}</p>
+      <p className="mt-1 text-[0.95rem] text-ink-soft">
+        {when} · {groupSize} {groupSize === 1 ? "person" : "people"}
+      </p>
+
+      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3">
+        <button type="button" onClick={() => toggle("plan")} aria-expanded={open === "plan"} className={link}>
+          {open === "plan" ? "Hide floor plan" : "Floor plan"}
+        </button>
+        <button type="button" onClick={() => toggle("change")} aria-expanded={open === "change"} className={link}>
+          {open === "change" ? "Close" : "Change"}
+        </button>
+        {confirmCancel ? (
+          <form action={cancelDgroupBooking} className="flex flex-wrap items-center gap-3">
+            <input type="hidden" name="id" value={id} />
+            <span className="text-[0.9rem] text-ink-soft">Cancel this booking?</span>
+            <button type="submit" className="label text-clay-deep underline underline-offset-4">
+              Yes, cancel
             </button>
-            {confirmCancel ? (
-              <form action={cancelDgroupBooking} className="flex items-center gap-3">
-                <input type="hidden" name="id" value={id} />
-                <span className="text-[0.9rem] text-ink-soft">Cancel this booking?</span>
-                <button type="submit" className="label text-sky underline underline-offset-4">
-                  Yes, cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirmCancel(false)}
-                  className="label text-ink-mute"
-                >
-                  Keep it
-                </button>
-              </form>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setConfirmCancel(true)}
-                className="label text-ink-mute transition-colors hover:text-sky"
-              >
-                Cancel booking
-              </button>
-            )}
-          </div>
-        </div>
-        <div className="w-[220px] shrink-0">{plan}</div>
+            <button type="button" onClick={() => setConfirmCancel(false)} className="label text-ink-mute">
+              Keep it
+            </button>
+          </form>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirmCancel(true)}
+            className="label text-ink-mute transition-colors hover:text-clay-deep"
+          >
+            Cancel
+          </button>
+        )}
       </div>
-      {editing ? (
+
+      {open === "plan" ? <div className="mt-5 max-w-xs border-t border-hairline pt-5">{plan}</div> : null}
+      {open === "change" ? (
         <ChangeForm id={id} date={date} slotId={slotId} groupSize={groupSize} nights={nights} />
       ) : null}
     </li>
@@ -105,11 +103,13 @@ function ChangeForm({
     null,
   );
   // Only days still open can be chosen; start on the booking's own day if it is.
-  const days = nights;
   const [date, setDate] = useState(
-    days.some((n) => n.date === initialDate) ? initialDate : (days[0]?.date ?? ""),
+    nights.some((n) => n.date === initialDate) ? initialDate : (nights[0]?.date ?? ""),
   );
-  const slots = days.find((n) => n.date === date)?.slots ?? [];
+  const slots = nights.find((n) => n.date === date)?.slots ?? [];
+  const [slot, setSlot] = useState(
+    slots.some((s) => s.id === slotId) ? slotId : (slots[0]?.id ?? ""),
+  );
   const e = state?.fieldErrors ?? {};
 
   if (state?.ok) {
@@ -120,57 +120,71 @@ function ChangeForm({
     );
   }
 
+  if (!nights.length) {
+    return (
+      <p className="mt-5 border-t border-hairline pt-4 text-[0.92rem] text-ink-mute">
+        There are no open days to move to right now. Next week opens on Sunday.
+      </p>
+    );
+  }
+
   return (
-    <form action={action} className="mt-5 space-y-5 border-t border-hairline pt-5">
+    <form
+      noValidate
+      className="mt-5 space-y-6 border-t border-hairline pt-5"
+      onSubmit={(ev) => {
+        ev.preventDefault();
+        const fd = new FormData(ev.currentTarget);
+        startTransition(() => action(fd));
+      }}
+    >
       <input type="hidden" name="id" value={id} />
-      <div className="grid gap-5 sm:grid-cols-[1fr_auto]">
-        <Field label="Day" error={e.date}>
-          <select name="date" value={date} onChange={(ev) => setDate(ev.target.value)} className={inputClass}>
-            {days.map((n) => (
-              <option key={n.date} value={n.date}>
-                {n.label}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="How many?" error={e.groupSize}>
+      <input type="hidden" name="date" value={date} />
+      <input type="hidden" name="slot" value={slot} />
+
+      <ChoiceGroup legend="Day" error={e.date}>
+        {nights.map((n) => (
+          <Chip
+            key={n.date}
+            on={date === n.date}
+            onClick={() => {
+              setDate(n.date);
+              if (!n.slots.some((s) => s.id === slot)) setSlot(n.slots[0]?.id ?? "");
+            }}
+          >
+            {shortNight(n.label)}
+          </Chip>
+        ))}
+      </ChoiceGroup>
+
+      <ChoiceGroup legend="Time" error={e.slotId}>
+        {slots.map((s) => (
+          <Chip key={s.id} on={slot === s.id} onClick={() => setSlot(s.id)}>
+            {s.label}
+          </Chip>
+        ))}
+      </ChoiceGroup>
+
+      <Field label="How many?" name="group_size" hint={`Up to ${MAX_GROUP_SIZE}.`} error={e.groupSize}>
+        {(p) => (
           <input
-            name="group_size"
+            {...p}
             type="number"
             min={1}
             max={MAX_GROUP_SIZE}
+            inputMode="numeric"
             defaultValue={groupSize}
-            required
-            className={`${inputClass} max-w-[7rem]`}
+            className={`${controlClass} max-w-28`}
           />
-        </Field>
-      </div>
-      <fieldset key={date}>
-        <legend className="label text-clay">Time slot</legend>
-        <div className="mt-2 flex flex-wrap gap-3">
-          {slots.map((s, i) => (
-            <label
-              key={s.id}
-              className="flex cursor-pointer items-center gap-2.5 border border-hairline bg-paper px-4 py-2.5 text-ink has-[:checked]:border-clay has-[:checked]:text-clay"
-            >
-              <input
-                type="radio"
-                name="slot"
-                value={s.id}
-                defaultChecked={slots.some((x) => x.id === slotId) ? s.id === slotId : i === 0}
-                required
-              />
-              {s.label}
-            </label>
-          ))}
-        </div>
-        {e.slotId ? <Err>{e.slotId}</Err> : null}
-      </fieldset>
+        )}
+      </Field>
+
       {state?.formError ? (
-        <p role="alert" className="border-l-2 border-sky pl-4 text-[0.95rem] text-sky">
+        <p role="alert" className="border-l-2 border-clay pl-4 text-[0.95rem] font-semibold text-clay-deep">
           {state.formError}
         </p>
       ) : null}
+
       <button
         type="submit"
         disabled={pending}

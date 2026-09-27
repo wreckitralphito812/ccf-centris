@@ -1,30 +1,36 @@
 # CCF content sync
 
 The site mirrors a handful of public CCF pages so they stay current without
-anyone editing this repo by hand. There is **no database and no runtime
-secret** — synced content is a single committed JSON file, refreshed by a
-scheduled GitHub Action.
+anyone editing this repo by hand. The sync itself needs **no database and no
+runtime secret** — synced content is a single committed JSON file, refreshed by
+a scheduled GitHub Action. (The rest of the site does use Supabase; the sync
+doesn't touch it.)
 
 ## What is synced
 
-| Section | Source page | Site route |
+| Section | Source page | Where it shows |
 | --- | --- | --- |
-| `resources` | `ccf.org.ph/resources/` | `/grow/resources` |
-| `scriptureMemory` | `ccf.org.ph/52-week-scripture/` | `/grow/resources/scripture-memory` |
-| `chronicleIssues` | `ccf.org.ph/chronicle/` | `/grow/resources/chronicle` |
-| `intercede` | `ccf.org.ph/intercede/` | `/intercede` |
-| `glcClasses` | `glc.ccf.org.ph` library | `/grow/glc` |
+| `fourWsWeeks`, `fourWsGuides` | `ccf.org.ph/4ws/` | `/watch/4ws`, `/watch/4ws/[slug]`, the homepage and `/watch` |
+| `intercede` | `ccf.org.ph/intercede/` | `getActiveAnnouncement`; no public banner is mounted, so only `/admin/announcements` shows it |
+| `resources` | `ccf.org.ph/resources/` | nowhere yet |
+| `scriptureMemory` | `ccf.org.ph/52-week-scripture/` | nowhere yet |
+| `chronicleIssues` | `ccf.org.ph/chronicle/` | nowhere yet |
+| `glcClasses` | `glc.ccf.org.ph` library | nowhere yet |
 
-Teaching (messages, series, speakers, 4Ws) is added by a later plan and lands in
-the same file.
+The Grow pages that showed Resources, Scripture Memory, Chronicle, GLC and
+Intercede (`/grow/resources/**`, `/grow/glc`, `/intercede`) were removed at
+CCF's request on 2026-09-13. Those sections still sync, and their queries in
+`src/lib/content/public-queries.ts` still work, so a page can come back
+without touching the sync.
 
 ## The snapshot
 
 `src/data/generated/public-content.json` — one key per section plus a `meta`
 block (per-section `lastRunAt`, `checksum`, `parserVersion`, `warnings`). Pages
-read it only through `src/lib/queries.ts` (which re-exports
-`src/lib/content/public-queries.ts`); a section that is empty falls back to the
-hand-authored seed data where one exists.
+read it through `src/lib/queries.ts` (which re-exports
+`src/lib/content/public-queries.ts`; a few import that module directly); a
+section that is empty falls back to the hand-authored seed data where one
+exists.
 
 The file is written atomically (temp file + rename) and only when a section
 actually changed, so re-runs with no upstream change produce a byte-identical

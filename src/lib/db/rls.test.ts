@@ -14,6 +14,11 @@ import { pgcrypto } from "@electric-sql/pglite/contrib/pgcrypto";
  * Supabase's default grants. Then checks the security rules by acting as
  * specific members. Writes made "as the server" run as the database owner,
  * which bypasses row-level security the way the service role does.
+ *
+ * Members sign in with Firebase now and the site talks to Postgres with the
+ * service role, so the member policies below no longer decide what the site
+ * shows. They are still tested because they are what stands between the data
+ * and anyone holding the anon key.
  */
 
 const MIGRATIONS = join(__dirname, "..", "..", "..", "supabase", "migrations");
@@ -56,7 +61,7 @@ before(async () => {
   }
   await db.exec(`
     insert into satellites (id, slug, name) values ('${SAT}', 'centris', 'CCF Centris');
-    insert into auth.users (id, email) values
+    insert into profiles (id, email) values
       ('${ANA}', 'ana@example.com'), ('${BEN}', 'ben@example.com'),
       ('${MOD}', 'mod@example.com'), ('${CAL}', 'cal@example.com'),
       ('${DAN}', 'dan@example.com');
@@ -193,10 +198,12 @@ test("members can't read reports; moderators can", async () => {
 });
 
 test("screen names are unique regardless of case, and renames follow past posts", async () => {
-  await assert.rejects(as(BEN, "select set_screen_name('ANA')"), /duplicate key/);
+  const rename = (who: string, name: string) =>
+    db.query("update profiles set screen_name = $2 where id = $1", [who, name]);
+  await assert.rejects(rename(BEN, "ANA"), /duplicate key/);
   const id = await post(ANA);
-  await assert.rejects(as(ANA, "select set_screen_name('Ana C.')"), /profiles_screen_name_format/);
-  await as(ANA, "select set_screen_name('Ana Cruz')");
+  await assert.rejects(rename(ANA, "Ana C."), /profiles_screen_name_format/);
+  await rename(ANA, "Ana Cruz");
   const [row] = await as<{ author_name: string }>(BEN, "select author_name from prayer_wall_posts where id = $1", [id]);
   assert.equal(row.author_name, "Ana Cruz");
 });
@@ -293,26 +300,51 @@ test("members see only their own bookings and can't book or read holds directly"
 
 // --- Member names and the Watch library -------------------------------------
 
-test("a Google sign-up arrives with first name and surname filled in", async () => {
-  const id = "66666666-6666-4666-8666-666666666666";
-  await db.exec(`
-    insert into auth.users (id, email, raw_user_meta_data) values
-      ('${id}', 'eve@example.com', '{"given_name":"Eve","family_name":"Santos","full_name":"Eve Santos"}')`);
-  const { rows } = await db.query<{ first_name: string; last_name: string }>(
-    "select first_name, last_name from profiles where id = $1",
-    [id],
-  );
-  assert.deepEqual(rows[0], { first_name: "Eve", last_name: "Santos" });
+// --- Firebase sign-in: linking accounts to profiles -------------------------
+
+const link = async (uid: string, email: string, first: string | null = null, last: string | null = null) =>
+  (
+    await db.query<{ id: string }>("select link_firebase_member($1, $2, null, $3, $4) as id", [
+      uid,
+      email,
+      first,
+      last,
+    ])
+  ).rows[0].id;
+
+test("a first Firebase sign-in with a known email keeps that member's profile", async () => {
+  assert.equal(await link("fb-ana", "Ana@Example.com "), ANA);
+  const { rows } = await db.query<{ firebase_uid: string }>("select firebase_uid from profiles where id = $1", [ANA]);
+  assert.equal(rows[0].firebase_uid, "fb-ana");
+  // Signing in again finds them by uid.
+  assert.equal(await link("fb-ana", "ana@example.com"), ANA);
 });
 
-test("members set only their own name", async () => {
-  await as(ANA, "select set_my_name('  Ana ', 'Dela  Cruz')");
-  const { rows } = await db.query<{ first_name: string; last_name: string; full_name: string }>(
-    "select first_name, last_name, full_name from profiles where id = $1",
-    [ANA],
+test("a new email gets a fresh profile, with Google's names filled in", async () => {
+  const id = await link("fb-eve", "eve@example.com", " Eve ", "Santos");
+  assert.notEqual(id, null);
+  const { rows } = await db.query<{ first_name: string; last_name: string; email: string }>(
+    "select first_name, last_name, email from profiles where id = $1",
+    [id],
   );
-  assert.deepEqual(rows[0], { first_name: "Ana", last_name: "Dela Cruz", full_name: "Ana Dela Cruz" });
-  await assert.rejects(as(null, "select set_my_name('X', 'Y')"), /permission denied/);
+  assert.deepEqual(rows[0], { first_name: "Eve", last_name: "Santos", email: "eve@example.com" });
+  assert.equal(await link("fb-eve", "eve@example.com", "Someone", "Else"), id);
+});
+
+test("linking fills gaps but never overwrites a confirmed name", async () => {
+  await db.query("update profiles set first_name = 'Benjamin', last_name = 'Reyes' where id = $1", [BEN]);
+  assert.equal(await link("fb-ben", "ben@example.com", "Ben", "R"), BEN);
+  const { rows } = await db.query<{ first_name: string; last_name: string }>(
+    "select first_name, last_name from profiles where id = $1",
+    [BEN],
+  );
+  assert.deepEqual(rows[0], { first_name: "Benjamin", last_name: "Reyes" });
+});
+
+test("only the server can link accounts", async () => {
+  await assert.rejects(as(ANA, "select link_firebase_member('fb-x', 'ben@example.com')"), /permission denied/);
+  await assert.rejects(as(null, "select link_firebase_member('fb-x', 'ben@example.com')"), /permission denied/);
+  await assert.rejects(link("", "x@example.com"), /required/);
 });
 
 test("the Watch library is server-only and holds one pinned video at most", async () => {

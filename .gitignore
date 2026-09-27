@@ -54,3 +54,6 @@ next-env.d.ts
 # local agent / editor tooling
 .mcp.json
 .gstack/
+
+# python bytecode
+__pycache__/

@@ -4,9 +4,10 @@ import type { ReactNode } from "react";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Section } from "@/components/ui";
 import { deletePrayerPost, setPrayerItemHidden } from "@/app/actions/prayer-wall";
-import { openRequests } from "@/lib/prayer-wall";
-import { hasSupabase, SATELLITE_ID } from "@/lib/supabase/server";
-import { createSupabaseServer } from "@/lib/supabase/ssr";
+import { currentUser, hasAccounts, memberHasRole } from "@/lib/auth/session";
+import { getMemberProfile } from "@/lib/auth/profile";
+import { MODERATOR_ROLES, openRequests, visibleReplies } from "@/lib/prayer-wall";
+import { SATELLITE_ID, supabaseAdmin } from "@/lib/supabase/server";
 import { PostForm, ReplyForm, ReportButton } from "./wall-forms";
 
 export const metadata: Metadata = {
@@ -44,8 +45,9 @@ const day = new Intl.DateTimeFormat("en-PH", {
 
 /**
  * The Prayer Wall. Members only: signed-out visitors see an explanation and a
- * sign-in button, never the requests. Reads run under the member's session, so
- * the database's row-level security decides what appears.
+ * sign-in button, never the requests. Reads run with the service role, so the
+ * visibility rules below (the same ones as the database policies in
+ * 0005_screen_names_and_prayer_wall.sql) are what decide what appears.
  */
 export default function PrayerWallPage() {
   return (
@@ -67,7 +69,7 @@ export default function PrayerWallPage() {
 async function Wall() {
   // Always render per visitor: this section shows members their own data.
   await connection();
-  if (!hasSupabase()) {
+  if (!hasAccounts()) {
     return (
       <Notice label="Opening soon">
         <p>The Prayer Wall opens when member accounts go live.</p>
@@ -75,10 +77,7 @@ async function Wall() {
     );
   }
 
-  const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await currentUser();
 
   if (!user) {
     return (
@@ -92,8 +91,8 @@ async function Wall() {
     );
   }
 
-  const { data: screenName } = await supabase.rpc("my_screen_name");
-  if (typeof screenName !== "string" || !screenName) {
+  const screenName = (await getMemberProfile(user.id))?.screen_name;
+  if (!screenName) {
     return (
       <Notice label="One step first">
         <p>
@@ -105,21 +104,24 @@ async function Wall() {
     );
   }
 
-  const [{ data, error }, { data: moderator }] = await Promise.all([
-    supabase
-      .from("prayer_wall_posts")
-      .select(
-        "id, author_id, author_name, body, created_at, expires_at, hidden_at, prayer_wall_replies(id, author_id, author_name, kind, body, created_at, hidden_at)",
-      )
-      .eq("satellite_id", SATELLITE_ID)
-      .order("created_at", { ascending: false })
-      .order("created_at", { referencedTable: "prayer_wall_replies", ascending: true })
-      .limit(60),
-    supabase.rpc("has_role", {
-      target_satellite: SATELLITE_ID,
-      wanted: ["prayer_team", "satellite_admin"],
-    }),
-  ]);
+  const isModerator = await memberHasRole(user.id, SATELLITE_ID, MODERATOR_ROLES);
+
+  let query = supabaseAdmin()
+    .from("prayer_wall_posts")
+    .select(
+      "id, author_id, author_name, body, created_at, expires_at, hidden_at, prayer_wall_replies(id, author_id, author_name, kind, body, created_at, hidden_at)",
+    )
+    .eq("satellite_id", SATELLITE_ID);
+  // Members see open requests plus their own; moderators see everything.
+  if (!isModerator) {
+    query = query.or(
+      `and(hidden_at.is.null,expires_at.gt."${new Date().toISOString()}"),author_id.eq.${user.id}`,
+    );
+  }
+  const { data, error } = await query
+    .order("created_at", { ascending: false })
+    .order("created_at", { referencedTable: "prayer_wall_replies", ascending: true })
+    .limit(60);
 
   if (error) {
     console.error("prayer wall read failed", error);
@@ -130,8 +132,10 @@ async function Wall() {
     );
   }
 
-  const posts = openRequests((data ?? []) as Post[]);
-  const isModerator = moderator === true;
+  const posts = openRequests((data ?? []) as Post[]).map((p) => ({
+    ...p,
+    prayer_wall_replies: visibleReplies(p.prayer_wall_replies ?? [], user.id, isModerator),
+  }));
 
   return (
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">

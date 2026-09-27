@@ -8,6 +8,7 @@ import {
   PRAYER_BODY_MAX,
   safeNext,
   screenNameProblem,
+  visibleReplies,
 } from "./prayer-wall";
 
 test("screen names allow real names and handles", () => {
@@ -46,4 +47,14 @@ test("expired requests leave the wall", () => {
     { id: "gone", expires_at: "2026-09-10T11:59:59Z" },
   ];
   assert.deepEqual(openRequests(posts, now).map((p) => p.id), ["open"]);
+});
+
+test("hidden replies show only to their author and to moderators", () => {
+  const replies = [
+    { id: "a", author_id: "ana", hidden_at: null },
+    { id: "b", author_id: "ben", hidden_at: "2026-09-01T00:00:00Z" },
+  ];
+  assert.deepEqual(visibleReplies(replies, "dan", false).map((r) => r.id), ["a"]);
+  assert.deepEqual(visibleReplies(replies, "ben", false).map((r) => r.id), ["a", "b"]);
+  assert.deepEqual(visibleReplies(replies, "dan", true).map((r) => r.id), ["a", "b"]);
 });

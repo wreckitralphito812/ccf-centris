@@ -1,40 +1,43 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { createClient } from "@/lib/supabase/client";
 import { signOut } from "@/app/actions/auth";
-
-const CONFIGURED = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL);
+import { FIREBASE_CONFIGURED } from "@/lib/firebase/client";
 
 /**
  * Header account control. "Sign in" when signed out; the member's initial and
  * a small menu (My reservations / Sign out) when signed in. Renders nothing
- * when Supabase isn't configured, so the static build is unaffected.
+ * when Firebase isn't configured, so the static build is unaffected.
+ *
+ * Asks `/auth/me` on each navigation, so a session started or ended in this
+ * tab shows up without a reload.
  */
 export function AccountMenu() {
+  const pathname = usePathname();
   const [email, setEmail] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    if (!CONFIGURED) return;
-    const supabase = createClient();
+    if (!FIREBASE_CONFIGURED) return;
+    let live = true;
+    fetch("/auth/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : { email: null }))
+      .then((body: { email: string | null }) => {
+        if (!live) return;
+        setEmail(body.email || null);
+        setReady(true);
+      })
+      .catch(() => live && setReady(true));
+    return () => {
+      live = false;
+    };
+  }, [pathname]);
 
-    supabase.auth.getUser().then(({ data }) => {
-      setEmail(data.user?.email ?? null);
-      setReady(true);
-    });
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      setEmail(session?.user?.email ?? null);
-      setReady(true);
-    });
-    return () => sub.subscription.unsubscribe();
-  }, []);
-
-  if (!CONFIGURED || !ready) return null;
+  if (!FIREBASE_CONFIGURED || !ready) return null;
 
   if (!email) {
     return (
@@ -72,7 +75,14 @@ export function AccountMenu() {
           >
             My reservations
           </Link>
-          <form action={signOut}>
+          <form
+            action={async () => {
+              await signOut();
+              // A full load, so every server-rendered part drops the session too.
+              // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+              window.location.assign("/");
+            }}
+          >
             <button
               type="submit"
               className="block w-full px-3 py-2 text-left text-[0.9rem] text-ink-soft transition-colors hover:bg-bone hover:text-clay"

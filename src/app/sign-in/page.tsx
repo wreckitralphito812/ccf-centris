@@ -3,9 +3,8 @@ import { redirect } from "next/navigation";
 
 import { PageHeader } from "@/components/page-header";
 import { Container, Section } from "@/components/ui";
-import { currentUser } from "@/lib/supabase/ssr";
-import { enabledAuthProviders } from "@/lib/supabase/providers";
-import { hasSupabase } from "@/lib/supabase/server";
+import { currentUser, hasAccounts } from "@/lib/auth/session";
+import { safeNext } from "@/lib/prayer-wall";
 import { ProviderButton } from "./provider-button";
 import { SignInForm } from "./sign-in-form";
 
@@ -22,12 +21,9 @@ export default async function SignInPage({
   const sp = await searchParams;
   const one = (v: string | string[] | undefined) =>
     Array.isArray(v) ? v[0] : v;
-  const nextParam = one(sp.next);
-  const next = nextParam && nextParam.startsWith("/") ? nextParam : "/my/reservations";
+  const next = safeNext(one(sp.next), "/my/reservations");
 
-  if (hasSupabase() && (await currentUser())) redirect(next);
-
-  const providers = await enabledAuthProviders();
+  if (await currentUser()) redirect(next);
 
   return (
     <>
@@ -44,15 +40,9 @@ export default async function SignInPage({
               been used, so please request a new one.
             </p>
           ) : null}
-          {/* Each provider is only offered when the project actually has it
-              switched on. Otherwise the button is a dead end: Supabase answers
-              "Unsupported provider: provider is not enabled". */}
-          {providers.google || providers.facebook ? (
+          {hasAccounts() ? (
             <>
-              <div className="grid gap-3">
-                {providers.google ? <ProviderButton provider="google" next={next} /> : null}
-                {providers.facebook ? <ProviderButton provider="facebook" next={next} /> : null}
-              </div>
+              <ProviderButton next={next} />
               <div className="my-6 flex items-center gap-4">
                 <span className="h-px flex-1 bg-hairline" />
                 <span className="label text-ink-mute">or with your email</span>

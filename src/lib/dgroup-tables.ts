@@ -180,6 +180,24 @@ export function openSlots(date: string, today: string, nowMinutes: number): Dgro
   return DGROUP_SLOTS.filter((s) => minutesOf(s.start) > nowMinutes);
 }
 
+/** A bookable day and the slots still open on it, as the forms show them. */
+export interface NightOption {
+  date: string;
+  label: string;
+  slots: { id: string; label: string }[];
+}
+
+/** Every day a leader can book or move to from `today`, with its open slots. */
+export function nightOptions(today: string, nowMinutes: number): NightOption[] {
+  return bookableNights(today)
+    .map((date) => ({
+      date,
+      label: nightLabel(date),
+      slots: openSlots(date, today, nowMinutes).map(({ id, label }) => ({ id, label })),
+    }))
+    .filter((n) => n.slots.length > 0);
+}
+
 /** Manila minutes since midnight for an instant. */
 export function manilaMinutes(at: Date = new Date()): number {
   return (at.getUTCHours() * 60 + at.getUTCMinutes() + 8 * 60) % (24 * 60);

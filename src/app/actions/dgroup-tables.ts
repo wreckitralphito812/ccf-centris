@@ -18,7 +18,7 @@ import { bookingEmail, type BookingEmailKind } from "@/lib/emails/dgroup-booking
 import { sendEmail, siteOrigin } from "@/lib/email";
 import { manilaDateKey } from "@/lib/format";
 import { hasSupabase, SATELLITE_ID, supabaseAdmin } from "@/lib/supabase/server";
-import { currentUser } from "@/lib/supabase/ssr";
+import { currentUser } from "@/lib/auth/session";
 
 export interface DgroupBookingResult {
   ok: boolean;
@@ -97,6 +97,7 @@ async function notify(
 
 function refresh() {
   revalidatePath("/reserve/dgroup");
+  revalidatePath("/my/reservations");
   revalidatePath("/admin/dgroup-tables");
 }
 

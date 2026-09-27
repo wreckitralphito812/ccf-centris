@@ -1,50 +1,57 @@
 "use client";
 
+import { getAdditionalUserInfo, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+import { FirebaseError } from "firebase/app";
 import { useState } from "react";
 
 import { Button } from "@/components/ui";
-import { FacebookGlyph } from "@/components/icons";
-import { createClient } from "@/lib/supabase/client";
+import { startSession } from "@/app/actions/auth";
+import { firebaseAuth } from "@/lib/firebase/client";
 
 /**
- * One-click sign-in via a Supabase OAuth provider (Google or Facebook). `signInWithOAuth`
- * does a full-page redirect to Google, so there's no success state to render —
- * only a pending state while the redirect is being set up, and an error line
- * if that call itself fails (network, provider misconfigured).
+ * One-click sign-in with Google, through Firebase. A popup rather than a
+ * redirect: it doesn't depend on the browser sharing storage with the
+ * firebaseapp.com auth domain, which Safari and others now block.
  *
- * The callback lands on `/auth/callback`, the same route the magic link uses;
- * it exchanges the `code` for a session and forwards to `next`.
+ * Firebase's ID token then goes to `startSession`, which sets the site's own
+ * session cookie; the browser keeps no Firebase session.
  */
-const LABEL = { google: "Google", facebook: "Facebook" } as const;
-
-export function ProviderButton({
-  provider,
-  next,
-}: {
-  provider: keyof typeof LABEL;
-  next: string;
-}) {
+export function ProviderButton({ next }: { next: string }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function signIn() {
     setPending(true);
     setError(null);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        // Facebook only shares the email address when asked for it.
-        ...(provider === "facebook" ? { scopes: "email" } : {}),
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-      },
-    });
-    if (error) {
-      console.error(`${LABEL[provider]} sign-in failed`, error);
-      setError(`Could not start ${LABEL[provider]} sign-in. Try again, or use email below.`);
+    try {
+      const auth = await firebaseAuth();
+      const result = await signInWithPopup(auth, new GoogleAuthProvider());
+      const profile = (getAdditionalUserInfo(result)?.profile ?? {}) as Record<string, unknown>;
+      const res = await startSession({
+        idToken: await result.user.getIdToken(),
+        next,
+        firstName: typeof profile.given_name === "string" ? profile.given_name : null,
+        lastName: typeof profile.family_name === "string" ? profile.family_name : null,
+      });
+      await signOut(auth);
+      if (!res.ok || !res.redirectTo) {
+        setError(res.formError ?? "Could not sign you in. Try again, or use email below.");
+        setPending(false);
+        return;
+      }
+      // A full load, so the header and every server-rendered part see the new session.
+      window.location.assign(res.redirectTo);
+    } catch (e) {
       setPending(false);
+      const code = e instanceof FirebaseError ? e.code : "";
+      if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") return;
+      console.error("Google sign-in failed", e);
+      setError(
+        code === "auth/popup-blocked"
+          ? "Your browser blocked the Google window. Allow pop-ups for this site, or use email below."
+          : "Could not start Google sign-in. Try again, or use email below.",
+      );
     }
-    // On success the browser is already navigating away.
   }
 
   return (
@@ -62,12 +69,8 @@ export function ProviderButton({
         disabled={pending}
         onClick={signIn}
       >
-        {provider === "google" ? (
-          <GoogleGlyph className="h-4 w-4" />
-        ) : (
-          <FacebookGlyph className="h-4 w-4 text-[#1877F2]" />
-        )}
-        {pending ? "Redirecting…" : `Continue with ${LABEL[provider]}`}
+        <GoogleGlyph className="h-4 w-4" />
+        {pending ? "Signing in…" : "Continue with Google"}
       </Button>
     </div>
   );

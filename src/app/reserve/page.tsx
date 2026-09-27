@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
-import { ButtonLink, Container, Section } from "@/components/ui";
+import { Container, Section } from "@/components/ui";
 
 export const metadata: Metadata = {
   title: "Reserve",
@@ -8,33 +9,21 @@ export const metadata: Metadata = {
     "Book a table for your Dgroup, request a room for a ministry gathering, or reserve the court at CCF Centris.",
 };
 
-const OPTIONS: {
-  eyebrow: string;
-  title: string;
-  body: string;
-  href: string | null;
-  cta: string;
-}[] = [
+const OPTIONS: { title: string; body: string; href: string | null }[] = [
   {
-    eyebrow: "Dgroup meeting",
-    title: "Book a table for your Dgroup.",
-    body: "Weeknight tables in the Dgroup Lounge and the Welcome Center. Tell us how many are coming and we'll assign a table that fits.",
+    title: "A table for my Dgroup",
+    body: "Weeknights in the Dgroup Lounge or Welcome Center. We assign the table.",
     href: "/reserve/dgroup",
-    cta: "Book a table",
   },
   {
-    eyebrow: "Ministry & church gatherings",
-    title: "Request a room.",
-    body: "Free for ministry meetings, trainings, and events. Send a request, and once an admin approves it, it goes on the calendar.",
+    title: "A room for a ministry gathering",
+    body: "Free for meetings, trainings and events. Confirmed by the facilities team.",
     href: "/centris/reserve",
-    cta: "Request a room",
   },
   {
-    eyebrow: "Sports",
-    title: "Reserve the court.",
+    title: "The court",
     body: "Basketball and pickleball bookings are on their way.",
     href: null,
-    cta: "Coming soon",
   },
 ];
 
@@ -43,29 +32,46 @@ export default function ReservePage() {
     <>
       <PageHeader
         eyebrow="Reserve"
-        title="Use the center."
-        lead="Book a space at CCF Centris for your Dgroup, your ministry, or a game."
+        title="What would you like to book?"
+        lead="Use a space at CCF Centris for your Dgroup, your ministry, or a game."
       />
       <Section>
-        <Container>
-          <div className="grid gap-6 md:grid-cols-3">
+        <Container className="max-w-3xl">
+          <ul className="space-y-px border border-hairline bg-hairline">
             {OPTIONS.map((o) => (
-              <div key={o.eyebrow} className="flex flex-col border border-hairline bg-paper-bright p-7">
-                <p className="label text-clay">{o.eyebrow}</p>
-                <h2 className="display-md mt-3 text-balance">{o.title}</h2>
-                <p className="mt-4 flex-1 text-[1rem] leading-relaxed text-ink-soft">{o.body}</p>
+              <li key={o.title}>
                 {o.href ? (
-                  <ButtonLink href={o.href} size="lg" className="mt-6 self-start">
-                    {o.cta}
-                  </ButtonLink>
+                  <Link
+                    href={o.href}
+                    className="group flex items-center justify-between gap-6 bg-paper-bright p-6 transition-colors hover:bg-bone/50"
+                  >
+                    <span>
+                      <span className="font-display block text-2xl leading-tight text-ink">{o.title}</span>
+                      <span className="mt-1.5 block text-[0.95rem] text-ink-soft">{o.body}</span>
+                    </span>
+                    <span aria-hidden className="label shrink-0 text-clay transition-transform group-hover:translate-x-0.5">
+                      →
+                    </span>
+                  </Link>
                 ) : (
-                  <span className="label mt-6 self-start border border-hairline px-5 py-3 text-ink-mute">
-                    {o.cta}
-                  </span>
+                  <div className="flex items-center justify-between gap-6 bg-paper-bright p-6">
+                    <span>
+                      <span className="font-display block text-2xl leading-tight text-ink-mute">{o.title}</span>
+                      <span className="mt-1.5 block text-[0.95rem] text-ink-mute">{o.body}</span>
+                    </span>
+                    <span className="label shrink-0 text-ink-mute">Soon</span>
+                  </div>
                 )}
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
+          <p className="mt-8 text-[0.95rem] text-ink-soft">
+            Already booked?{" "}
+            <Link href="/my/reservations" className="text-clay underline underline-offset-4">
+              See and manage your reservations
+            </Link>
+            .
+          </p>
         </Container>
       </Section>
     </>

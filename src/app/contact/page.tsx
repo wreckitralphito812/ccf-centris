@@ -4,8 +4,7 @@ import type { ReactNode } from "react";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Section } from "@/components/ui";
 import { CONTACT, MAPS_EMBED, SITE } from "@/lib/site";
-import { hasSupabase } from "@/lib/supabase/server";
-import { currentUser } from "@/lib/supabase/ssr";
+import { currentUser, hasAccounts } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -139,7 +138,7 @@ async function LeaveAMessage() {
   // there is no session to read and every visitor sees the same panel, so the
   // page can still be prerendered; only the signed-in branch below is
   // genuinely per-visitor.
-  if (!hasSupabase()) {
+  if (!hasAccounts()) {
     return (
       <Gate title="Opening soon.">
         <p>

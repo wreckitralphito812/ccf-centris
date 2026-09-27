@@ -4,7 +4,7 @@ import { EVENT_CATEGORIES } from "@/lib/events";
 import { getTeaching } from "@/lib/teaching-live";
 import { getCurrentIntercede } from "@/lib/content/public-queries";
 import { hasSupabase, supabaseAdmin, SATELLITE_ID } from "@/lib/supabase/server";
-import { createSupabaseServer } from "@/lib/supabase/ssr";
+import { currentUser } from "@/lib/auth/session";
 import { markSlots, type Busy } from "@/lib/availability";
 import { addons, communities, facilities } from "@/data/center";
 import {
@@ -540,19 +540,16 @@ export interface MyBooking {
 }
 
 /**
- * The current user's reservations, newest first. Runs under the caller's
- * session (RLS `reservations_self_read`), so it only ever returns their rows.
+ * The current user's reservations, newest first. Runs with the service role,
+ * so the `user_id` filter is what keeps it to their rows.
  * Empty when signed out or offline.
  */
 export async function getMyBookings(): Promise<MyBooking[]> {
   if (!hasSupabase()) return [];
-  const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await currentUser();
   if (!user) return [];
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin()
     .from("reservations")
     .select(
       "id, activity_name, participants, during, status, created_at, facilities(name), courts(name)",
@@ -581,6 +578,63 @@ export async function getMyBookings(): Promise<MyBooking[]> {
       created_at: r.created_at as string,
     };
   });
+}
+
+/** The signed-in member's details, to prefill booking forms. */
+export interface MyContact {
+  name: string;
+  email: string;
+  mobile: string;
+}
+
+export async function getMyContact(): Promise<MyContact | null> {
+  if (!hasSupabase()) return null;
+  const user = await currentUser();
+  if (!user) return null;
+
+  const { data } = await supabaseAdmin()
+    .from("profiles")
+    .select("first_name, last_name, full_name, mobile")
+    .eq("id", user.id)
+    .maybeSingle();
+  const name =
+    [data?.first_name, data?.last_name].filter(Boolean).join(" ") ||
+    ((data?.full_name as string | null) ?? "");
+  return { name, email: user.email, mobile: (data?.mobile as string | null) ?? "" };
+}
+
+export interface MyDgroupBooking {
+  id: string;
+  room_slug: string;
+  table_labels: string[];
+  booked_on: string;
+  slot_id: string;
+  group_size: number;
+}
+
+/**
+ * The current user's confirmed Dgroup tables from `today` on, soonest first.
+ * Service role, so the `user_id` filter is what keeps it to their rows.
+ */
+export async function getMyDgroupBookings(today: string): Promise<MyDgroupBooking[]> {
+  if (!hasSupabase()) return [];
+  const user = await currentUser();
+  if (!user) return [];
+
+  const { data, error } = await supabaseAdmin()
+    .from("dgroup_table_bookings")
+    .select("id, room_slug, table_labels, booked_on, slot_id, group_size")
+    .eq("satellite_id", SATELLITE_ID)
+    .eq("user_id", user.id)
+    .eq("status", "confirmed")
+    .gte("booked_on", today)
+    .order("booked_on")
+    .order("slot_id");
+  if (error) {
+    console.error("getMyDgroupBookings failed", error);
+    return [];
+  }
+  return (data ?? []) as MyDgroupBooking[];
 }
 
 // --- Admin queues ---------------------------------------------------------

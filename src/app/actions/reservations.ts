@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { hasSupabase, supabaseAdmin, SATELLITE_ID } from "@/lib/supabase/server";
-import { createSupabaseServer } from "@/lib/supabase/ssr";
+import { currentUser } from "@/lib/auth/session";
 import { parseReservation, type FieldErrors } from "@/lib/validation";
 import { referenceFor } from "@/lib/reference";
 
@@ -36,9 +36,7 @@ export async function createReservation(
     };
   }
 
-  const {
-    data: { user },
-  } = await (await createSupabaseServer()).auth.getUser();
+  const user = await currentUser();
   if (!user) {
     return {
       ok: false,

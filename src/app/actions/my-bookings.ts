@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
-import { createSupabaseServer } from "@/lib/supabase/ssr";
-import { hasSupabase } from "@/lib/supabase/server";
+import { currentUser } from "@/lib/auth/session";
+import { hasSupabase, supabaseAdmin } from "@/lib/supabase/server";
 
 export interface CancelResult {
   ok: boolean;
@@ -11,23 +11,20 @@ export interface CancelResult {
 }
 
 /**
- * Cancel one of the caller's own reservations. Runs under their session, so
- * RLS (`reservations_self_cancel`) is what actually enforces ownership — this
- * cannot touch anyone else's booking even if the id is guessed.
+ * Cancel one of the caller's own reservations. The `user_id` filter is what
+ * enforces ownership (this runs with the service role): a guessed id for
+ * someone else's booking matches nothing.
  */
 export async function cancelMyBooking(id: string): Promise<CancelResult> {
   if (!hasSupabase()) {
     return { ok: false, formError: "Not available in this environment." };
   }
 
-  const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await currentUser();
   if (!user) return { ok: false, formError: "Please sign in again." };
 
   // Only pending or approved bookings can be cancelled by the member.
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin()
     .from("reservations")
     .update({ status: "cancelled" })
     .eq("id", id)

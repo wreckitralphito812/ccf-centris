@@ -50,6 +50,22 @@ export function openRequests<T extends { expires_at: string }>(
   return posts.filter((p) => new Date(p.expires_at).getTime() > now.getTime());
 }
 
+/** Roles that moderate the Prayer Wall, as in `has_role()` checks. */
+export const MODERATOR_ROLES = ["prayer_team", "satellite_admin"];
+
+/**
+ * The replies a viewer may see: unhidden ones, their own, or all of them for
+ * a moderator. The database policy `prayer_wall_replies_read` states the same
+ * rule; the server applies it now that members' reads run with the service role.
+ */
+export function visibleReplies<T extends { author_id: string; hidden_at: string | null }>(
+  replies: T[],
+  viewerId: string,
+  isModerator: boolean,
+): T[] {
+  return replies.filter((r) => isModerator || r.hidden_at === null || r.author_id === viewerId);
+}
+
 /** A same-origin path to return to, or the fallback. */
 export function safeNext(raw: unknown, fallback = "/prayer-wall"): string {
   const next = String(raw ?? "");

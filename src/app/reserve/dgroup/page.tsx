@@ -1,29 +1,28 @@
 import { connection } from "next/server";
 import type { Metadata } from "next";
-import Image from "next/image";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Section } from "@/components/ui";
 import { FloorPlanDrawing } from "@/components/floor-plan";
 import {
-  bookableNights,
   bookingOpen,
   DGROUP_OPENS_ON,
-  DGROUP_POLICIES,
   DGROUP_ROOMS,
   DGROUP_SLOTS,
   longDateLabel,
   manilaMinutes,
+  MAX_GROUP_SIZE,
   nightLabel,
-  openSlots,
+  nightOptions,
   roomName,
   slotLabel,
   tablesLabel,
 } from "@/lib/dgroup-tables";
 import { manilaDateKey } from "@/lib/format";
-import { hasSupabase, SATELLITE_ID } from "@/lib/supabase/server";
-import { createSupabaseServer } from "@/lib/supabase/ssr";
-import { BookingForm, type NightOption } from "./booking-form";
+import { currentUser, hasAccounts } from "@/lib/auth/session";
+import { getMyContact, getMyDgroupBookings } from "@/lib/queries";
+import { BookingForm } from "./booking-form";
 import { MyBooking } from "./my-booking";
 
 export const metadata: Metadata = {
@@ -32,18 +31,18 @@ export const metadata: Metadata = {
     "Book a table for your Dgroup in the Dgroup Lounge or the Welcome Center at CCF Centris, Monday to Friday.",
 };
 
-interface Row {
-  id: string;
-  room_slug: string;
-  table_labels: string[];
-  booked_on: string;
-  slot_id: string;
-  group_size: number;
-}
-
 /** See bookingPreview() in the actions: pre-launch testing, never production. */
 const preview = () =>
   process.env.DGROUP_BOOKING_PREVIEW === "1" && process.env.VERCEL_ENV !== "production";
+
+/** "1:00, 4:00 or 7:00 PM", from the slot labels ("1:00 – 3:30 PM"). */
+const SLOT_STARTS = (() => {
+  const starts = DGROUP_SLOTS.map((s) => s.label.split(" – ")[0]);
+  const suffix = DGROUP_SLOTS.at(-1)?.label.slice(-2) ?? "";
+  const list =
+    starts.length > 1 ? `${starts.slice(0, -1).join(", ")} or ${starts.at(-1)}` : (starts[0] ?? "");
+  return `${list} ${suffix}`;
+})();
 
 export default function DgroupTablesPage() {
   return (
@@ -51,68 +50,22 @@ export default function DgroupTablesPage() {
       <PageHeader
         eyebrow="Reserve · Dgroup meeting"
         title="Book a table for your Dgroup."
-        lead="Monday to Friday in the Dgroup Lounge and the Welcome Center. Tell us how many are coming and we'll assign your table."
+        lead="Pick a day and time, tell us how many are coming, and we'll assign your table."
+        image={{
+          src: "/photos/dgroup-lounge.jpg",
+          alt: "The Dgroup Lounge at CCF Centris, seen through its glass front",
+        }}
       />
       <Section>
-        <Container>
-          <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
-            <div>
-              <Booking />
-            </div>
-            <aside className="space-y-6 lg:sticky lg:top-28">
-              <figure>
-                <div className="relative aspect-[16/9] overflow-hidden border border-hairline bg-paper">
-                  <Image
-                    src="/photos/dgroup-lounge.jpg"
-                    alt="The Dgroup Lounge at CCF Centris, seen through its glass front"
-                    fill
-                    sizes="(min-width: 1024px) 22rem, 100vw"
-                    className="object-cover"
-                  />
-                </div>
-                <figcaption className="mt-2 text-[0.85rem] text-ink-mute">The Dgroup Lounge</figcaption>
-              </figure>
-              <div className="border border-hairline bg-paper-bright p-6">
-                <p className="label text-clay">How it works</p>
-                <ol className="mt-4 space-y-3 text-[0.92rem] leading-relaxed text-ink-soft">
-                  {[
-                    "Pick a day and one time slot. Book again for another slot.",
-                    "Tell us the leader's details and how many are coming, up to 12.",
-                    "Accept the policies. We assign your table, joining neighbouring tables for bigger groups.",
-                    "Your table number and a floor plan arrive by email.",
-                  ].map((step, i) => (
-                    <li key={step} className="flex gap-3">
-                      <span className="label shrink-0 text-clay">{i + 1}</span>
-                      {step}
-                    </li>
-                  ))}
-                </ol>
-              </div>
-              <div className="border border-hairline bg-paper-bright p-6">
-                <p className="label text-clay">Times</p>
-                <p className="mt-3 text-[0.92rem] text-ink-soft">Monday to Friday</p>
-                <ul className="mt-2 space-y-1 text-[0.95rem] text-ink">
-                  {DGROUP_SLOTS.map((s) => (
-                    <li key={s.id}>{s.label}</li>
-                  ))}
-                </ul>
-                <p className="mt-4 text-[0.85rem] leading-relaxed text-ink-mute">
-                  You can book the days left in the current week. Next week opens
-                  every Sunday.
-                </p>
-              </div>
-              <div className="border-l-2 border-clay bg-paper-bright p-6">
-                <p className="label text-clay">Policies</p>
-                <ul className="mt-4 space-y-4">
-                  {DGROUP_POLICIES.map((r) => (
-                    <li key={r.id}>
-                      <p className="font-semibold text-ink">{r.title}</p>
-                      <p className="mt-1 text-[0.88rem] leading-relaxed text-ink-soft">{r.body}</p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </aside>
+        <Container className="max-w-3xl">
+          <ul className="flex flex-wrap gap-x-6 gap-y-2 border-y border-hairline py-4 text-[0.9rem] text-ink-soft">
+            <li>Monday to Friday</li>
+            <li>Starts at {SLOT_STARTS}</li>
+            <li>Groups up to {MAX_GROUP_SIZE}</li>
+            <li>Dgroup Lounge or Welcome Center</li>
+          </ul>
+          <div className="mt-10">
+            <Booking />
           </div>
         </Container>
       </Section>
@@ -139,7 +92,7 @@ async function Booking() {
     );
   }
 
-  if (!hasSupabase()) {
+  if (!hasAccounts()) {
     return (
       <Notice label="Opening soon">
         <p>Table reservations open when member accounts go live.</p>
@@ -147,17 +100,14 @@ async function Booking() {
     );
   }
 
-  const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await currentUser();
   if (!user) {
     return (
       <div className="space-y-10">
         <Notice label="Sign in to book">
           <p>
-            Sign in with your email so you can see, change, or cancel your bookings later. We
-            send you a link; there&rsquo;s no password.
+            Sign in with your email so you can change or cancel your bookings later. We send you
+            a link; there&rsquo;s no password.
           </p>
           <ButtonLink href="/sign-in?next=/reserve/dgroup">Sign in to book a table</ButtonLink>
         </Notice>
@@ -166,40 +116,21 @@ async function Booking() {
     );
   }
 
-  const now = manilaMinutes();
-  const nights: NightOption[] = bookableNights(today)
-    .map((date) => ({
-      date,
-      label: nightLabel(date),
-      slots: openSlots(date, today, now).map(({ id, label }) => ({ id, label })),
-    }))
-    .filter((n) => n.slots.length > 0);
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("first_name, last_name, mobile")
-    .eq("id", user.id)
-    .maybeSingle();
-  const myName = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ");
-
-  const { data } = await supabase
-    .from("dgroup_table_bookings")
-    .select("id, room_slug, table_labels, booked_on, slot_id, group_size")
-    .eq("satellite_id", SATELLITE_ID)
-    .eq("user_id", user.id)
-    .eq("status", "confirmed")
-    .gte("booked_on", today)
-    .order("booked_on")
-    .order("slot_id");
-  const mine = (data ?? []) as Row[];
+  const nights = nightOptions(today, manilaMinutes());
+  const [contact, mine] = await Promise.all([getMyContact(), getMyDgroupBookings(today)]);
 
   return (
     <div className="space-y-14">
       {mine.length ? (
         <section aria-labelledby="your-tables-h" id="your-tables" className="scroll-mt-28">
-          <h2 id="your-tables-h" className="label text-clay">
-            Your bookings
-          </h2>
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <h2 id="your-tables-h" className="label text-clay">
+              Your upcoming tables
+            </h2>
+            <Link href="/my/reservations" className="label text-ink-mute underline underline-offset-4 hover:text-ink">
+              All my reservations
+            </Link>
+          </div>
           <ul className="mt-4 space-y-4">
             {mine.map((m) => (
               <MyBooking
@@ -211,7 +142,7 @@ async function Booking() {
                 date={m.booked_on}
                 slotId={m.slot_id}
                 nights={nights}
-                plan={<FloorPlanDrawing room={m.room_slug} highlight={m.table_labels} width={220} />}
+                plan={<FloorPlanDrawing room={m.room_slug} highlight={m.table_labels} width={280} />}
               />
             ))}
           </ul>
@@ -219,15 +150,15 @@ async function Booking() {
       ) : null}
 
       <section aria-labelledby="book-h">
-        <h2 id="book-h" className="label text-clay">
+        <h2 id="book-h" className="display-md">
           {mine.length ? "Book another slot" : "Book a table"}
         </h2>
-        <div className="mt-5">
+        <div className="mt-7">
           <BookingForm
             nights={nights}
-            email={user.email ?? ""}
-            name={myName}
-            mobile={profile?.mobile ?? ""}
+            email={contact?.email || user.email}
+            name={contact?.name ?? ""}
+            mobile={contact?.mobile ?? ""}
           />
         </div>
       </section>
@@ -261,7 +192,7 @@ function Rooms() {
 
 function Notice({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="max-w-2xl border-l-2 border-clay bg-paper-bright p-6">
+    <div className="border-l-2 border-clay bg-paper-bright p-6">
       <p className="label text-clay">{label}</p>
       <div className="mt-3 space-y-5 text-[1.02rem] leading-relaxed text-ink-soft">{children}</div>
     </div>

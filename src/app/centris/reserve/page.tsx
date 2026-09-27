@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
-import { ButtonLink, Container, Eyebrow, Section, SectionHead } from "@/components/ui";
+import { ButtonLink, Container, Eyebrow, Section } from "@/components/ui";
 import {
   getCourtSlots,
   getFacility,
+  getMyContact,
   getReservableFacilities,
 } from "@/lib/queries";
-import { currentUser } from "@/lib/supabase/ssr";
-import { hasSupabase } from "@/lib/supabase/server";
+import { currentUser, hasAccounts } from "@/lib/auth/session";
 import { addDaysKey, manilaDateKey } from "@/lib/format";
 import { BookingFlow } from "./booking";
 
@@ -17,6 +17,22 @@ export const metadata: Metadata = {
   description:
     "Book the basketball or pickleball court, or request a multipurpose hall at CCF Centris. Rooms are free for ministries.",
 };
+
+/** The rules everyone needs; the rest sit behind "All rules". */
+const KEY_RULES = [
+  ["Cancelling", "Cancel at least 24 hours ahead and there is no penalty. Repeated no-shows affect future bookings."],
+  ["Approval", "Courts are usually instant. Rooms are a request first, confirmed by the facilities team within a day."],
+  ["Payment", "Rooms are free for ministries. Court rates will be posted soon. Nothing is charged through this site."],
+] as const;
+
+const MORE_RULES = [
+  ["Footwear", "Non-marking indoor shoes are required on the sport floor. Other shoes damage the surface, so there are no exceptions."],
+  ["Setup time", "Room bookings must include setup and packing-down time in the window you book."],
+  ["Under 16s", "An adult must be present for anyone under 16 using the Sports Hall."],
+  ["Recurring bookings", "Weekly or monthly slots can be arranged, but need approval first."],
+  ["Blackout dates", "The center closes for some CCF-wide events and holidays. Those dates are blocked in advance."],
+  ["Damage and lost property", "Report anything broken to the desk. Lost property is held at the Welcome Center."],
+] as const;
 
 /** Availability is live, so this page is never cached. */
 export const dynamic = "force-dynamic";
@@ -32,13 +48,14 @@ export default async function ReservePage({
   const rawDate = one(sp.date);
   const date = rawDate && /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? rawDate : today;
 
-  // Booking needs an account. When Supabase isn't configured there are no
-  // accounts, so the flow stays open (it just can't actually write).
-  const signedIn = !hasSupabase() || Boolean(await currentUser());
+  // Booking needs an account. When accounts aren't configured there are
+  // none, so the flow stays open (it just can't actually write).
+  const signedIn = !hasAccounts() || Boolean(await currentUser());
 
-  const [facilities, hall] = await Promise.all([
+  const [facilities, hall, contact] = await Promise.all([
     getReservableFacilities(),
     getFacility("sports-hall"),
+    signedIn ? getMyContact() : null,
   ]);
 
   // Preload every court's grid so the flow never waits on a click.
@@ -59,7 +76,7 @@ export default async function ReservePage({
       <PageHeader
         eyebrow="Reserve"
         title="Book a court or a room."
-        lead="Anyone can book the Sports Hall, CCF member or not. Multipurpose halls are for classes, trainings, and meetings."
+        lead="Courts are booked by the hour. Rooms are free for ministries and confirmed by the facilities team."
       />
 
       <Section>
@@ -72,6 +89,7 @@ export default async function ReservePage({
               initialCourt={one(sp.court)}
               date={date}
               dateOptions={dateOptions}
+              contact={contact}
             />
           ) : (
             <div className="mx-auto max-w-xl border border-hairline bg-paper-bright p-8 text-center">
@@ -106,43 +124,41 @@ export default async function ReservePage({
       </Section>
 
       <Section id="policies" tone="deep" className="scroll-mt-24">
-        <Container>
-          <SectionHead
-            eyebrow="Policies"
-            title="Booking rules"
-            lead="These keep the center fair for everyone."
-          />
-          <div className="mt-10 grid gap-px border border-hairline bg-hairline sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              ["Cancelling", "Cancel at least 24 hours ahead and there is no penalty. Repeated no-shows affect future bookings."],
-              ["Approval", "Courts are usually instant. Multipurpose halls are a request first, confirmed by the facilities team within a day."],
-              ["Payment", "Rooms are free for ministries. Court rates will be posted soon. Nothing is charged through this site."],
-              ["Footwear", "Non-marking indoor shoes are required on the sport floor. Other shoes damage the surface, so there are no exceptions."],
-              ["Setup time", "Room bookings must include setup and packing-down time in the window you book."],
-              ["Under 16s", "An adult must be present for anyone under 16 using the Sports Hall."],
-              ["Recurring bookings", "Weekly or monthly slots can be arranged, but need approval first."],
-              ["Blackout dates", "The center closes for some CCF-wide events and holidays. Those dates are blocked in advance."],
-              ["Damage and lost property", "Report anything broken to the desk. Lost property is held at the Welcome Center."],
-            ].map(([t, b]) => (
-              <div key={t} className="bg-paper-bright p-6">
-                <h3 className="font-display text-lg">{t}</h3>
-                <p className="mt-1.5 text-[0.88rem] leading-relaxed text-ink-soft">
-                  {b}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-10 border-l-2 border-clay bg-paper-bright py-4 pl-5 pr-4">
-            <Eyebrow>Note</Eyebrow>
-            <p className="mt-2 max-w-2xl leading-relaxed text-ink-soft">
-              Hours and policies shown here are placeholders and will be set by
-              the CCF Centris facilities team before the booking system opens
-              to the public.
-            </p>
-          </div>
+        <Container className="max-w-3xl">
+          <h2 className="display-md">Booking rules</h2>
+          <Rules rules={KEY_RULES} className="mt-6" />
+          <details className="group mt-5">
+            <summary className="label cursor-pointer list-none text-clay underline underline-offset-4 [&::-webkit-details-marker]:hidden">
+              <span className="group-open:hidden">All rules</span>
+              <span className="hidden group-open:inline">Fewer rules</span>
+            </summary>
+            <Rules rules={MORE_RULES} className="mt-4" />
+          </details>
+          <p className="mt-8 text-[0.82rem] leading-relaxed text-ink-mute">
+            Hours and policies are placeholders until the CCF Centris facilities team sets them
+            before booking opens to the public.
+          </p>
         </Container>
       </Section>
     </>
+  );
+}
+
+function Rules({
+  rules,
+  className,
+}: {
+  rules: readonly (readonly [string, string])[];
+  className?: string;
+}) {
+  return (
+    <dl className={`divide-y divide-hairline border-y border-hairline ${className ?? ""}`}>
+      {rules.map(([t, b]) => (
+        <div key={t} className="grid gap-1 py-4 sm:grid-cols-[10rem_1fr] sm:gap-6">
+          <dt className="font-semibold text-ink">{t}</dt>
+          <dd className="text-[0.92rem] leading-relaxed text-ink-soft">{b}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }
