@@ -42,9 +42,14 @@ export const currentUser = cache(async (): Promise<Member | null> => {
 
   let uid: string;
   try {
-    uid = (await firebaseAdminAuth().verifySessionCookie(cookie)).uid;
-  } catch {
-    return null; // expired, revoked, or not ours
+    uid = (await (await firebaseAdminAuth()).verifySessionCookie(cookie)).uid;
+  } catch (e) {
+    // Expired, revoked or not ours are routine; firebase-admin failing to
+    // load is not, so leave a trace of that one.
+    if (!(e as { code?: string })?.code?.startsWith("auth/")) {
+      console.error("currentUser: session check failed", e);
+    }
+    return null;
   }
 
   const { data, error } = await supabaseAdmin()

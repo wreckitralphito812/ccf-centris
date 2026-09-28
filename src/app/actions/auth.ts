@@ -77,9 +77,10 @@ export async function startSession(
 ): Promise<AuthResult & { redirectTo?: string }> {
   if (!hasAccounts()) return { ok: false, formError: UNAVAILABLE };
 
-  const auth = firebaseAdminAuth();
+  let auth;
   let token;
   try {
+    auth = await firebaseAdminAuth();
     token = await auth.verifyIdToken(String(input.idToken ?? ""), true);
   } catch (e) {
     console.error("startSession: ID token rejected", e);
