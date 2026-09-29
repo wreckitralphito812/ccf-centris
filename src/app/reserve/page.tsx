@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 const OPTIONS: { title: string; body: string; href: string | null }[] = [
   {
     title: "A table for my Dgroup",
-    body: "Weeknights in the Dgroup Lounge or Welcome Center. We assign the table.",
+    body: "Monday to Friday, 1:00 to 9:30 PM, in the Dgroup Lounge or Welcome Center. We assign the table.",
     href: "/reserve/dgroup",
   },
   {
