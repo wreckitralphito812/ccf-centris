@@ -65,7 +65,7 @@ export default function OpengraphImage() {
             CCF Centris
           </div>
           <div style={{ display: "flex", fontSize: 38, color: "#007682" }}>
-            Sunday service, 10:00 AM
+            Sundays, 10:00 AM and 3:00 PM
           </div>
         </div>
 

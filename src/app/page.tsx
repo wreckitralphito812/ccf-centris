@@ -11,7 +11,7 @@ import {
   CCF_NET,
   CONNECT_LINKS,
   MAPS_LINK,
-  SERVICE_TIMES,
+  SERVICE_TIMES_TEXT,
   SITE,
   SOCIALS,
   YOUTUBE,
@@ -168,12 +168,11 @@ function ScrollCue() {
 
 /**
  * Everything a first-time guest needs on one card: where, and how to get
- * there, and a way to bring someone along. Reads SERVICE_TIMES and SITE, so it
+ * there, and a way to bring someone along. Reads SERVICE_TIMES_TEXT and SITE, so it
  * can't drift from the rest of the site.
  */
 function VisitCard({ live }: { live: boolean }) {
-  const [first] = SERVICE_TIMES;
-  const invite = `Join me at CCF Centris this ${first.day} at ${first.time}. We meet at 2/F Centris Station, Eton Centris, right off MRT Quezon Avenue.`;
+  const invite = `Join me at CCF Centris this Sunday, at ${SERVICE_TIMES_TEXT.replace(" and ", " or ")}. We meet at 2/F Centris Station, Eton Centris, right off MRT Quezon Avenue.`;
 
   return (
     <div className="surface p-6 text-ink shadow-[0_30px_80px_-40px_rgba(0,0,0,0.75)] sm:p-7">
@@ -188,6 +187,8 @@ function VisitCard({ live }: { live: boolean }) {
       ) : (
         <p className="label text-clay">Join us this Sunday</p>
       )}
+
+      <p className="font-display mt-4 text-2xl leading-tight text-ink">{SERVICE_TIMES_TEXT}</p>
 
       <address className="mt-5 border-t border-hairline pt-4 text-[0.95rem] not-italic leading-relaxed text-ink-soft">
         {SITE.addressLines.slice(0, 2).join(", ")}

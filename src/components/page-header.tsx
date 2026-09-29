@@ -16,6 +16,7 @@ export interface PageHeaderImage {
  */
 export function PageHeader({
   eyebrow,
+  eyebrowAside,
   title,
   lead,
   actions,
@@ -24,6 +25,8 @@ export function PageHeader({
   align = "left",
 }: {
   eyebrow?: string;
+  /** Something small beside the eyebrow, e.g. a partner's logo. */
+  eyebrowAside?: ReactNode;
   title: ReactNode;
   lead?: ReactNode;
   actions?: ReactNode;
@@ -56,12 +59,20 @@ export function PageHeader({
       >
         <div className={cx("max-w-2xl", centered && "mx-auto")}>
           {eyebrow ? (
-            <Eyebrow
-              tone={dark ? "paper" : "clay"}
-              className={centered ? "justify-center" : undefined}
-            >
-              {eyebrow}
-            </Eyebrow>
+            <div className={cx("flex items-center gap-4", centered && "justify-center")}>
+              <Eyebrow
+                tone={dark ? "paper" : "clay"}
+                className={centered ? "justify-center" : undefined}
+              >
+                {eyebrow}
+              </Eyebrow>
+              {eyebrowAside ? (
+                <>
+                  <span aria-hidden className="h-5 w-px bg-ink/15" />
+                  {eyebrowAside}
+                </>
+              ) : null}
+            </div>
           ) : null}
           <h1 className="page-title mt-4 text-balance">{title}</h1>
           {lead ? (

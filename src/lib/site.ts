@@ -138,12 +138,16 @@ export function organizationJsonLd() {
 
 /**
  * CCF Centris service times — the single source for every page that states
- * them, and for the seed schedule. One service for now; add an entry when a
- * second opens. `dow` is 0 for Sunday, in Manila time.
+ * them, and for the seed schedule. Two Sunday services from 2026-09-29: 10:00
+ * AM and 3:00 PM. `dow` is 0 for Sunday, in Manila time.
  */
 export const SERVICE_TIMES = [
   { dow: 0, day: "Sunday", hour: 10, minute: 0, time: "10:00 AM" },
+  { dow: 0, day: "Sunday", hour: 15, minute: 0, time: "3:00 PM" },
 ] as const;
+
+/** "10:00 AM and 3:00 PM", for sentences. */
+export const SERVICE_TIMES_TEXT = SERVICE_TIMES.map((s) => s.time).join(" and ");
 
 /**
  * External sign-up flows run by CCF, linked from the Connect page. They are
