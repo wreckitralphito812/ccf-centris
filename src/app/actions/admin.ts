@@ -1,6 +1,9 @@
 "use server";
 
 import { bookingEmail } from "@/lib/emails/dgroup-booking";
+import { roomRequestEmail } from "@/lib/emails/room-request";
+import { referenceFor } from "@/lib/reference";
+import { fmtDayLong, fmtTime } from "@/lib/format";
 import { sendEmail, siteOrigin } from "@/lib/email";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
@@ -73,17 +76,71 @@ async function setStatus(
   return { ok: true };
 }
 
+/**
+ * Decide a room request. Every room in the request moves together, and the
+ * requester is emailed when it's approved, declined or cancelled.
+ */
 export async function setReservationStatus(
   id: string,
   status: Enum<typeof RESERVATION_STATUSES>,
-) {
-  return setStatus(
-    "reservations",
-    id,
-    status,
-    RESERVATION_STATUSES,
-    "/admin/reservations",
-  );
+): Promise<AdminActionResult> {
+  const blocked = await guard();
+  if (blocked) return blocked;
+  if (!RESERVATION_STATUSES.includes(status)) return { ok: false, formError: "Unknown status." };
+
+  const db = supabaseAdmin();
+  const { data: row, error: readErr } = await db
+    .from("reservations")
+    .select("request_group")
+    .eq("id", id)
+    .maybeSingle();
+  if (readErr || !row) return { ok: false, formError: "That request could not be found." };
+
+  const query = db.from("reservations").update({ status });
+  const { data: rows, error } = await (row.request_group ? query.eq("request_group", row.request_group) : query.eq("id", id))
+    .select(
+      "contact_name, contact_email, contact_mobile, organization, activity_name, participants, during, layout, equipment, food, purpose, facilities(name)",
+    );
+
+  if (error) {
+    if (error.code === "23P01")
+      return { ok: false, formError: "Another request now holds one of these rooms at that time." };
+    console.error("setReservationStatus failed", error);
+    return { ok: false, formError: "Update failed. Try again." };
+  }
+
+  const first = rows?.[0];
+  if (first && (status === "approved" || status === "rejected" || status === "cancelled")) {
+    const m = /[[(]"?([^",]+)"?,\s*"?([^")]+)"?[)\]]/.exec(first.during as string);
+    const startsAt = m ? new Date(m[1]).toISOString() : "";
+    const endsAt = m ? new Date(m[2]).toISOString() : "";
+    const facilityName = (f: unknown) => (Array.isArray(f) ? f[0]?.name : (f as { name?: string } | null)?.name) ?? "Room";
+    await sendEmail({
+      to: first.contact_email as string,
+      ...roomRequestEmail({
+        kind: status,
+        origin: siteOrigin(),
+        reference: referenceFor("reservation", (row.request_group as string | null) ?? id),
+        requester: first.contact_name as string,
+        requesterEmail: first.contact_email as string,
+        mobile: (first.contact_mobile as string | null) ?? null,
+        activity: (first.activity_name as string | null) ?? "Your event",
+        ministry: (first.organization as string | null) ?? "",
+        rooms: rows!.map((r) => facilityName(r.facilities)),
+        when: m ? `${fmtDayLong(startsAt)}, ${fmtTime(startsAt)} to ${fmtTime(endsAt)}` : "",
+        participants: first.participants as number,
+        setup: (first.layout as string | null) ?? null,
+        equipment: (first.equipment as Record<string, number> | null) ?? null,
+        food: (first.food as string | null) ?? null,
+        notes: (first.purpose as string | null) ?? null,
+      }),
+    });
+  }
+
+  revalidatePath("/admin/reservations");
+  revalidatePath("/my/reservations");
+  revalidatePath("/centris/reserve");
+  return { ok: true };
 }
 
 export async function setInquiryStatus(

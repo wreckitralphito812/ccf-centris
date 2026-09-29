@@ -14,37 +14,69 @@ import { setReservationStatus } from "@/app/actions/admin";
 import { hasSupabase } from "@/lib/supabase/server";
 import { isAdminConfigured } from "@/lib/admin-auth";
 import { fmtDayShort, fmtTime } from "@/lib/format";
+import { equipmentSummary, foodLabel, setupLabel } from "@/lib/ministry-rooms";
 
 export const metadata: Metadata = { title: "Reservations" };
 
-export default async function AdminReservations() {
-  const reservations = await getReservations();
+/** One request: every room it asked for, decided together. */
+interface RequestGroup {
+  first: AdminReservation;
+  rooms: string[];
+}
 
-  const pending = reservations.filter((r) => r.status === "pending");
-  const approved = reservations.filter((r) => r.status === "approved");
+function groupRequests(rows: AdminReservation[]): RequestGroup[] {
+  const groups = new Map<string, RequestGroup>();
+  for (const r of rows) {
+    const key = r.request_group ?? r.id;
+    const g = groups.get(key);
+    if (g) g.rooms.push(r.facility_name ?? "—");
+    else groups.set(key, { first: r, rooms: [r.court_name ?? r.facility_name ?? "—"] });
+  }
+  return [...groups.values()];
+}
+
+export default async function AdminReservations() {
+  const reservations = groupRequests(await getReservations());
+
+  const pending = reservations.filter((g) => g.first.status === "pending");
+  const approved = reservations.filter((g) => g.first.status === "approved");
   const past = reservations.filter(
-    (r) => !["pending", "approved"].includes(r.status),
+    (g) => !["pending", "approved"].includes(g.first.status),
   );
 
   const readOnly = !isAdminConfigured() || !hasSupabase();
 
   const row = (
-    r: AdminReservation,
+    { first: r, rooms }: RequestGroup,
     transitions: Parameters<typeof QueueActions>[0]["transitions"],
   ) => (
     <tr key={r.id}>
       <Td>
-        <span className="font-semibold">{r.facility_name ?? "—"}</span>
+        <span className="font-semibold">{r.activity_name ?? "—"}</span>
         <span className="mt-0.5 block text-[0.82rem] text-ink-mute">
-          {r.court_name ?? r.activity_name ?? "—"}
+          {rooms.join(", ")}
         </span>
+        <span className="mt-1 block text-[0.78rem] leading-relaxed text-ink-mute">
+          {[
+            r.layout ? setupLabel(r.layout) : null,
+            r.equipment && Object.keys(r.equipment).length ? equipmentSummary(r.equipment) : null,
+            r.food ? foodLabel(r.food) : null,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </span>
+        {r.purpose ? (
+          <span className="mt-1 block max-w-xs text-[0.78rem] italic leading-relaxed text-ink-mute">
+            {r.purpose}
+          </span>
+        ) : null}
       </Td>
       <Td>
         <span className="font-semibold">{r.contact_name}</span>
         <span className="mt-0.5 block text-[0.82rem] text-ink-mute">
+          {r.organization ? `${r.organization} · ` : ""}
           {r.contact_email}
           {r.contact_mobile ? ` · ${r.contact_mobile}` : ""}
-          {r.organization ? ` · ${r.organization}` : ""}
         </span>
       </Td>
       <Td>
@@ -72,7 +104,7 @@ export default async function AdminReservations() {
     </tr>
   );
 
-  const cols = ["Space", "Requested by", "When", "Party", "Status", "Actions"];
+  const cols = ["Event and rooms", "Requested by", "When", "People", "Status", "Actions"];
 
   const empty = (msg: string) => (
     <p className="px-5 py-8 text-center text-[0.9rem] text-ink-mute">{msg}</p>
@@ -82,7 +114,7 @@ export default async function AdminReservations() {
     <div className="space-y-8">
       <AdminHeader
         title="Reservations"
-        lead="Room and court requests arrive here as pending. Approving one holds the slot; the database blocks any overlap."
+        lead="Room requests arrive here as pending, and each one is already holding its rooms. Approving or declining emails the requester; a request for several rooms is decided as one."
       />
 
       {!hasSupabase() ? (
@@ -105,7 +137,7 @@ export default async function AdminReservations() {
               {pending.map((r) =>
                 row(r, [
                   { label: "Approve", status: "approved", tone: "go" },
-                  { label: "Reject", status: "rejected", tone: "stop" },
+                  { label: "Decline", status: "rejected", tone: "stop" },
                 ]),
               )}
             </Table>

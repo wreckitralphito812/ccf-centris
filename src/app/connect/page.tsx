@@ -23,11 +23,6 @@ export default function ConnectPage() {
         eyebrow="Connect"
         title="Get connected."
         lead="Sign up for a Dgroup or a serving team, and follow CCF Centris for updates."
-        image={{
-          src: "/photos/dgroup-conversation.jpg",
-          alt: "Two people talking and laughing in the Dgroup Lounge at CCF Centris",
-          position: "center 60%",
-        }}
       />
 
       <Section>

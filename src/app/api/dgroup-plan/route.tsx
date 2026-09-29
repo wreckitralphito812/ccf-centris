@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 import type { NextRequest } from "next/server";
-import { FloorPlanDrawing } from "@/components/floor-plan";
+import { FloorPlanDrawing, floorPlanHeight } from "@/components/floor-plan";
 import { FLOOR_PLANS } from "@/lib/dgroup-floor";
 import { DGROUP_ROOMS, tablesLabel } from "@/lib/dgroup-tables";
 
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
 
   const width = 520;
   const pad = 24;
-  const planH = Math.round((width - 2 * Math.max(3, Math.round(width / 140))) / plan.aspect) + 2 * Math.max(3, Math.round(width / 140));
+  const planH = floorPlanHeight(room, width);
   const head = 56;
 
   return new ImageResponse(

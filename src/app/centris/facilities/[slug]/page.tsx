@@ -12,6 +12,7 @@ import { FacilityCard, MessageArt } from "@/components/cards";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { getFacilities, getFacility } from "@/lib/queries";
 import { fmtPeso } from "@/lib/format";
+import { isRequestableRoom } from "@/lib/requestable-rooms";
 
 export async function generateStaticParams() {
   return (await getFacilities()).map((f) => ({ slug: f.slug }));
@@ -80,16 +81,11 @@ export default async function FacilityPage({
                 </p>
               ) : null}
 
-              {f.is_reservable ? (
+              {f.is_reservable && isRequestableRoom(f) ? (
                 <div className="mt-8 flex flex-wrap gap-3">
                   <ButtonLink href={`/centris/reserve?facility=${f.slug}`} size="lg">
-                    Reserve this space
+                    Request this room
                   </ButtonLink>
-                  {f.courts.length ? (
-                    <ButtonLink href="/centris/availability" tone="outline" size="lg">
-                      Check availability
-                    </ButtonLink>
-                  ) : null}
                 </div>
               ) : null}
             </div>
