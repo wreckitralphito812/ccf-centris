@@ -50,6 +50,7 @@ export async function getChannelVideos(limit = 12): Promise<ChannelVideo[]> {
     const res = await fetch(FEED, {
       next: { revalidate: REVALIDATE_SECONDS },
       headers: { "user-agent": "CCF-Centris-Site/1.0" },
+      signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) return [];
     xml = await res.text();
