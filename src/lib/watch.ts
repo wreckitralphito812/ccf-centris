@@ -108,7 +108,7 @@ export async function stillOnYouTube(videoId: string): Promise<boolean> {
   try {
     const res = await fetch(
       `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`)}`,
-      { next: { revalidate: 6 * 3600 } },
+      { next: { revalidate: 6 * 3600 }, signal: AbortSignal.timeout(5000) },
     );
     return ![401, 403, 404].includes(res.status);
   } catch {

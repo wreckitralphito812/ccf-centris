@@ -152,7 +152,7 @@ async function call<T>(
       await acquire();
       let res: Response;
       try {
-        res = await fetch(url, { next: { revalidate } });
+        res = await fetch(url, { next: { revalidate }, signal: AbortSignal.timeout(8000) });
       } catch (err) {
         release();
         // Network blip — retry a couple of times before giving up.

@@ -492,3 +492,23 @@ a.surface:hover,
   letter-spacing: 0.005em;
   font-size: 0.9rem;
 }
+
+/* Placeholder shapes for loading states (PageSkeleton). A slow shimmer, or a
+   flat tone for people who asked for less motion. */
+.skeleton {
+  border-radius: 0.5rem;
+  background: var(--paper-deep);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton {
+    background: linear-gradient(90deg, var(--paper-deep) 0%, var(--bone) 40%, var(--paper-deep) 80%);
+    background-size: 300% 100%;
+    animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes skeleton-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}

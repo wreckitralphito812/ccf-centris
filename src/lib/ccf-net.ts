@@ -24,6 +24,13 @@ const REVALIDATE_SECONDS = 60 * 30;
 /** Cache tag on every CCF Net fetch, so the admin can ask for a fresh look. */
 export const CCF_NET_TAG = "ccf-net";
 
+/**
+ * CCF Net can be very slow to answer (27 seconds on 2026-09-30). Past this the
+ * fetch gives up and the Watch page falls back to the newest saved replay,
+ * rather than holding the page (or a build) hostage.
+ */
+const FETCH_TIMEOUT_MS = 8000;
+
 export interface Replay {
   videoId: string;
   /** The message title, e.g. "Who Are We Called To Love Today?" */
@@ -112,6 +119,7 @@ async function fetchText(url: string): Promise<string | null> {
     const res = await fetch(url, {
       headers: { "User-Agent": "CCF-Centris-Site" },
       next: { revalidate: REVALIDATE_SECONDS, tags: [CCF_NET_TAG] },
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
     return res.ok ? await res.text() : null;
   } catch {
@@ -121,7 +129,10 @@ async function fetchText(url: string): Promise<string | null> {
 
 async function fetchJson<T>(url: string): Promise<T | null> {
   try {
-    const res = await fetch(url, { next: { revalidate: REVALIDATE_SECONDS, tags: [CCF_NET_TAG] } });
+    const res = await fetch(url, {
+      next: { revalidate: REVALIDATE_SECONDS, tags: [CCF_NET_TAG] },
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
     return res.ok ? ((await res.json()) as T) : null;
   } catch {
     return null;
