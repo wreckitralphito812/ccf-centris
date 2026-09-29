@@ -37,7 +37,7 @@ export default function ReservePage() {
       />
       <Section>
         <Container className="max-w-3xl">
-          <ul className="space-y-px border border-hairline bg-hairline">
+          <ul className="space-y-px surface-grid">
             {OPTIONS.map((o) => (
               <li key={o.title}>
                 {o.href ? (

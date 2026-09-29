@@ -68,7 +68,7 @@ export default async function SportsPage() {
       {/* Two doors, deliberately separate */}
       <Section className="py-12">
         <Container>
-          <div className="grid gap-px border border-hairline bg-hairline sm:grid-cols-2">
+          <div className="grid gap-px surface-grid sm:grid-cols-2">
             <div className="bg-paper-bright p-8">
               <Eyebrow>Play</Eyebrow>
               <h2 className="display-md mt-4">Book a court</h2>
@@ -117,7 +117,7 @@ export default async function SportsPage() {
             {[...bySport.entries()].map(([sport, list]) => (
               <div key={sport}>
                 <h3 className="font-display text-2xl capitalize">{sport}</h3>
-                <div className="mt-4 grid gap-px border border-hairline bg-hairline sm:grid-cols-2 lg:grid-cols-4">
+                <div className="mt-4 grid gap-px surface-grid sm:grid-cols-2 lg:grid-cols-4">
                   {list.map(({ court, nextFree, busyUntil }) => (
                     <div key={court.id} className="bg-paper-bright p-5">
                       <p className="font-display text-xl">{court.name}</p>
@@ -168,7 +168,7 @@ export default async function SportsPage() {
             title="Leagues, clinics and more"
             lead="All of these are open to people outside CCF."
           />
-          <div className="mt-10 grid gap-px border border-hairline bg-hairline sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-10 grid gap-px surface-grid sm:grid-cols-2 lg:grid-cols-3">
             {[
               ["Open play", "Most weeknights. Come on your own and we'll put you in a game. Equipment is available at the desk."],
               ["Leagues", "Eight-week seasons in basketball. Register as a team, roster due a week before opening day."],

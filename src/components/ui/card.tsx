@@ -10,7 +10,7 @@ export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
   return (
     <div
       className={cn(
-        "border border-hairline bg-paper-bright transition-colors duration-200",
+        "surface transition-colors duration-200",
         className,
       )}
       {...props}

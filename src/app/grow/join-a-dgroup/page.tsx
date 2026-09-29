@@ -43,7 +43,7 @@ export default function JoinDgroupPage() {
             title="What happens at a Dgroup"
             lead="Most groups follow the same four parts, which CCF calls the 4Ws."
           />
-          <div className="mt-10 grid gap-px border border-hairline bg-hairline sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-10 grid gap-px surface-grid sm:grid-cols-2 lg:grid-cols-4">
             {[
               ["Welcome", "An opening question that gets everyone talking before anything heavy. Often over food."],
               ["Worship", "Reading the passage together and praying. Some groups sing, many do not."],
@@ -92,7 +92,7 @@ export default function JoinDgroupPage() {
       <Section>
         <Container>
           <SectionHead eyebrow="Joining" title="How it works from here" />
-          <ol className="mt-10 space-y-px border border-hairline bg-hairline">
+          <ol className="mt-10 space-y-px surface-grid">
             {[
               ["Fill in the sign-up form", "CCF's Dgroup form asks a few questions about you and when you're free."],
               ["The Dgroup team gets in touch", "They'll answer your questions and match you with a group."],

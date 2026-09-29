@@ -38,7 +38,7 @@ export default async function ReservePage() {
           {user?.email ? (
             <BookingFlow today={manilaDateKey()} name={name} email={user.email} mobile={mobile} />
           ) : (
-            <div className="grid gap-8 border border-hairline bg-paper-bright p-7 sm:p-9 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+            <div className="grid gap-8 surface p-7 sm:p-9 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div>
                 <Eyebrow>Sign in to request</Eyebrow>
                 <p className="font-display mt-3 text-2xl leading-tight text-ink sm:text-3xl">

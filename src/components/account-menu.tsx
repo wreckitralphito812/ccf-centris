@@ -43,7 +43,7 @@ export function AccountMenu() {
     return (
       <Link
         href="/sign-in"
-        className="btn-press label hidden items-center border border-ink px-3.5 py-2 text-ink transition-colors hover:bg-ink hover:text-paper-bright sm:inline-flex"
+        className="btn-press label rounded-full hidden items-center border border-ink px-3.5 py-2 text-ink transition-colors hover:bg-ink hover:text-paper-bright sm:inline-flex"
       >
         Sign in
       </Link>
@@ -67,7 +67,7 @@ export function AccountMenu() {
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-full z-50 mt-1 w-56 border border-hairline bg-paper-bright p-1.5 shadow-lg">
+        <div className="absolute right-0 top-full z-50 mt-1 w-56 surface p-1.5 shadow-lg">
           <p className="truncate px-3 py-2 text-[0.8rem] text-ink-mute">{email}</p>
           <Link
             href="/my/reservations"

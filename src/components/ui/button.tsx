@@ -30,7 +30,7 @@ export const TONES = [
 export type ButtonTone = (typeof TONES)[number];
 
 export const buttonVariants = cva(
-  "btn-press inline-flex items-center justify-center gap-2 border font-semibold uppercase tracking-[0.1em] transition-colors duration-200 disabled:opacity-40 disabled:pointer-events-none",
+  "btn-press inline-flex items-center justify-center gap-2 rounded-full border font-semibold tracking-[0.005em] transition-colors duration-200 disabled:opacity-40 disabled:pointer-events-none",
   {
     variants: {
       variant: {
@@ -50,9 +50,9 @@ export const buttonVariants = cva(
           "bg-transparent text-paper-bright border-transparent hover:border-paper-bright/40 hover:bg-paper-bright/10",
       },
       size: {
-        sm: "px-3.5 py-1.5 text-[0.78rem]",
-        md: "px-5 py-2.5 text-[0.86rem]",
-        lg: "px-5 py-3 text-[0.9rem] sm:px-7 sm:py-3.5 sm:text-[0.95rem]",
+        sm: "px-4 py-1.5 text-[0.85rem]",
+        md: "px-5 py-2.5 text-[0.92rem]",
+        lg: "px-6 py-3 text-[0.95rem] sm:px-7 sm:py-3.5 sm:text-[1rem]",
       },
       full: {
         true: "w-full",

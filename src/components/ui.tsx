@@ -137,7 +137,7 @@ export function Eyebrow({
   return (
     <p className={cx("label flex items-center", rule && "gap-3", c, className)}>
       {rule ? (
-        <span aria-hidden className="h-px w-8 bg-current opacity-50" />
+        <span aria-hidden className="h-[2px] w-6 rounded-full bg-current opacity-70" />
       ) : null}
       {children}
     </p>
@@ -204,7 +204,7 @@ export function Card({
   return (
     <As
       className={cx(
-        "border border-hairline bg-paper-bright transition-colors duration-200",
+        "surface transition-colors duration-200",
         className,
       )}
     >
@@ -227,7 +227,7 @@ export function LinkCard({
     <Link
       href={href}
       className={cx(
-        "group block border border-hairline bg-paper-bright",
+        "group block surface",
         "transition-colors duration-200 hover:border-ink",
         className,
       )}

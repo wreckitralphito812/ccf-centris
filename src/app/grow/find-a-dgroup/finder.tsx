@@ -56,11 +56,11 @@ export function DgroupFinder({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search by name, area, or description"
-          className="w-full border border-hairline bg-paper-bright px-4 py-3 text-[0.95rem] focus:border-ink"
+          className="w-full rounded-lg border border-hairline bg-paper-bright px-4 py-3 text-[0.95rem] focus:border-ink"
         />
         <button
           type="submit"
-          className="btn-press label shrink-0 border border-ink bg-ink px-5 text-paper-bright transition-colors hover:bg-night"
+          className="btn-press label rounded-full shrink-0 border border-ink bg-ink px-5 text-paper-bright transition-colors hover:bg-night"
         >
           Search
         </button>
@@ -79,7 +79,7 @@ export function DgroupFinder({
                 aria-pressed={on}
                 onClick={() => set("day", on ? "" : String(d))}
                 className={cx(
-                  "btn-press label border px-3.5 py-2 transition-colors",
+                  "btn-press label rounded-full border px-3.5 py-2 transition-colors",
                   on
                     ? "border-clay bg-clay text-paper-bright"
                     : "border-ink/25 text-ink hover:border-ink",
@@ -161,7 +161,7 @@ function Select({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full border border-hairline bg-paper-bright px-3 py-2.5 text-[0.9rem] focus:border-ink"
+        className="w-full rounded-lg border border-hairline bg-paper-bright px-3 py-2.5 text-[0.9rem] focus:border-ink"
       >
         <option value="">Any</option>
         {options.map(([v, l]) => (

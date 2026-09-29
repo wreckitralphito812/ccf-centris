@@ -54,7 +54,7 @@ export default function ConnectPage() {
                       href={a.href}
                       target="_blank"
                       rel="noreferrer"
-                      className="label tap gap-2 border border-ink px-4 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+                      className="label tap gap-2 rounded-full border border-ink px-4 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
                     >
                       <a.Glyph className="h-4 w-4" />
                       {a.label}
@@ -62,7 +62,7 @@ export default function ConnectPage() {
                   ) : (
                     <span
                       aria-disabled="true"
-                      className="label tap gap-2 border border-hairline px-4 py-2.5 text-ink-mute"
+                      className="label tap gap-2 rounded-full border border-hairline px-4 py-2.5 text-ink-mute"
                     >
                       {a.label}
                       <span className="text-[0.62rem] tracking-[0.12em] text-ink-mute/80">
@@ -94,7 +94,7 @@ function Pathway({
   cta: string;
 }) {
   return (
-    <div className="flex flex-col border border-hairline bg-paper-bright p-7">
+    <div className="flex flex-col surface p-7">
       <p className="label text-clay">{eyebrow}</p>
       <h2 className="display-md mt-3">{title}</h2>
       <p className="mt-4 flex-1 text-[1rem] leading-relaxed text-ink-soft">{body}</p>

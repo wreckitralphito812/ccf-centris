@@ -184,7 +184,7 @@ function PostCard({
   userId: string;
 }) {
   return (
-    <article className="border border-hairline bg-paper-bright p-6">
+    <article className="surface p-6">
       <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <p className="font-display text-lg text-ink">{post.author_name}</p>
         <p className="text-[0.8rem] text-ink-mute">

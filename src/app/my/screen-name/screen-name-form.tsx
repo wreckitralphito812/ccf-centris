@@ -25,7 +25,7 @@ export function ScreenNameForm({ next, current }: { next: string; current: strin
         maxLength={24}
         autoComplete="nickname"
         aria-describedby="screen-name-rule"
-        className="mt-3 w-full border border-hairline bg-paper-bright px-4 py-3 text-lg text-ink focus:border-clay"
+        className="mt-3 w-full rounded-lg border border-hairline bg-paper-bright px-4 py-3 text-lg text-ink focus:border-clay"
       />
       <p id="screen-name-rule" className="mt-2 text-[0.85rem] leading-relaxed text-ink-mute">
         {SCREEN_NAME_RULE}
@@ -38,7 +38,7 @@ export function ScreenNameForm({ next, current }: { next: string; current: strin
       <button
         type="submit"
         disabled={pending}
-        className="btn-press label mt-6 border border-clay bg-clay px-6 py-3 text-paper-bright transition-colors hover:bg-clay-deep disabled:opacity-50"
+        className="btn-press label rounded-full mt-6 border border-clay bg-clay px-6 py-3 text-paper-bright transition-colors hover:bg-clay-deep disabled:opacity-50"
       >
         {pending ? "Saving…" : "Save screen name"}
       </button>

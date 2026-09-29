@@ -41,7 +41,7 @@ export function MyBooking({
   const link = "label text-clay underline underline-offset-4 hover:text-clay-deep";
 
   return (
-    <li className="border border-hairline bg-paper-bright p-5">
+    <li className="surface p-5">
       <p className="label text-clay">Dgroup table</p>
       <p className="font-display mt-1 text-2xl text-ink">{title}</p>
       <p className="mt-1 text-[0.95rem] text-ink-soft">
@@ -188,7 +188,7 @@ function ChangeForm({
       <button
         type="submit"
         disabled={pending}
-        className="btn-press label border border-clay bg-clay px-5 py-3 text-paper-bright hover:bg-clay-deep disabled:opacity-50"
+        className="btn-press label rounded-full border border-clay bg-clay px-5 py-3 text-paper-bright hover:bg-clay-deep disabled:opacity-50"
       >
         {pending ? "Saving…" : "Save changes"}
       </button>

@@ -113,7 +113,7 @@ export default async function FourWsGuidePage({ params }: { params: Params }) {
               {guide.welcome ? (
                 <section
                   id="welcome"
-                  className="scroll-mt-24 rounded-xl border border-hairline bg-paper-bright p-6 sm:p-8"
+                  className="scroll-mt-24 surface p-6 sm:p-8"
                 >
                   <div className="flex items-center gap-3">
                     {step(1)}
@@ -132,7 +132,7 @@ export default async function FourWsGuidePage({ params }: { params: Params }) {
               {guide.worshipSongs.length ? (
                 <section
                   id="worship"
-                  className="scroll-mt-24 rounded-xl border border-hairline bg-paper-bright p-6 sm:p-8"
+                  className="scroll-mt-24 surface p-6 sm:p-8"
                 >
                   <div className="flex items-center gap-3">
                     {step(2)}
@@ -159,7 +159,7 @@ export default async function FourWsGuidePage({ params }: { params: Params }) {
               {guide.word ? (
                 <section
                   id="word"
-                  className="scroll-mt-24 rounded-xl border border-hairline bg-paper-bright p-6 sm:p-8"
+                  className="scroll-mt-24 surface p-6 sm:p-8"
                 >
                   <div className="flex items-center gap-3">
                     {step(3)}
@@ -247,7 +247,7 @@ export default async function FourWsGuidePage({ params }: { params: Params }) {
               {guide.works ? (
                 <section
                   id="works"
-                  className="scroll-mt-24 rounded-xl border border-hairline bg-paper-bright p-6 sm:p-8"
+                  className="scroll-mt-24 surface p-6 sm:p-8"
                 >
                   <div className="flex items-center gap-3">
                     {step(4)}
@@ -305,7 +305,7 @@ export default async function FourWsGuidePage({ params }: { params: Params }) {
               {guide.prayCareShare ? (
                 <section
                   id="pray-care-share"
-                  className="scroll-mt-24 rounded-xl border border-hairline bg-paper-bright p-6 sm:p-8"
+                  className="scroll-mt-24 surface p-6 sm:p-8"
                 >
                   <h2 className="font-display text-2xl">Pray · Care · Share</h2>
                   <p className="mt-2 text-[0.85rem] text-ink-mute">
@@ -342,7 +342,7 @@ export default async function FourWsGuidePage({ params }: { params: Params }) {
               {guide.prayerPoints.length ? (
                 <section
                   id="prayer-points"
-                  className="scroll-mt-24 rounded-xl border border-hairline bg-paper-bright p-6 sm:p-8"
+                  className="scroll-mt-24 surface p-6 sm:p-8"
                 >
                   <h2 className="font-display text-2xl">Weekly Prayer Points</h2>
                   <div className="mt-5 space-y-2">
@@ -404,7 +404,7 @@ export default async function FourWsGuidePage({ params }: { params: Params }) {
               <div className="flex flex-wrap gap-3 pt-4">
                 <Link
                   href="/watch/4ws"
-                  className="label border border-hairline px-4 py-2.5 text-ink-mute transition-colors hover:border-ink hover:text-ink"
+                  className="label rounded-full border border-hairline px-4 py-2.5 text-ink-mute transition-colors hover:border-ink hover:text-ink"
                 >
                   ← All 4Ws
                 </Link>
@@ -412,7 +412,7 @@ export default async function FourWsGuidePage({ params }: { params: Params }) {
                   href={guide.source.sourceUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="label border border-hairline px-4 py-2.5 text-ink-mute transition-colors hover:border-ink hover:text-ink"
+                  className="label rounded-full border border-hairline px-4 py-2.5 text-ink-mute transition-colors hover:border-ink hover:text-ink"
                 >
                   View on ccf.org.ph ↗
                 </a>

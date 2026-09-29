@@ -40,7 +40,7 @@ export default function TalkPage() {
                 </p>
               </div>
 
-              <div className="border border-hairline bg-paper-bright p-6">
+              <div className="surface p-6">
                 <p className="label text-clay">What happens next</p>
                 <ol className="mt-3 space-y-2.5 text-[0.9rem] leading-relaxed text-ink-soft">
                   <li>A member of the pastoral team reads what you send.</li>
@@ -56,7 +56,7 @@ export default function TalkPage() {
                 </ol>
               </div>
 
-              <div className="border border-hairline bg-paper-bright p-6">
+              <div className="surface p-6">
                 <p className="label text-clay">Confidentiality</p>
                 <p className="mt-3 text-[0.9rem] leading-relaxed text-ink-soft">
                   What you write reaches the pastoral team only. It is not

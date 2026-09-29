@@ -27,7 +27,7 @@ export default function PrayerPage() {
             </div>
 
             <aside className="space-y-6 lg:sticky lg:top-28">
-              <div className="border border-hairline bg-paper-bright p-6">
+              <div className="surface p-6">
                 <p className="label text-clay">In person</p>
                 <p className="mt-3 leading-relaxed text-ink-soft">
                   The prayer team stays at the front after every service. You
@@ -38,7 +38,7 @@ export default function PrayerPage() {
                 </ButtonLink>
               </div>
 
-              <div className="border border-hairline bg-paper-bright p-6">
+              <div className="surface p-6">
                 <p className="label text-clay">Pastoral care</p>
                 <p className="mt-3 leading-relaxed text-ink-soft">
                   If you&rsquo;d rather talk to a person than send a note, the
@@ -49,7 +49,7 @@ export default function PrayerPage() {
                 </ButtonLink>
               </div>
 
-              <div className="border border-hairline bg-paper-bright p-6">
+              <div className="surface p-6">
                 <p className="label text-clay">Urgent</p>
                 <p className="mt-3 text-[0.9rem] leading-relaxed text-ink-soft">
                   This form is monitored during office hours and is not an

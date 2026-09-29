@@ -61,7 +61,7 @@ export function SeriesDisclosure({ row }: { row: SeriesRow }) {
   const panelId = `series-${row.slug}`;
 
   return (
-    <article className="border border-hairline bg-paper-bright">
+    <article className="surface">
       <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:gap-5 sm:p-5">
         <a
           href={row.playlistHref}
@@ -96,7 +96,7 @@ export function SeriesDisclosure({ row }: { row: SeriesRow }) {
                     href={c.href}
                     target="_blank"
                     rel="noreferrer"
-                    className="label tap gap-1 border border-ink/20 px-2.5 py-1.5 text-ink-soft transition-colors hover:border-ink hover:text-ink"
+                    className="label tap gap-1 rounded-full border border-ink/20 px-2.5 py-1.5 text-ink-soft transition-colors hover:border-ink hover:text-ink"
                   >
                     {c.label}
                     {c.count ? (
@@ -114,7 +114,7 @@ export function SeriesDisclosure({ row }: { row: SeriesRow }) {
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-controls={panelId}
-          className="btn-press label tap gap-2 self-start border border-ink px-4 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright sm:self-center"
+          className="btn-press label rounded-full tap gap-2 self-start border border-ink px-4 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright sm:self-center"
         >
           {open ? "Hide videos" : "Show videos"}
           <ChevronIcon open={open} />

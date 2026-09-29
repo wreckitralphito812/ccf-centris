@@ -68,7 +68,7 @@ export default async function CentrisPage() {
           />
 
           <div className="mt-10 grid gap-10 lg:grid-cols-[1.1fr_1fr] lg:items-start">
-            <ol className="space-y-px border border-hairline bg-hairline">
+            <ol className="space-y-px surface-grid">
               {[
                 ["Welcome Center", "First stop if it's your first Sunday. Staffed before and after every service.", "/centris/facilities/welcome-center"],
                 ["Main Worship Hall", "1,300 seats, with accessible bays. Sunday service is held here.", "/centris/facilities/main-worship-hall"],
@@ -112,7 +112,7 @@ export default async function CentrisPage() {
               })}
             </ol>
 
-            <div className="border border-hairline bg-paper-bright p-6">
+            <div className="surface p-6">
               <p className="label text-ink-mute">Accessibility</p>
               <h3 className="font-display mt-3 text-2xl leading-tight">
                 Step-free from the concourse.

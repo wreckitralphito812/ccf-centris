@@ -54,7 +54,7 @@ function BookingCard({ b }: { b: MyBooking }) {
   const cancellable = upcoming && (b.status === "pending" || b.status === "approved");
 
   return (
-    <li className="border border-hairline bg-paper-bright p-5">
+    <li className="surface p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="label text-clay">{b.court_name ? "Court" : "Room"}</p>
@@ -108,7 +108,7 @@ export default async function MyReservationsPage() {
       <Section>
         <Container className="max-w-3xl space-y-12">
           {nothing ? (
-            <div className="border border-hairline bg-paper-bright p-6">
+            <div className="surface p-6">
               <p className="text-ink">Nothing booked yet.</p>
               <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
                 <Link href="/reserve/dgroup" className="label text-clay underline underline-offset-4">

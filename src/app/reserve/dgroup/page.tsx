@@ -171,7 +171,7 @@ function Rooms() {
       </h2>
       <div className="mt-5 grid gap-6 sm:grid-cols-2">
         {DGROUP_ROOMS.map((r) => (
-          <figure key={r.slug} className="border border-hairline bg-paper-bright p-5">
+          <figure key={r.slug} className="surface p-5">
             <figcaption className="font-display text-xl text-ink">{r.name}</figcaption>
             <p className="mt-1 text-[0.85rem] text-ink-mute">
               {r.tables.length} tables · {r.tables.reduce((n, t) => n + t.seats, 0)} seats

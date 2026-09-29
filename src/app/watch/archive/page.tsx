@@ -50,7 +50,7 @@ export default async function ArchivePage() {
               href={`${YOUTUBE.channelUrl}/playlists`}
               target="_blank"
               rel="noreferrer"
-              className="label tap border border-ink px-7 py-3.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+              className="label tap rounded-full border border-ink px-7 py-3.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
             >
               All playlists on YouTube
             </a>
@@ -70,7 +70,7 @@ export default async function ArchivePage() {
                   href={`${YOUTUBE.channelUrl}/streams`}
                   target="_blank"
                   rel="noreferrer"
-                  className="label tap border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+                  className="label tap rounded-full border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
                 >
                   All streams on YouTube
                 </a>
@@ -80,7 +80,7 @@ export default async function ArchivePage() {
               {sunday.archive.map((s) => (
                 <article
                   key={s.videoId}
-                  className="group flex flex-col border border-hairline bg-paper-bright"
+                  className="group flex flex-col surface"
                 >
                   <Link
                     href={`/watch/archive/${s.videoId}`}
@@ -148,7 +148,7 @@ export default async function ArchivePage() {
               {withMain.map((g) => (
                 <article
                   key={g.series}
-                  className="group flex flex-col border border-hairline bg-paper-bright"
+                  className="group flex flex-col surface"
                 >
                   <a
                     href={g.main!.href}
@@ -193,7 +193,7 @@ export default async function ArchivePage() {
                                 href={c.href}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="label tap gap-1 border border-ink/20 px-2.5 py-1.5 text-ink-soft transition-colors hover:border-ink hover:text-ink"
+                                className="label tap gap-1 rounded-full border border-ink/20 px-2.5 py-1.5 text-ink-soft transition-colors hover:border-ink hover:text-ink"
                               >
                                 {KIND_LABEL[c.kind]}
                                 {c.itemCount ? (
@@ -223,7 +223,7 @@ export default async function ArchivePage() {
               title="Other collections"
               lead="Holy Week, anniversaries, prayer and fasting, conferences, and everything else CCF has published as its own collection."
             />
-            <ul className="mt-10 grid gap-px border border-hairline bg-hairline sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="mt-10 grid gap-px surface-grid sm:grid-cols-2 lg:grid-cols-3">
               {rest.slice(0, 24).map((g) => {
                 const first = g.companions[0];
                 if (!first) return null;
@@ -277,7 +277,7 @@ export default async function ArchivePage() {
                     href={c.href}
                     target="_blank"
                     rel="noreferrer"
-                    className="group flex h-full flex-col border border-hairline bg-paper-bright transition-colors hover:border-ink"
+                    className="group flex h-full flex-col surface transition-colors hover:border-ink"
                   >
                     <span className="relative block aspect-video overflow-hidden">
                       {c.thumbnail ? (

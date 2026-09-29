@@ -12,9 +12,9 @@ import { PRAYER_BODY_MAX, PRAYER_LIFETIME } from "@/lib/prayer-wall";
 const field =
   "w-full border border-hairline bg-paper px-4 py-3 text-[1rem] leading-relaxed text-ink placeholder:text-ink-mute focus:border-clay";
 const primary =
-  "btn-press label border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep disabled:opacity-50";
+  "btn-press label rounded-full border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep disabled:opacity-50";
 const outline =
-  "btn-press label border border-ink px-3.5 py-2 text-ink transition-colors hover:bg-ink hover:text-paper-bright";
+  "btn-press label rounded-full border border-ink px-3.5 py-2 text-ink transition-colors hover:bg-ink hover:text-paper-bright";
 
 export function PostForm({ screenName }: { screenName: string }) {
   const [state, action, pending] = useActionState<WallResult | null, FormData>(
@@ -27,7 +27,7 @@ export function PostForm({ screenName }: { screenName: string }) {
   }, [state]);
 
   return (
-    <form ref={form} action={action} className="border border-hairline bg-paper-bright p-6">
+    <form ref={form} action={action} className="surface p-6">
       <label htmlFor="prayer-body" className="label text-clay">
         Share a prayer request
       </label>

@@ -102,7 +102,7 @@ export function TalkForm() {
         <div className="mt-7 flex flex-wrap gap-3">
           <Link
             href="/"
-            className="btn-press label border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
+            className="btn-press label rounded-full border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
           >
             Back to home
           </Link>
@@ -132,7 +132,7 @@ export function TalkForm() {
             {errors.kind}
           </p>
         ) : null}
-        <div className="mt-3 space-y-px border border-hairline bg-hairline">
+        <div className="mt-3 space-y-px surface-grid">
           {KINDS.map((k) => (
             <label
               key={k.id}
@@ -189,7 +189,7 @@ export function TalkForm() {
               aria-pressed={contactBy === v}
               onClick={() => setContactBy(v)}
               className={cx(
-                "btn-press label border px-3.5 py-2 transition-colors",
+                "btn-press label rounded-full border px-3.5 py-2 transition-colors",
                 contactBy === v
                   ? "border-clay bg-clay text-paper-bright"
                   : "border-ink/25 text-ink hover:border-ink",

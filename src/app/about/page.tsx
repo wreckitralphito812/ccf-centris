@@ -74,7 +74,7 @@ export default function AboutPage() {
                 </cite>
               </blockquote>
             </div>
-            <div className="border border-hairline bg-paper-bright p-8">
+            <div className="surface p-8">
               <Eyebrow>Our vision</Eyebrow>
               <p className="mt-5 text-[1.05rem] leading-relaxed text-ink-soft">
                 {VISION}
@@ -95,7 +95,7 @@ export default function AboutPage() {
             title="LOVE"
             lead="Part of what unites CCF is a common set of values that guide our priorities in our walk with God."
           />
-          <div className="mt-10 grid gap-px border border-hairline bg-hairline sm:grid-cols-2">
+          <div className="mt-10 grid gap-px surface-grid sm:grid-cols-2">
             {CORE_VALUES.map((v) => (
               <div key={v.letter} className="bg-paper-bright p-7">
                 <div className="flex items-baseline gap-4">

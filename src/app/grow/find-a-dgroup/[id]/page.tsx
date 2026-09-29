@@ -88,7 +88,7 @@ export default async function DgroupPage({
                 <DetailRow label="Language">{d.language}</DetailRow>
               </dl>
 
-              <div className="mt-10 border border-hairline bg-paper-bright p-7">
+              <div className="mt-10 surface p-7">
                 <h2 className="font-display text-2xl">What happens at a Dgroup</h2>
                 <p className="mt-3 leading-relaxed text-ink-soft">
                   Most groups run about ninety minutes and follow the 4Ws:
@@ -110,7 +110,7 @@ export default async function DgroupPage({
               </div>
             </div>
 
-            <aside className="border border-hairline bg-paper-bright p-7 lg:sticky lg:top-28">
+            <aside className="surface p-7 lg:sticky lg:top-28">
               <h2 className="font-display text-2xl leading-tight">
                 I&rsquo;m interested in joining
               </h2>

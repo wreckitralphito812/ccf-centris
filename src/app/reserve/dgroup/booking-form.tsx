@@ -215,7 +215,7 @@ function BookingAttempt({
       <button
         type="submit"
         disabled={pending}
-        className="btn-press label border border-clay bg-clay px-6 py-3.5 text-paper-bright transition-colors hover:bg-clay-deep disabled:opacity-50"
+        className="btn-press label rounded-full border border-clay bg-clay px-6 py-3.5 text-paper-bright transition-colors hover:bg-clay-deep disabled:opacity-50"
       >
         {pending ? "Assigning your table…" : "Confirm booking"}
       </button>

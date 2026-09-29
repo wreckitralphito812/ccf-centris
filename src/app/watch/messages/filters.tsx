@@ -54,11 +54,11 @@ export function MessageFilters({ facets, total }: { facets: Facets; total: numbe
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search by title, speaker, passage, or topic"
-          className="w-full border border-hairline bg-paper-bright px-4 py-3 text-[0.95rem] focus:border-ink"
+          className="w-full rounded-lg border border-hairline bg-paper-bright px-4 py-3 text-[0.95rem] focus:border-ink"
         />
         <button
           type="submit"
-          className="btn-press label shrink-0 border border-ink bg-ink px-5 text-paper-bright transition-colors hover:bg-night"
+          className="btn-press label rounded-full shrink-0 border border-ink bg-ink px-5 text-paper-bright transition-colors hover:bg-night"
         >
           Search
         </button>
@@ -157,7 +157,7 @@ function Select({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={cx(
-          "border border-hairline bg-paper-bright px-3 py-2.5 text-[0.9rem] focus:border-ink",
+          "rounded-lg border border-hairline bg-paper-bright px-3 py-2.5 text-[0.9rem] focus:border-ink",
           compact ? "w-auto" : "w-full",
         )}
       >

@@ -61,11 +61,11 @@ export default async function SearchPage({
               defaultValue={q}
               autoFocus
               placeholder="Try a topic, a passage, a room, or a question"
-              className="w-full border border-hairline bg-paper-bright px-5 py-4 text-[1.05rem] focus:border-ink"
+              className="w-full rounded-lg border border-hairline bg-paper-bright px-5 py-4 text-[1.05rem] focus:border-ink"
             />
             <button
               type="submit"
-              className="btn-press label shrink-0 border border-ink bg-ink px-6 text-paper-bright transition-colors hover:bg-night"
+              className="btn-press label rounded-full shrink-0 border border-ink bg-ink px-6 text-paper-bright transition-colors hover:bg-night"
             >
               Search
             </button>
@@ -79,7 +79,7 @@ export default async function SearchPage({
                   <Link
                     key={s}
                     href={`/search?q=${encodeURIComponent(s)}`}
-                    className="btn-press label border border-ink/25 px-3.5 py-2 text-ink transition-colors hover:border-ink"
+                    className="btn-press label rounded-full border border-ink/25 px-3.5 py-2 text-ink transition-colors hover:border-ink"
                   >
                     {s}
                   </Link>
