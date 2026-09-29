@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SITE, MAPS_LINK, YOUTUBE, SOCIALS, SERVICE_TIMES, organizationJsonLd } from "@/lib/site";
+import { SITE, MAPS_LINK, YOUTUBE, SOCIALS, SERVICE_TIMES_TEXT, organizationJsonLd } from "@/lib/site";
 import { Wordmark } from "./wordmark";
 import { FacebookGlyph, InstagramGlyph, YouTubeGlyph } from "./icons";
 
@@ -86,7 +86,7 @@ export function SiteFooter() {
       <div className="bg-[linear-gradient(100deg,#006d78_0%,#00879a_55%,#009fb0_100%)]">
         <div className="mx-auto flex max-w-[110rem] flex-col gap-4 px-5 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <p className="font-display text-xl leading-snug sm:text-2xl">
-            Sunday service is at {SERVICE_TIMES[0].time}. See you there.
+            Sunday services at {SERVICE_TIMES_TEXT}. See you there.
           </p>
           <div className="flex flex-wrap gap-3">
             {/* Solid cream, not teal: under the footer's .bg-night the

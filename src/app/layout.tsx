@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     template: "%s | CCF Centris",
   },
   description:
-    "CCF Centris is a satellite of Christ's Commission Fellowship at 2/F Centris Station, Eton Centris, EDSA corner Quezon Avenue. Sunday service is at 10:00 AM.",
+    "CCF Centris is a satellite of Christ's Commission Fellowship at 2/F Centris Station, Eton Centris, EDSA corner Quezon Avenue. Sunday services are at 10:00 AM and 3:00 PM.",
   openGraph: {
     type: "website",
     siteName: "CCF Centris",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "CCF Centris",
     description:
-      "A satellite of Christ's Commission Fellowship at Eton Centris, Quezon City. Sundays at 10:00 AM.",
+      "A satellite of Christ's Commission Fellowship at Eton Centris, Quezon City. Sundays at 10:00 AM and 3:00 PM.",
   },
   robots: { index: true, follow: true },
 };
