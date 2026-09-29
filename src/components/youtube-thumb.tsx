@@ -34,13 +34,25 @@ export function YouTubeThumb({
 
   const [current, setCurrent] = useState(primary);
 
+  // YouTube answers a missing maxresdefault with a 404 that still carries a
+  // 120x90 grey placeholder, so the browser often "loads" it rather than
+  // erroring. And on a server-rendered page the image can finish before React
+  // attaches onError at all. So check both ways: on load, and when the element
+  // mounts already complete.
+  const fallBack = (img: HTMLImageElement | null) => {
+    if (!img || !img.complete || !backup || current === backup) return;
+    if (img.naturalWidth === 0 || img.naturalWidth <= 120) setCurrent(backup);
+  };
+
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
+      ref={fallBack}
       src={current}
       alt={alt}
       loading={loading}
       decoding="async"
+      onLoad={(e) => fallBack(e.currentTarget)}
       onError={() => {
         if (backup && current !== backup) setCurrent(backup);
       }}

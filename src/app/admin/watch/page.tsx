@@ -4,7 +4,7 @@ import { AdminHeader, AdminNote, AdminPanel } from "../admin-ui";
 import { YouTubeThumb } from "@/components/youtube-thumb";
 import { isAdminConfigured } from "@/lib/admin-auth";
 import { hasSupabase } from "@/lib/supabase/server";
-import { getReplayLibrary, getWatchReplay } from "@/lib/watch";
+import { getReplayLibrary, getWatchReplay, stillOnYouTube } from "@/lib/watch";
 import { replayLabelDate } from "@/lib/watch-shared";
 import {
   checkCcfNetNow,
@@ -32,6 +32,10 @@ const input = "w-full border border-hairline bg-paper px-3 py-2 text-[0.92rem] t
 export default async function AdminWatch() {
   await connection();
   const [{ replay, source }, library] = await Promise.all([getWatchReplay(), getReplayLibrary()]);
+  // Replays YouTube has since made private or removed; the public page skips them.
+  const gone = new Set(
+    (await Promise.all(library.map(async (r) => ((await stillOnYouTube(r.video_id)) ? null : r.video_id)))).filter(Boolean),
+  );
   const readOnly = !isAdminConfigured() || !hasSupabase();
   const pinned = library.find((r) => r.pinned);
 
@@ -115,6 +119,7 @@ export default async function AdminWatch() {
                     <span className="font-semibold">{r.title}</span>
                     {r.pinned ? <Tag tone="clay">Pinned</Tag> : null}
                     {r.hidden ? <Tag tone="mute">Hidden</Tag> : null}
+                    {gone.has(r.video_id) ? <Tag tone="clay">No longer on YouTube</Tag> : null}
                     <Tag tone="mute">{r.source === "ccfnet" ? "From CCF Net" : "Added by admin"}</Tag>
                   </p>
                   <p className="mt-0.5 text-[0.85rem] text-ink-mute">
