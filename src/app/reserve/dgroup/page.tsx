@@ -51,10 +51,6 @@ export default function DgroupTablesPage() {
         eyebrow="Reserve · Dgroup meeting"
         title="Book a table for your Dgroup."
         lead="Pick a day and time, tell us how many are coming, and we'll assign your table."
-        image={{
-          src: "/photos/dgroup-lounge.jpg",
-          alt: "The Dgroup Lounge at CCF Centris, seen through its glass front",
-        }}
       />
       <Section>
         <Container className="max-w-3xl">

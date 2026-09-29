@@ -17,7 +17,7 @@ const OPTIONS: { title: string; body: string; href: string | null }[] = [
   },
   {
     title: "A room for a ministry gathering",
-    body: "Free for meetings, trainings and events. Confirmed by the facilities team.",
+    body: "John, Luke, Matthew, Mark, the Welcome Center or the Dgroup Lounge. Free for ministries, confirmed by the facilities team.",
     href: "/centris/reserve",
   },
   {

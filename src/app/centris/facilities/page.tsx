@@ -24,10 +24,7 @@ export default async function FacilitiesPage() {
         actions={
           <>
             <ButtonLink href="/centris/reserve" size="lg">
-              Reserve a space
-            </ButtonLink>
-            <ButtonLink href="/centris/availability" tone="outline" size="lg">
-              Check availability
+              Request a room
             </ButtonLink>
           </>
         }
