@@ -120,7 +120,7 @@ export function SiteHeader() {
           </Link>
           <Link
             href="/watch"
-            className="btn-press label hidden items-center gap-2 border border-clay bg-clay px-3.5 py-2 whitespace-nowrap text-paper-bright transition-colors hover:bg-clay-deep md:inline-flex lg:hidden xl:inline-flex"
+            className="btn-press label rounded-full hidden items-center gap-2 border border-clay bg-clay px-3.5 py-2 whitespace-nowrap text-paper-bright transition-colors hover:bg-clay-deep md:inline-flex lg:hidden xl:inline-flex"
           >
             Last Sunday
           </Link>
@@ -161,7 +161,7 @@ export function SiteHeader() {
 
             <Link
               href="/search"
-              className="mt-3 flex items-center gap-2 border border-hairline bg-paper-bright px-4 py-3 text-[0.9rem] text-ink-mute"
+              className="mt-3 flex items-center gap-2 rounded-lg border border-hairline bg-paper-bright px-4 py-3 text-[0.9rem] text-ink-mute"
             >
               <SearchIcon />
               Search CCF Centris

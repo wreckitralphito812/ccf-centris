@@ -176,7 +176,7 @@ function VisitCard({ live }: { live: boolean }) {
   const invite = `Join me at CCF Centris this ${first.day} at ${first.time}. We meet at 2/F Centris Station, Eton Centris, right off MRT Quezon Avenue.`;
 
   return (
-    <div className="border border-hairline bg-paper-bright p-6 text-ink shadow-[0_30px_80px_-40px_rgba(0,0,0,0.75)] sm:p-7">
+    <div className="surface p-6 text-ink shadow-[0_30px_80px_-40px_rgba(0,0,0,0.75)] sm:p-7">
       {live ? (
         <Link
           href="/watch"
@@ -317,7 +317,7 @@ function StepCard({ icon, title, body, href, external }: (typeof NEXT_STEPS)[num
           {body}
         </span>
         {external ? (
-          <span className="label mt-3 block text-ink-mute">
+          <span className="mt-3 block text-[0.88rem] font-semibold text-clay">
             Sign-up form &#8599;
           </span>
         ) : null}
@@ -325,7 +325,7 @@ function StepCard({ icon, title, body, href, external }: (typeof NEXT_STEPS)[num
     </>
   );
   const cls =
-    "group flex h-full items-start gap-5 border border-hairline bg-paper-bright p-6 shadow-[0_18px_40px_-34px_rgba(23,21,15,0.55)] transition-colors hover:border-ink";
+    "group flex h-full items-start gap-5 surface p-6 shadow-[0_18px_40px_-34px_rgba(23,21,15,0.55)] transition-colors hover:border-ink";
 
   return external ? (
     <a href={href} target="_blank" rel="noreferrer" className={cls}>
@@ -355,7 +355,7 @@ function LastSunday({
   return (
     <Section tone="paper" className="py-12! sm:py-20!">
       <Container>
-        <Reveal className="grid overflow-hidden border border-hairline bg-paper-bright md:grid-cols-[minmax(0,1.15fr)_1fr]">
+        <Reveal className="grid overflow-hidden surface md:grid-cols-[minmax(0,1.15fr)_1fr]">
           {replay ? (
             <Link
               href="/watch"

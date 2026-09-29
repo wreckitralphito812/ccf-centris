@@ -32,7 +32,11 @@ export function PageHeader({
   align?: "left" | "center";
 }) {
   const tones = {
-    deep: "bg-paper-deep text-ink",
+    // A soft wash of CCF teal from the top corner, over white, rather than a
+    // flat grey band (2026-09-29): enough colour to feel like CCF's, light
+    // enough that the page stays calm.
+    deep:
+      "bg-paper-bright bg-[radial-gradient(80%_150%_at_100%_0%,rgb(0_166_182/0.22),transparent_62%),radial-gradient(55%_100%_at_0%_100%,rgb(0_118_130/0.08),transparent_70%)] text-ink",
     paper: "bg-paper text-ink",
     ink: "bg-night text-paper-bright",
     clay: "bg-clay text-paper-bright",
@@ -42,10 +46,10 @@ export function PageHeader({
   const centered = align === "center" && !image;
 
   return (
-    <header className={cx("border-b border-hairline", tones[tone])}>
+    <header className={cx("border-b border-ink/[0.06]", tones[tone])}>
       <Container
         className={cx(
-          "py-12 sm:py-16",
+          "py-14 sm:py-20",
           image && "grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-14",
           centered && "text-center",
         )}
@@ -83,7 +87,7 @@ export function PageHeader({
         </div>
 
         {image ? (
-          <div className="relative aspect-[4/3] overflow-hidden bg-paper">
+          <div className="photo relative aspect-[4/3] bg-paper shadow-[0_24px_60px_-30px_rgb(20_32_33/0.45)]">
             <Image
               src={image.src}
               alt={image.alt}

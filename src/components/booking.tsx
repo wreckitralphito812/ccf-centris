@@ -30,7 +30,7 @@ export function Chip({
       disabled={disabled}
       onClick={onClick}
       className={cx(
-        "btn-press border px-4 py-2.5 text-[0.9rem] font-semibold transition-colors",
+        "btn-press rounded-full border px-4 py-2.5 text-[0.9rem] font-semibold transition-colors",
         disabled && "cursor-not-allowed border-transparent bg-ink/5 text-ink-mute/50 line-through",
         !disabled && on && "border-clay bg-clay text-paper-bright",
         !disabled && !on && "border-ink/25 bg-paper-bright text-ink hover:border-ink",
@@ -89,7 +89,7 @@ export function Stepper({
   error?: string;
 }) {
   const btn =
-    "btn-press flex h-10 w-10 items-center justify-center border border-ink/25 text-lg transition-colors hover:border-ink disabled:opacity-40 disabled:hover:border-ink/25";
+    "btn-press flex rounded-full h-10 w-10 items-center justify-center border border-ink/25 text-lg transition-colors hover:border-ink disabled:opacity-40 disabled:hover:border-ink/25";
   return (
     <div>
       <p className="label text-ink-mute">{label}</p>
@@ -151,7 +151,7 @@ export function ContactFields({ fields }: { fields: ContactField[] }) {
 
   if (!editing && !hasError) {
     return (
-      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border border-hairline bg-paper-bright px-5 py-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 surface px-5 py-4">
         <div className="min-w-0">
           <p className="label text-ink-mute">Booking as</p>
           <p className="mt-1 break-words text-[0.95rem] text-ink">
@@ -220,7 +220,7 @@ export function AcceptRules({
 }) {
   const [accepted, setAccepted] = useState(false);
   return (
-    <div className="border border-hairline bg-paper-bright p-5">
+    <div className="surface p-5">
       <ul className="space-y-2 text-[0.88rem] leading-relaxed text-ink-soft">
         {rules.map((r) => (
           <li key={r.title ?? r.body} className="flex gap-3">

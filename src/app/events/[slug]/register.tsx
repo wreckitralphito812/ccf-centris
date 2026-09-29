@@ -56,7 +56,7 @@ export function RegisterForm({
 
   if (!requiresRegistration) {
     return (
-      <div className="border border-hairline bg-paper-bright p-7">
+      <div className="surface p-7">
         <Pill tone="moss">No registration needed</Pill>
         <h2 className="font-display mt-4 text-2xl leading-tight">
           Just turn up.
@@ -118,13 +118,13 @@ export function RegisterForm({
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
             href="/events"
-            className="btn-press label border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
+            className="btn-press label rounded-full border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
           >
             More events
           </Link>
           <Link
             href="/events/calendar"
-            className="btn-press label border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+            className="btn-press label rounded-full border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
           >
             See the calendar
           </Link>
@@ -134,7 +134,7 @@ export function RegisterForm({
   }
 
   return (
-    <div className="border border-hairline bg-paper-bright p-7">
+    <div className="surface p-7">
       {full ? (
         <>
           <Pill tone="clay">Full</Pill>
@@ -220,7 +220,7 @@ export function RegisterForm({
                 type="button"
                 aria-label="One fewer"
                 onClick={() => setParty((n) => Math.max(1, n - 1))}
-                className="btn-press flex h-8 w-8 items-center justify-center border border-ink/25 transition-colors hover:border-ink"
+                className="btn-press flex rounded-full h-8 w-8 items-center justify-center border border-ink/25 transition-colors hover:border-ink"
               >
                 −
               </button>
@@ -234,7 +234,7 @@ export function RegisterForm({
                 type="button"
                 aria-label="One more"
                 onClick={() => setParty((n) => Math.min(10, n + 1))}
-                className="btn-press flex h-8 w-8 items-center justify-center border border-ink/25 transition-colors hover:border-ink"
+                className="btn-press flex rounded-full h-8 w-8 items-center justify-center border border-ink/25 transition-colors hover:border-ink"
               >
                 +
               </button>

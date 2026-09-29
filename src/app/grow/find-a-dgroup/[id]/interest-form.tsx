@@ -50,13 +50,13 @@ export function InterestForm({
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
             href="/grow/find-a-dgroup"
-            className="btn-press label border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+            className="btn-press label rounded-full border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
           >
             Browse other groups
           </Link>
           <Link
             href="/visit/new-here"
-            className="btn-press label border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
+            className="btn-press label rounded-full border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
           >
             Plan your visit
           </Link>

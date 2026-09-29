@@ -80,7 +80,7 @@ export default function VisitPage() {
       <Section>
         <Container>
           <div className="grid gap-8 lg:grid-cols-[1.35fr_1fr] lg:items-start lg:gap-12">
-            <div className="border border-hairline bg-paper-bright p-2">
+            <div className="surface p-2">
               <iframe
                 title={`Map showing ${SITE.name} at Eton Centris, EDSA corner Quezon Avenue, Quezon City`}
                 src={MAPS_EMBED}
@@ -129,7 +129,7 @@ export default function VisitPage() {
           {/* One grid for both routes, with each card on a subgrid, so the
               heading, steps, note, picture and facts sit on the same line in
               both columns even when one note wraps and the other doesn't. */}
-          <div className="mt-8 grid gap-px border border-hairline bg-hairline md:grid-cols-2 md:grid-rows-[repeat(5,auto)]">
+          <div className="mt-8 grid gap-px surface-grid md:grid-cols-2 md:grid-rows-[repeat(5,auto)]">
             {ROUTES.map((r) => (
               <div
                 key={r.id}

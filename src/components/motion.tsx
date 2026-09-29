@@ -310,7 +310,7 @@ export function RevealHead({
                 <SectionIcon name={icon} className="h-3.5 w-3.5" />
               </span>
             ) : !centered ? (
-              <span aria-hidden className="h-px w-8 bg-current opacity-50" />
+              <span aria-hidden className="h-[2px] w-6 rounded-full bg-current opacity-70" />
             ) : null}
             {eyebrow}
           </RevealItem>

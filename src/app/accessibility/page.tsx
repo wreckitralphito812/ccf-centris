@@ -25,7 +25,7 @@ export default function AccessibilityPage() {
       <Section>
         <Container>
           <SectionHead eyebrow="The building" title="At CCF Centris" />
-          <div className="mt-10 grid gap-px border border-hairline bg-hairline sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-10 grid gap-px surface-grid sm:grid-cols-2 lg:grid-cols-3">
             {[
               [
                 "Step-free access",

@@ -659,7 +659,7 @@ function firstOpenDay(today: string): string {
 const INPUT =
   "w-full bg-paper-bright px-4 py-3 text-[1rem] text-ink shadow-[inset_0_0_0_1px_var(--hairline)] focus:shadow-[inset_0_0_0_2px_var(--clay)] focus:outline-none";
 const PRIMARY =
-  "btn-press label bg-clay px-6 py-3.5 text-paper-bright transition-colors hover:bg-clay-deep disabled:cursor-not-allowed disabled:opacity-40 sm:px-10";
+  "btn-press label rounded-full bg-clay px-6 py-3.5 text-paper-bright transition-colors hover:bg-clay-deep disabled:cursor-not-allowed disabled:opacity-40 sm:px-10";
 
 /* --- The room board --------------------------------------------------------- */
 

@@ -220,7 +220,7 @@ function NavLink({
 }) {
   if (disabled) {
     return (
-      <span className="label border border-hairline px-4 py-2 text-ink-mute opacity-50">
+      <span className="label rounded-full border border-hairline px-4 py-2 text-ink-mute opacity-50">
         {children}
       </span>
     );
@@ -228,7 +228,7 @@ function NavLink({
   return (
     <Link
       href={to === 0 ? "/events/calendar" : `/events/calendar?m=${to}`}
-      className="label border border-ink px-4 py-2 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+      className="label rounded-full border border-ink px-4 py-2 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
     >
       {children}
     </Link>

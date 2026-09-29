@@ -59,7 +59,7 @@ export default function ContactPage() {
             </div>
 
             <aside className="space-y-6 lg:sticky lg:top-28">
-              <div className="border border-hairline bg-paper-bright p-6">
+              <div className="surface p-6">
                 <p className="label text-clay">Visit us</p>
                 <address className="font-display mt-3 text-xl not-italic leading-snug">
                   {SITE.addressLines.map((l) => (
@@ -78,7 +78,7 @@ export default function ContactPage() {
                 </ButtonLink>
               </div>
 
-              <div className="border border-hairline bg-paper-bright p-2">
+              <div className="surface p-2">
                 <iframe
                   title="Map showing CCF Centris"
                   src={MAPS_EMBED}
@@ -99,7 +99,7 @@ export default function ContactPage() {
                 </ButtonLink>
               </div>
 
-              <div className="border border-hairline bg-paper-bright p-6">
+              <div className="surface p-6">
                 <p className="label text-clay">CCF nationwide</p>
                 <p className="mt-3 text-[0.9rem] leading-relaxed text-ink-soft">
                   For other CCF centers and ministries, go to CCF&rsquo;s main

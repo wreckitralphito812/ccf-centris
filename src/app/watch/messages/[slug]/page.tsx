@@ -124,7 +124,7 @@ export default async function MessagePage({
                 {m.series ? (
                   <Link
                     href={`/watch/series/${m.series.slug}`}
-                    className="btn-press label border border-white/25 px-4 py-2.5 text-paper-bright transition-colors hover:bg-white/10"
+                    className="btn-press label rounded-full border border-white/25 px-4 py-2.5 text-paper-bright transition-colors hover:bg-white/10"
                   >
                     More from this series
                   </Link>
@@ -202,7 +202,7 @@ export default async function MessagePage({
                 {w ? (
                   <a
                     href="#four-ws"
-                    className="label tap border border-white/25 px-4 py-2.5 text-paper-bright transition-colors hover:bg-white/10"
+                    className="label tap rounded-full border border-white/25 px-4 py-2.5 text-paper-bright transition-colors hover:bg-white/10"
                   >
                     4Ws
                   </a>
@@ -217,7 +217,7 @@ export default async function MessagePage({
                       <Link
                         key={t}
                         href={`/watch/messages?topic=${encodeURIComponent(t)}`}
-                        className="label border border-white/25 px-3 py-1.5 text-paper-bright/80 transition-colors hover:bg-white/10"
+                        className="label rounded-full border border-white/25 px-3 py-1.5 text-paper-bright/80 transition-colors hover:bg-white/10"
                       >
                         {t}
                       </Link>
@@ -248,7 +248,7 @@ export default async function MessagePage({
               }
             />
 
-            <div className="mt-10 grid gap-px border border-hairline bg-hairline sm:grid-cols-2">
+            <div className="mt-10 grid gap-px surface-grid sm:grid-cols-2">
               {[
                 ["Welcome", w.welcome_md],
                 ["Worship", w.worship_md],
@@ -299,7 +299,7 @@ export default async function MessagePage({
               </div>
             </div>
 
-            <aside className="border border-hairline bg-paper-bright p-6">
+            <aside className="surface p-6">
               <p className="label text-clay">In this series</p>
               {m.series ? (
                 <>

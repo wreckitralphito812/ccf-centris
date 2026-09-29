@@ -30,7 +30,7 @@ export default async function SpeakersPage() {
 
       <Section>
         <Container>
-          <ul className="grid gap-px border border-hairline bg-hairline sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid gap-px surface-grid sm:grid-cols-2 lg:grid-cols-3">
             {speakers.map((s, i) => (
               <li key={s.id}>
                 <Link

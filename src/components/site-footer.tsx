@@ -80,7 +80,10 @@ export function SiteFooter() {
       />
 
       {/* Last Sunday nudge, before the sitemap. */}
-      <div className="border-b border-white/15">
+      {/* The one full-strength CCF teal moment on every page (2026-09-29):
+          brand teal (#00a6b6) as a large surface, with a darker teal wash so
+          the white type clears contrast. */}
+      <div className="bg-[linear-gradient(100deg,#006d78_0%,#00879a_55%,#009fb0_100%)]">
         <div className="mx-auto flex max-w-[110rem] flex-col gap-4 px-5 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <p className="font-display text-xl leading-snug sm:text-2xl">
             Sunday service is at {SERVICE_TIMES[0].time}. See you there.
@@ -91,7 +94,7 @@ export function SiteFooter() {
                 contrast. Matches the "on-dark" button tone in ui.tsx. */}
             <Link
               href="/visit#getting-here"
-              className="btn-press label tap border border-paper-bright bg-paper-bright px-4 py-2.5 text-night transition-colors hover:border-bone hover:bg-bone"
+              className="btn-press label rounded-full tap border border-paper-bright bg-paper-bright px-4 py-2.5 text-night transition-colors hover:border-bone hover:bg-bone"
             >
               Getting here
             </Link>
@@ -135,7 +138,7 @@ export function SiteFooter() {
                 href={MAPS_LINK}
                 target="_blank"
                 rel="noreferrer"
-                className="label tap border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
+                className="label tap rounded-full border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
               >
                 Get directions
               </a>
@@ -145,7 +148,7 @@ export function SiteFooter() {
                   target="_blank"
                   rel="noreferrer"
                   aria-label="CCF Centris on Instagram"
-                  className="label tap gap-2 border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
+                  className="label tap gap-2 rounded-full border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
                 >
                   <InstagramGlyph className="h-4 w-4" />
                   Instagram
@@ -157,7 +160,7 @@ export function SiteFooter() {
                   target="_blank"
                   rel="noreferrer"
                   aria-label="CCF Centris on Facebook"
-                  className="label tap gap-2 border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
+                  className="label tap gap-2 rounded-full border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
                 >
                   <FacebookGlyph className="h-4 w-4" />
                   Facebook
@@ -168,7 +171,7 @@ export function SiteFooter() {
                 target="_blank"
                 rel="noreferrer"
                 aria-label="CCF on YouTube"
-                className="label tap gap-2 border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
+                className="label tap gap-2 rounded-full border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
               >
                 <YouTubeGlyph className="h-4 w-4" />
                 YouTube

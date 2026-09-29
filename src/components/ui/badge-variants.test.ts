@@ -29,6 +29,6 @@ test("base always includes the label utility and border box", () => {
 test("base pins the full label + box string", () => {
   assert.match(
     badgeVariants({}),
-    /label inline-flex items-center gap-1\.5 border px-2\.5 py-1/,
+    /label inline-flex items-center gap-1\.5 rounded-full border px-2\.5 py-1/,
   );
 });

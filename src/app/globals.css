@@ -424,3 +424,71 @@ a.link,
 .no-bar::-webkit-scrollbar {
   display: none;
 }
+
+/* ---------------------------------------------------------------------------
+   Surfaces (2026-09-29)
+
+   Ralph found the site bland: every card, panel and aside was the same 1px
+   grey outline on near-white, so nothing had weight and pages read like forms.
+   A surface is a white panel lifted by a hairline ring and a soft shadow, with
+   rounded corners, instead of a drawn border. Still minimal, but it has depth.
+
+   `overflow: hidden` keeps images at a surface's edge inside its corners.
+   --------------------------------------------------------------------------- */
+
+@layer components {
+.surface {
+  background: var(--paper-bright);
+  border-radius: 0.875rem;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgb(20 32 33 / 0.07),
+    0 1px 2px rgb(20 32 33 / 0.04),
+    0 14px 34px -22px rgb(20 32 33 / 0.28);
+  transition:
+    box-shadow 220ms var(--ease),
+    transform 220ms var(--ease);
+}
+
+/* Surfaces that are links (or wrap one) rise a little on hover. */
+a.surface:hover,
+.surface.group:hover {
+  box-shadow:
+    0 0 0 1px rgb(20 32 33 / 0.1),
+    0 2px 4px rgb(20 32 33 / 0.05),
+    0 22px 44px -22px rgb(20 32 33 / 0.34);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a.surface:hover,
+  .surface.group:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* The "grid lines" layout: cells separated by 1px gaps over a hairline
+   ground. Same corners and lift as a surface, so the two sit together. */
+.surface-grid {
+  background: var(--hairline);
+  border-radius: 0.875rem;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgb(20 32 33 / 0.07),
+    0 14px 34px -22px rgb(20 32 33 / 0.28);
+}
+
+/* Photos inside content get the same softened corners. */
+.photo {
+  border-radius: 0.875rem;
+  overflow: hidden;
+}
+}
+
+/* Text links and small controls styled with `.label` inside the page read in
+   sentence case. Uppercase tracked type is kept for what it is good at:
+   eyebrows, badges and headings (non-interactive `.label`). */
+:where(main, footer) :is(a, button, summary).label {
+  text-transform: none;
+  letter-spacing: 0.005em;
+  font-size: 0.9rem;
+}

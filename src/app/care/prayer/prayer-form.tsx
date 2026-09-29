@@ -76,13 +76,13 @@ export function PrayerForm() {
         <div className="mt-7 flex flex-wrap gap-3">
           <Link
             href="/care/talk"
-            className="label border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+            className="label rounded-full border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
           >
             I&rsquo;d like to talk to someone
           </Link>
           <Link
             href="/"
-            className="label border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
+            className="label rounded-full border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
           >
             Back to home
           </Link>
@@ -103,7 +103,7 @@ export function PrayerForm() {
       }}
     >
       {/* Anonymity first, because it changes everything below it. */}
-      <fieldset className="border border-hairline bg-paper-bright p-5">
+      <fieldset className="surface p-5">
         <legend className="label px-2 text-ink-mute">How to send this</legend>
         <div className="mt-2 space-y-3">
           {[
@@ -205,7 +205,7 @@ export function PrayerForm() {
               aria-pressed={category === c}
               onClick={() => setCategory(category === c ? "" : c)}
               className={cx(
-                "btn-press label border px-3.5 py-2 transition-colors",
+                "btn-press label rounded-full border px-3.5 py-2 transition-colors",
                 category === c
                   ? "border-clay bg-clay text-paper-bright"
                   : "border-ink/25 text-ink hover:border-ink",

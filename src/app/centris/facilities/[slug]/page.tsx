@@ -140,7 +140,7 @@ export default async function FacilityPage({
                     The hall converts between sports. Courts are booked
                     individually, by the hour.
                   </p>
-                  <ul className="mt-6 grid gap-px border border-hairline bg-hairline sm:grid-cols-2">
+                  <ul className="mt-6 grid gap-px surface-grid sm:grid-cols-2">
                     {f.courts.map((c) => (
                       <li key={c.id} className="bg-paper-bright p-5">
                         <p className="label text-clay">{c.sport}</p>
@@ -173,7 +173,7 @@ export default async function FacilityPage({
               </p>
             </div>
 
-            <aside className="border border-hairline bg-paper-bright p-6 lg:sticky lg:top-28">
+            <aside className="surface p-6 lg:sticky lg:top-28">
               <p className="label text-clay">At a glance</p>
               <dl className="mt-4">
                 {f.capacity ? (

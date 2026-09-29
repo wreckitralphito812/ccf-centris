@@ -202,7 +202,7 @@ export default async function WatchLivePage() {
         <Section tone="bright" className="py-10">
           <Container>
             <p className="label text-clay">Next Sunday service</p>
-            <div className="mt-4 grid gap-6 border border-hairline bg-paper-bright p-5 sm:grid-cols-[20rem_1fr] sm:items-center sm:p-6">
+            <div className="mt-4 grid gap-6 surface p-5 sm:grid-cols-[20rem_1fr] sm:items-center sm:p-6">
               <div className="relative aspect-video overflow-hidden border border-hairline">
                 {nextService.thumbnail && nextService.videoId ? (
                   <YouTubeThumb
@@ -237,7 +237,7 @@ export default async function WatchLivePage() {
                       href={nextService.watchUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="btn-press label tap border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
+                      className="btn-press label rounded-full tap border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
                     >
                       Set a reminder on YouTube
                     </a>
@@ -246,7 +246,7 @@ export default async function WatchLivePage() {
                       href={`${YOUTUBE.channelUrl}/streams`}
                       target="_blank"
                       rel="noreferrer"
-                      className="btn-press label tap border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+                      className="btn-press label rounded-full tap border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
                     >
                       See the schedule on YouTube
                     </a>
@@ -325,7 +325,7 @@ export default async function WatchLivePage() {
                   href={YOUTUBE.channelUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="label tap border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+                  className="label tap rounded-full border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
                 >
                   Visit the channel
                 </a>
@@ -378,7 +378,7 @@ export default async function WatchLivePage() {
             ))}
           </div>
           {latest?.four_ws ? (
-            <div className="mt-12 flex flex-col gap-4 border border-hairline bg-paper-bright p-7 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-12 flex flex-col gap-4 surface p-7 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="label text-clay">This week&rsquo;s 4Ws</p>
                 <p className="font-display mt-2 text-2xl">{latest.title}</p>
@@ -415,7 +415,7 @@ function AddToCalendar({
       href={`https://calendar.google.com/calendar/render?${params}`}
       target="_blank"
       rel="noreferrer"
-      className="label tap border border-clay bg-clay px-7 py-3.5 text-paper-bright transition-colors hover:bg-clay-deep"
+      className="label tap rounded-full border border-clay bg-clay px-7 py-3.5 text-paper-bright transition-colors hover:bg-clay-deep"
     >
       Add to calendar
     </a>

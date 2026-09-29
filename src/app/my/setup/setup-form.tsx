@@ -5,7 +5,7 @@ import { completeProfile, type SetupResult } from "@/app/actions/account";
 import { SCREEN_NAME_RULE } from "@/lib/prayer-wall";
 
 const input =
-  "mt-2 w-full border border-hairline bg-paper-bright px-4 py-3 text-lg text-ink focus:border-clay";
+  "mt-2 w-full rounded-lg border border-hairline bg-paper-bright px-4 py-3 text-lg text-ink focus:border-clay";
 
 export function SetupForm({
   next,
@@ -50,7 +50,7 @@ export function SetupForm({
       <button
         type="submit"
         disabled={pending}
-        className="btn-press label border border-clay bg-clay px-6 py-3.5 text-paper-bright transition-colors hover:bg-clay-deep disabled:opacity-50"
+        className="btn-press label rounded-full border border-clay bg-clay px-6 py-3.5 text-paper-bright transition-colors hover:bg-clay-deep disabled:opacity-50"
       >
         {pending ? "Saving…" : "Save and continue"}
       </button>

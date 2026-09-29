@@ -79,7 +79,7 @@ export default async function EventsPage({
                   <a
                     key={r.name}
                     href={`#${anchor(r.name)}`}
-                    className="label tap border border-ink/25 px-3.5 py-2 text-ink transition-colors hover:border-ink"
+                    className="label tap rounded-full border border-ink/25 px-3.5 py-2 text-ink transition-colors hover:border-ink"
                   >
                     {r.name}
                   </a>
@@ -142,7 +142,7 @@ export default async function EventsPage({
                   <Link
                     href={`/events?category=${encodeURIComponent(r.name)}`}
                     className={cx(
-                      "label tap mt-5 border px-3.5 py-2 transition-colors",
+                      "label tap mt-5 rounded-full border px-3.5 py-2 transition-colors",
                       band.dark
                         ? "border-paper-bright/50 text-paper-bright hover:border-paper-bright hover:bg-paper-bright/10"
                         : "border-ink/25 text-ink hover:border-ink",
@@ -212,7 +212,7 @@ function RowHead({ title, href, count }: { title: string; href: string; count: n
       <h2 className="brand-face text-[2rem] sm:text-[2.5rem]">{title}</h2>
       <Link
         href={href}
-        className="label tap border border-ink/25 px-3.5 py-2 text-ink transition-colors hover:border-ink"
+        className="label tap rounded-full border border-ink/25 px-3.5 py-2 text-ink transition-colors hover:border-ink"
       >
         View all {count}
       </Link>
@@ -369,8 +369,8 @@ function FilterChip({
       aria-current={active ? "page" : undefined}
       className={
         active
-          ? "label border border-clay bg-clay px-3.5 py-2 text-paper-bright"
-          : "label border border-ink/25 px-3.5 py-2 text-ink transition-colors hover:border-ink"
+          ? "label rounded-full border border-clay bg-clay px-3.5 py-2 text-paper-bright"
+          : "label rounded-full border border-ink/25 px-3.5 py-2 text-ink transition-colors hover:border-ink"
       }
     >
       {children}

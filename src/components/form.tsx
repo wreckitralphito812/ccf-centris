@@ -18,7 +18,7 @@ import { cx } from "./ui";
  * wiring live in <Field>.
  */
 export const controlClass =
-  "w-full border border-hairline bg-paper-bright px-4 py-3 text-[0.95rem] " +
+  "w-full rounded-lg border border-hairline bg-paper-bright px-4 py-3 text-[0.95rem] " +
   "aria-[invalid=true]:border-clay aria-[invalid=true]:bg-clay/5";
 
 /**

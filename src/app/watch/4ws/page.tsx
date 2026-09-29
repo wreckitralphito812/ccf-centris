@@ -40,7 +40,7 @@ export default async function FourWsPage() {
         <Section tone="deep" className="py-12">
           <Container>
             <p className="label text-ink-mute">This week</p>
-            <div className="mt-4 border border-hairline bg-paper-bright p-8">
+            <div className="mt-4 surface p-8">
               <div className="flex flex-wrap items-center gap-3">
                 {current.weekNumber ? (
                   <Pill tone="clay">Week {current.weekNumber}</Pill>
@@ -65,7 +65,7 @@ export default async function FourWsPage() {
                     href={current.goViralUrl ?? current.standardUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="label border border-ink px-4 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+                    className="label rounded-full border border-ink px-4 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
                   >
                     Open on ccf.org.ph ↗
                   </a>
@@ -103,7 +103,7 @@ export default async function FourWsPage() {
                   {w.hasGuide ? (
                     <Link
                       href={`/watch/4ws/${w.slug}`}
-                      className="label border border-ink px-3.5 py-2 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+                      className="label rounded-full border border-ink px-3.5 py-2 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
                     >
                       Open
                     </Link>
@@ -112,7 +112,7 @@ export default async function FourWsPage() {
                       href={w.standardUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="label border border-hairline px-3.5 py-2 text-ink-mute transition-colors hover:border-ink hover:text-ink"
+                      className="label rounded-full border border-hairline px-3.5 py-2 text-ink-mute transition-colors hover:border-ink hover:text-ink"
                     >
                       ccf.org.ph ↗
                     </a>

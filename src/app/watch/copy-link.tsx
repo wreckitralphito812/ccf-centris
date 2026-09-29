@@ -23,7 +23,7 @@ export function CopyLink({ url }: { url: string }) {
         href={url}
         target="_blank"
         rel="noreferrer"
-        className="font-display border border-hairline bg-paper-bright px-4 py-2.5 text-lg text-clay underline-offset-4 hover:underline"
+        className="font-display rounded-lg border border-hairline bg-paper-bright px-4 py-2.5 text-lg text-clay underline-offset-4 hover:underline"
       >
         {display}
       </a>
@@ -31,7 +31,7 @@ export function CopyLink({ url }: { url: string }) {
         type="button"
         onClick={copy}
         aria-live="polite"
-        className="btn-press label border border-ink px-4 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+        className="btn-press label rounded-full border border-ink px-4 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
       >
         {copied ? "Copied" : "Copy link"}
       </button>

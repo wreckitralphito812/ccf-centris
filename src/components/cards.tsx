@@ -141,7 +141,7 @@ export function MessageCard({ m, compact }: { m: Message; compact?: boolean }) {
 export function EventCard({ e }: { e: CcfEvent }) {
   const full = e.capacity !== null && e.seats_taken >= e.capacity;
   return (
-    <article className="group flex h-full flex-col border border-hairline bg-paper-bright hover:border-ink">
+    <article className="group flex h-full flex-col surface hover:border-ink">
       <Link href={`/events/${e.slug}`} className="flex h-full flex-col">
         <div className="relative aspect-[16/9] overflow-hidden">
           <MessageArt seed={e.slug} label={e.category ?? "Event"} className="h-full w-full" />
@@ -215,7 +215,7 @@ export function ServiceRow({ s, highlight }: { s: Service; highlight?: boolean }
 
 export function DgroupCard({ d }: { d: Dgroup }) {
   return (
-    <article className="flex h-full flex-col border border-hairline bg-paper-bright p-5">
+    <article className="flex h-full flex-col surface p-5">
       <div className="flex flex-wrap items-center gap-2">
         <Pill tone="clay">{AUDIENCE_LABEL[d.audience]}</Pill>
         <Pill tone="muted">{MODE_LABEL[d.mode]}</Pill>
@@ -260,7 +260,7 @@ export function DgroupCard({ d }: { d: Dgroup }) {
         </p>
         <Link
           href={`/grow/find-a-dgroup/${d.id}`}
-          className="btn-press label border border-ink px-3.5 py-2 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+          className="btn-press label rounded-full border border-ink px-3.5 py-2 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
         >
           I&rsquo;m interested
         </Link>
@@ -282,7 +282,7 @@ export function FacilityCard({ f }: { f: Facility }) {
   return (
     <Link
       href={`/centris/facilities/${f.slug}`}
-      className="group flex h-full flex-col border border-hairline bg-paper-bright hover:border-ink"
+      className="group flex h-full flex-col surface hover:border-ink"
     >
       <div className="aspect-[16/10] overflow-hidden">
         <MessageArt

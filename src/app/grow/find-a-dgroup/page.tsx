@@ -90,7 +90,7 @@ export default async function FindDgroupPage({
 
       <Section tone="deep">
         <Container>
-          <div className="flex flex-col gap-6 border border-hairline bg-paper-bright p-8 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-6 surface p-8 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="font-display text-2xl">
                 Help choosing a group

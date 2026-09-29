@@ -90,7 +90,7 @@ function ReplayPanel({
 
   return (
     <article>
-      <div className="aspect-video w-full overflow-hidden border border-hairline bg-ink">
+      <div className="photo aspect-video w-full border border-hairline bg-ink">
         <iframe
           src={youtubeEmbed(replay.videoId)}
           title={replay.title}
@@ -171,7 +171,7 @@ function PastSundays({ replays }: { replays: Replay[] }) {
 
 function ReplayMissing() {
   return (
-    <div className="grid aspect-video place-items-center border border-hairline bg-paper-bright p-8 text-center">
+    <div className="grid aspect-video place-items-center surface p-8 text-center">
       <div>
         <p className="label text-clay">Replay not available here</p>
         <p className="mx-auto mt-3 max-w-md text-[1rem] leading-relaxed text-ink-soft">
@@ -196,7 +196,7 @@ function FourWsPanel({ current }: { current: FourWsCurrent }) {
   const pdf = guide?.downloadUrl ?? null;
 
   return (
-    <aside className="border border-hairline bg-paper-bright p-6 lg:sticky lg:top-28">
+    <aside className="surface p-6 lg:sticky lg:top-28">
       <p className="label text-clay">This week&rsquo;s 4Ws</p>
       <h2 className="font-display mt-3 text-2xl leading-tight">{week.title}</h2>
       {week.dateSpan ? (

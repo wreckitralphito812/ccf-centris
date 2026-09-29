@@ -166,7 +166,7 @@ export default async function AvailabilityPage({
           </div>
 
           {/* Next free, summarised. Easier to read than the grid on a phone. */}
-          <div className="mt-10 grid gap-px border border-hairline bg-hairline sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-10 grid gap-px surface-grid sm:grid-cols-2 lg:grid-cols-4">
             {courts.map(({ court, nextFree, busyUntil }) => (
               <div key={court.id} className="bg-paper-bright p-5">
                 <p className="label text-ink-mute">{court.sport}</p>
