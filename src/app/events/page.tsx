@@ -166,7 +166,7 @@ export default async function EventsPage({
               ) : (
                 <div
                   className={cx(
-                    "flex aspect-[16/5] items-center justify-center border border-dashed p-8 text-center",
+                    "flex min-h-40 items-center justify-center border border-dashed p-8 text-center sm:aspect-[16/5] sm:min-h-0",
                     band.dark ? "border-paper-bright/35 text-paper-bright/85" : "border-hairline text-ink-mute",
                   )}
                 >

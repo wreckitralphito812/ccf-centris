@@ -92,7 +92,28 @@ export async function getPastReplays(exclude: string | null, limit = 12): Promis
     console.error("getPastReplays failed", error);
     return [];
   }
-  return ((data ?? []) as ReplayRow[]).map(rowToReplay);
+  const rows = (data ?? []) as ReplayRow[];
+  const live = await Promise.all(rows.map((r) => stillOnYouTube(r.video_id)));
+  return rows.filter((_, i) => live[i]).map(rowToReplay);
+}
+
+/**
+ * Whether YouTube still serves a video. CCF Net's replays are unlisted, and
+ * some are later made private or removed (one was by 2026-09-29), which left a
+ * grey placeholder in Past Sundays. YouTube's oEmbed answers 401/403/404 for
+ * those. Anything else, including a network failure, counts as available, so
+ * a YouTube hiccup never empties the list. Cached for six hours.
+ */
+export async function stillOnYouTube(videoId: string): Promise<boolean> {
+  try {
+    const res = await fetch(
+      `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`)}`,
+      { next: { revalidate: 6 * 3600 } },
+    );
+    return ![401, 403, 404].includes(res.status);
+  } catch {
+    return true;
+  }
 }
 
 /** Everything in the library, for the admin page. */
