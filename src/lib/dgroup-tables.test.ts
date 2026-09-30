@@ -11,9 +11,11 @@ import {
   openSlots,
   parseDgroupBooking,
   parseDgroupChange,
+  slotAvailability,
   tableGroups,
   tableKey,
   tablesLabel,
+  withAvailability,
 } from "./dgroup-tables";
 
 const none = new Set<string>();
@@ -192,4 +194,36 @@ test("rejects a day outside this week, a bad email, and a group over 12", () => 
 test("a change needs only the day, time, and headcount", () => {
   const r = parseDgroupChange(form({ date: "2026-10-09", slot: "1300", group_size: "3" }), "2026-10-07", 600);
   assert.ok(r.ok);
+});
+
+test("an empty slot has every table free and seats the largest group", () => {
+  assert.deepEqual(slotAvailability(none), { free: 26, fits: MAX_GROUP_SIZE });
+});
+
+test("a slot with every table held is full", () => {
+  const all = new Set(DGROUP_ROOMS.flatMap((r) => r.tables.map((t) => tableKey(r.slug, t.label))));
+  assert.deepEqual(slotAvailability(all), { free: 0, fits: 0 });
+});
+
+test("fits follows the tables left, not the seat count", () => {
+  // Leave only lounge tables 8 and 9 (two 2-seat rounds that join): 4 seats.
+  const lounge = room("dgroup-lounge");
+  const keep = new Set(["8", "9"]);
+  const taken = new Set([
+    ...lounge.tables.filter((t) => !keep.has(t.label)).map((t) => tableKey(lounge.slug, t.label)),
+    ...room("welcome-center").tables.map((t) => tableKey("welcome-center", t.label)),
+  ]);
+  assert.deepEqual(slotAvailability(taken), { free: 2, fits: 4 });
+});
+
+test("availability is counted per day and slot", () => {
+  const nights = [
+    { date: "2026-10-05", label: "Monday, Oct 5", slots: [{ id: "1300", label: "" }, { id: "1600", label: "" }] },
+  ];
+  const [n] = withAvailability(nights, [
+    { booked_on: "2026-10-05", slot_id: "1300", room_slug: "dgroup-lounge", table_labels: ["2", "3"] },
+    { booked_on: "2026-10-06", slot_id: "1300", room_slug: "dgroup-lounge", table_labels: ["4"] },
+  ]);
+  assert.equal(n.slots[0].free, 24);
+  assert.equal(n.slots[1].free, 26);
 });

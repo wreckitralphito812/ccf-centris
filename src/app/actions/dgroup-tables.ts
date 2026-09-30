@@ -192,9 +192,13 @@ export async function reserveDgroupTable(
     // Another leader took one of these tables a moment ago. Try the next set.
   }
 
+  // Shown at the time question, and the refresh updates the form's counts.
+  refresh();
   return {
     ok: false,
-    formError: `Every table is taken for ${b.groupSize} at that time. Try another day or time slot.`,
+    fieldErrors: {
+      slotId: `That time just filled up for ${b.groupSize}. Pick another time or day.`,
+    },
   };
 }
 

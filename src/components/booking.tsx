@@ -6,7 +6,7 @@ import { Field, controlClass } from "./form";
 
 /* ---------------------------------------------------------------------------
    Pieces shared by the booking flows (Dgroup tables, courts and rooms), so
-   both ask for a day, a time, a headcount and contact details the same way.
+   they ask for a day, a time, a headcount and contact details the same way.
    --------------------------------------------------------------------------- */
 
 /** One choice in a row of tap targets: a day, a time, a court. */
@@ -68,65 +68,6 @@ export function ChoiceGroup({
   );
 }
 
-/** − n + for a headcount, posted as a hidden field named `name`. */
-export function Stepper({
-  label,
-  name,
-  value,
-  onChange,
-  min = 1,
-  max,
-  hint,
-  error,
-}: {
-  label: string;
-  name: string;
-  value: number;
-  onChange: (n: number) => void;
-  min?: number;
-  max: number;
-  hint?: string;
-  error?: string;
-}) {
-  const btn =
-    "btn-press flex rounded-full h-10 w-10 items-center justify-center border border-ink/25 text-lg transition-colors hover:border-ink disabled:opacity-40 disabled:hover:border-ink/25";
-  return (
-    <div>
-      <p className="label text-ink-mute">{label}</p>
-      <div className="mt-3 flex items-center gap-4">
-        <button
-          type="button"
-          aria-label="Fewer"
-          disabled={value <= min}
-          onClick={() => onChange(Math.max(min, value - 1))}
-          className={btn}
-        >
-          −
-        </button>
-        <output aria-live="polite" className="font-display w-10 text-center text-2xl tabular-nums">
-          {value}
-        </output>
-        <button
-          type="button"
-          aria-label="More"
-          disabled={value >= max}
-          onClick={() => onChange(Math.min(max, value + 1))}
-          className={btn}
-        >
-          +
-        </button>
-        {hint ? <span className="text-[0.82rem] text-ink-mute">{hint}</span> : null}
-      </div>
-      <input type="hidden" name={name} value={value} />
-      {error ? (
-        <p role="alert" className="mt-2 text-[0.82rem] font-semibold text-clay-deep">
-          {error}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
 export interface ContactField {
   name: string;
   label: string;
@@ -140,8 +81,8 @@ export interface ContactField {
 
 /**
  * Name, email and mobile. When the account already has every required one and
- * none has an error, they fold into a single "Booking as" line with an Edit
- * link, so a signed-in member doesn't retype what we know. The values still
+ * none has an error, they fold into one card (the name, then the rest) with a
+ * Change button, so a signed-in member doesn't retype what we know. The values still
  * post, as hidden fields, either way.
  */
 export function ContactFields({ fields }: { fields: ContactField[] }) {
@@ -151,22 +92,23 @@ export function ContactFields({ fields }: { fields: ContactField[] }) {
 
   if (!editing && !hasError) {
     return (
-      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 surface px-5 py-4">
-        <div className="min-w-0">
-          <p className="label text-ink-mute">Booking as</p>
-          <p className="mt-1 break-words text-[0.95rem] text-ink">
-            {fields
-              .map((f) => f.value.trim())
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
+      <div className="flex items-center justify-between gap-x-6 gap-y-2 surface px-5 py-4">
+        <div className="min-w-0 text-[1.05rem] leading-relaxed">
+          <p className="break-words font-semibold text-ink">{fields[0]?.value.trim()}</p>
+          {fields.slice(1).map((f) =>
+            f.value.trim() ? (
+              <p key={f.name} className="break-words text-ink-soft">
+                {f.value.trim()}
+              </p>
+            ) : null,
+          )}
         </div>
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="label text-clay underline underline-offset-4 hover:text-clay-deep"
+          className="min-h-11 shrink-0 text-[0.98rem] font-semibold text-clay underline underline-offset-4 hover:text-clay-deep"
         >
-          Edit
+          Change
         </button>
         {fields.map((f) => (
           <input key={f.name} type="hidden" name={f.name} value={f.value} />
@@ -199,57 +141,6 @@ export function ContactFields({ fields }: { fields: ContactField[] }) {
           )}
         </Field>
       ))}
-    </div>
-  );
-}
-
-/**
- * The rules as a short list and one checkbox to accept them all. `fields`
- * are the names the action expects; each posts "on" once the box is ticked.
- */
-export function AcceptRules({
-  rules,
-  fields,
-  label,
-  error,
-}: {
-  rules: { title?: string; body: string }[];
-  fields: string[];
-  label: string;
-  error?: string;
-}) {
-  const [accepted, setAccepted] = useState(false);
-  return (
-    <div className="surface p-5">
-      <ul className="space-y-2 text-[0.88rem] leading-relaxed text-ink-soft">
-        {rules.map((r) => (
-          <li key={r.title ?? r.body} className="flex gap-3">
-            <span aria-hidden className="mt-2.5 h-px w-3 shrink-0 bg-clay" />
-            <span>
-              {r.title ? <span className="font-semibold text-ink">{r.title}. </span> : null}
-              {r.body}
-            </span>
-          </li>
-        ))}
-      </ul>
-      <label className="mt-5 flex cursor-pointer items-start gap-3 border-t border-hairline pt-4">
-        <input
-          type="checkbox"
-          checked={accepted}
-          onChange={(e) => setAccepted(e.target.checked)}
-          aria-invalid={error ? true : undefined}
-          className="mt-1 h-4 w-4 shrink-0 accent-clay"
-        />
-        <span className="text-[0.92rem] font-semibold text-ink">{label}</span>
-      </label>
-      {accepted
-        ? fields.map((f) => <input key={f} type="hidden" name={f} value="on" />)
-        : null}
-      {error ? (
-        <p role="alert" className="mt-2 text-[0.82rem] font-semibold text-clay-deep">
-          {error}
-        </p>
-      ) : null}
     </div>
   );
 }

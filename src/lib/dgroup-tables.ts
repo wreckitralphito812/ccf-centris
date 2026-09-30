@@ -184,7 +184,59 @@ export function openSlots(date: string, today: string, nowMinutes: number): Dgro
 export interface NightOption {
   date: string;
   label: string;
-  slots: { id: string; label: string }[];
+  slots: SlotOption[];
+}
+
+export interface SlotOption {
+  id: string;
+  label: string;
+  /** Tables still free. Missing when availability couldn't be read. */
+  free?: number;
+  /** The largest group the site can still seat, up to MAX_GROUP_SIZE. */
+  fits?: number;
+}
+
+/** A table hold as the availability query reads it. */
+export interface DgroupHold {
+  booked_on: string;
+  slot_id: string;
+  room_slug: string;
+  table_labels: string[];
+}
+
+/**
+ * Free tables and the largest group that still fits in one slot, by the same
+ * rules that assign tables (candidateTables), so the form never offers a time
+ * the booking would then refuse.
+ */
+export function slotAvailability(
+  taken: ReadonlySet<string>,
+  rooms: DgroupRoom[] = DGROUP_ROOMS,
+): { free: number; fits: number } {
+  const free = rooms.reduce(
+    (n, r) => n + r.tables.filter((t) => !taken.has(tableKey(r.slug, t.label))).length,
+    0,
+  );
+  const biggest = Math.max(0, ...candidateTables(1, taken, rooms).map((c) => c.seats));
+  return { free, fits: Math.min(MAX_GROUP_SIZE, biggest) };
+}
+
+/** The nights with each slot's availability, from one read of the week's holds. */
+export function withAvailability(nights: NightOption[], holds: DgroupHold[]): NightOption[] {
+  const taken = new Map<string, Set<string>>();
+  for (const h of holds) {
+    const key = `${h.booked_on}|${h.slot_id}`;
+    const set = taken.get(key) ?? new Set<string>();
+    for (const l of h.table_labels) set.add(tableKey(h.room_slug, l));
+    taken.set(key, set);
+  }
+  return nights.map((n) => ({
+    ...n,
+    slots: n.slots.map((s) => ({
+      ...s,
+      ...slotAvailability(taken.get(`${n.date}|${s.id}`) ?? new Set()),
+    })),
+  }));
 }
 
 /** Every day a leader can book or move to from `today`, with its open slots. */
