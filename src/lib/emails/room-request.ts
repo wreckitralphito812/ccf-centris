@@ -11,7 +11,7 @@ import { CONTACT, SITE } from "@/lib/site";
  * unconfirmed request never lands in anyone's calendar.
  */
 
-export type RoomEmailKind = "received" | "admin" | "approved" | "rejected" | "cancelled";
+export type RoomEmailKind = "received" | "admin" | "approved" | "rejected" | "cancelled" | "reminder";
 
 export interface RoomEmailData {
   kind: RoomEmailKind;
@@ -53,7 +53,7 @@ export function roomRequestEmail(d: RoomEmailData): {
   const first = d.requester.split(" ")[0];
   const rooms = d.rooms.join(", ");
   const event =
-    d.kind === "approved" && d.span
+    (d.kind === "approved" || d.kind === "reminder") && d.span
       ? (() => {
           const from = manilaParts(d.span.startsAt);
           const to = manilaParts(d.span.endsAt);
@@ -76,6 +76,7 @@ export function roomRequestEmail(d: RoomEmailData): {
     approved: `Confirmed: ${rooms} for ${d.activity}`,
     rejected: `Your room request for ${d.activity}`,
     cancelled: `Cancelled: ${rooms} for ${d.activity}`,
+    reminder: `Tomorrow: ${d.activity} in ${rooms}`,
   }[d.kind];
 
   const eyebrow = {
@@ -84,6 +85,7 @@ export function roomRequestEmail(d: RoomEmailData): {
     approved: "Room confirmed",
     rejected: "Room request",
     cancelled: "Room cancelled",
+    reminder: "Room reminder",
   }[d.kind];
 
   const headline = {
@@ -92,6 +94,7 @@ export function roomRequestEmail(d: RoomEmailData): {
     approved: `You're confirmed, ${first}.`,
     rejected: `We can't confirm this one, ${first}.`,
     cancelled: `Your booking is cancelled, ${first}.`,
+    reminder: `See you tomorrow, ${first}.`,
   }[d.kind];
 
   const intro = {
@@ -102,6 +105,8 @@ export function roomRequestEmail(d: RoomEmailData): {
     rejected:
       "The rooms aren't available for this request. Reply to this email or write to us and we'll help you find another time or room.",
     cancelled: "These rooms have been released for other ministries.",
+    reminder:
+      "A reminder that your room is booked. If plans changed, please cancel from My reservations so another ministry can use it.",
   }[d.kind];
 
   const button =

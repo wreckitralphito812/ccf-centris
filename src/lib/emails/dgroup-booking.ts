@@ -20,7 +20,7 @@ import { CONTACT, SITE } from "@/lib/site";
  * same way. Every image and link is absolute.
  */
 
-export type BookingEmailKind = "confirmed" | "changed" | "cancelled";
+export type BookingEmailKind = "confirmed" | "changed" | "cancelled" | "reminder";
 
 export interface BookingEmailData {
   kind: BookingEmailKind;
@@ -63,18 +63,21 @@ export function bookingEmail(d: BookingEmailData): {
     confirmed: `Your Dgroup table: ${tables}, ${room} · ${nightLabel(d.date)}`,
     changed: `Updated: ${tables}, ${room} · ${nightLabel(d.date)}`,
     cancelled: `Cancelled: your Dgroup table on ${nightLabel(d.date)}`,
+    reminder: `Tomorrow: ${tables}, ${room} · ${slotLabel(d.slotId)}`,
   }[d.kind];
 
   const headline = {
     confirmed: `You're all set, ${first}.`,
     changed: `Your booking is updated, ${first}.`,
     cancelled: `Your booking is cancelled, ${first}.`,
+    reminder: `See you tomorrow, ${first}.`,
   }[d.kind];
 
   const intro = {
     confirmed: "Your Dgroup has a table at CCF Centris. See you there.",
     changed: "Here are your new booking details. Your old table has been released.",
     cancelled: "Your table has been released for another Dgroup. You can book again anytime a slot is open.",
+    reminder: "A reminder of your Dgroup table. If plans changed, please cancel so another Dgroup can use it.",
   }[d.kind];
 
   const row = (k: string, v: string) => `
@@ -104,7 +107,7 @@ export function bookingEmail(d: BookingEmailData): {
   </td></tr>
 
   <tr><td align="center" style="background:${GROUND};padding:44px 32px 40px;">
-    <p style="margin:0;font:600 11px/1.4 ${FONT};letter-spacing:3px;text-transform:uppercase;color:${TEAL};">Dgroup table ${cancelled ? "cancelled" : "reservation"}</p>
+    <p style="margin:0;font:600 11px/1.4 ${FONT};letter-spacing:3px;text-transform:uppercase;color:${TEAL};">Dgroup table ${cancelled ? "cancelled" : d.kind === "reminder" ? "reminder" : "reservation"}</p>
     <h1 style="margin:14px 0 0;font:500 30px/1.2 ${FONT};color:${TEAL};">${esc(headline)}</h1>
     <p style="margin:14px auto 0;max-width:420px;font:400 15px/1.6 ${FONT};color:${SOFT};">${esc(intro)}</p>
     ${
