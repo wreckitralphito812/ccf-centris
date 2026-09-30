@@ -14,6 +14,9 @@
     "seed:facilities": "tsx scripts/seed-centris-facilities.ts",
     "assets:check": "tsx scripts/check-public-assets.ts"
   },
+  "engines": {
+    "node": "22.x"
+  },
   "dependencies": {
     "@radix-ui/react-slot": "^1.3.3",
     "@supabase/supabase-js": "^2.97.0",
