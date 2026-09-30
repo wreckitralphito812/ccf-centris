@@ -11,7 +11,8 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 /**
  * Member sign-in, with Firebase Auth proving identity.
  *
- * The browser signs in with Firebase (an emailed link, or Google), then hands
+ * The browser signs in with Firebase (email and password, or Google; the
+ * emailed sign-in link was retired on 2026-09-30), then hands
  * the resulting ID token to `startSession`. That checks the token, finds or
  * creates the member's profile, and swaps the token for an httpOnly Firebase
  * session cookie, which is all the site trusts from then on.
@@ -43,29 +44,48 @@ function cleanPhone(raw: unknown): string | null {
   );
 }
 
+export interface SignUpCheck extends AuthResult {
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  fieldErrors?: Partial<Record<"firstName" | "lastName" | "email", string>>;
+}
+
 /**
- * Vet the sign-in form before the browser asks Firebase to email a link. The
- * same checks run again in `startSession`, which is what actually enforces
- * them: anyone can call Firebase directly.
+ * Vet the sign-up form before the browser asks Firebase to create the
+ * account: a real name and a lasting email. `startSession` checks the email
+ * again, which is what actually enforces it, since anyone can call Firebase
+ * directly.
  */
-export async function checkSignInEmail(
-  _prev: EmailCheck | null,
-  formData: FormData,
-): Promise<EmailCheck> {
+export async function checkSignUp(input: {
+  firstName: string;
+  lastName: string;
+  email: string;
+}): Promise<SignUpCheck> {
   if (!hasAccounts()) return { ok: false, formError: UNAVAILABLE };
 
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  if (!EMAIL.test(email)) return { ok: false, formError: "Enter a valid email address." };
-  if (isDisposableEmail(email)) return { ok: false, formError: DISPOSABLE };
+  const firstName = cleanName(input.firstName);
+  const lastName = cleanName(input.lastName);
+  const email = String(input.email ?? "").trim().toLowerCase();
+  const fieldErrors: SignUpCheck["fieldErrors"] = {};
+  const f = nameProblem(firstName, "first name");
+  const l = nameProblem(lastName, "surname");
+  if (f) fieldErrors.firstName = f;
+  if (l) fieldErrors.lastName = l;
+  if (!EMAIL.test(email)) fieldErrors.email = "Enter a valid email address.";
+  else if (isDisposableEmail(email)) fieldErrors.email = DISPOSABLE;
+  if (Object.keys(fieldErrors).length) return { ok: false, fieldErrors };
 
-  return { ok: true, email, phone: cleanPhone(formData.get("phone")) };
+  return { ok: true, email, firstName, lastName };
 }
 
 export interface SessionStart {
   idToken: string;
   next?: string;
-  /** From the sign-in form, carried through the emailed link. First signup only. */
+  /** Optional mobile, first sign-up only. */
   phone?: string | null;
+  /** "Remember me": keep the session after the browser closes (default true). */
+  remember?: boolean;
   /** Google's given and family names, to prefill the setup step. */
   firstName?: string | null;
   lastName?: string | null;
@@ -125,12 +145,14 @@ export async function startSession(
     return { ok: false, formError: "Something went wrong on our end. Try again in a moment." };
   }
 
+  // Without "Remember me" the cookie has no max-age, so the browser drops it
+  // when it closes; the session itself still ends after SESSION_MAX_AGE_S.
   (await cookies()).set(SESSION_COOKIE, session, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: SESSION_MAX_AGE_S,
+    ...(input.remember === false ? {} : { maxAge: SESSION_MAX_AGE_S }),
   });
 
   // First sign-in (or anything missing): ask for first name, surname and a

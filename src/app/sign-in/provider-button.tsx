@@ -4,8 +4,8 @@ import { getAdditionalUserInfo, GoogleAuthProvider, signInWithPopup, signOut } f
 import { FirebaseError } from "firebase/app";
 import { useState } from "react";
 
-import { Button } from "@/components/ui";
 import { startSession } from "@/app/actions/auth";
+import { FormNote } from "@/components/auth-fields";
 import { firebaseAuth } from "@/lib/firebase/client";
 
 /**
@@ -16,7 +16,7 @@ import { firebaseAuth } from "@/lib/firebase/client";
  * Firebase's ID token then goes to `startSession`, which sets the site's own
  * session cookie; the browser keeps no Firebase session.
  */
-export function ProviderButton({ next }: { next: string }) {
+export function ProviderButton({ next, remember = true }: { next: string; remember?: boolean }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,10 +32,11 @@ export function ProviderButton({ next }: { next: string }) {
         next,
         firstName: typeof profile.given_name === "string" ? profile.given_name : null,
         lastName: typeof profile.family_name === "string" ? profile.family_name : null,
+        remember,
       });
       await signOut(auth);
       if (!res.ok || !res.redirectTo) {
-        setError(res.formError ?? "Could not sign you in. Try again, or use email below.");
+        setError(res.formError ?? "Could not sign you in. Try again, or use your email and password.");
         setPending(false);
         return;
       }
@@ -48,8 +49,8 @@ export function ProviderButton({ next }: { next: string }) {
       console.error("Google sign-in failed", e);
       setError(
         code === "auth/popup-blocked"
-          ? "Your browser blocked the Google window. Allow pop-ups for this site, or use email below."
-          : "Could not start Google sign-in. Try again, or use email below.",
+          ? "Your browser blocked the Google window. Allow pop-ups for this site, or use your email and password."
+          : "Could not start Google sign-in. Try again, or use your email and password.",
       );
     }
   }
@@ -57,21 +58,19 @@ export function ProviderButton({ next }: { next: string }) {
   return (
     <div>
       {error ? (
-        <p className="mb-4 border border-clay bg-clay/8 px-4 py-3 text-[0.85rem] font-semibold text-clay-deep">
-          {error}
-        </p>
+        <div className="mb-4">
+          <FormNote>{error}</FormNote>
+        </div>
       ) : null}
-      <Button
+      <button
         type="button"
-        tone="outline"
-        size="lg"
-        full
         disabled={pending}
         onClick={signIn}
+        className="btn-press flex w-full items-center justify-center gap-3 rounded-full border border-edge bg-paper-bright px-6 py-4 text-[1.02rem] font-semibold text-ink transition-colors hover:border-ink-mute disabled:opacity-60"
       >
-        <GoogleGlyph className="h-4 w-4" />
+        <GoogleGlyph className="h-5 w-5" />
         {pending ? "Signing in…" : "Continue with Google"}
-      </Button>
+      </button>
     </div>
   );
 }

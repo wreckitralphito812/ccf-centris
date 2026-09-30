@@ -1,90 +1,182 @@
 "use client";
 
-import { sendSignInLinkToEmail } from "firebase/auth";
-import { useActionState } from "react";
+import Link from "next/link";
+import { useState } from "react";
+import { FirebaseError } from "firebase/app";
+import {
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  signOut,
+  type User,
+} from "firebase/auth";
+import { startSession } from "@/app/actions/auth";
+import { FormNote, IconField, OrDivider, PasswordField, submitClass } from "@/components/auth-fields";
+import { authErrorMessage } from "@/lib/auth/password";
+import { firebaseAuth } from "@/lib/firebase/client";
+import { ProviderButton } from "./provider-button";
 
-import { Button } from "@/components/ui";
-import { Field, FormSuccess, controlClass } from "@/components/form";
-import { checkSignInEmail } from "@/app/actions/auth";
-import { firebaseAuth, savePendingSignIn } from "@/lib/firebase/client";
+/**
+ * Email and password sign-in, then Google (2026-09-30, after the Uiverse form
+ * Ralph chose). Firebase checks the password; the ID token then goes to
+ * `startSession`, which sets the site's own session cookie.
+ *
+ * An account whose email isn't confirmed yet can't start a session (bookings
+ * are emailed there), so we say so and offer to resend the confirmation.
+ */
+export function SignInForm({ next, accounts }: { next: string; accounts: boolean }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(true);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const [unverified, setUnverified] = useState<User | null>(null);
 
-interface FormState {
-  sent?: boolean;
-  formError?: string;
-}
-
-export function SignInForm({ next }: { next: string }) {
-  const [state, action, pending] = useActionState<FormState | null, FormData>(
-    async (_prev, formData) => {
-      const check = await checkSignInEmail(null, formData);
-      if (!check.ok || !check.email) return { formError: check.formError };
-      try {
-        await sendSignInLinkToEmail(await firebaseAuth(), check.email, {
-          url: `${window.location.origin}/auth/finish?next=${encodeURIComponent(next)}`,
-          handleCodeInApp: true,
-        });
-      } catch (e) {
-        console.error("sendSignInLinkToEmail failed", e);
-        return { formError: "Could not send the link. Try again in a moment." };
+  async function submit(ev: React.FormEvent) {
+    ev.preventDefault();
+    setError(null);
+    setNote(null);
+    if (!accounts) return setError("Accounts aren’t available yet. Check back soon.");
+    if (!email.trim() || !password) return setError("Enter your email and password.");
+    setPending(true);
+    try {
+      const auth = await firebaseAuth();
+      const { user } = await signInWithEmailAndPassword(auth, email.trim(), password);
+      if (!user.emailVerified) {
+        setUnverified(user);
+        setPending(false);
+        return;
       }
-      savePendingSignIn({ email: check.email, phone: check.phone ?? null });
-      return { sent: true };
-    },
-    null,
-  );
+      const res = await startSession({ idToken: await user.getIdToken(), next, remember });
+      await signOut(auth);
+      if (!res.ok || !res.redirectTo) {
+        setError(res.formError ?? "Could not sign you in. Please try again.");
+        setPending(false);
+        return;
+      }
+      // A full load, so the header and every server-rendered part see the new session.
+      window.location.assign(res.redirectTo);
+    } catch (e) {
+      setPending(false);
+      setError(authErrorMessage(e instanceof FirebaseError ? e.code : ""));
+    }
+  }
 
-  if (state?.sent) {
+  async function resend() {
+    if (!unverified) return;
+    try {
+      await sendEmailVerification(unverified, { url: `${window.location.origin}/sign-in?verified=1` });
+      setNote(`We’ve sent a new confirmation email to ${unverified.email}.`);
+    } catch (e) {
+      setError(authErrorMessage(e instanceof FirebaseError ? e.code : ""));
+    }
+  }
+
+  async function forgot() {
+    setError(null);
+    setNote(null);
+    if (!accounts) return setError("Accounts aren’t available yet. Check back soon.");
+    if (!email.trim()) return setError("Enter your email above, then tap “Forgot password?” again.");
+    try {
+      await sendPasswordResetEmail(await firebaseAuth(), email.trim(), {
+        url: `${window.location.origin}/sign-in`,
+      });
+    } catch (e) {
+      const code = e instanceof FirebaseError ? e.code : "";
+      // Don't reveal whether an account exists; only real problems show.
+      if (code !== "auth/user-not-found" && code !== "auth/invalid-email") {
+        return setError(authErrorMessage(code));
+      }
+    }
+    setNote(`If ${email.trim()} has an account, we’ve emailed a link to set a new password.`);
+  }
+
+  if (unverified) {
     return (
-      <FormSuccess>
-        <p className="font-display text-xl">Check your email</p>
-        <p className="mt-2 text-[0.92rem] leading-relaxed text-ink-soft">
-          We sent you a sign-in link. Open it on this device to sign in. The
-          link works once and expires within the hour.
+      <div className="space-y-5 text-center">
+        <p className="text-[1.3rem] font-semibold text-ink">Confirm your email first</p>
+        <p className="text-[1rem] leading-relaxed text-ink-mute">
+          We sent a confirmation link to <span className="font-semibold text-ink">{unverified.email}</span>. Tap it,
+          then come back and sign in.
         </p>
-      </FormSuccess>
+        {note ? <FormNote tone="ok">{note}</FormNote> : null}
+        {error ? <FormNote>{error}</FormNote> : null}
+        <div className="flex flex-col gap-3">
+          <button type="button" onClick={resend} className={submitClass}>
+            Send the email again
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setUnverified(null);
+              setNote(null);
+            }}
+            className="min-h-11 text-[0.98rem] font-semibold text-clay hover:underline"
+          >
+            I’ve confirmed it, sign in
+          </button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <form action={action} className="space-y-5" noValidate>
-      {state?.formError ? (
-        <p className="border border-clay bg-clay/8 px-4 py-3 text-[0.85rem] font-semibold text-clay-deep">
-          {state.formError}
-        </p>
+    <div>
+      <form noValidate onSubmit={submit} className="space-y-5">
+        <IconField
+          id="email"
+          label="Email"
+          icon="email"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          placeholder="you@example.com"
+          value={email}
+          onChange={(ev) => setEmail(ev.target.value)}
+        />
+        <PasswordField
+          id="password"
+          label="Password"
+          autoComplete="current-password"
+          placeholder="Your password"
+          value={password}
+          onChange={(ev) => setPassword(ev.target.value)}
+        />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-[0.98rem] text-ink">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(ev) => setRemember(ev.target.checked)}
+              className="h-5 w-5 rounded-md accent-clay"
+            />
+            Remember me
+          </label>
+          <button type="button" onClick={forgot} className="min-h-11 text-[0.98rem] font-semibold text-clay hover:underline">
+            Forgot password?
+          </button>
+        </div>
+        {note ? <FormNote tone="ok">{note}</FormNote> : null}
+        {error ? <FormNote>{error}</FormNote> : null}
+        <button type="submit" disabled={pending} className={submitClass}>
+          {pending ? "Signing in…" : "Sign in"}
+        </button>
+      </form>
+
+      <p className="mt-6 text-center text-[0.98rem] text-ink-mute">
+        Don&rsquo;t have an account?{" "}
+        <Link href={`/sign-up?next=${encodeURIComponent(next)}`} className="font-semibold text-clay hover:underline">
+          Sign up
+        </Link>
+      </p>
+
+      {accounts ? (
+        <>
+          <OrDivider />
+          <ProviderButton next={next} remember={remember} />
+        </>
       ) : null}
-
-      <Field label="Email" name="email" required>
-        {(p) => (
-          <input
-            {...p}
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            autoFocus
-            className={controlClass}
-          />
-        )}
-      </Field>
-
-      <Field
-        label="Phone"
-        name="phone"
-        hint="Optional. So we can reach you about a booking."
-      >
-        {(p) => (
-          <input
-            {...p}
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            className={controlClass}
-          />
-        )}
-      </Field>
-
-      <Button type="submit" size="lg" full disabled={pending}>
-        {pending ? "Sending…" : "Email me a sign-in link"}
-      </Button>
-    </form>
+    </div>
   );
 }
