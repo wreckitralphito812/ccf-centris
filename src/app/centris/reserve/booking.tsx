@@ -6,6 +6,10 @@ import { createRoomRequest, roomBusyTimes, type RoomRequestResult } from "@/app/
 import {
   AddToCalendar,
   BookingBar,
+  Confirmation,
+  DayCircle,
+  IconLine,
+  calmChipClass,
   FieldError,
   Question,
   StepButton,
@@ -100,12 +104,7 @@ const ERROR_TARGETS: [string, StepId, string][] = [
   ["accept", 2, "#f-accept"],
 ];
 
-const INPUT =
-  "w-full rounded-xl border border-hairline bg-paper-bright px-4 py-3.5 text-[1.05rem] text-ink focus:border-clay focus:outline-none focus:ring-2 focus:ring-clay disabled:text-ink-mute";
-const CHIP =
-  "inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-full px-5 py-2.5 text-[1rem] transition-[box-shadow,background-color] duration-150";
-const CHIP_ON = "bg-clay/[0.07] font-semibold text-clay shadow-[inset_0_0_0_2px_var(--clay)]";
-const CHIP_OFF = "bg-paper-bright text-ink shadow-[inset_0_0_0_1px_var(--hairline)] hover:shadow-[inset_0_0_0_1px_var(--ink-mute)]";
+const INPUT = "calm-input";
 
 function CheckIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
   return (
@@ -312,12 +311,13 @@ function Request({
               })
             : null
         }
-        rows={[
-          ["Event", activity],
-          ["When", timed ? `${dateLong(date)}, ${timeLabel(start!)} to ${timeLabel(end!)}` : "—"],
-          [picked.length > 1 ? "Rooms" : "Room", picked.map(roomName).join(", ")],
-          ["People", String(people)],
-        ]}
+        details={{
+          event: activity,
+          date: dateLong(date),
+          time: timed ? range(start!, end!) : "—",
+          rooms: picked.map(roomName).join(", "),
+          people,
+        }}
         onAnother={onAnother}
       />
     );
@@ -361,20 +361,22 @@ function Request({
       <input type="hidden" name="mobile" value={mobile} />
       {agreed ? <input type="hidden" name="accept" value="on" /> : null}
 
-      <p className="label text-clay">Step {step} of 2</p>
-      <h2 className="display-md mt-2">{step === 1 ? "Find a room" : "Details and send"}</h2>
-      <p className="mt-2 text-[1.05rem] text-ink-soft">
+      <p className="text-[0.95rem] font-semibold text-clay">Step {step} of 2</p>
+      <h2 className="mt-1.5 text-[1.75rem] font-semibold tracking-[-0.02em] text-ink sm:text-[2rem]">
+        {step === 1 ? "Find a room" : "Details and send"}
+      </h2>
+      <p className="mt-2 text-[1.05rem] text-ink-mute">
         {step === 1
           ? "Tell us when and how many. We'll show the rooms that fit."
           : "A few details for the facilities team, then send."}
       </p>
 
       {step === 1 ? (
-        <div className="mt-10">
-          <Question n={1} id="q-day" title="Which day?" note="Monday to Saturday." error={e.date}>
+        <div className="calm-card mt-8 px-6 py-8 sm:px-9 sm:py-10">
+          <Question id="q-day" title="Which day?" note="Monday to Saturday." error={e.date}>
             <div className="flex items-center justify-between gap-4">
               <p className="text-[1rem] font-semibold text-ink">
-                {dayNum(days[0])} {monthOf(days[0])} to {dayNum(days[5])} {monthOf(days[5])}
+                {dayNum(days[0])} {monthOf(days[0])} – {dayNum(days[5])} {monthOf(days[5])}
               </p>
               <div className="flex gap-2">
                 <ArrowButton label="Previous week" disabled={!canPrev} onClick={() => setWeek(prevWeek)}>
@@ -385,49 +387,34 @@ function Request({
                 </ArrowButton>
               </div>
             </div>
-            <div role="radiogroup" aria-labelledby="q-day" className="mt-4 grid grid-cols-6 gap-1.5 sm:gap-2">
+            <div role="radiogroup" aria-labelledby="q-day" className="mt-5 grid grid-cols-6 gap-1">
               {days.map((d) => {
                 const past = d < today;
-                const on = d === date;
                 return (
-                  <label
+                  <DayCircle
                     key={d}
-                    className={cx(
-                      "flex min-h-16 flex-col items-center justify-center rounded-2xl border py-2.5 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-clay has-[:focus-visible]:ring-offset-2",
-                      on
-                        ? "cursor-pointer border-clay bg-clay text-paper-bright"
-                        : past
-                          ? "cursor-not-allowed border-hairline bg-paper text-ink-mute/50"
-                          : "cursor-pointer border-hairline bg-paper-bright text-ink hover:border-ink/40",
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      name="day"
-                      value={d}
-                      checked={on}
-                      disabled={past}
-                      onChange={() => setDate(d)}
-                      className="sr-only"
-                    />
-                    <span className={cx("text-[0.85rem] font-semibold", on ? "text-paper-bright/85" : "text-ink-mute")}>
-                      {WEEKDAY[weekdayOf(d)]}
-                    </span>
-                    <span className="mt-0.5 text-2xl font-semibold leading-none tabular-nums">{dayNum(d)}</span>
-                  </label>
+                    name="day"
+                    value={d}
+                    weekday={WEEKDAY[weekdayOf(d)]}
+                    day={dayNum(d)}
+                    on={d === date}
+                    disabled={past}
+                    note={past ? "Past" : undefined}
+                    onChange={() => setDate(d)}
+                  />
                 );
               })}
             </div>
           </Question>
 
-          <Question n={2} id="q-time" title="What time?" note="Include time to set up and pack up." error={e.time}>
-            <div role="radiogroup" aria-labelledby="q-time" className="grid gap-2.5 sm:grid-cols-2">
+          <Question id="q-time" title="What time?" note="Include time to set up and pack up." error={e.time}>
+            <div role="radiogroup" aria-labelledby="q-time" className="grid gap-3 sm:grid-cols-2">
               {[...TIME_BLOCKS, { id: "other", label: "Other time", from: 0, to: 0 }].map((b) => {
                 const other = b.id === "other";
                 const ok = other || blockOk(b);
                 const on = when === b.id && ok;
                 return (
-                  <label key={b.id} className={cx("flex min-h-16 flex-col justify-center px-5 py-3.5", choiceClass(on, !ok))}>
+                  <label key={b.id} className={cx("flex min-h-[4.25rem] flex-col justify-center px-5 py-3.5", choiceClass(on, !ok))}>
                     <input
                       type="radio"
                       name="when"
@@ -437,10 +424,8 @@ function Request({
                       onChange={() => setWhen(b.id)}
                       className="sr-only"
                     />
-                    <span className={cx("text-[1.1rem] font-semibold", ok ? "text-ink" : "text-ink-mute line-through")}>
-                      {b.label}
-                    </span>
-                    <span className="mt-0.5 text-[0.95rem] text-ink-mute">
+                    <span className={cx("text-[1.05rem]", ok && "font-semibold")}>{b.label}</span>
+                    <span className={cx("mt-0.5 text-[0.92rem]", on ? "text-paper-bright/85" : "text-ink-mute")}>
                       {other ? "Choose a start and end" : ok ? range(b.from, b.to) : "Already started"}
                     </span>
                   </label>
@@ -454,7 +439,7 @@ function Request({
                   <select
                     value={customStart === null ? "" : String(customStart)}
                     onChange={(ev) => pickCustomStart(ev.target.value ? Number(ev.target.value) : null)}
-                    className={cx(INPUT, "mt-1.5 h-14")}
+                    className={cx(INPUT, "mt-1.5")}
                   >
                     <option value="">Choose</option>
                     {starts.map((m) => (
@@ -470,7 +455,7 @@ function Request({
                     value={customEnd === null ? "" : String(customEnd)}
                     disabled={customStart === null}
                     onChange={(ev) => setCustomEnd(ev.target.value ? Number(ev.target.value) : null)}
-                    className={cx(INPUT, "mt-1.5 h-14")}
+                    className={cx(INPUT, "mt-1.5")}
                   >
                     <option value="">{customStart === null ? "—" : "Choose"}</option>
                     {ends.map((m) => (
@@ -485,7 +470,6 @@ function Request({
           </Question>
 
           <Question
-            n={3}
             id="q-people"
             title="How many people?"
             note="Everyone coming, your team included. Type it, or use − and + to go 5 at a time."
@@ -508,12 +492,12 @@ function Request({
                 +
               </StepButton>
             </div>
-            <p id="setup-label" className="mt-6 text-[1rem] font-semibold text-ink">
+            <p id="setup-label" className="mt-7 text-[1rem] font-semibold text-ink">
               How should the room be set up?
             </p>
             <div role="radiogroup" aria-labelledby="setup-label" className="mt-3 flex flex-wrap gap-2">
               {SETUPS.map((s) => (
-                <label key={s.id} className={cx(CHIP, "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-clay", setup === s.id ? CHIP_ON : CHIP_OFF)}>
+                <label key={s.id} className={calmChipClass(setup === s.id)}>
                   <input
                     type="radio"
                     name="setup_choice"
@@ -530,7 +514,6 @@ function Request({
           </Question>
 
           <Question
-            n={4}
             id="q-room"
             title="Pick a room"
             note={
@@ -541,20 +524,20 @@ function Request({
             error={e.rooms}
           >
             {timed && people && !anyFits ? (
-              <p className="mb-4 rounded-2xl bg-paper p-4 text-[1rem] leading-relaxed text-ink">
+              <p className="mb-4 rounded-2xl bg-mist p-4 text-[1rem] leading-relaxed text-ink">
                 {openSeats >= people
                   ? `No room seats ${people} on its own at that time. Tick several rooms to split your group, or try another time.`
                   : `No room seats ${people} at that time, even together. Try another time or day.`}
               </p>
             ) : null}
-            <div role="group" aria-labelledby="q-room" className="space-y-2.5">
+            <div role="group" aria-labelledby="q-room" className="space-y-3">
               {MINISTRY_ROOMS.map((r) => {
                 const s = statusOf(r);
                 const on = picked.includes(r.slug);
                 const [main, alt] = r.name.replace(")", "").split(" (");
                 const cap = r.capacity[setup];
                 return (
-                  <label key={r.slug} className={cx("flex min-h-16 items-center gap-4 px-5 py-3.5", choiceClass(on, s.disabled))}>
+                  <label key={r.slug} className={cx("flex min-h-[4.25rem] items-center gap-4 px-5 py-3.5", choiceClass(on, s.disabled))}>
                     <input
                       type="checkbox"
                       checked={on}
@@ -565,25 +548,35 @@ function Request({
                     <span
                       aria-hidden
                       className={cx(
-                        "grid h-7 w-7 shrink-0 place-items-center rounded-md border-2",
-                        on ? "border-clay bg-clay text-paper-bright" : s.disabled ? "border-ink/10" : "border-ink/30",
+                        "grid h-7 w-7 shrink-0 place-items-center rounded-full border-2",
+                        on ? "border-paper-bright bg-paper-bright text-clay" : s.disabled ? "border-ink/10" : "border-edge",
                       )}
                     >
                       {on ? <CheckIcon className="h-4 w-4" /> : null}
                     </span>
                     <span className="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between sm:gap-4">
                       <span className="block">
-                        <span className={cx("block text-[1.1rem] font-semibold", s.disabled ? "text-ink-mute" : "text-ink")}>
+                        <span className={cx("block text-[1.05rem]", !s.disabled && "font-semibold")}>
                           {main}
-                          {alt ? <span className="font-normal text-ink-mute"> · {alt}</span> : null}
+                          {alt ? <span className={cx("font-normal", on ? "text-paper-bright/80" : "text-ink-mute")}> · {alt}</span> : null}
                         </span>
-                        {cap ? <span className="mt-0.5 block text-[0.95rem] text-ink-mute">Seats {cap}</span> : null}
+                        {cap ? (
+                          <span className={cx("mt-0.5 block text-[0.92rem]", on ? "text-paper-bright/85" : "text-ink-mute")}>
+                            Seats {cap}
+                          </span>
+                        ) : null}
                       </span>
                       {s.text ? (
                         <span
                           className={cx(
-                            "mt-0.5 block text-[0.95rem] sm:mt-0 sm:shrink-0 sm:text-right",
-                            s.tone === "free" ? "font-semibold text-moss" : s.tone === "warn" ? "font-semibold text-clay-deep" : "text-ink-mute",
+                            "mt-0.5 block text-[0.92rem] font-medium sm:mt-0 sm:shrink-0 sm:text-right",
+                            on
+                              ? "text-paper-bright"
+                              : s.tone === "free"
+                                ? "text-moss"
+                                : s.tone === "warn"
+                                  ? "text-clay-deep"
+                                  : "text-ink-mute",
                           )}
                         >
                           {s.text}
@@ -604,8 +597,8 @@ function Request({
           </Question>
         </div>
       ) : (
-        <div className="mt-10">
-          <Question n={1} id="q-event" title="About your event">
+        <div className="calm-card mt-8 px-6 py-8 sm:px-9 sm:py-10">
+          <Question id="q-event" title="About your event">
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="sm:col-span-2">
                 <TextField label="Event name" error={e.activity}>
@@ -613,7 +606,7 @@ function Request({
                 </TextField>
               </div>
               <TextField label="Ministry" hint="The lead ministry, if several are involved." error={e.ministry}>
-                <select id="f-ministry" value={ministry} onChange={(ev) => setMinistry(ev.target.value)} className={cx(INPUT, "h-14")}>
+                <select id="f-ministry" value={ministry} onChange={(ev) => setMinistry(ev.target.value)} className={INPUT}>
                   <option value="" disabled>
                     Choose your ministry
                   </option>
@@ -631,7 +624,7 @@ function Request({
             </div>
           </Question>
 
-          <Question n={2} id="q-extras" title="Equipment and food" note="Optional. Tap what you'd like set up." error={e.food}>
+          <Question id="q-extras" title="Equipment and food" note="Optional. Tap what you'd like set up." error={e.food}>
             <div className="flex flex-wrap gap-2">
               {EQUIPMENT.map((item) => (
                 <EquipmentChip
@@ -648,7 +641,7 @@ function Request({
             </p>
             <div role="radiogroup" aria-labelledby="food-label" className="mt-3 flex flex-wrap gap-2">
               {FOOD.map((f) => (
-                <label key={f.id} className={cx(CHIP, "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-clay", food === f.id ? CHIP_ON : CHIP_OFF)}>
+                <label key={f.id} className={calmChipClass(food === f.id)}>
                   <input type="radio" name="food_choice" value={f.id} checked={food === f.id} onChange={() => setFood(f.id)} className="sr-only" />
                   {f.label}
                 </label>
@@ -664,7 +657,7 @@ function Request({
             </div>
           </Question>
 
-          <Question n={3} id="q-you" title="Your details" note={`The confirmation goes to ${email}.`}>
+          <Question id="q-you" title="Your details" note={`The confirmation goes to ${email}.`}>
             <div className="grid gap-5 sm:grid-cols-2">
               <TextField label="Name" error={e.name}>
                 <input id="f-name" value={name} onChange={(ev) => setName(ev.target.value)} autoComplete="name" className={INPUT} />
@@ -685,7 +678,7 @@ function Request({
           </Question>
 
           {/* The whole request in one place before it goes. */}
-          <section aria-labelledby="check-h" className="surface mt-2 p-6">
+          <section aria-labelledby="check-h" className="mt-8 rounded-2xl bg-mist p-6">
             <div className="flex items-start justify-between gap-4">
               <h3 id="check-h" className="text-[1.2rem] font-semibold text-ink">
                 Your request
@@ -723,7 +716,7 @@ function Request({
                 checked={agreed}
                 onChange={(ev) => setAgreed(ev.target.checked)}
                 aria-invalid={e.accept ? true : undefined}
-                className="mt-0.5 h-6 w-6 shrink-0 accent-clay"
+                className="mt-0.5 h-6 w-6 shrink-0 rounded-md accent-clay"
               />
               <span>I accept the room policies on behalf of my ministry.</span>
             </label>
@@ -732,7 +725,7 @@ function Request({
                 <span className="group-open:hidden">Read the {ROOM_POLICIES.length} policies</span>
                 <span className="hidden group-open:inline">Hide the policies</span>
               </summary>
-              <ul className="mt-2 space-y-2.5 rounded-2xl bg-paper p-5 text-[0.98rem] leading-relaxed text-ink-soft">
+              <ul className="mt-2 space-y-2.5 rounded-2xl bg-mist p-5 text-[0.98rem] leading-relaxed text-ink-soft">
                 {ROOM_POLICIES.map(([t, b]) => (
                   <li key={t}>
                     <span className="font-semibold text-ink">{t}.</span> {b}
@@ -744,7 +737,7 @@ function Request({
           </div>
 
           {state?.formError ? (
-            <p id="form-error" tabIndex={-1} role="alert" className="mt-6 border-l-2 border-clay pl-4 text-[1rem] font-semibold text-clay-deep outline-none">
+            <p id="form-error" tabIndex={-1} role="alert" className="mt-6 rounded-2xl bg-sky-wash px-5 py-4 text-[1rem] font-semibold text-sky outline-none">
               {state.formError}
               {state.needsAuth ? (
                 <>
@@ -766,7 +759,7 @@ function Request({
             type="button"
             onClick={() => goTo(1)}
             aria-label="Back to step 1"
-            className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-hairline text-ink hover:border-ink"
+            className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-edge text-clay hover:border-clay"
           >
             <ChevronIcon dir="left" />
           </button>
@@ -812,7 +805,7 @@ function ArrowButton({ label, onClick, disabled, children }: { label: string; on
       aria-label={label}
       onClick={onClick}
       disabled={disabled}
-      className="grid h-12 w-12 shrink-0 cursor-pointer place-items-center rounded-full border border-hairline bg-paper-bright text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:bg-transparent disabled:text-ink-mute/40 disabled:hover:border-hairline"
+      className="grid h-12 w-12 shrink-0 cursor-pointer place-items-center rounded-full border border-edge bg-paper-bright text-clay transition-colors hover:border-clay disabled:cursor-not-allowed disabled:bg-transparent disabled:text-ink-mute/40 disabled:hover:border-edge"
     >
       {children}
     </button>
@@ -826,7 +819,7 @@ function EquipmentChip({ label, max, count, onChange }: { label: string; max: nu
         type="button"
         aria-pressed={Boolean(count)}
         onClick={() => onChange(count ? 0 : 1)}
-        className={cx(CHIP, count ? CHIP_ON : CHIP_OFF)}
+        className={calmChipClass(Boolean(count))}
       >
         {count ? <CheckIcon /> : null}
         {label}
@@ -834,8 +827,8 @@ function EquipmentChip({ label, max, count, onChange }: { label: string; max: nu
     );
   }
   return (
-    <span className={cx("inline-flex min-h-12 items-stretch rounded-full text-[1rem]", CHIP_ON)}>
-      <button type="button" aria-label={`One fewer ${label.toLowerCase()}`} onClick={() => onChange(count - 1)} className="w-11 cursor-pointer rounded-l-full hover:bg-clay/10">
+    <span className="inline-flex min-h-12 items-stretch rounded-full bg-clay text-[1rem] text-paper-bright">
+      <button type="button" aria-label={`One fewer ${label.toLowerCase()}`} onClick={() => onChange(count - 1)} className="w-11 cursor-pointer rounded-l-full hover:bg-clay-deep">
         &minus;
       </button>
       <span aria-live="polite" className="flex items-center px-1 tabular-nums">
@@ -846,7 +839,7 @@ function EquipmentChip({ label, max, count, onChange }: { label: string; max: nu
         aria-label={`One more ${label.toLowerCase()}`}
         onClick={() => onChange(Math.min(max, count + 1))}
         disabled={count >= max}
-        className="w-11 cursor-pointer rounded-r-full hover:bg-clay/10 disabled:cursor-not-allowed disabled:text-clay/30"
+        className="w-11 cursor-pointer rounded-r-full hover:bg-clay-deep disabled:cursor-not-allowed disabled:text-paper-bright/40"
       >
         +
       </button>
@@ -873,51 +866,55 @@ function Sent({
   reference,
   email,
   emailed,
-  rows,
+  details,
   event,
   onAnother,
 }: {
   reference: string;
   email: string;
   emailed: boolean;
-  rows: [string, string][];
+  details: { event: string; date: string; time: string; rooms: string; people: number };
   event: CalendarEvent | null;
   onAnother: () => void;
 }) {
+  const doneRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    doneRef.current?.scrollIntoView({ block: "center" });
+    doneRef.current?.focus({ preventScroll: true });
+  }, []);
   const steps: [string, string, boolean][] = [
     ["Request sent", emailed ? `A copy is in ${email}.` : "Saved under My reservations.", true],
     ["The facilities team reviews it", "Your rooms are held for you while they check.", false],
-    ["You get a confirmation email", "Then it's safe to announce your event.", false],
+    ["You get a confirmation email", "Then it’s safe to announce your event.", false],
   ];
   return (
-    <div role="status" className="surface grid gap-12 p-8 sm:p-12 lg:grid-cols-2">
-      <div>
-        <span aria-hidden className="flex h-12 w-12 items-center justify-center rounded-full bg-clay text-paper-bright">
-          <CheckIcon className="h-6 w-6" />
-        </span>
-        <h2 className="font-display mt-6 text-3xl leading-tight text-ink sm:text-4xl">Request sent.</h2>
-        <p className="mt-2 text-ink-mute">
+    <Confirmation
+      focusRef={doneRef}
+      title="Request sent"
+      note={
+        <>
           Reference <span className="font-semibold tabular-nums text-ink">{reference}</span>
-        </p>
-        <dl className="mt-7 divide-y divide-hairline border-y border-hairline text-[1rem]">
-          {rows.map(([k, v]) => (
-            <div key={k} className="flex justify-between gap-6 py-3">
-              <dt className="text-ink-mute">{k}</dt>
-              <dd className="text-right text-ink">{v}</dd>
-            </div>
-          ))}
-        </dl>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <p className="text-[1.3rem] font-semibold leading-snug text-ink">{details.event}</p>
+        <IconLine icon="calendar">{details.date}</IconLine>
+        <IconLine icon="clock">{details.time}</IconLine>
+        <IconLine icon="pin">{details.rooms}</IconLine>
+        <IconLine icon="people">{details.people} people</IconLine>
       </div>
       <div>
-        <h3 className="font-display text-xl text-ink">What happens next</h3>
-        <ol className="mt-5 space-y-6">
+        <p className="text-[1rem] font-semibold text-ink">What happens next</p>
+        <ol className="mt-4 space-y-4">
           {steps.map(([t, b, done], i) => (
-            <li key={t} className="flex gap-4">
+            <li key={t} className="flex gap-3.5">
               <span
                 aria-hidden
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[0.85rem] font-bold ${
-                  done ? "bg-clay text-paper-bright" : "text-ink-mute shadow-[inset_0_0_0_1px_var(--hairline)]"
-                }`}
+                className={cx(
+                  "grid h-7 w-7 shrink-0 place-items-center rounded-full text-[0.8rem] font-semibold",
+                  done ? "bg-clay text-paper-bright" : "bg-rule text-ink-mute",
+                )}
               >
                 {done ? <CheckIcon /> : i + 1}
               </span>
@@ -928,23 +925,23 @@ function Sent({
             </li>
           ))}
         </ol>
-        {event ? (
-          <div className="mt-9">
-            <AddToCalendar event={event} />
-            <p className="mt-2 text-[0.92rem] text-ink-mute">
-              It&rsquo;s marked as requested. The confirmation email brings the final invite.
-            </p>
-          </div>
-        ) : null}
-        <div className="mt-9 flex flex-wrap gap-6">
-          <Link href="/my/reservations" className="text-[1rem] font-semibold text-clay underline underline-offset-4">
-            See my requests
-          </Link>
-          <button type="button" onClick={onAnother} className="text-[1rem] font-semibold text-clay underline underline-offset-4">
-            Request another room
-          </button>
-        </div>
       </div>
-    </div>
+      {event ? (
+        <div>
+          <AddToCalendar bare event={event} />
+          <p className="mt-2.5 text-[0.9rem] text-ink-mute">
+            Marked as requested. The confirmation email brings the final invite.
+          </p>
+        </div>
+      ) : null}
+      <p className="flex flex-wrap gap-x-6 gap-y-2 text-[0.98rem]">
+        <Link href="/my/reservations" className="inline-flex min-h-11 items-center font-semibold text-clay hover:underline">
+          See my requests
+        </Link>
+        <button type="button" onClick={onAnother} className="min-h-11 font-semibold text-clay hover:underline">
+          Request another room
+        </button>
+      </p>
+    </Confirmation>
   );
 }

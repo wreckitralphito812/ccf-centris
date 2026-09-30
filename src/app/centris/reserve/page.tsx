@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/page-header";
-import { ButtonLink, Container, Eyebrow, Section, SectionHead } from "@/components/ui";
+import { ButtonLink, Container, Section, SectionHead } from "@/components/ui";
 import { currentUser } from "@/lib/auth/session";
 import { getMyContact } from "@/lib/queries";
 import { hasSupabase } from "@/lib/supabase/server";
@@ -41,7 +41,7 @@ export default async function ReservePage() {
         lead="For ministry meetings, trainings and events. Rooms are free. Send a request and the facilities team will confirm it by email."
       />
 
-      <Section>
+      <Section tone="mist">
         <Container>
           {user?.email ? (
             <BookingFlow
@@ -53,10 +53,10 @@ export default async function ReservePage() {
               mobile={mobile}
             />
           ) : (
-            <div className="grid gap-8 surface p-7 sm:p-9 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+            <div className="calm-card mx-auto grid max-w-3xl gap-8 p-8 sm:p-10 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div>
-                <Eyebrow>Sign in to request</Eyebrow>
-                <p className="font-display mt-3 text-2xl leading-tight text-ink sm:text-3xl">
+                <p className="text-[0.95rem] font-semibold text-clay">Sign in to request</p>
+                <p className="mt-2 text-[1.5rem] font-semibold leading-tight tracking-[-0.01em] text-ink sm:text-[1.75rem]">
                   Requests come from a signed-in account.
                 </p>
                 <p className="mt-3 max-w-xl leading-relaxed text-ink-soft">
