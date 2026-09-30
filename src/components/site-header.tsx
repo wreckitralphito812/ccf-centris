@@ -64,8 +64,8 @@ export function SiteHeader() {
       className={cx(
         "sticky top-0 z-50 border-b transition-colors duration-300",
         scrolled
-          ? "border-hairline bg-paper/95 backdrop-blur-sm"
-          : "border-transparent bg-paper",
+          ? "border-rule bg-paper-bright/95 backdrop-blur-sm"
+          : "border-transparent bg-paper-bright",
       )}
     >
       <div
@@ -100,12 +100,17 @@ export function SiteHeader() {
             <Link
               key={group.label}
               href={group.href}
+              aria-current={isActive(group.href) ? "page" : undefined}
               className={cx(
-                "label whitespace-nowrap px-2 py-2 transition-colors xl:px-3",
-                isActive(group.href) ? "text-clay" : "text-ink hover:text-clay",
+                // Sentence case, not tracked capitals: the calm look (2026-09-30).
+                "relative whitespace-nowrap rounded-full px-2.5 py-2 text-[0.95rem] font-medium transition-colors xl:px-3.5",
+                isActive(group.href) ? "text-clay" : "text-ink hover:bg-mist hover:text-clay",
               )}
             >
               {group.label}
+              {isActive(group.href) ? (
+                <span aria-hidden className="absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-clay" />
+              ) : null}
             </Link>
           ))}
         </nav>
@@ -120,7 +125,7 @@ export function SiteHeader() {
           </Link>
           <Link
             href="/watch"
-            className="btn-press label rounded-full hidden items-center gap-2 border border-clay bg-clay px-3.5 py-2 whitespace-nowrap text-paper-bright transition-colors hover:bg-clay-deep md:inline-flex lg:hidden xl:inline-flex"
+            className="btn-press hidden items-center gap-2 rounded-full bg-clay px-4 py-2.5 text-[0.92rem] font-semibold whitespace-nowrap text-paper-bright shadow-[0_8px_20px_-8px_rgba(0,118,130,0.55)] transition-colors hover:bg-clay-deep md:inline-flex lg:hidden xl:inline-flex"
           >
             Last Sunday
           </Link>
@@ -141,19 +146,19 @@ export function SiteHeader() {
       {mobile ? (
         <div
           style={{ top: barH || undefined }}
-          className="fixed inset-x-0 bottom-0 top-[3.75rem] z-50 overflow-y-auto overscroll-contain border-t border-hairline bg-paper lg:hidden"
+          className="fixed inset-x-0 bottom-0 top-[3.75rem] z-50 overflow-y-auto overscroll-contain border-t border-rule bg-paper-bright lg:hidden"
         >
           <div className="px-5 py-6">
             <div className="flex gap-2">
               <Link
                 href="/watch"
-                className="label flex-1 border border-clay bg-clay px-4 py-3 text-center text-paper-bright"
+                className="btn-press flex-1 rounded-full bg-clay px-4 py-3.5 text-center text-[1rem] font-semibold text-paper-bright"
               >
                 Last Sunday
               </Link>
               <Link
                 href="/visit#getting-here"
-                className="label flex-1 border border-ink px-4 py-3 text-center text-ink"
+                className="btn-press flex-1 rounded-full border border-clay px-4 py-3.5 text-center text-[1rem] font-semibold text-clay"
               >
                 Getting here
               </Link>
@@ -161,7 +166,7 @@ export function SiteHeader() {
 
             <Link
               href="/search"
-              className="mt-3 flex items-center gap-2 rounded-lg border border-hairline bg-paper-bright px-4 py-3 text-[0.9rem] text-ink-mute"
+              className="mt-3 flex items-center gap-2 rounded-[0.875rem] bg-mist px-4 py-3.5 text-[0.95rem] text-ink-mute"
             >
               <SearchIcon />
               Search CCF Centris
@@ -173,14 +178,14 @@ export function SiteHeader() {
                   <Link
                     key={group.label}
                     href={group.href}
-                    className="flex items-center justify-between border-b border-hairline py-4"
+                    className="flex items-center justify-between border-b border-rule py-4"
                   >
-                    <span className="font-display text-2xl">{group.label}</span>
+                    <span className="text-[1.35rem] font-semibold tracking-[-0.01em]">{group.label}</span>
                   </Link>
                 ) : (
-                  <details key={group.label} className="border-b border-hairline">
+                  <details key={group.label} className="border-b border-rule">
                     <summary className="flex cursor-pointer list-none items-center justify-between py-4">
-                      <span className="font-display text-2xl">{group.label}</span>
+                      <span className="text-[1.35rem] font-semibold tracking-[-0.01em]">{group.label}</span>
                       <ChevronIcon />
                     </summary>
                     <ul className="pb-4">

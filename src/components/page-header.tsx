@@ -49,10 +49,10 @@ export function PageHeader({
   const centered = align === "center" && !image;
 
   return (
-    <header className={cx("border-b border-ink/[0.06]", tones[tone])}>
+    <header className={cx(tones[tone])}>
       <Container
         className={cx(
-          "py-14 sm:py-20",
+          "py-16 sm:py-24",
           image && "grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-14",
           centered && "text-center",
         )}
@@ -74,12 +74,12 @@ export function PageHeader({
               ) : null}
             </div>
           ) : null}
-          <h1 className="page-title mt-4 text-balance">{title}</h1>
+          <h1 className="page-title mt-3 text-balance">{title}</h1>
           {lead ? (
             <p
               className={cx(
                 "mt-5 text-[1.05rem] leading-relaxed",
-                dark ? "text-current/75" : "text-ink-soft",
+                dark ? "text-current/75" : "text-ink-mute",
               )}
             >
               {lead}
@@ -98,7 +98,7 @@ export function PageHeader({
         </div>
 
         {image ? (
-          <div className="photo relative aspect-[4/3] bg-paper shadow-[0_24px_60px_-30px_rgb(20_32_33/0.45)]">
+          <div className="photo relative aspect-[4/3] bg-paper shadow-[0_30px_60px_-30px_rgb(0_95_104/0.35)]">
             <Image
               src={image.src}
               alt={image.alt}

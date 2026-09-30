@@ -85,7 +85,7 @@ export function SiteFooter() {
           the white type clears contrast. */}
       <div className="bg-[linear-gradient(100deg,#006d78_0%,#00879a_55%,#009fb0_100%)]">
         <div className="mx-auto flex max-w-[110rem] flex-col gap-4 px-5 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-          <p className="font-display text-xl leading-snug sm:text-2xl">
+          <p className="text-xl font-semibold leading-snug tracking-[-0.01em] sm:text-2xl">
             Sunday services at {SERVICE_TIMES_TEXT}. See you there.
           </p>
           <div className="flex flex-wrap gap-3">
@@ -193,11 +193,11 @@ export function SiteFooter() {
               <div key={col.id}>
                 <h2
                   id={col.id}
-                  className="label text-[0.8rem] tracking-[0.16em] text-clay-lift"
+                  className="text-[0.95rem] font-semibold text-clay-lift"
                 >
                   {col.heading}
                 </h2>
-                <ul aria-labelledby={col.id} className="mt-3 space-y-0.5 lg:mt-4 lg:space-y-2.5">
+                <ul aria-labelledby={col.id} className="mt-3 space-y-1 lg:mt-4 lg:space-y-3">
                   {col.links.map((link) => (
                     <li key={link.href}>
                       <Link
