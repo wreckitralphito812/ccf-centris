@@ -41,7 +41,7 @@ export default function AboutPage() {
         actions={
           <>
             <ButtonLink
-              href="/visit/new-here"
+              href="/visit"
               size="lg"
                 tone="on-dark"
             >

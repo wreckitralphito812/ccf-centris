@@ -8,18 +8,14 @@ import { signOut } from "@/app/actions/auth";
 import { FIREBASE_CONFIGURED } from "@/lib/firebase/client";
 
 /**
- * Header account control. "Sign in" when signed out; the member's initial and
- * a small menu (My reservations / Sign out) when signed in. Renders nothing
- * when Firebase isn't configured, so the static build is unaffected.
- *
- * Asks `/auth/me` on each navigation, so a session started or ended in this
- * tab shows up without a reload.
+ * Who's signed in, from `/auth/me`, asked again on each navigation so a
+ * session started or ended in this tab shows up without a reload. `ready` is
+ * false until the answer is in (and always when Firebase isn't configured).
  */
-export function AccountMenu() {
+export function useAccount() {
   const pathname = usePathname();
   const [email, setEmail] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
-  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (!FIREBASE_CONFIGURED) return;
@@ -37,16 +33,37 @@ export function AccountMenu() {
     };
   }, [pathname]);
 
-  if (!FIREBASE_CONFIGURED || !ready) return null;
+  return { email, ready: FIREBASE_CONFIGURED && ready };
+}
+
+/**
+ * Header account control. Signed out: "Sign in" and a Sign up button (Ralph
+ * asked for sign-up to be easy to find, 2026-09-30). Signed in: the member's
+ * initial and a small menu (My reservations / Sign out). Renders nothing when
+ * Firebase isn't configured, so the static build is unaffected.
+ */
+export function AccountMenu() {
+  const { email, ready } = useAccount();
+  const [open, setOpen] = useState(false);
+
+  if (!ready) return null;
 
   if (!email) {
     return (
-      <Link
-        href="/sign-in"
-        className="btn-press label rounded-full hidden items-center border border-ink px-3.5 py-2 text-ink transition-colors hover:bg-ink hover:text-paper-bright sm:inline-flex"
-      >
-        Sign in
-      </Link>
+      <div className="hidden items-center gap-1 sm:flex">
+        <Link
+          href="/sign-in"
+          className="rounded-full px-3 py-2 text-[0.95rem] font-medium text-ink transition-colors hover:bg-mist hover:text-clay"
+        >
+          Sign in
+        </Link>
+        <Link
+          href="/sign-up"
+          className="btn-press inline-flex items-center rounded-full bg-clay px-4 py-2.5 text-[0.92rem] font-semibold whitespace-nowrap text-paper-bright shadow-[0_8px_20px_-8px_rgba(0,118,130,0.55)] transition-colors hover:bg-clay-deep"
+        >
+          Sign up
+        </Link>
+      </div>
     );
   }
 

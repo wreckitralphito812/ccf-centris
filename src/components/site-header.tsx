@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { NAV } from "@/lib/nav";
 import { cx } from "./ui";
 import { Wordmark } from "./wordmark";
-import { AccountMenu } from "./account-menu";
+import { AccountMenu, useAccount } from "./account-menu";
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -125,7 +125,7 @@ export function SiteHeader() {
           </Link>
           <Link
             href="/watch"
-            className="btn-press hidden items-center gap-2 rounded-full bg-clay px-4 py-2.5 text-[0.92rem] font-semibold whitespace-nowrap text-paper-bright shadow-[0_8px_20px_-8px_rgba(0,118,130,0.55)] transition-colors hover:bg-clay-deep md:inline-flex lg:hidden xl:inline-flex"
+            className="btn-press hidden items-center gap-2 rounded-full border border-clay px-4 py-2 text-[0.92rem] font-semibold whitespace-nowrap text-clay transition-colors hover:bg-clay-wash md:inline-flex lg:hidden xl:inline-flex"
           >
             Last Sunday
           </Link>
@@ -163,6 +163,8 @@ export function SiteHeader() {
                 Getting here
               </Link>
             </div>
+
+            <SheetAccount />
 
             <Link
               href="/search"
@@ -243,5 +245,37 @@ function ChevronIcon() {
     <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden>
       <path d="m5 8 5 5 5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
+  );
+}
+
+/** Sign up and Sign in in the phone menu, where the header control is hidden. */
+function SheetAccount() {
+  const { email, ready } = useAccount();
+  if (!ready) return null;
+  if (email) {
+    return (
+      <Link
+        href="/my/reservations"
+        className="btn-press mt-3 flex items-center justify-center rounded-full border border-clay px-4 py-3.5 text-[1rem] font-semibold text-clay"
+      >
+        My reservations
+      </Link>
+    );
+  }
+  return (
+    <div className="mt-3 flex gap-2">
+      <Link
+        href="/sign-up"
+        className="btn-press flex-1 rounded-full bg-clay px-4 py-3.5 text-center text-[1rem] font-semibold text-paper-bright"
+      >
+        Sign up
+      </Link>
+      <Link
+        href="/sign-in"
+        className="btn-press flex-1 rounded-full border border-edge px-4 py-3.5 text-center text-[1rem] font-semibold text-ink"
+      >
+        Sign in
+      </Link>
+    </div>
   );
 }

@@ -7,8 +7,9 @@
  *   Adrian Camacho's floor plans (DGROUP PLAN and WELCOME PLAN). Labels are the
  *   numbers printed on those plans, so "Table 7" matches the drawing on the wall.
  * - Monday to Friday, three slots: 1:00–3:30, 4:00–6:30, 7:00–9:30 PM.
- * - Bookings open on Sunday, October 4, 2026. From then on a leader can book
- *   the rest of the current week; the following week opens each Sunday.
+ * - A leader can book the rest of the current week; the following week opens
+ *   each Sunday. (The October 4 launch date was dropped on 2026-09-30 so the
+ *   team could try bookings out early.)
  * - One night and one slot per booking. A leader can hold several bookings in a
  *   week, but each goes through the form, and the policies, on its own.
  * - The site picks the room and the tables. It uses one table when one fits and
@@ -90,9 +91,6 @@ export const DGROUP_SLOTS: DgroupSlot[] = [
   { id: "1900", label: "7:00 – 9:30 PM", start: "19:00", end: "21:30" },
 ];
 
-/** The first day bookings open, in Manila. A Sunday, so it opens Oct 5–9. */
-export const DGROUP_OPENS_ON = "2026-10-04";
-
 /** The largest group the site will seat, joining up to MAX_JOINED tables. */
 export const MAX_GROUP_SIZE = 12;
 export const MAX_JOINED = 3;
@@ -142,14 +140,6 @@ const addDays = (key: string, n: number) => {
   d.setUTCDate(d.getUTCDate() + n);
   return toKey(d);
 };
-
-/**
- * Whether bookings are open on `today` (Manila "YYYY-MM-DD"). `preview` lets a
- * non-production deploy try the flow before launch; see bookingPreview().
- */
-export function bookingOpen(today: string, preview = false): boolean {
-  return preview || today >= DGROUP_OPENS_ON;
-}
 
 /**
  * The dates a leader can book from `today`, today included:
@@ -275,13 +265,6 @@ export function manilaMinutes(at: Date = new Date()): number {
 export function nightLabel(date: string): string {
   const day = toDate(date);
   const month = day.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
-  return `${WEEKDAY_NAMES[day.getUTCDay()]}, ${month} ${day.getUTCDate()}`;
-}
-
-/** "Sunday, October 4" for the opening notice. */
-export function longDateLabel(date: string): string {
-  const day = toDate(date);
-  const month = day.toLocaleString("en-US", { month: "long", timeZone: "UTC" });
   return `${WEEKDAY_NAMES[day.getUTCDay()]}, ${month} ${day.getUTCDate()}`;
 }
 
