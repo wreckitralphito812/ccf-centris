@@ -89,7 +89,8 @@ one falls back instead of failing.
 
 ## Auth and trust boundaries
 
-- **Members:** Firebase proves identity (emailed link or Google popup). The
+- **Members:** Firebase proves identity (email and password, or Google popup;
+  the email must be confirmed). `/sign-up` creates accounts. The
   browser sends the ID token to `startSession` (`actions/auth.ts`), which
   finds or creates the profile (`link_firebase_member`) and sets the httpOnly
   `__session` Firebase session cookie. That cookie is the only thing the
