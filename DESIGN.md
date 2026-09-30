@@ -105,26 +105,51 @@ to open.
 
 ## Booking flows
 
-The Dgroup table form (`/reserve/dgroup`) and the room request
-(`/centris/reserve`) share one pattern, from the 2026-09-30 design review. Use
-it for any new booking or sign-up flow.
+The reservation pages (`/reserve`, `/reserve/dgroup`, `/centris/reserve`,
+`/my/reservations`) share one pattern and one calm look, from the design
+reviews of 2026-09-30 (the look takes after Calendly). Use it for any new
+booking or sign-up flow.
 
-- **Numbered questions**, one plain question each ("Which day?", "What
-  time?", "How many people?"), with `Question` from `components/booking.tsx`.
-- **Show availability before the choice**: "12 tables free", "Only 3 tables
-  left", "Full", "Taken 1:00 PM – 3:00 PM", "Too small for 60". Anything that
-  can't be picked is disabled and says why.
-- **Headcounts start empty**, with big − / + (`StepButton`) and a box you can
-  type in. Nobody books for a number they didn't choose.
-- **Known details fold** into one card with a Change button (`ContactFields`).
+- **One calm card per step**, with plain question headings ("Which day?",
+  "What time?", "How many people?") from `Question` in
+  `components/booking.tsx`, separated by a faint rule.
+- **Days are date circles** (`DayCircle`): the weekday over the date, pale
+  teal when open, solid teal when chosen, grey with a note ("Full", "Past")
+  when not.
+- **Show availability before the choice**: "12 tables free", "Only 3 left",
+  "Full", "Taken 1:00 PM – 3:00 PM", "Too small for 60". Anything that can't be
+  picked is disabled and says why.
+- **Choice rows** (`choiceClass`): a soft edge, solid teal with white type when
+  chosen. Small pill choices (set-up, food, equipment) use `calmChipClass`.
+- **Headcounts start empty**, with round − / + (`StepButton`) and a box you
+  can type in. Nobody books for a number they didn't choose.
+- **Known details fold** into one pale panel with a Change button
+  (`ContactFields`).
 - **One tick for the policies**, with the policies a tap away.
 - **A bar pinned to the bottom** (`BookingBar`) shows the answers so far, or
   the next thing to answer, and holds the one button. It stays disabled until
   the form is complete. The form above has `pb-36` so the bar never covers
   the last field.
-- **Confirmations** say what happened in large type, what happens next, and
-  offer **Add to calendar** (`AddToCalendar`).
+- **Confirmations** use `Confirmation`: a teal check, one headline, the
+  details as icon lines (`IconLine`), then **Add to calendar**
+  (`AddToCalendar`) and the next links.
 - **Errors** move focus to the first thing to fix, on the right step.
+
+### The calm booking look
+
+| Piece | What it is |
+|---|---|
+| `bg-mist` / `Section tone="mist"` | The booking ground, one step lighter than `paper` |
+| `.calm-card` | White, 24px corners, no border, a soft three-layer teal-tinted shadow |
+| `.calm-input` | Filled (`mist`), borderless, 14px corners, a teal ring on focus |
+| `border-rule` | The faint line between questions |
+| `border-edge` | The soft outline of an unchosen choice |
+| `StatusBadge` | Confirmed `clay-wash`/`clay-deep`, Awaiting approval `sky-wash`/`sky` (CCF maroon), the rest `rule`/`ink-mute` |
+| `UiIcon` | Line icons (calendar, clock, people, pin, check), 1.5px stroke |
+
+Teal appears only where someone has chosen something, or on the one main
+button. Pill buttons stay as everywhere else. This look is on the reservation
+pages first; the rest of the site follows in a later pass.
 
 ## Accessibility floor
 
