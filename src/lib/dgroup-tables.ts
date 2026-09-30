@@ -250,6 +250,23 @@ export function nightOptions(today: string, nowMinutes: number): NightOption[] {
     .filter((n) => n.slots.length > 0);
 }
 
+/**
+ * Where "Book again" lands (2026-09-30): the first bookable date after
+ * `bookedOn` on the same weekday whose `slotId` hasn't started. Null when that
+ * week isn't open yet (the next week opens on Sunday).
+ */
+export function rebookDate(bookedOn: string, slotId: string, today: string, nowMinutes: number): string | null {
+  const weekday = toDate(bookedOn).getUTCDay();
+  return (
+    bookableNights(today).find(
+      (d) =>
+        d > bookedOn &&
+        toDate(d).getUTCDay() === weekday &&
+        openSlots(d, today, nowMinutes).some((s) => s.id === slotId),
+    ) ?? null
+  );
+}
+
 /** Manila minutes since midnight for an instant. */
 export function manilaMinutes(at: Date = new Date()): number {
   return (at.getUTCHours() * 60 + at.getUTCMinutes() + 8 * 60) % (24 * 60);
