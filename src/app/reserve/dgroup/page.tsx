@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Section } from "@/components/ui";
 import { FloorPlanDrawing } from "@/components/floor-plan";
+import { IconLine } from "@/components/booking";
 import {
   bookingOpen,
   DGROUP_OPENS_ON,
@@ -13,18 +14,13 @@ import {
   longDateLabel,
   manilaMinutes,
   MAX_GROUP_SIZE,
-  nightLabel,
   nightOptions,
-  roomName,
-  slotLabel,
-  tablesLabel,
   withAvailability,
 } from "@/lib/dgroup-tables";
 import { manilaDateKey } from "@/lib/format";
 import { currentUser, hasAccounts } from "@/lib/auth/session";
 import { getDgroupHolds, getMyContact, getMyDgroupBookings } from "@/lib/queries";
 import { BookingForm } from "./booking-form";
-import { MyBooking } from "./my-booking";
 
 export const metadata: Metadata = {
   title: "Reserve a Dgroup table",
@@ -53,14 +49,14 @@ export default function DgroupTablesPage() {
         title="Book a table for your Dgroup."
         lead="Four quick questions. We'll pick the table."
       />
-      <Section>
-        <Container className="max-w-3xl">
-          <ul className="flex flex-wrap gap-x-6 gap-y-2 border-y border-hairline py-4 text-[0.9rem] text-ink-soft">
-            <li>Monday to Friday</li>
-            <li>Starts at {SLOT_STARTS}</li>
-            <li>Groups up to {MAX_GROUP_SIZE}</li>
-            <li>Dgroup Lounge or Welcome Center</li>
-          </ul>
+      <Section tone="mist">
+        <Container className="max-w-2xl">
+          <div className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
+            <IconLine icon="calendar">Monday to Friday</IconLine>
+            <IconLine icon="clock">Starts at {SLOT_STARTS}</IconLine>
+            <IconLine icon="people">Groups up to {MAX_GROUP_SIZE}</IconLine>
+            <IconLine icon="pin">Dgroup Lounge or Welcome Center</IconLine>
+          </div>
           <div className="mt-10">
             <Booking />
           </div>
@@ -123,40 +119,24 @@ async function Booking() {
   const nights = holds ? withAvailability(open, holds) : open;
 
   return (
-    <div className="space-y-14">
+    <div className="space-y-8">
       {mine.length ? (
-        <section aria-labelledby="your-tables-h" id="your-tables" className="scroll-mt-28">
-          <div className="flex flex-wrap items-baseline justify-between gap-3">
-            <h2 id="your-tables-h" className="label text-clay">
-              Your upcoming tables
-            </h2>
-            <Link href="/my/reservations" className="label text-ink-mute underline underline-offset-4 hover:text-ink">
-              All my reservations
-            </Link>
-          </div>
-          <ul className="mt-4 space-y-4">
-            {mine.map((m) => (
-              <MyBooking
-                key={m.id}
-                id={m.id}
-                title={`${tablesLabel(m.table_labels)} · ${roomName(m.room_slug)}`}
-                when={`${nightLabel(m.booked_on)}, ${slotLabel(m.slot_id)}`}
-                groupSize={m.group_size}
-                date={m.booked_on}
-                slotId={m.slot_id}
-                nights={nights}
-                plan={<FloorPlanDrawing room={m.room_slug} highlight={m.table_labels} width={280} />}
-              />
-            ))}
-          </ul>
-        </section>
+        <Link
+          href="/my/reservations"
+          className="calm-card flex items-center justify-between gap-4 px-7 py-5 transition-shadow hover:shadow-lg"
+        >
+          <span className="text-[1rem] text-ink">
+            You have <span className="font-semibold">{mine.length} upcoming {mine.length === 1 ? "table" : "tables"}</span>.
+          </span>
+          <span className="shrink-0 text-[0.98rem] font-semibold text-clay">See them</span>
+        </Link>
       ) : null}
 
       <section aria-labelledby="book-h">
-        <h2 id="book-h" className="display-md">
-          {mine.length ? "Book another slot" : "Book a table"}
+        <h2 id="book-h" className="sr-only">
+          Book a table
         </h2>
-        <div className="mt-7">
+        <div>
           <BookingForm
             nights={nights}
             email={contact?.email || user.email}
@@ -173,13 +153,13 @@ async function Booking() {
 function Rooms() {
   return (
     <section aria-labelledby="rooms-h">
-      <h2 id="rooms-h" className="label text-clay">
+      <h2 id="rooms-h" className="text-[1.2rem] font-semibold text-ink">
         The rooms
       </h2>
       <div className="mt-5 grid gap-6 sm:grid-cols-2">
         {DGROUP_ROOMS.map((r) => (
-          <figure key={r.slug} className="surface p-5">
-            <figcaption className="font-display text-xl text-ink">{r.name}</figcaption>
+          <figure key={r.slug} className="calm-card p-6">
+            <figcaption className="text-[1.2rem] font-semibold text-ink">{r.name}</figcaption>
             <p className="mt-1 text-[0.85rem] text-ink-mute">
               {r.tables.length} tables · {r.tables.reduce((n, t) => n + t.seats, 0)} seats
             </p>
@@ -195,8 +175,8 @@ function Rooms() {
 
 function Notice({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="border-l-2 border-clay bg-paper-bright p-6">
-      <p className="label text-clay">{label}</p>
+    <div className="calm-card p-7 sm:p-9">
+      <p className="text-[1.2rem] font-semibold text-ink">{label}</p>
       <div className="mt-3 space-y-5 text-[1.02rem] leading-relaxed text-ink-soft">{children}</div>
     </div>
   );
