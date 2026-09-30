@@ -87,9 +87,14 @@ export function icsFile(ev: CalendarEvent, now = new Date()): string {
     .concat("\r\n");
 }
 
-/** A link that downloads the .ics straight from the page, no server trip. */
+/**
+ * A link that downloads the .ics straight from the page, no server trip. The
+ * DTSTAMP is fixed to the event's day rather than "now", so the server and the
+ * browser render the same link (a "now" stamp broke hydration, 2026-09-30).
+ */
 export function icsHref(ev: CalendarEvent): string {
-  return `data:text/calendar;charset=utf-8,${encodeURIComponent(icsFile(ev))}`;
+  const stamp = new Date(`${ev.date}T00:00:00+08:00`);
+  return `data:text/calendar;charset=utf-8,${encodeURIComponent(icsFile(ev, stamp))}`;
 }
 
 /** A Dgroup table booking as a calendar event. */

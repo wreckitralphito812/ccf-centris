@@ -63,6 +63,11 @@
      than --paper, and the faint line between questions. */
   --mist: #f7f9f9;
   --rule: #edf2f3;
+  /* Soft outline for choice rows, and the pale washes behind open days and
+     status badges (teal for confirmed, maroon for awaiting approval). */
+  --edge: #dfe8e9;
+  --clay-wash: #e9f4f5;
+  --sky-wash: #f8ecf0;
   /* Dark ground. The old #10262b was a cold slate-teal that read severe under
      the display face. This keeps the same teal family but pulls it warm and
      green, so a full-bleed dark section feels like deep pine rather than
@@ -92,6 +97,9 @@
   --color-bone: var(--bone);
   --color-mist: var(--mist);
   --color-rule: var(--rule);
+  --color-edge: var(--edge);
+  --color-clay-wash: var(--clay-wash);
+  --color-sky-wash: var(--sky-wash);
   --color-night: var(--night);
 
   /* One face, Montserrat, for display and body (chosen 2026-09-24). The CCF
