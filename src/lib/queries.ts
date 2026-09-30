@@ -539,6 +539,8 @@ export interface MyBooking {
   status: string;
   participants: number;
   created_at: string;
+  /** Rooms asked for together share this, and it makes the reference code. */
+  request_group: string | null;
 }
 
 /**
@@ -554,7 +556,7 @@ export async function getMyBookings(): Promise<MyBooking[]> {
   const { data, error } = await supabaseAdmin()
     .from("reservations")
     .select(
-      "id, activity_name, participants, during, status, created_at, facilities(name), courts(name)",
+      "id, activity_name, participants, during, status, created_at, request_group, facilities(name), courts(name)",
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
@@ -578,6 +580,7 @@ export async function getMyBookings(): Promise<MyBooking[]> {
       status: r.status as string,
       participants: r.participants as number,
       created_at: r.created_at as string,
+      request_group: (r.request_group as string | null) ?? null,
     };
   });
 }
