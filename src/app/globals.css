@@ -59,6 +59,10 @@
   --sky: #7d1235;           /* CCF maroon, warmed slightly off pure oxblood */
   --moss: #55643f;
   --bone: #e2ebed; /* hover surface, one step under --paper-deep */
+  /* Calm booking ground and rule (design review 2026-09-30): one step lighter
+     than --paper, and the faint line between questions. */
+  --mist: #f7f9f9;
+  --rule: #edf2f3;
   /* Dark ground. The old #10262b was a cold slate-teal that read severe under
      the display face. This keeps the same teal family but pulls it warm and
      green, so a full-bleed dark section feels like deep pine rather than
@@ -86,6 +90,8 @@
   --color-sky: var(--sky);
   --color-moss: var(--moss);
   --color-bone: var(--bone);
+  --color-mist: var(--mist);
+  --color-rule: var(--rule);
   --color-night: var(--night);
 
   /* One face, Montserrat, for display and body (chosen 2026-09-24). The CCF
@@ -481,6 +487,36 @@ a.surface:hover,
 .photo {
   border-radius: 0.875rem;
   overflow: hidden;
+}
+
+/* The calm booking card (Calendly-inspired, 2026-09-30): no border, big soft
+   corners, a teal-tinted shadow in three layers. */
+.calm-card {
+  background: var(--paper-bright);
+  border-radius: 1.5rem;
+  box-shadow:
+    0 1px 2px rgb(0 95 104 / 0.04),
+    0 8px 24px -8px rgb(0 95 104 / 0.08),
+    0 30px 60px -30px rgb(0 95 104 / 0.12);
+}
+
+/* Inputs in the booking flows: filled, borderless, a teal ring on focus. */
+.calm-input {
+  width: 100%;
+  border-radius: 0.875rem;
+  background: var(--mist);
+  padding: 0.95rem 1.1rem;
+  font-size: 1.05rem;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px transparent;
+  transition:
+    box-shadow 150ms var(--ease),
+    background-color 150ms var(--ease);
+}
+.calm-input:focus {
+  outline: none;
+  background: var(--paper-bright);
+  box-shadow: inset 0 0 0 2px var(--clay);
 }
 }
 
