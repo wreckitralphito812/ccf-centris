@@ -112,7 +112,7 @@ export function SignInForm({ next, accounts }: { next: string; accounts: boolean
               setUnverified(null);
               setNote(null);
             }}
-            className="min-h-11 text-[0.98rem] font-semibold text-clay hover:underline"
+            className="min-h-11 shrink-0 text-[0.95rem] font-medium text-clay hover:underline"
           >
             I’ve confirmed it, sign in
           </button>
@@ -143,8 +143,8 @@ export function SignInForm({ next, accounts }: { next: string; accounts: boolean
           value={password}
           onChange={(ev) => setPassword(ev.target.value)}
         />
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-[0.98rem] text-ink">
+        <div className="flex items-center justify-between gap-3">
+          <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-[0.95rem] text-ink-soft">
             <input
               type="checkbox"
               checked={remember}
@@ -153,7 +153,7 @@ export function SignInForm({ next, accounts }: { next: string; accounts: boolean
             />
             Remember me
           </label>
-          <button type="button" onClick={forgot} className="min-h-11 text-[0.98rem] font-semibold text-clay hover:underline">
+          <button type="button" onClick={forgot} className="min-h-11 shrink-0 text-[0.95rem] font-medium text-clay hover:underline">
             Forgot password?
           </button>
         </div>
@@ -164,9 +164,9 @@ export function SignInForm({ next, accounts }: { next: string; accounts: boolean
         </button>
       </form>
 
-      <p className="mt-6 text-center text-[0.98rem] text-ink-mute">
+      <p className="mt-6 text-center text-[0.95rem] text-ink-mute">
         Don&rsquo;t have an account?{" "}
-        <Link href={`/sign-up?next=${encodeURIComponent(next)}`} className="font-semibold text-clay hover:underline">
+        <Link href={`/sign-up?next=${encodeURIComponent(next)}`} className="font-medium text-clay hover:underline">
           Sign up
         </Link>
       </p>

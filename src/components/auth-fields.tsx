@@ -34,7 +34,7 @@ export function IconField({
   const describedBy = [error ? `${id}-error` : null, hint ? `${id}-hint` : null].filter(Boolean).join(" ") || undefined;
   return (
     <div>
-      <label htmlFor={id} className="block text-[0.98rem] font-semibold text-ink">
+      <label htmlFor={id} className="block text-[0.95rem] font-medium text-ink">
         {label}
       </label>
       <div className={cx(FIELD, "mt-2", error && "bg-sky-wash ring-1 ring-sky/40")}>
@@ -54,7 +54,7 @@ export function IconField({
         </p>
       ) : null}
       {error ? (
-        <p id={`${id}-error`} role="alert" className="mt-1.5 text-[0.92rem] font-semibold text-sky">
+        <p id={`${id}-error`} role="alert" className="mt-1.5 text-[0.9rem] font-medium text-sky">
           {error}
         </p>
       ) : null}
@@ -91,14 +91,14 @@ export function OrDivider({ children = "Or with" }: { children?: ReactNode }) {
   );
 }
 
-/** A form-wide message: an error (maroon wash) or good news (teal wash). */
-export function FormNote({ tone = "error", children }: { tone?: "error" | "ok"; children: ReactNode }) {
+/** A form-wide message: an error (maroon), good news (teal) or a plain note (grey). */
+export function FormNote({ tone = "error", children }: { tone?: "error" | "ok" | "info"; children: ReactNode }) {
   return (
     <p
       role={tone === "error" ? "alert" : "status"}
       className={cx(
-        "rounded-2xl px-5 py-4 text-[0.95rem] font-semibold leading-relaxed",
-        tone === "error" ? "bg-sky-wash text-sky" : "bg-clay-wash text-clay-deep",
+        "rounded-xl px-4 py-3 text-[0.92rem] leading-relaxed",
+        tone === "error" ? "bg-sky-wash text-sky" : tone === "ok" ? "bg-clay-wash text-clay-deep" : "bg-mist text-ink-soft",
       )}
     >
       {children}
@@ -107,7 +107,7 @@ export function FormNote({ tone = "error", children }: { tone?: "error" | "ok"; 
 }
 
 export const submitClass =
-  "btn-press w-full rounded-full bg-clay px-6 py-4 text-[1.02rem] font-semibold text-paper-bright shadow-[0_8px_20px_-8px_rgba(0,118,130,0.55)] transition-colors hover:bg-clay-deep disabled:cursor-not-allowed disabled:opacity-60";
+  "btn-press w-full rounded-full bg-clay px-6 py-3.5 text-[1rem] font-semibold text-paper-bright shadow-[0_8px_20px_-8px_rgba(0,118,130,0.55)] transition-colors hover:bg-clay-deep disabled:cursor-not-allowed disabled:opacity-60";
 
 function FieldIcon({ name }: { name: "email" | "person" | "lock" }) {
   const p = {

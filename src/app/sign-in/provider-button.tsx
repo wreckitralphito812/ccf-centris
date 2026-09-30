@@ -66,7 +66,7 @@ export function ProviderButton({ next, remember = true }: { next: string; rememb
         type="button"
         disabled={pending}
         onClick={signIn}
-        className="btn-press flex w-full items-center justify-center gap-3 rounded-full border border-edge bg-paper-bright px-6 py-4 text-[1.02rem] font-semibold text-ink transition-colors hover:border-ink-mute disabled:opacity-60"
+        className="btn-press flex w-full items-center justify-center gap-3 rounded-full border border-edge bg-paper-bright px-6 py-3.5 text-[1rem] font-medium text-ink transition-colors hover:border-ink-mute disabled:opacity-60"
       >
         <GoogleGlyph className="h-5 w-5" />
         {pending ? "Signing in…" : "Continue with Google"}

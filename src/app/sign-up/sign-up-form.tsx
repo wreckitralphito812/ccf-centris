@@ -134,9 +134,9 @@ export function SignUpForm({ next, accounts }: { next: string; accounts: boolean
         </button>
       </form>
 
-      <p className="mt-6 text-center text-[0.98rem] text-ink-mute">
+      <p className="mt-6 text-center text-[0.95rem] text-ink-mute">
         Already have an account?{" "}
-        <Link href={`/sign-in?next=${encodeURIComponent(next)}`} className="font-semibold text-clay hover:underline">
+        <Link href={`/sign-in?next=${encodeURIComponent(next)}`} className="font-medium text-clay hover:underline">
           Sign in
         </Link>
       </p>
