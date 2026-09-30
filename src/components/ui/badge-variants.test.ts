@@ -12,7 +12,7 @@ test("every pill tone produces a non-empty class string", () => {
 
 test("clay tone keeps the tinted fill and deep text", () => {
   const cls = badgeVariants({ variant: "clay" });
-  assert.match(cls, /bg-clay\/10/);
+  assert.match(cls, /bg-clay-wash/);
   assert.match(cls, /text-clay-deep/);
 });
 
@@ -20,15 +20,9 @@ test("live tone is the solid clay chip", () => {
   assert.match(badgeVariants({ variant: "live" }), /bg-clay\b/);
 });
 
-test("base always includes the label utility and border box", () => {
+test("base is the calm sentence-case tag: no tracked label, no border", () => {
   const cls = badgeVariants({});
-  assert.match(cls, /\blabel\b/);
-  assert.match(cls, /border px-2\.5 py-1/);
-});
-
-test("base pins the full label + box string", () => {
-  assert.match(
-    badgeVariants({}),
-    /label inline-flex items-center gap-1\.5 rounded-full border px-2\.5 py-1/,
-  );
+  assert.doesNotMatch(cls, /\blabel\b/);
+  assert.doesNotMatch(cls, /\bborder\b/);
+  assert.match(cls, /rounded-full px-3 py-1/);
 });
