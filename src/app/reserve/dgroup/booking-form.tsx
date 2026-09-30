@@ -6,8 +6,11 @@ import { reserveDgroupTable, type DgroupBookingResult } from "@/app/actions/dgro
 import {
   AddToCalendar,
   BookingBar,
+  Confirmation,
   ContactFields,
+  DayCircle,
   FieldError,
+  IconLine,
   Question,
   StepButton,
   barButtonClass,
@@ -17,6 +20,7 @@ import {
 import { cx } from "@/components/ui";
 import { FloorPlanDrawing } from "@/components/floor-plan";
 import { dgroupEvent } from "@/lib/calendar";
+import { SITE } from "@/lib/site";
 import {
   DGROUP_POLICIES,
   MAX_GROUP_SIZE,
@@ -71,8 +75,10 @@ const startTime = (label: string) => `${label.split(" – ")[0]} ${label.slice(-
 const dayFull = (n: NightOption) => n.slots.every((s) => s.fits === 0);
 
 /**
- * Four numbered questions (day, time, headcount, details) and a bar pinned to
- * the bottom that keeps the answers so far in view with the one button.
+ * Four questions (day, time, headcount, details) on one calm card, and a bar
+ * pinned to the bottom that keeps the answers so far in view with the one
+ * button. Days are date circles; times are soft rows that turn solid teal
+ * when chosen (the calm, Calendly-inspired look, 2026-09-30).
  *
  * Built for the whole church, older members included (design review
  * 2026-09-30): big targets, 18px text, times that say how many tables are
@@ -145,46 +151,54 @@ function BookingAttempt({
   if (state?.ok && state.booking) {
     const b = state.booking;
     return (
-      <div ref={doneRef} tabIndex={-1} role="status" className="surface border-clay p-7 outline-none">
-        <p className="label text-clay">You&rsquo;re booked</p>
-        <p className="font-display mt-3 text-4xl leading-tight text-ink">{b.tables}</p>
-        <p className="mt-1 text-lg text-ink-soft">{b.roomName}</p>
-        <p className="mt-4 text-lg text-ink">
-          {b.night}, {b.slot} · {b.groupSize} {b.groupSize === 1 ? "person" : "people"}
-        </p>
-        <div className="mt-6 max-w-sm">
-          <FloorPlanDrawing room={b.roomSlug} highlight={b.labels} width={320} />
+      <Confirmation
+        focusRef={doneRef}
+        title="You’re booked"
+        note={
+          b.emailed
+            ? `We’ve emailed the details to ${b.email}.`
+            : `Your booking is saved. We couldn’t email ${b.email} just now.`
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-[1.3rem] font-semibold leading-snug text-ink">
+            {b.tables} · {b.roomName}
+          </p>
+          <IconLine icon="calendar">{b.night}</IconLine>
+          <IconLine icon="clock">{b.slot}</IconLine>
+          <IconLine icon="people">
+            {b.groupSize} {b.groupSize === 1 ? "person" : "people"}
+          </IconLine>
+          <IconLine icon="pin">{SITE.addressLines.slice(0, 2).join(", ")}</IconLine>
         </div>
-        <div className="mt-6">
-          <AddToCalendar
-            event={dgroupEvent({ date: b.date, slotId: b.slotId, roomSlug: b.roomSlug, labels: b.labels })}
-          />
+        {/* The drawing is fixed-size (it doubles as the email image), so phones get a smaller one. */}
+        <div className="flex justify-center overflow-hidden rounded-2xl bg-mist p-4">
+          <div className="sm:hidden">
+            <FloorPlanDrawing room={b.roomSlug} highlight={b.labels} width={250} />
+          </div>
+          <div className="hidden sm:block">
+            <FloorPlanDrawing room={b.roomSlug} highlight={b.labels} width={440} />
+          </div>
         </div>
-        <p className="mt-6 border-t border-hairline pt-4 text-[1rem] leading-relaxed text-ink-soft">
-          {b.emailed
-            ? `We've emailed the details to ${b.email}.`
-            : `We couldn't email ${b.email} just now, but your booking is saved.`}{" "}
-          Change or cancel it any time from My reservations.
-        </p>
-        <div className="mt-5 flex flex-wrap gap-5">
-          <button
-            type="button"
-            onClick={onAnother}
-            className="label text-clay underline underline-offset-4 hover:text-clay-deep"
-          >
-            Book another slot
+        <AddToCalendar
+          bare
+          event={dgroupEvent({ date: b.date, slotId: b.slotId, roomSlug: b.roomSlug, labels: b.labels })}
+        />
+        <p className="flex flex-wrap gap-x-6 gap-y-2 text-[0.98rem]">
+          <button type="button" onClick={onAnother} className="min-h-11 font-semibold text-clay hover:underline">
+            Book another time
           </button>
-          <Link href="/my/reservations" className="label text-clay underline underline-offset-4">
+          <Link href="/my/reservations" className="inline-flex min-h-11 items-center font-semibold text-clay hover:underline">
             My reservations
           </Link>
-        </div>
-      </div>
+        </p>
+      </Confirmation>
     );
   }
 
   if (!nights.length) {
     return (
-      <p className="rounded-2xl border border-dashed border-hairline p-8 text-center text-[1.05rem] text-ink-mute">
+      <p className="calm-card px-8 py-10 text-center text-[1.05rem] text-ink-mute">
         No times are open right now. Next week&rsquo;s days open on Sunday.
       </p>
     );
@@ -202,193 +216,184 @@ function BookingAttempt({
         startTransition(() => action(fd));
       }}
     >
-      <Question n={1} id="q-day" title="Which day?" note="Next week opens every Sunday." error={e.date}>
-        <div
-          role="radiogroup"
-          aria-labelledby="q-day"
-          className="grid gap-2"
-          style={{ gridTemplateColumns: `repeat(${Math.min(nights.length, 5)}, minmax(0, 1fr))` }}
+      <div className="calm-card px-6 py-8 sm:px-9 sm:py-10">
+        <Question
+          id="q-day"
+          title="Which day?"
+          note="This week, Monday to Friday. Next week opens on Sunday."
+          error={e.date}
         >
-          {nights.map((n) => {
-            const [day, rest] = shortNight(n.label).split(", ");
-            const full = dayFull(n);
-            const on = date === n.date;
-            return (
-              <label
-                key={n.date}
-                className={cx(
-                  "flex min-h-16 flex-col items-center justify-center rounded-2xl border px-1 py-2.5 text-center transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-clay has-[:focus-visible]:ring-offset-2",
-                  full
-                    ? "cursor-not-allowed border-hairline bg-paper text-ink-mute"
-                    : on
-                      ? "cursor-pointer border-clay bg-clay text-paper-bright"
-                      : "cursor-pointer border-hairline bg-paper-bright text-ink hover:border-ink/40",
-                )}
-              >
-                <input
-                  type="radio"
+          <div
+            role="radiogroup"
+            aria-labelledby="q-day"
+            className="grid gap-1"
+            style={{ gridTemplateColumns: `repeat(${Math.min(nights.length, 5)}, minmax(0, 1fr))` }}
+          >
+            {nights.map((n) => {
+              const [day, rest] = shortNight(n.label).split(", ");
+              const full = dayFull(n);
+              return (
+                <DayCircle
+                  key={n.date}
                   name="date"
                   value={n.date}
-                  checked={on}
+                  weekday={day}
+                  day={rest.split(" ")[1]}
+                  on={date === n.date}
                   disabled={full}
+                  note={full ? "Full" : undefined}
                   onChange={() => setDate(n.date)}
-                  className="sr-only"
                 />
-                <span className="text-[1rem] font-semibold">{day}</span>
-                <span className={cx("mt-0.5 text-[0.85rem]", on ? "text-paper-bright/85" : "text-ink-mute")}>
-                  {full ? "Full" : rest}
-                </span>
-              </label>
-            );
-          })}
-        </div>
-      </Question>
+              );
+            })}
+          </div>
+        </Question>
 
-      <Question n={2} id="q-time" title="What time?" error={e.slotId}>
-        <div role="radiogroup" aria-labelledby="q-time" className="space-y-2.5">
-          {(night?.slots ?? []).map((s) => {
-            const ok = usable(s);
-            const on = chosen?.id === s.id;
-            return (
-              <label
-                key={s.id}
-                className={cx("flex min-h-16 items-center justify-between gap-4 px-5 py-3.5", choiceClass(on, !ok))}
-              >
-                <input
-                  type="radio"
-                  name="slot"
-                  value={s.id}
-                  checked={on}
-                  disabled={!ok}
-                  onChange={() => setSlot(s.id)}
-                  className="sr-only"
-                />
-                <span className={cx("text-[1.1rem] font-semibold", ok ? "text-ink" : "text-ink-mute line-through")}>
-                  {s.label}
-                </span>
-                <SlotStatus s={s} people={people} on={on} />
-              </label>
-            );
-          })}
-        </div>
-      </Question>
+        <Question id="q-time" title="What time?" note={night?.label} error={e.slotId}>
+          <div role="radiogroup" aria-labelledby="q-time" className="space-y-3">
+            {(night?.slots ?? []).map((s) => {
+              const ok = usable(s);
+              const on = chosen?.id === s.id;
+              return (
+                <label
+                  key={s.id}
+                  className={cx("flex min-h-[3.75rem] items-center justify-between gap-4 px-5 py-4", choiceClass(on, !ok))}
+                >
+                  <input
+                    type="radio"
+                    name="slot"
+                    value={s.id}
+                    checked={on}
+                    disabled={!ok}
+                    onChange={() => setSlot(s.id)}
+                    className="sr-only"
+                  />
+                  <span className={cx("whitespace-nowrap text-[1.05rem]", ok && "font-semibold")}>
+                    {s.label}
+                  </span>
+                  <SlotStatus s={s} people={people} on={on} />
+                </label>
+              );
+            })}
+          </div>
+        </Question>
 
-      <Question
-        n={3}
-        id="q-people"
-        title="How many people?"
-        note={`Including you. Up to ${MAX_GROUP_SIZE}. We'll pick a table that fits.`}
-        error={e.groupSize}
-      >
-        <div className="flex items-center gap-4">
-          <StepButton
-            label="One fewer"
-            disabled={people <= 1}
-            onClick={() => setCount(String(Math.max(1, people - 1)))}
-          >
-            −
-          </StepButton>
-          <input
-            id="group_size"
-            name="group_size"
-            aria-labelledby="q-people"
-            inputMode="numeric"
-            autoComplete="off"
-            maxLength={2}
-            value={count}
-            onChange={(ev) => setCount(ev.target.value.replace(/\D/g, ""))}
-            aria-invalid={e.groupSize ? true : undefined}
-            className={countInputClass}
-          />
-          <StepButton
-            label="One more"
-            disabled={people >= MAX_GROUP_SIZE}
-            onClick={() => setCount(String(Math.min(MAX_GROUP_SIZE, people + 1)))}
-          >
-            +
-          </StepButton>
-        </div>
-      </Question>
-
-      <Question n={4} id="q-details" title="Your details">
-        <ContactFields
-          fields={[
-            {
-              name: "leader_name",
-              label: "Dleader name",
-              value: name,
-              autoComplete: "name",
-              required: true,
-              error: e.leaderName,
-            },
-            {
-              name: "leader_email",
-              label: "Dleader email",
-              value: email,
-              type: "email",
-              autoComplete: "email",
-              required: true,
-              hint: "Your table number is sent here.",
-              error: e.leaderEmail,
-            },
-            {
-              name: "contact_mobile",
-              label: "Dleader contact number",
-              value: mobile,
-              type: "tel",
-              autoComplete: "tel",
-              required: true,
-              error: e.contactMobile,
-            },
-          ]}
-        />
-
-        <div className="mt-6">
-          <label className="flex cursor-pointer items-start gap-3.5 text-[1.05rem] leading-snug text-ink">
+        <Question
+          id="q-people"
+          title="How many people?"
+          note={`Including you, up to ${MAX_GROUP_SIZE}. We’ll pick a table that fits.`}
+          error={e.groupSize}
+        >
+          <div className="flex items-center gap-4">
+            <StepButton
+              label="One fewer"
+              disabled={people <= 1}
+              onClick={() => setCount(String(Math.max(1, people - 1)))}
+            >
+              −
+            </StepButton>
             <input
-              id="policies-ok"
-              type="checkbox"
-              checked={agreed}
-              onChange={(ev) => setAgreed(ev.target.checked)}
-              aria-invalid={e.policies ? true : undefined}
-              aria-describedby="policies-list"
-              className="mt-0.5 h-6 w-6 shrink-0 accent-clay"
+              id="group_size"
+              name="group_size"
+              aria-labelledby="q-people"
+              inputMode="numeric"
+              autoComplete="off"
+              maxLength={2}
+              value={count}
+              onChange={(ev) => setCount(ev.target.value.replace(/\D/g, ""))}
+              aria-invalid={e.groupSize ? true : undefined}
+              className={countInputClass}
             />
-            <span>I agree to the Dgroup policies for my group.</span>
-          </label>
-          {agreed
-            ? DGROUP_POLICIES.map((p) => <input key={p.id} type="hidden" name={`policy_${p.id}`} value="on" />)
-            : null}
-          <button
-            type="button"
-            onClick={() => setShowPolicies((v) => !v)}
-            aria-expanded={showPolicies}
-            aria-controls="policies-list"
-            className="mt-2 ml-[2.4rem] min-h-11 text-[0.98rem] font-semibold text-clay underline underline-offset-4 hover:text-clay-deep"
-          >
-            {showPolicies ? "Hide the policies" : `Read the ${DGROUP_POLICIES.length} policies`}
-          </button>
-          <ul
-            id="policies-list"
-            hidden={!showPolicies}
-            className="mt-2 space-y-2.5 rounded-2xl bg-paper p-5 text-[0.98rem] leading-relaxed text-ink-soft"
-          >
-            {DGROUP_POLICIES.map((p) => (
-              <li key={p.id}>
-                <span className="font-semibold text-ink">{p.title}.</span> {p.body}
-              </li>
-            ))}
-          </ul>
-          <FieldError text={e.policies} />
-        </div>
-      </Question>
+            <StepButton
+              label="One more"
+              disabled={people >= MAX_GROUP_SIZE}
+              onClick={() => setCount(String(Math.min(MAX_GROUP_SIZE, people + 1)))}
+            >
+              +
+            </StepButton>
+          </div>
+        </Question>
+
+        <Question id="q-details" title="Your details">
+          <ContactFields
+            fields={[
+              {
+                name: "leader_name",
+                label: "Dleader name",
+                value: name,
+                autoComplete: "name",
+                required: true,
+                error: e.leaderName,
+              },
+              {
+                name: "leader_email",
+                label: "Dleader email",
+                value: email,
+                type: "email",
+                autoComplete: "email",
+                required: true,
+                hint: "Your table number is sent here.",
+                error: e.leaderEmail,
+              },
+              {
+                name: "contact_mobile",
+                label: "Dleader contact number",
+                value: mobile,
+                type: "tel",
+                autoComplete: "tel",
+                required: true,
+                error: e.contactMobile,
+              },
+            ]}
+          />
+
+          <div className="mt-6">
+            <label className="flex cursor-pointer items-start gap-3.5 text-[1.05rem] leading-snug text-ink">
+              <input
+                id="policies-ok"
+                type="checkbox"
+                checked={agreed}
+                onChange={(ev) => setAgreed(ev.target.checked)}
+                aria-invalid={e.policies ? true : undefined}
+                aria-describedby="policies-list"
+                className="mt-0.5 h-6 w-6 shrink-0 rounded-md accent-clay"
+              />
+              <span>I agree to the Dgroup policies for my group.</span>
+            </label>
+            {agreed
+              ? DGROUP_POLICIES.map((p) => <input key={p.id} type="hidden" name={`policy_${p.id}`} value="on" />)
+              : null}
+            <button
+              type="button"
+              onClick={() => setShowPolicies((v) => !v)}
+              aria-expanded={showPolicies}
+              aria-controls="policies-list"
+              className="mt-2 ml-[2.4rem] min-h-11 text-[0.98rem] font-semibold text-clay underline underline-offset-4 hover:text-clay-deep"
+            >
+              {showPolicies ? "Hide the policies" : `Read the ${DGROUP_POLICIES.length} policies`}
+            </button>
+            <ul
+              id="policies-list"
+              hidden={!showPolicies}
+              className="mt-2 space-y-2.5 rounded-2xl bg-mist p-5 text-[0.98rem] leading-relaxed text-ink-soft"
+            >
+              {DGROUP_POLICIES.map((p) => (
+                <li key={p.id}>
+                  <span className="font-semibold text-ink">{p.title}.</span> {p.body}
+                </li>
+              ))}
+            </ul>
+            <FieldError text={e.policies} />
+          </div>
+        </Question>
+      </div>
 
       {state?.formError ? (
         <p
           id="form-error"
           tabIndex={-1}
           role="alert"
-          className="mt-2 border-l-2 border-clay pl-4 text-[1rem] font-semibold text-clay-deep outline-none"
+          className="mt-6 rounded-2xl bg-sky-wash px-5 py-4 text-[1rem] font-semibold text-sky outline-none"
         >
           {state.formError}
           {state.needsAuth ? (
@@ -431,7 +436,7 @@ function SlotStatus({ s, people, on }: { s: SlotOption; people: number; on: bool
       : people > s.fits
         ? [`Too full for ${people}`, "text-ink-mute"]
         : s.free <= 3
-          ? [`Only ${s.free} ${s.free === 1 ? "table" : "tables"} left`, "font-semibold text-clay-deep"]
-          : [`${s.free} tables free`, on ? "font-semibold text-clay" : "text-moss"];
-  return <span className={cx("shrink-0 text-right text-[0.95rem]", tone)}>{text}</span>;
+          ? [`Only ${s.free} left`, on ? "text-paper-bright" : "font-semibold text-clay-deep"]
+          : [`${s.free} tables free`, on ? "text-paper-bright/85" : "text-moss"];
+  return <span className={cx("shrink-0 text-right text-[0.92rem] font-medium", tone)}>{text}</span>;
 }

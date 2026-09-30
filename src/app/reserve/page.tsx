@@ -1,76 +1,129 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
-import { Container, Section } from "@/components/ui";
+import { ButtonLink, Container, Section } from "@/components/ui";
+import { IconLine, StatusBadge } from "@/components/booking";
+import type { UiIconName } from "@/components/icons";
+import { currentUser, hasAccounts } from "@/lib/auth/session";
+import { whenLabel } from "@/lib/booking-status";
+import { MAX_GROUP_SIZE } from "@/lib/dgroup-tables";
+import { manilaDateKey } from "@/lib/format";
+import { getMyUpcoming } from "@/lib/queries";
 
 export const metadata: Metadata = {
   title: "Reserve",
   description:
-    "Book a table for your Dgroup, request a room for a ministry gathering, or reserve the court at CCF Centris.",
+    "Book a table for your Dgroup or request a room for a ministry gathering at CCF Centris.",
 };
 
-const OPTIONS: { title: string; body: string; href: string | null }[] = [
+/** Signed-in members see their next booking, so render per visitor. */
+export const dynamic = "force-dynamic";
+
+/**
+ * What can be booked, as calm cards (Calendly's event types, 2026-09-30):
+ * when it's open, three quick facts, and one button each. A member's next
+ * booking sits on top, so this page is also the way back to what they've
+ * booked.
+ */
+const OPTIONS: {
+  title: string;
+  badge: string;
+  href: string;
+  cta: string;
+  facts: [UiIconName, string][];
+}[] = [
   {
-    title: "A table for my Dgroup",
-    body: "Monday to Friday, 1:00 to 9:30 PM, in the Dgroup Lounge or Welcome Center. We assign the table.",
+    title: "Dgroup table",
+    badge: "Mon–Fri",
     href: "/reserve/dgroup",
+    cta: "Book a table",
+    facts: [
+      ["clock", "2½ hours, from 1, 4 or 7 PM"],
+      ["people", `Up to ${MAX_GROUP_SIZE} people`],
+      ["check", "Confirmed at once"],
+    ],
   },
   {
-    title: "A room for a ministry gathering",
-    body: "John, Luke, Matthew, Mark, the Welcome Center or the Dgroup Lounge. Free for ministries, confirmed by the facilities team.",
+    title: "Ministry room",
+    badge: "Mon–Sat",
     href: "/centris/reserve",
-  },
-  {
-    title: "The court",
-    body: "Basketball and pickleball bookings are on their way.",
-    href: null,
+    cta: "Request a room",
+    facts: [
+      ["clock", "Any time, 9:00 AM to 9:30 PM"],
+      ["people", "Rooms for 36 to 90"],
+      ["check", "The facilities team confirms"],
+    ],
   },
 ];
 
-export default function ReservePage() {
+export default async function ReservePage() {
+  const today = manilaDateKey();
+  const user = hasAccounts() ? await currentUser() : null;
+  const next = user ? (await getMyUpcoming(today))[0] : undefined;
+
   return (
     <>
       <PageHeader
         eyebrow="Reserve"
         title="What would you like to book?"
-        lead="Use a space at CCF Centris for your Dgroup, your ministry, or a game."
+        lead="Use a space at CCF Centris for your Dgroup or your ministry."
       />
-      <Section>
-        <Container className="max-w-3xl">
-          <ul className="space-y-px surface-grid">
+      <Section tone="mist">
+        <Container className="max-w-5xl">
+          {next ? (
+            <Link
+              href="/my/reservations"
+              className="mb-8 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-[1.5rem] bg-night px-7 py-6 text-paper-bright transition-colors hover:bg-ink"
+            >
+              <span className="min-w-0">
+                <span className="block text-[0.8rem] font-semibold uppercase tracking-[0.08em] text-paper-bright/70">
+                  Your next booking
+                </span>
+                <span className="mt-1 block text-[1.1rem] font-semibold">
+                  {next.title} · {whenLabel(next.date, today)}, {next.time.split(" – ")[0]}
+                </span>
+              </span>
+              <span className="text-[0.98rem] font-semibold text-clay-lift">Manage</span>
+            </Link>
+          ) : null}
+
+          <ul className="grid gap-6 md:grid-cols-3">
             {OPTIONS.map((o) => (
-              <li key={o.title}>
-                {o.href ? (
-                  <Link
-                    href={o.href}
-                    className="group flex items-center justify-between gap-6 bg-paper-bright p-6 transition-colors hover:bg-bone/50"
-                  >
-                    <span>
-                      <span className="font-display block text-2xl leading-tight text-ink">{o.title}</span>
-                      <span className="mt-1.5 block text-[0.95rem] text-ink-soft">{o.body}</span>
-                    </span>
-                    <span aria-hidden className="label shrink-0 text-clay transition-transform group-hover:translate-x-0.5">
-                      →
-                    </span>
-                  </Link>
-                ) : (
-                  <div className="flex items-center justify-between gap-6 bg-paper-bright p-6">
-                    <span>
-                      <span className="font-display block text-2xl leading-tight text-ink-mute">{o.title}</span>
-                      <span className="mt-1.5 block text-[0.95rem] text-ink-mute">{o.body}</span>
-                    </span>
-                    <span className="label shrink-0 text-ink-mute">Soon</span>
-                  </div>
-                )}
+              <li key={o.title} className="calm-card flex flex-col p-8">
+                <span>
+                  <StatusBadge tone="ok">{o.badge}</StatusBadge>
+                </span>
+                <h2 className="mt-4 text-[1.4rem] font-semibold tracking-[-0.01em] text-ink">{o.title}</h2>
+                <div className="mt-4 space-y-2.5">
+                  {o.facts.map(([icon, text]) => (
+                    <IconLine key={text} icon={icon}>
+                      {text}
+                    </IconLine>
+                  ))}
+                </div>
+                <div className="mt-auto pt-8">
+                  <ButtonLink href={o.href} size="lg">
+                    {o.cta}
+                  </ButtonLink>
+                </div>
               </li>
             ))}
+            <li className="calm-card flex flex-col p-8">
+              <span>
+                <StatusBadge tone="grey">Soon</StatusBadge>
+              </span>
+              <h2 className="mt-4 text-[1.4rem] font-semibold tracking-[-0.01em] text-ink-mute">The court</h2>
+              <p className="mt-4 text-[1rem] leading-relaxed text-ink-mute">
+                Basketball and pickleball bookings open after launch.
+              </p>
+            </li>
           </ul>
-          <p className="mt-8 text-[0.95rem] text-ink-soft">
+
+          <p className="mt-10 text-center text-[1rem] text-ink-soft">
             Already booked?{" "}
-            <Link href="/my/reservations" className="text-clay underline underline-offset-4">
-              See and manage your reservations
+            <Link href="/my/reservations" className="font-semibold text-clay underline-offset-4 hover:underline">
+              See your reservations
             </Link>
-            .
           </p>
         </Container>
       </Section>

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { dgroupEvent, googleCalendarLink, icsFile, manilaParts, roomEvent, utcStamp } from "./calendar";
+import { dgroupEvent, googleCalendarLink, icsFile, icsHref, manilaParts, roomEvent, utcStamp } from "./calendar";
 
 const table = dgroupEvent({ date: "2026-10-06", slotId: "1600", roomSlug: "welcome-center", labels: ["4", "5"] });
 
@@ -43,4 +43,8 @@ test("a room request says it's waiting until it's confirmed", () => {
   assert.equal(roomEvent({ ...r, confirmed: false }).title, "Elevate huddle (room requested)");
   assert.equal(roomEvent({ ...r, confirmed: true }).title, "Elevate huddle");
   assert.equal(roomEvent({ ...r, confirmed: true }).uid, "room-R-7K2M");
+});
+
+test("the page link is the same on every render", () => {
+  assert.equal(icsHref(table), icsHref(table));
 });

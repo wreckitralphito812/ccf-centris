@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type ReactNode, type Ref } from "react";
 import { cx } from "./ui";
-import { Field, controlClass } from "./form";
+import { Field } from "./form";
+import { UiIcon, type UiIconName } from "./icons";
 import { googleCalendarLink, icsHref, type CalendarEvent } from "@/lib/calendar";
+import type { BadgeTone } from "@/lib/booking-status";
 
 /* ---------------------------------------------------------------------------
    Pieces shared by the booking flows (Dgroup tables, courts and rooms), so
@@ -93,7 +95,7 @@ export function ContactFields({ fields }: { fields: ContactField[] }) {
 
   if (!editing && !hasError) {
     return (
-      <div className="flex items-center justify-between gap-x-6 gap-y-2 surface px-5 py-4">
+      <div className="flex items-center justify-between gap-x-6 gap-y-2 rounded-2xl bg-mist px-5 py-4">
         <div className="min-w-0 text-[1.05rem] leading-relaxed">
           <p className="break-words font-semibold text-ink">{fields[0]?.value.trim()}</p>
           {fields.slice(1).map((f) =>
@@ -137,7 +139,7 @@ export function ContactFields({ fields }: { fields: ContactField[] }) {
               inputMode={f.type === "email" ? "email" : f.type === "tel" ? "tel" : undefined}
               autoComplete={f.autoComplete}
               defaultValue={f.value}
-              className={controlClass}
+              className="calm-input"
             />
           )}
         </Field>
@@ -147,26 +149,33 @@ export function ContactFields({ fields }: { fields: ContactField[] }) {
 }
 
 /* ---------------------------------------------------------------------------
-   The step-by-step layout both booking flows use since the design review of
-   2026-09-30: numbered questions with big targets, and a bar pinned to the
-   bottom with the answers so far and the one button.
+   The calm booking kit (design review 2026-09-30, Calendly-inspired): plain
+   question headings on one big card, soft choice rows that turn solid teal
+   when chosen, date circles for days, and a bar pinned to the bottom with the
+   answers so far and the one button.
    --------------------------------------------------------------------------- */
 
-/** A choice card's look: teal ring when chosen, greyed when it can't be picked. */
+/** A choice row's look: soft edge, solid teal when chosen, faded when it can't be picked. */
 export function choiceClass(on: boolean, disabled = false) {
   return cx(
-    "rounded-2xl border transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-clay has-[:focus-visible]:ring-offset-2",
+    "rounded-[0.875rem] border transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-clay has-[:focus-visible]:ring-offset-2",
     disabled
-      ? "cursor-not-allowed border-hairline bg-paper"
+      ? "cursor-not-allowed border-rule bg-mist text-ink-mute"
       : on
-        ? "cursor-pointer border-clay bg-clay/[0.06] ring-2 ring-clay"
-        : "cursor-pointer border-hairline bg-paper-bright hover:border-ink/40",
+        ? "cursor-pointer border-clay bg-clay text-paper-bright"
+        : "cursor-pointer border-edge bg-paper-bright text-ink hover:border-clay/50",
   );
 }
 
-/** One numbered question. Its heading (by `id`) labels the choices inside. */
+/** A soft pill choice (set-up, food, equipment). */
+export const calmChipClass = (on: boolean) =>
+  cx(
+    "btn-press inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-full border px-5 text-[1rem] transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-clay",
+    on ? "border-clay bg-clay text-paper-bright" : "border-edge bg-paper-bright text-ink hover:border-clay/50",
+  );
+
+/** One question in a booking card. Its heading (by `id`) labels the choices inside. */
 export function Question({
-  n,
   id,
   title,
   note,
@@ -174,7 +183,6 @@ export function Question({
   level = 3,
   children,
 }: {
-  n: number;
   id: string;
   title: string;
   note?: ReactNode;
@@ -184,21 +192,15 @@ export function Question({
 }) {
   const H = level === 2 ? "h2" : "h3";
   return (
-    <section className="border-t border-hairline py-8 first:border-t-0 first:pt-0">
+    <section className="border-t border-rule py-8 first:border-t-0 first:pt-0 last:pb-0">
       <H
         id={id}
         tabIndex={-1}
-        className="flex scroll-mt-28 items-center gap-3 text-[1.3rem] font-semibold leading-tight text-ink outline-none sm:text-[1.4rem]"
+        className="scroll-mt-28 text-[1.2rem] font-semibold leading-tight tracking-[-0.01em] text-ink outline-none"
       >
-        <span
-          aria-hidden
-          className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-clay text-[0.95rem] text-paper-bright"
-        >
-          {n}
-        </span>
         {title}
       </H>
-      {note ? <p className="mt-1.5 pl-11 text-[1rem] leading-relaxed text-ink-mute">{note}</p> : null}
+      {note ? <p className="mt-1.5 text-[0.95rem] leading-relaxed text-ink-mute">{note}</p> : null}
       <div className="mt-5">{children}</div>
       <FieldError text={error} />
     </section>
@@ -211,6 +213,80 @@ export function FieldError({ text }: { text?: string }) {
       {text}
     </p>
   ) : null;
+}
+
+/** A day as a date circle (Calendly-style): the weekday over the date, a note under it. */
+export function DayCircle({
+  name,
+  value,
+  weekday,
+  day,
+  on,
+  disabled,
+  note,
+  onChange,
+}: {
+  name: string;
+  value: string;
+  weekday: string;
+  day: string | number;
+  on: boolean;
+  disabled?: boolean;
+  note?: string;
+  onChange: () => void;
+}) {
+  return (
+    <label className={cx("group flex flex-col items-center gap-2 text-center", disabled ? "cursor-not-allowed" : "cursor-pointer")}>
+      <span className="text-[0.75rem] font-semibold uppercase tracking-[0.06em] text-ink-mute">{weekday}</span>
+      <input
+        type="radio"
+        name={name}
+        value={value}
+        checked={on}
+        disabled={disabled}
+        onChange={onChange}
+        className="peer sr-only"
+      />
+      <span
+        className={cx(
+          "grid h-11 w-11 place-items-center rounded-full text-[1.05rem] font-semibold tabular-nums sm:h-12 sm:w-12 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-clay peer-focus-visible:ring-offset-2",
+          disabled
+            ? "text-ink-mute/45"
+            : on
+              ? "bg-clay text-paper-bright shadow-[0_6px_14px_-4px_rgba(0,118,130,0.45)]"
+              : "bg-clay-wash text-clay group-hover:bg-clay/15",
+        )}
+      >
+        {day}
+      </span>
+      <span className="h-4 text-[0.72rem] text-ink-mute">{note ?? ""}</span>
+    </label>
+  );
+}
+
+const BADGE: Record<BadgeTone, string> = {
+  ok: "bg-clay-wash text-clay-deep",
+  wait: "bg-sky-wash text-sky",
+  grey: "bg-rule text-ink-mute",
+};
+
+/** A small rounded status tag: Confirmed (teal), Awaiting approval (maroon), the rest grey. */
+export function StatusBadge({ tone, children }: { tone: BadgeTone; children: ReactNode }) {
+  return (
+    <span className={cx("inline-flex whitespace-nowrap rounded-full px-3 py-1 text-[0.8rem] font-medium", BADGE[tone])}>
+      {children}
+    </span>
+  );
+}
+
+/** One fact with its line icon. */
+export function IconLine({ icon, children }: { icon: UiIconName; children: ReactNode }) {
+  return (
+    <p className="flex items-start gap-3 text-[1rem] leading-snug text-ink-soft">
+      <UiIcon name={icon} className="mt-0.5 h-[18px] w-[18px] shrink-0 text-clay" />
+      <span>{children}</span>
+    </p>
+  );
 }
 
 /** A big round − or + for a headcount. */
@@ -231,7 +307,7 @@ export function StepButton({
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      className="btn-press grid h-14 w-14 shrink-0 place-items-center rounded-full border border-ink/25 bg-paper-bright text-2xl text-ink transition-colors hover:border-ink disabled:opacity-35 disabled:hover:border-ink/25"
+      className="btn-press grid h-[3.25rem] w-[3.25rem] shrink-0 place-items-center rounded-full border border-edge bg-paper-bright text-2xl text-clay transition-colors hover:border-clay disabled:text-ink-mute/40 disabled:hover:border-edge"
     >
       {children}
     </button>
@@ -240,53 +316,81 @@ export function StepButton({
 
 /** The headcount box between the − and + buttons. Digits only; empty until chosen. */
 export const countInputClass =
-  "h-14 w-20 rounded-2xl border border-hairline bg-paper-bright text-center text-3xl font-semibold tabular-nums text-ink focus:border-clay focus:outline-none focus:ring-2 focus:ring-clay";
+  "h-[3.25rem] w-[4.5rem] rounded-[0.875rem] bg-mist text-center text-[1.5rem] font-semibold tabular-nums text-ink focus:bg-paper-bright focus:outline-none focus:ring-2 focus:ring-clay";
 
 /** The main button in the pinned bar. */
 export const barButtonClass =
-  "btn-press shrink-0 rounded-full bg-clay px-6 py-4 text-[1.05rem] font-semibold text-paper-bright transition-colors hover:bg-clay-deep disabled:cursor-not-allowed disabled:bg-ink/15 disabled:text-ink-mute sm:px-8";
+  "btn-press shrink-0 rounded-full bg-clay px-6 py-4 text-[1rem] font-semibold text-paper-bright shadow-[0_8px_20px_-8px_rgba(0,118,130,0.55)] transition-colors hover:bg-clay-deep disabled:cursor-not-allowed disabled:bg-ink/10 disabled:text-ink-mute disabled:shadow-none sm:px-8";
 
 /**
  * The bar pinned to the bottom of the screen. The form above it needs bottom
  * padding (pb-36) so the bar never covers the last field.
  */
-export function BookingBar({ width = "max-w-3xl", children }: { width?: string; children: ReactNode }) {
+export function BookingBar({ width = "max-w-2xl", children }: { width?: string; children: ReactNode }) {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-paper-bright/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-12px_rgba(20,32,33,0.18)] backdrop-blur">
-      <div className={cx("mx-auto flex items-center gap-3 px-5 py-3.5 sm:gap-4 sm:px-8", width)}>{children}</div>
+    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-rule bg-paper-bright/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+      <div className={cx("mx-auto flex items-center gap-3 px-5 py-4 sm:gap-4 sm:px-8", width)}>{children}</div>
+    </div>
+  );
+}
+
+/** The centred card both flows end on: "You're booked" or "Request sent". */
+export function Confirmation({
+  title,
+  note,
+  focusRef,
+  children,
+}: {
+  title: string;
+  note: ReactNode;
+  focusRef?: Ref<HTMLDivElement>;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      ref={focusRef}
+      tabIndex={-1}
+      role="status"
+      className="calm-card mx-auto max-w-[35rem] px-7 py-10 text-center outline-none sm:px-10"
+    >
+      <span
+        aria-hidden
+        className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-clay text-paper-bright shadow-[0_8px_20px_-8px_rgba(0,118,130,0.55)]"
+      >
+        <UiIcon name="check" className="h-7 w-7" />
+      </span>
+      <h2 className="mt-5 text-[1.75rem] font-semibold tracking-[-0.02em] text-ink">{title}</h2>
+      <p className="mt-2 text-[1rem] text-ink-mute">{note}</p>
+      <div className="mt-8 space-y-6 border-t border-rule pt-7 text-left">{children}</div>
     </div>
   );
 }
 
 /**
- * Add to calendar, on a booking's confirmation: Google Calendar in a new tab,
- * or an .ics file for Apple Calendar and Outlook.
+ * Add to calendar: Google Calendar in a new tab, or an .ics file for Apple
+ * Calendar and Outlook. `bare` drops the label, inside a Confirmation.
  */
-export function AddToCalendar({ event }: { event: CalendarEvent }) {
-  const pill =
-    "btn-press inline-flex min-h-12 items-center gap-2 rounded-full border border-clay px-5 py-2.5 text-[1rem] font-semibold text-clay transition-colors hover:bg-clay hover:text-paper-bright";
+export function AddToCalendar({ event, bare = false }: { event: CalendarEvent; bare?: boolean }) {
+  const base =
+    "btn-press inline-flex min-h-12 items-center gap-2 rounded-full border border-clay px-5 py-2.5 text-[0.98rem] font-semibold transition-colors";
   return (
     <div>
-      <p className="text-[1rem] font-semibold text-ink">Add it to your calendar</p>
-      <div className="mt-3 flex flex-wrap gap-2.5">
-        <a href={googleCalendarLink(event)} target="_blank" rel="noreferrer" className={pill}>
-          <CalendarGlyph />
+      {bare ? null : <p className="text-[1rem] font-semibold text-ink">Add it to your calendar</p>}
+      <div className={cx("flex flex-wrap gap-2.5", !bare && "mt-3")}>
+        <a
+          href={googleCalendarLink(event)}
+          target="_blank"
+          rel="noreferrer"
+          className={cx(base, "bg-clay text-paper-bright hover:bg-clay-deep")}
+        >
+          <UiIcon name="calendar" className="h-4 w-4" />
           Google Calendar
         </a>
-        <a href={icsHref(event)} download="ccf-centris.ics" className={pill}>
-          <CalendarGlyph />
+        <a href={icsHref(event)} download="ccf-centris.ics" className={cx(base, "text-clay hover:bg-clay-wash")}>
+          <UiIcon name="calendar" className="h-4 w-4" />
           Apple or Outlook
         </a>
       </div>
     </div>
-  );
-}
-
-function CalendarGlyph() {
-  return (
-    <svg aria-hidden viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" className="h-4 w-4">
-      <rect x="2" y="3" width="12" height="11" rx="2" />
-      <path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" />
-    </svg>
   );
 }

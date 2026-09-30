@@ -99,7 +99,7 @@ export function Section({
 }: {
   children: ReactNode;
   className?: string;
-  tone?: "paper" | "deep" | "bright" | "ink";
+  tone?: "paper" | "deep" | "bright" | "ink" | "mist";
   id?: string;
 }) {
   const tones = {
@@ -107,6 +107,8 @@ export function Section({
     deep: "bg-paper-deep text-ink",
     bright: "bg-paper-bright text-ink",
     ink: "bg-night text-paper-bright",
+    // The calm booking ground (2026-09-30).
+    mist: "bg-mist text-ink",
   } as const;
   return (
     <section id={id} className={cx("py-12 sm:py-24", tones[tone], className)}>

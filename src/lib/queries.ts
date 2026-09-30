@@ -7,6 +7,7 @@ import { hasSupabase, supabaseAdmin, SATELLITE_ID } from "@/lib/supabase/server"
 import { currentUser } from "@/lib/auth/session";
 import { markSlots, type Busy } from "@/lib/availability";
 import type { DgroupHold } from "@/lib/dgroup-tables";
+import { mergeUpcoming, type Upcoming } from "@/lib/my-bookings";
 import { addons, communities, facilities } from "@/data/center";
 import {
   announcements,
@@ -636,6 +637,12 @@ export async function getMyDgroupBookings(today: string): Promise<MyDgroupBookin
     return [];
   }
   return (data ?? []) as MyDgroupBooking[];
+}
+
+/** Every upcoming booking the member has, tables and rooms, soonest first. */
+export async function getMyUpcoming(today: string): Promise<Upcoming[]> {
+  const [tables, rooms] = await Promise.all([getMyDgroupBookings(today), getMyBookings()]);
+  return mergeUpcoming(tables, rooms);
 }
 
 /**

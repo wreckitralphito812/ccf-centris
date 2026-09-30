@@ -157,3 +157,84 @@ export function YouTubeGlyph({ className }: { className?: string }) {
     </svg>
   );
 }
+
+/**
+ * Line icons for the booking pages (2026-09-30): 1.5px stroke, round caps,
+ * currentColor. They replace emoji and text arrows in facts and details.
+ */
+export type UiIconName =
+  | "calendar"
+  | "clock"
+  | "people"
+  | "pin"
+  | "check"
+  | "chevron-right"
+  | "chevron-left";
+
+export function UiIcon({
+  name,
+  className = "h-[18px] w-[18px]",
+}: {
+  name: UiIconName;
+  className?: string;
+}) {
+  const p = {
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.5,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+    className,
+  };
+  switch (name) {
+    case "calendar":
+      return (
+        <svg {...p}>
+          <rect x="3.5" y="5" width="17" height="15" rx="2.5" />
+          <path d="M3.5 10h17M8 3v4M16 3v4" />
+        </svg>
+      );
+    case "clock":
+      return (
+        <svg {...p}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v5l3 2" />
+        </svg>
+      );
+    case "people":
+      return (
+        <svg {...p}>
+          <circle cx="9" cy="8" r="3.5" />
+          <path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5" />
+          <path d="M16 4.8a3.5 3.5 0 0 1 0 6.4M18.5 14.8c1.6.8 2.7 2.5 3 5.2" />
+        </svg>
+      );
+    case "pin":
+      return (
+        <svg {...p}>
+          <path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z" />
+          <circle cx="12" cy="9.5" r="2.5" />
+        </svg>
+      );
+    case "check":
+      return (
+        <svg {...p}>
+          <path d="M5 12.5l4.5 4.5L19 7.5" />
+        </svg>
+      );
+    case "chevron-right":
+      return (
+        <svg {...p}>
+          <path d="M9 5l7 7-7 7" />
+        </svg>
+      );
+    case "chevron-left":
+      return (
+        <svg {...p}>
+          <path d="M15 5l-7 7 7 7" />
+        </svg>
+      );
+  }
+}
