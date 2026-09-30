@@ -6,6 +6,7 @@ import { getCurrentIntercede } from "@/lib/content/public-queries";
 import { hasSupabase, supabaseAdmin, SATELLITE_ID } from "@/lib/supabase/server";
 import { currentUser } from "@/lib/auth/session";
 import { markSlots, type Busy } from "@/lib/availability";
+import type { DgroupHold } from "@/lib/dgroup-tables";
 import { addons, communities, facilities } from "@/data/center";
 import {
   announcements,
@@ -635,6 +636,27 @@ export async function getMyDgroupBookings(today: string): Promise<MyDgroupBookin
     return [];
   }
   return (data ?? []) as MyDgroupBooking[];
+}
+
+/**
+ * Every table held on the given days, for the booking form's "tables free"
+ * counts. One read for the whole week rather than one per slot. Holds only,
+ * no names. Null when it can't be read, and the form then books without
+ * showing counts.
+ */
+export async function getDgroupHolds(dates: string[]): Promise<DgroupHold[] | null> {
+  if (!hasSupabase() || !dates.length) return [];
+  const { data, error } = await supabaseAdmin()
+    .from("dgroup_table_bookings")
+    .select("booked_on, slot_id, room_slug, table_labels")
+    .eq("satellite_id", SATELLITE_ID)
+    .in("booked_on", dates)
+    .in("status", ["pending", "confirmed"]);
+  if (error) {
+    console.error("getDgroupHolds failed", error);
+    return null;
+  }
+  return (data ?? []) as DgroupHold[];
 }
 
 // --- Admin queues ---------------------------------------------------------

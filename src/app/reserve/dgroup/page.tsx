@@ -18,10 +18,11 @@ import {
   roomName,
   slotLabel,
   tablesLabel,
+  withAvailability,
 } from "@/lib/dgroup-tables";
 import { manilaDateKey } from "@/lib/format";
 import { currentUser, hasAccounts } from "@/lib/auth/session";
-import { getMyContact, getMyDgroupBookings } from "@/lib/queries";
+import { getDgroupHolds, getMyContact, getMyDgroupBookings } from "@/lib/queries";
 import { BookingForm } from "./booking-form";
 import { MyBooking } from "./my-booking";
 
@@ -50,7 +51,7 @@ export default function DgroupTablesPage() {
       <PageHeader
         eyebrow="Reserve · Dgroup meeting"
         title="Book a table for your Dgroup."
-        lead="Pick a day and time, tell us how many are coming, and we'll assign your table."
+        lead="Four quick questions. We'll pick the table."
       />
       <Section>
         <Container className="max-w-3xl">
@@ -112,8 +113,14 @@ async function Booking() {
     );
   }
 
-  const nights = nightOptions(today, manilaMinutes());
-  const [contact, mine] = await Promise.all([getMyContact(), getMyDgroupBookings(today)]);
+  const open = nightOptions(today, manilaMinutes());
+  const [contact, mine, holds] = await Promise.all([
+    getMyContact(),
+    getMyDgroupBookings(today),
+    getDgroupHolds(open.map((n) => n.date)),
+  ]);
+  // Without the holds the form still books; it just can't show what's left.
+  const nights = holds ? withAvailability(open, holds) : open;
 
   return (
     <div className="space-y-14">
