@@ -5,6 +5,7 @@ import {
   slotLabel,
   tablesLabel,
 } from "@/lib/dgroup-tables";
+import { dgroupEvent, googleCalendarLink, icsFile } from "@/lib/calendar";
 import { CONTACT, SITE } from "@/lib/site";
 
 /**
@@ -12,7 +13,9 @@ import { CONTACT, SITE } from "@/lib/site";
  *
  * Minimal on purpose, in the spirit of a one-screen transactional email: the
  * logo, one headline, the table in large type, the floor plan with the table
- * highlighted, one button, then the policies and a quiet footer. Table-based
+ * highlighted, one button, then the policies and a quiet footer. Confirmed and
+ * changed bookings also carry an "Add to Google Calendar" link and an .ics
+ * file for Apple Calendar and Outlook (design review, 2026-09-30). Table-based
  * layout with inline styles, because that's what every mail client renders the
  * same way. Every image and link is absolute.
  */
@@ -40,7 +43,12 @@ const FONT = "'Proxima Nova', Montserrat, 'Helvetica Neue', Arial, sans-serif";
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-export function bookingEmail(d: BookingEmailData): { subject: string; html: string; text: string } {
+export function bookingEmail(d: BookingEmailData): {
+  subject: string;
+  html: string;
+  text: string;
+  attachments?: { filename: string; content: string }[];
+} {
   const first = d.leaderName.split(" ")[0];
   const tables = tablesLabel(d.labels);
   const room = roomName(d.roomSlug);
@@ -48,6 +56,8 @@ export function bookingEmail(d: BookingEmailData): { subject: string; html: stri
   const manage = `${d.origin}/reserve/dgroup#your-tables`;
   const plan = `${d.origin}/api/dgroup-plan?room=${d.roomSlug}&t=${d.labels.join(",")}`;
   const cancelled = d.kind === "cancelled";
+  const event = dgroupEvent({ date: d.date, slotId: d.slotId, roomSlug: d.roomSlug, labels: d.labels });
+  const calendar = googleCalendarLink(event);
 
   const subject = {
     confirmed: `Your Dgroup table: ${tables}, ${room} · ${nightLabel(d.date)}`,
@@ -122,7 +132,9 @@ export function bookingEmail(d: BookingEmailData): { subject: string; html: stri
     ${
       cancelled
         ? ""
-        : `<p style="margin:14px auto 0;max-width:420px;font:400 13px/1.5 ${FONT};color:${MUTE};">To change the headcount or time, sign in and edit your booking. If you can't make it, please cancel so another Dgroup can use the table.</p>`
+        : `<p style="margin:18px 0 0;font:600 15px/1.5 ${FONT};"><a href="${esc(calendar)}" style="color:${TEAL};">Add to Google Calendar</a></p>
+    <p style="margin:4px 0 0;font:400 13px/1.5 ${FONT};color:${MUTE};">Using Apple Calendar or Outlook? Open the attached invite.</p>
+    <p style="margin:14px auto 0;max-width:420px;font:400 13px/1.5 ${FONT};color:${MUTE};">To change the headcount or time, sign in and edit your booking. If you can't make it, please cancel so another Dgroup can use the table.</p>`
     }
   </td></tr>
 
@@ -158,6 +170,7 @@ export function bookingEmail(d: BookingEmailData): { subject: string; html: stri
     `Leader: ${d.leaderName}`,
     "",
     `${cancelled ? "Book again" : "Change or cancel"}: ${manage}`,
+    ...(cancelled ? [] : [`Add to Google Calendar: ${calendar}`]),
     ...(cancelled
       ? []
       : ["", "Before you come:", ...DGROUP_POLICIES.map((p) => `- ${p.title}. ${p.body}`)]),
@@ -166,5 +179,7 @@ export function bookingEmail(d: BookingEmailData): { subject: string; html: stri
     `Questions? ${CONTACT.messageEmail}`,
   ].join("\n");
 
-  return { subject, html, text };
+  return cancelled
+    ? { subject, html, text }
+    : { subject, html, text, attachments: [{ filename: "dgroup-table.ics", content: icsFile(event) }] };
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createRoomRequest, roomBusyTimes, type RoomRequestResult } from "@/app/actions/reservations";
 import {
+  AddToCalendar,
   BookingBar,
   FieldError,
   Question,
@@ -13,6 +14,7 @@ import {
   countInputClass,
 } from "@/components/booking";
 import { cx } from "@/components/ui";
+import { roomEvent, type CalendarEvent } from "@/lib/calendar";
 import {
   EQUIPMENT,
   FOOD,
@@ -297,6 +299,19 @@ function Request({
         reference={state.reference ?? "—"}
         email={email}
         emailed={Boolean(state.emailed)}
+        event={
+          timed
+            ? roomEvent({
+                reference: state.reference ?? "request",
+                activity,
+                rooms: picked.map(roomName),
+                date,
+                start: toHHMM(start!),
+                end: toHHMM(end!),
+                confirmed: false,
+              })
+            : null
+        }
         rows={[
           ["Event", activity],
           ["When", timed ? `${dateLong(date)}, ${timeLabel(start!)} to ${timeLabel(end!)}` : "—"],
@@ -859,12 +874,14 @@ function Sent({
   email,
   emailed,
   rows,
+  event,
   onAnother,
 }: {
   reference: string;
   email: string;
   emailed: boolean;
   rows: [string, string][];
+  event: CalendarEvent | null;
   onAnother: () => void;
 }) {
   const steps: [string, string, boolean][] = [
@@ -911,6 +928,14 @@ function Sent({
             </li>
           ))}
         </ol>
+        {event ? (
+          <div className="mt-9">
+            <AddToCalendar event={event} />
+            <p className="mt-2 text-[0.92rem] text-ink-mute">
+              It&rsquo;s marked as requested. The confirmation email brings the final invite.
+            </p>
+          </div>
+        ) : null}
         <div className="mt-9 flex flex-wrap gap-6">
           <Link href="/my/reservations" className="text-[1rem] font-semibold text-clay underline underline-offset-4">
             See my requests

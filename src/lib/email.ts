@@ -18,6 +18,8 @@ export async function sendEmail(msg: {
   subject: string;
   html: string;
   text: string;
+  /** Files to attach, e.g. a booking's .ics. Content is plain text. */
+  attachments?: { filename: string; content: string }[];
 }): Promise<{ ok: boolean }> {
   const key = process.env.RESEND_API_KEY;
   if (!key) {
@@ -34,6 +36,14 @@ export async function sendEmail(msg: {
         subject: msg.subject,
         html: msg.html,
         text: msg.text,
+        ...(msg.attachments?.length
+          ? {
+              attachments: msg.attachments.map((a) => ({
+                filename: a.filename,
+                content: Buffer.from(a.content, "utf8").toString("base64"),
+              })),
+            }
+          : {}),
       }),
     });
     if (!res.ok) {

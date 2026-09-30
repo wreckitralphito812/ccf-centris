@@ -32,6 +32,9 @@ export interface DgroupBookingResult {
     tables: string;
     night: string;
     slot: string;
+    /** Raw "YYYY-MM-DD" and slot id, for Add to calendar. */
+    date: string;
+    slotId: string;
     groupSize: number;
     email: string;
     emailed: boolean;
@@ -172,6 +175,8 @@ export async function reserveDgroupTable(
           tables: tablesLabel(choice.labels),
           night: nightLabel(b.date),
           slot: slotLabel(b.slotId),
+          date: b.date,
+          slotId: b.slotId,
           groupSize: b.groupSize,
           email: b.leaderEmail,
           emailed,
