@@ -140,7 +140,7 @@ export default async function SearchPage({
                 body="Try a broader word, or browse one of the main sections."
                 action={
                   <div className="flex flex-wrap justify-center gap-3">
-                    <ButtonLink href="/visit/new-here" tone="outline">
+                    <ButtonLink href="/visit" tone="outline">
                       Read New here
                     </ButtonLink>
                     <ButtonLink href="/contact">Ask us directly</ButtonLink>

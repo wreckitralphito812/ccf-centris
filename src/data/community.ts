@@ -177,7 +177,7 @@ export const announcements: Announcement[] = [
     is_sitewide: true,
     starts_at: new Date(Date.now() - 86_400_000).toISOString(),
     ends_at: new Date(Date.now() + 30 * 86_400_000).toISOString(),
-    link_href: "/visit/new-here",
+    link_href: "/visit",
     link_label: "Plan your first visit",
   },
 ];

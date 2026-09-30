@@ -32,7 +32,6 @@ const COLUMNS: FooterColumn[] = [
     heading: "Plan a visit",
     id: "footer-visit",
     links: [
-      { label: "New here", href: "/visit/new-here" },
       { label: "Getting here", href: "/visit#getting-here" },
     ],
   },

@@ -55,7 +55,7 @@ export function InterestForm({
             Browse other groups
           </Link>
           <Link
-            href="/visit/new-here"
+            href="/visit"
             className="btn-press label rounded-full border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
           >
             Plan your visit

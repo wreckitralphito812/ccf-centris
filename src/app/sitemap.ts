@@ -8,7 +8,6 @@ import { SITE } from "@/lib/site";
 const PAGES: { path: string; priority: number }[] = [
   { path: "/", priority: 1 },
   { path: "/visit", priority: 0.9 },
-  { path: "/visit/new-here", priority: 0.8 },
   { path: "/watch", priority: 0.8 },
   { path: "/watch/4ws", priority: 0.6 },
   { path: "/watch/archive", priority: 0.5 },

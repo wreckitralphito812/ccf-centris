@@ -16,7 +16,8 @@ import {
   SOCIALS,
   YOUTUBE,
 } from "@/lib/site";
-import { ButtonLink, Container, LiveDot, Section } from "@/components/ui";
+import { ButtonLink, Container, LiveDot, Section, cx } from "@/components/ui";
+import { hasAccounts } from "@/lib/auth/session";
 import { HeroStage, Reveal, RevealHead, Stagger } from "@/components/motion";
 import {
   FacebookGlyph,
@@ -53,7 +54,7 @@ export default async function HomePage() {
   return (
     <>
       <Welcome live={service.current !== null} />
-      <NextSteps />
+      <NextSteps accounts={hasAccounts()} />
       <LastSunday replay={replay} fourWs={fourWs} />
     </>
   );
@@ -103,7 +104,7 @@ function Welcome({ live }: { live: boolean }) {
             {/* Full width while they stack, so two buttons of different word
                 lengths do not leave a ragged edge down the phone screen. */}
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <ButtonLink href="/visit/new-here" tone="on-dark" size="lg" className="w-full sm:w-auto">
+              <ButtonLink href="/visit" tone="on-dark" size="lg" className="w-full sm:w-auto">
                 Plan your visit
               </ButtonLink>
               <ButtonLink href="/watch" tone="outline-on-dark" size="lg" className="w-full sm:w-auto">
@@ -236,7 +237,17 @@ const NEXT_STEPS: {
   },
 ];
 
-function NextSteps() {
+/** First on the list once accounts are on: Ralph wants sign-up easy to find (2026-09-30). */
+const SIGN_UP_STEP: (typeof NEXT_STEPS)[number] = {
+  icon: "sparkle",
+  title: "Create your account",
+  body: "Book Dgroup tables and rooms, and post on the Prayer Wall.",
+  href: "/sign-up",
+  external: false,
+};
+
+function NextSteps({ accounts }: { accounts: boolean }) {
+  const steps = accounts ? [SIGN_UP_STEP, ...NEXT_STEPS] : NEXT_STEPS;
   return (
     <Section tone="paper" className="pb-14! pt-20! sm:pb-24! sm:pt-28!">
       <Container>
@@ -245,8 +256,8 @@ function NextSteps() {
           title="Take your next step"
           className="mx-auto max-w-2xl"
         />
-        <Stagger className="mt-10 grid gap-4 lg:grid-cols-3">
-          {NEXT_STEPS.map((step) => (
+        <Stagger className={cx("mt-10 grid gap-4", steps.length === 4 ? "sm:grid-cols-2" : "lg:grid-cols-3")}>
+          {steps.map((step) => (
             <StepCard key={step.title} {...step} />
           ))}
         </Stagger>

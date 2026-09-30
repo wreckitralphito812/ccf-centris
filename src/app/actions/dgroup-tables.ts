@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 
 import {
-  bookingOpen,
   candidateTables,
   manilaMinutes,
   nightLabel,
@@ -46,14 +45,6 @@ export interface DgroupBookingResult {
 }
 
 const GENERIC = "Something went wrong on our end. Try again in a moment.";
-
-/**
- * Lets a non-production deploy (a Vercel preview, or local dev) try the booking
- * flow before it opens on October 4. Never applies in production.
- */
-function bookingPreview(): boolean {
-  return process.env.DGROUP_BOOKING_PREVIEW === "1" && process.env.VERCEL_ENV !== "production";
-}
 
 /** Tables already held for a day and slot, as tableKey()s. */
 async function takenTables(date: string, slotId: string, exceptBooking?: string) {
@@ -126,9 +117,6 @@ export async function reserveDgroupTable(
     return { ok: false, formError: "Table reservations aren't switched on yet." };
   }
   const today = manilaDateKey();
-  if (!bookingOpen(today, bookingPreview())) {
-    return { ok: false, formError: "Dgroup table reservations open on Sunday, October 4." };
-  }
   const user = await currentUser();
   if (!user) return { ok: false, needsAuth: true, formError: "Sign in to reserve a table." };
 
@@ -146,9 +134,6 @@ export async function reserveDgroupTable(
 export async function rebookDgroupTable(id: string): Promise<DgroupBookingResult> {
   if (!hasSupabase()) return { ok: false, formError: GENERIC };
   const today = manilaDateKey();
-  if (!bookingOpen(today, bookingPreview())) {
-    return { ok: false, formError: "Dgroup table reservations open on Sunday, October 4." };
-  }
   const user = await currentUser();
   if (!user) return { ok: false, needsAuth: true, formError: "Sign in again to book." };
 

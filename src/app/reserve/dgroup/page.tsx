@@ -7,11 +7,8 @@ import { ButtonLink, Container, Section } from "@/components/ui";
 import { FloorPlanDrawing } from "@/components/floor-plan";
 import { IconLine } from "@/components/booking";
 import {
-  bookingOpen,
-  DGROUP_OPENS_ON,
   DGROUP_ROOMS,
   DGROUP_SLOTS,
-  longDateLabel,
   manilaMinutes,
   MAX_GROUP_SIZE,
   nightOptions,
@@ -27,10 +24,6 @@ export const metadata: Metadata = {
   description:
     "Book a table for your Dgroup in the Dgroup Lounge or the Welcome Center at CCF Centris, Monday to Friday.",
 };
-
-/** See bookingPreview() in the actions: pre-launch testing, never production. */
-const preview = () =>
-  process.env.DGROUP_BOOKING_PREVIEW === "1" && process.env.VERCEL_ENV !== "production";
 
 /** "1:00, 4:00 or 7:00 PM", from the slot labels ("1:00 – 3:30 PM"). */
 const SLOT_STARTS = (() => {
@@ -70,20 +63,6 @@ async function Booking() {
   // Always render per visitor: this section shows members their own data.
   await connection();
   const today = manilaDateKey();
-
-  if (!bookingOpen(today, preview())) {
-    return (
-      <div className="space-y-10">
-        <Notice label={`Opens ${longDateLabel(DGROUP_OPENS_ON)}`}>
-          <p>
-            Dgroup table reservations open on {longDateLabel(DGROUP_OPENS_ON)}, 2026, for
-            Dgroups meeting from Monday, October 5. Come back then to book.
-          </p>
-        </Notice>
-        <Rooms />
-      </div>
-    );
-  }
 
   if (!hasAccounts()) {
     return (

@@ -3,7 +3,6 @@ import test from "node:test";
 
 import {
   bookableNights,
-  bookingOpen,
   candidateTables,
   DGROUP_POLICIES,
   DGROUP_ROOMS,
@@ -114,12 +113,6 @@ test("a full slot never hands the same table out twice", () => {
 test("offers nothing past the group limit", () => {
   assert.equal(MAX_GROUP_SIZE, 12);
   assert.deepEqual(candidateTables(13, none), []);
-});
-
-test("closed until Sunday, October 4, 2026", () => {
-  assert.equal(bookingOpen("2026-10-03"), false);
-  assert.equal(bookingOpen("2026-10-04"), true);
-  assert.equal(bookingOpen("2026-09-20", true), true);
 });
 
 test("Sunday opens Monday to Friday of the week ahead", () => {

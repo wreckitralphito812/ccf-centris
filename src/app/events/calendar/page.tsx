@@ -53,7 +53,7 @@ export default async function CalendarPage({
       ...(byDay.get(k) ?? []),
       {
         label: `${fmtTime(s.starts_at)} ${s.title}`,
-        href: "/visit/new-here",
+        href: "/visit",
         kind: "service",
       },
     ]);

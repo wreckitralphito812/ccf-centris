@@ -23,6 +23,9 @@ const PARKED: { source: string; destination: string }[] = [
   // Court booking isn't offered yet, and these pages were built around it.
   { source: "/centris/sports", destination: "/centris" },
   { source: "/centris/availability", destination: "/centris" },
+  // "Your first Sunday" was removed at Ralph's request (2026-09-30); the Visit
+  // page covers where and how. Old links land there.
+  { source: "/visit/new-here", destination: "/visit" },
 ];
 
 const nextConfig: NextConfig = {
