@@ -9,9 +9,11 @@ import {
   nightLabel,
   parseDgroupBooking,
   parseDgroupChange,
+  rebookDate,
   slotLabel,
   tableKey,
   tablesLabel,
+  type DgroupBookingInput,
   type DgroupFieldErrors,
 } from "@/lib/dgroup-tables";
 import { bookingEmail, type BookingEmailKind } from "@/lib/emails/dgroup-booking";
@@ -26,6 +28,8 @@ export interface DgroupBookingResult {
   formError?: string;
   needsAuth?: boolean;
   booking?: {
+    /** The new booking's id, for Book again. */
+    id: string;
     roomSlug: string;
     roomName: string;
     labels: string[];
@@ -130,7 +134,50 @@ export async function reserveDgroupTable(
 
   const parsed = parseDgroupBooking(formData, today, manilaMinutes());
   if (!parsed.ok) return { ok: false, fieldErrors: parsed.fieldErrors };
-  const b = parsed.value;
+  return bookTables(user.id, parsed.value);
+}
+
+/**
+ * Book the same weekday, time and headcount again at the next open date
+ * (rebookDate), for the leader who owns `id`. It reuses the booking's own
+ * leader details, and the policies were already accepted for this group
+ * (2026-09-30).
+ */
+export async function rebookDgroupTable(id: string): Promise<DgroupBookingResult> {
+  if (!hasSupabase()) return { ok: false, formError: GENERIC };
+  const today = manilaDateKey();
+  if (!bookingOpen(today, bookingPreview())) {
+    return { ok: false, formError: "Dgroup table reservations open on Sunday, October 4." };
+  }
+  const user = await currentUser();
+  if (!user) return { ok: false, needsAuth: true, formError: "Sign in again to book." };
+
+  const { data: row, error } = await supabaseAdmin()
+    .from("dgroup_table_bookings")
+    .select("booked_on, slot_id, group_size, leader_name, leader_email, contact_mobile")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (error || !row) return { ok: false, formError: "That booking can’t be found." };
+
+  const date = rebookDate(row.booked_on as string, row.slot_id as string, today, manilaMinutes());
+  if (!date) return { ok: false, formError: "That week isn’t open yet. Next week opens on Sunday." };
+
+  return bookTables(user.id, {
+    date,
+    slotId: row.slot_id as string,
+    groupSize: row.group_size as number,
+    leaderName: row.leader_name as string,
+    contactMobile: row.contact_mobile as string,
+    leaderEmail: (row.leader_email as string | null) ?? user.email,
+  });
+}
+
+/**
+ * Assign and hold tables for one booking, then email the leader. Shared by a
+ * new booking and Book again.
+ */
+async function bookTables(userId: string, b: DgroupBookingInput): Promise<DgroupBookingResult> {
   const db = supabaseAdmin();
 
   let taken: Set<string>;
@@ -142,9 +189,9 @@ export async function reserveDgroupTable(
   }
 
   for (const choice of candidateTables(b.groupSize, taken)) {
-    const { error } = await db.rpc("book_dgroup_tables", {
+    const { data: bookingId, error } = await db.rpc("book_dgroup_tables", {
       p_satellite: SATELLITE_ID,
-      p_user: user.id,
+      p_user: userId,
       p_room: choice.roomSlug,
       p_labels: choice.labels,
       p_seats: choice.seats,
@@ -169,6 +216,7 @@ export async function reserveDgroupTable(
       return {
         ok: true,
         booking: {
+          id: bookingId as string,
           roomSlug: choice.roomSlug,
           roomName: choice.roomName,
           labels: choice.labels,

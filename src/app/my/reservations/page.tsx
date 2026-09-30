@@ -1,21 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-
 import { PageHeader } from "@/components/page-header";
-import { Container, Section, cx } from "@/components/ui";
-import { FloorPlanDrawing } from "@/components/floor-plan";
-import { getMyBookings, getMyDgroupBookings, type MyBooking } from "@/lib/queries";
-import { fmtDayLong, fmtTime, manilaDateKey } from "@/lib/format";
-import {
-  manilaMinutes,
-  nightLabel,
-  nightOptions,
-  roomName,
-  slotLabel,
-  tablesLabel,
-} from "@/lib/dgroup-tables";
-import { MyBooking as DgroupBooking } from "@/app/reserve/dgroup/my-booking";
-import { CancelButton } from "./cancel-button";
+import { ButtonLink, Container, Section } from "@/components/ui";
+import { manilaMinutes, nightOptions, rebookDate } from "@/lib/dgroup-tables";
+import { manilaDateKey } from "@/lib/format";
+import { mergeUpcoming, type Upcoming } from "@/lib/my-bookings";
+import { getMyBookings, getMyDgroupBookings } from "@/lib/queries";
+import { referenceFor } from "@/lib/reference";
+import { LaterRow, NextUp, PastRow } from "./parts";
 
 export const metadata: Metadata = {
   title: "My reservations",
@@ -24,157 +15,73 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-const TONE: Record<string, string> = {
-  pending: "border-amber-500/40 bg-amber-50 text-amber-800",
-  approved: "border-emerald-600/30 bg-emerald-50 text-emerald-800",
-  rejected: "border-clay/40 bg-clay/8 text-clay-deep",
-  cancelled: "border-ink/20 bg-bone text-ink-mute",
-  completed: "border-ink/20 bg-bone text-ink-soft",
-};
-
-/** Plain words for each status, as a member would say it. */
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Awaiting approval",
-  approved: "Confirmed",
-  rejected: "Declined",
-  cancelled: "Cancelled",
-  completed: "Done",
-};
-
-function StatusPill({ value }: { value: string }) {
-  return (
-    <span className={cx("label inline-flex border px-2 py-1", TONE[value] ?? "border-ink/20 text-ink")}>
-      {STATUS_LABEL[value] ?? value}
-    </span>
-  );
-}
-
-function BookingCard({ b }: { b: MyBooking }) {
-  const upcoming = new Date(b.ends_at).getTime() > Date.now();
-  const cancellable = upcoming && (b.status === "pending" || b.status === "approved");
-
-  return (
-    <li className="surface p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="label text-clay">{b.court_name ? "Court" : "Room"}</p>
-          <p className="font-display mt-1 text-2xl text-ink">
-            {b.court_name ?? b.facility_name ?? "Reservation"}
-          </p>
-          <p className="mt-1 text-[0.95rem] text-ink-soft">
-            {[
-              `${fmtDayLong(b.starts_at)}, ${fmtTime(b.starts_at)} – ${fmtTime(b.ends_at)}`,
-              b.court_name ? b.facility_name : b.activity_name,
-              `${b.participants} ${b.participants === 1 ? "person" : "people"}`,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
-        </div>
-        <StatusPill value={b.status} />
-      </div>
-      {cancellable ? (
-        <div className="mt-4">
-          <CancelButton id={b.id} />
-        </div>
-      ) : null}
-    </li>
-  );
-}
-
+/**
+ * Everything a member has booked, soonest first (design review 2026-09-30,
+ * after Calendly): the next booking as a big card with every action, the rest
+ * as rows that open to Manage, and past bookings folded away.
+ */
 export default async function MyReservationsPage() {
   const today = manilaDateKey();
-  const [bookings, tables] = await Promise.all([getMyBookings(), getMyDgroupBookings(today)]);
-  const nights = nightOptions(today, manilaMinutes());
+  const now = manilaMinutes();
+  const [tables, rooms] = await Promise.all([getMyDgroupBookings(today), getMyBookings()]);
+  const upcoming = mergeUpcoming(tables, rooms);
+  const [next, ...later] = upcoming;
+  const past = rooms.filter((r) => !upcoming.some((u) => u.id === r.id));
+  const nights = nightOptions(today, now);
 
-  const upcoming = bookings
-    .filter(
-      (b) =>
-        new Date(b.ends_at).getTime() > Date.now() &&
-        b.status !== "cancelled" &&
-        b.status !== "rejected",
-    )
-    .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
-  const past = bookings.filter((b) => !upcoming.includes(b));
-  const nothing = !tables.length && !upcoming.length;
+  const rebook = (u: Upcoming) => (u.table ? rebookDate(u.table.booked_on, u.table.slot_id, today, now) : null);
+  const reference = (u: Upcoming) =>
+    referenceFor("reservation", u.room?.request_group ?? u.id);
 
   return (
     <>
       <PageHeader
         eyebrow="My account"
         title="Your reservations."
-        lead="Everything you've booked at CCF Centris, in one place. Change or cancel at least 24 hours ahead if plans change."
+        lead="Everything you’ve booked at CCF Centris, soonest first. If plans change, cancel early so someone else can use the space."
       />
-      <Section>
-        <Container className="max-w-3xl space-y-12">
-          {nothing ? (
-            <div className="surface p-6">
-              <p className="text-ink">Nothing booked yet.</p>
-              <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
-                <Link href="/reserve/dgroup" className="label text-clay underline underline-offset-4">
+      <Section tone="mist">
+        <Container className="max-w-3xl space-y-10">
+          {next ? (
+            <NextUp item={next} today={today} nights={nights} rebookTarget={rebook(next)} reference={reference(next)} />
+          ) : (
+            <div className="calm-card px-8 py-12 text-center">
+              <p className="text-[1.4rem] font-semibold text-ink">Nothing booked yet.</p>
+              <p className="mt-2 text-[1rem] text-ink-mute">Book a table for your Dgroup or a room for your ministry.</p>
+              <div className="mt-7 flex flex-wrap justify-center gap-3">
+                <ButtonLink href="/reserve/dgroup" size="lg">
                   Book a Dgroup table
-                </Link>
-                <Link href="/centris/reserve" className="label text-clay underline underline-offset-4">
-                  Book a court or room
-                </Link>
+                </ButtonLink>
+                <ButtonLink href="/centris/reserve" size="lg" tone="outline">
+                  Request a room
+                </ButtonLink>
               </div>
             </div>
-          ) : null}
+          )}
 
-          {tables.length ? (
-            <section aria-labelledby="tables-h">
-              <div className="flex flex-wrap items-baseline justify-between gap-3">
-                <h2 id="tables-h" className="label text-ink-mute">
-                  Dgroup tables
-                </h2>
-                <Link href="/reserve/dgroup" className="label text-clay underline underline-offset-4">
-                  Book another
-                </Link>
-              </div>
-              <ul className="mt-4 space-y-4">
-                {tables.map((m) => (
-                  <DgroupBooking
-                    key={m.id}
-                    id={m.id}
-                    title={`${tablesLabel(m.table_labels)} · ${roomName(m.room_slug)}`}
-                    when={`${nightLabel(m.booked_on)}, ${slotLabel(m.slot_id)}`}
-                    groupSize={m.group_size}
-                    date={m.booked_on}
-                    slotId={m.slot_id}
-                    nights={nights}
-                    plan={<FloorPlanDrawing room={m.room_slug} highlight={m.table_labels} width={280} />}
-                  />
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
-          {upcoming.length ? (
-            <section aria-labelledby="spaces-h">
-              <div className="flex flex-wrap items-baseline justify-between gap-3">
-                <h2 id="spaces-h" className="label text-ink-mute">
-                  Courts and rooms
-                </h2>
-                <Link href="/centris/reserve" className="label text-clay underline underline-offset-4">
-                  Book another
-                </Link>
-              </div>
-              <ul className="mt-4 space-y-4">
-                {upcoming.map((b) => (
-                  <BookingCard key={b.id} b={b} />
+          {later.length ? (
+            <section aria-labelledby="later-h">
+              <h2 id="later-h" className="text-[1.2rem] font-semibold text-ink">
+                Later
+              </h2>
+              <ul className="calm-card mt-4 divide-y divide-rule overflow-hidden">
+                {later.map((u) => (
+                  <LaterRow key={u.id} item={u} nights={nights} rebookTarget={rebook(u)} reference={reference(u)} />
                 ))}
               </ul>
             </section>
           ) : null}
 
           {past.length ? (
-            <details className="group">
-              <summary className="label cursor-pointer list-none text-ink-mute underline underline-offset-4 hover:text-ink [&::-webkit-details-marker]:hidden">
+            <details className="calm-card group overflow-hidden">
+              <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between px-6 py-4 text-[1rem] font-semibold text-ink hover:bg-mist [&::-webkit-details-marker]:hidden">
                 Past and cancelled ({past.length})
+                <span className="text-[0.95rem] text-clay group-open:hidden">Show</span>
+                <span className="hidden text-[0.95rem] text-ink-mute group-open:inline">Hide</span>
               </summary>
-              <ul className="mt-4 space-y-4">
-                {past.map((b) => (
-                  <BookingCard key={b.id} b={b} />
+              <ul className="divide-y divide-rule border-t border-rule">
+                {past.map((r) => (
+                  <PastRow key={r.id} r={r} />
                 ))}
               </ul>
             </details>

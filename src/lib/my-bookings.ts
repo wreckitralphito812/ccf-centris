@@ -24,6 +24,7 @@ export interface RoomRow {
   ends_at: string;
   status: string;
   participants: number;
+  request_group?: string | null;
 }
 
 export interface Upcoming {

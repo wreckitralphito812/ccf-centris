@@ -21,9 +21,13 @@ import { cx } from "@/components/ui";
 import { FloorPlanDrawing } from "@/components/floor-plan";
 import { dgroupEvent } from "@/lib/calendar";
 import { SITE } from "@/lib/site";
+import { BookAgain } from "@/app/my/reservations/book-again";
+import { manilaDateKey } from "@/lib/format";
 import {
   DGROUP_POLICIES,
+  manilaMinutes,
   MAX_GROUP_SIZE,
+  rebookDate,
   type NightOption,
   type SlotOption,
 } from "@/lib/dgroup-tables";
@@ -183,6 +187,11 @@ function BookingAttempt({
         <AddToCalendar
           bare
           event={dgroupEvent({ date: b.date, slotId: b.slotId, roomSlug: b.roomSlug, labels: b.labels })}
+        />
+        <BookAgain
+          id={b.id}
+          target={rebookDate(b.date, b.slotId, manilaDateKey(), manilaMinutes())}
+          label="Book the same time next week"
         />
         <p className="flex flex-wrap gap-x-6 gap-y-2 text-[0.98rem]">
           <button type="button" onClick={onAnother} className="min-h-11 font-semibold text-clay hover:underline">

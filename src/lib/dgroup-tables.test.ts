@@ -11,6 +11,7 @@ import {
   openSlots,
   parseDgroupBooking,
   parseDgroupChange,
+  rebookDate,
   slotAvailability,
   tableGroups,
   tableKey,
@@ -226,4 +227,15 @@ test("availability is counted per day and slot", () => {
   ]);
   assert.equal(n.slots[0].free, 24);
   assert.equal(n.slots[1].free, 26);
+});
+
+test("book again lands on the next open date with the same weekday and slot", () => {
+  // Booked Wed Oct 7, 4 PM. On Sunday Oct 11 next week opens: Wed Oct 14.
+  assert.equal(rebookDate("2026-10-07", "1600", "2026-10-11", 600), "2026-10-14");
+  // Mid-week (Thu Oct 8) the following Wednesday isn't open yet.
+  assert.equal(rebookDate("2026-10-07", "1600", "2026-10-08", 600), null);
+  // A Monday booking, looked at on Sunday: this coming Monday.
+  assert.equal(rebookDate("2026-10-05", "1300", "2026-10-11", 600), "2026-10-12");
+  // That Monday itself, after the slot has started: nothing.
+  assert.equal(rebookDate("2026-10-05", "1300", "2026-10-12", 14 * 60), null);
 });
