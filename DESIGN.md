@@ -23,14 +23,14 @@ If a page feels flat, reach for one of those before inventing something new.
 
 | Token | Hex | Use |
 |---|---|---|
-| `paper` | `#f4f7f7` | Page ground |
+| `paper` | `#f7f9f9` | Page ground (the calm pale) |
 | `paper-deep` | `#e6eef0` | Deeper sections, skeletons |
 | `paper-bright` | `#ffffff` | Surfaces, cards, inputs |
 | `bone` | `#e2ebed` | Hover ground |
 | `ink` | `#142021` | Headings |
 | `ink-soft` | `#223032` | Body copy |
 | `ink-mute` | `#4d5c5e` | Labels, dates, hints |
-| `hairline` | `#d3dfe1` | Borders and rules |
+| `hairline` | `#e1e9eb` | Borders and rules (softened in the calm pass) |
 | `clay` | `#007682` | The working teal: links, buttons, focus, accents on paper |
 | `clay-deep` | `#005f68` | Hover for clay; error text |
 | `clay-lift` | `#3ec6d0` | Teal type on the dark ground |
@@ -66,6 +66,12 @@ Montserrat only, loaded once in the root layout.
   `tabular-nums`.
 - Booking flows use a larger reading size: 1.05rem body, 1.3–1.4rem question
   titles, because older members book too.
+- **One heading weight and a gentle scale** (page polish, 2026-09-30). Every
+  heading is semibold (`.font-display` defaults to 600; a weight utility on the
+  same element still wins). On a laptop: page titles about 44px, section
+  titles (`.display-md`) about 30px, card titles 20–24px, body 16–17px. Big
+  feature words and numbers stay at or under 30px. Nothing thin (300) at
+  large sizes.
 
 ## Shape and depth
 

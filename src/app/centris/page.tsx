@@ -47,7 +47,7 @@ export default async function CentrisPage() {
               ["2,500", "combined", "Total capacity across the center when everything is running."],
             ].map(([n, unit, b]) => (
               <div key={unit}>
-                <p className="font-display text-5xl leading-none text-clay">{n}</p>
+                <p className="font-display text-4xl leading-none text-clay">{n}</p>
                 <p className="label mt-2 text-paper-bright/50">{unit}</p>
                 <p className="mt-3 text-[0.9rem] leading-relaxed text-paper-bright/70">
                   {b}
@@ -82,7 +82,7 @@ export default async function CentrisPage() {
                 const [name, blurb, href] = row as [string, string, string | null];
                 const body = (
                   <>
-                    <span className="font-display shrink-0 text-3xl leading-none text-clay/30">
+                    <span className="font-display shrink-0 text-2xl leading-none text-clay/30">
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     <span>
@@ -169,7 +169,7 @@ export default async function CentrisPage() {
           <div className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
             <div>
               <Eyebrow>Find us</Eyebrow>
-              <address className="font-display mt-4 text-2xl not-italic leading-snug sm:text-3xl">
+              <address className="font-display mt-4 text-2xl not-italic leading-snug sm:text-2xl">
                 {SITE.addressLines.map((l) => (
                   <span key={l} className="block">
                     {l}

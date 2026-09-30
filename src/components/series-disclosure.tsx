@@ -67,7 +67,7 @@ export function SeriesDisclosure({ row }: { row: SeriesRow }) {
           href={row.playlistHref}
           target="_blank"
           rel="noreferrer"
-          className="relative block aspect-video w-full shrink-0 overflow-hidden border border-hairline sm:w-56"
+          className="relative block aspect-video w-full shrink-0 overflow-hidden rounded-xl sm:w-56"
         >
           {row.cover ? (
             <YouTubeThumb
@@ -136,7 +136,7 @@ export function SeriesDisclosure({ row }: { row: SeriesRow }) {
                   rel="noreferrer"
                   className="group block"
                 >
-                  <div className="relative aspect-video overflow-hidden border border-hairline">
+                  <div className="relative aspect-video overflow-hidden rounded-2xl">
                     <YouTubeThumb videoId={v.id} alt={v.title} />
                     <span className="pointer-events-none absolute inset-0 grid place-items-center">
                       <span className="flex h-10 w-10 items-center justify-center rounded-full bg-clay text-paper-bright">

@@ -64,7 +64,7 @@ export function InviteFriend({ message }: { message: string }) {
             rows={4}
             value={manual}
             onFocus={(e) => e.currentTarget.select()}
-            className="mt-1.5 w-full resize-none border border-hairline bg-paper p-3 text-[0.85rem] leading-relaxed text-ink-soft"
+            className="mt-1.5 w-full resize-none rounded-xl bg-mist p-3 text-[0.85rem] leading-relaxed text-ink-soft"
           />
         </div>
       ) : null}

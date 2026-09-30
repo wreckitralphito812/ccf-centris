@@ -257,7 +257,7 @@ export default async function MessagePage({
               ].map(([label, body]) =>
                 body ? (
                   <div key={label} className="bg-paper-bright p-7">
-                    <p className="font-display text-3xl text-clay/30">{label}</p>
+                    <p className="font-display text-2xl text-clay/30">{label}</p>
                     <div className="mt-3 space-y-2 text-[0.95rem] leading-relaxed text-ink-soft">
                       {String(body)
                         .split("\n")

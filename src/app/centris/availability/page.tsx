@@ -109,7 +109,7 @@ export default async function AvailabilityPage({
           </div>
 
           {/* Grid. Scrolls horizontally rather than squeezing the page. */}
-          <div className="mt-6 overflow-x-auto border border-hairline">
+          <div className="mt-6 overflow-x-auto rounded-2xl border border-rule bg-paper-bright">
             <table className="w-full min-w-[52rem] border-collapse">
               <caption className="sr-only">
                 Court availability for {fmtDayLong(`${date}T12:00:00+08:00`)}

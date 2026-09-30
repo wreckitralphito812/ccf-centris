@@ -56,7 +56,7 @@ export function DgroupFinder({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search by name, area, or description"
-          className="w-full rounded-lg border border-hairline bg-paper-bright px-4 py-3 text-[0.95rem] focus:border-ink"
+          className="w-full rounded-[0.875rem] bg-mist focus:bg-paper-bright focus:outline-none focus:ring-2 focus:ring-clay px-4 py-3 text-[0.95rem]"
         />
         <button
           type="submit"
@@ -161,7 +161,7 @@ function Select({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-hairline bg-paper-bright px-3 py-2.5 text-[0.9rem] focus:border-ink"
+        className="w-full rounded-[0.875rem] bg-mist focus:bg-paper-bright focus:outline-none focus:ring-2 focus:ring-clay px-3 py-2.5 text-[0.9rem]"
       >
         <option value="">Any</option>
         {options.map(([v, l]) => (

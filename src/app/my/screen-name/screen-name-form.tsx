@@ -25,7 +25,7 @@ export function ScreenNameForm({ next, current }: { next: string; current: strin
         maxLength={24}
         autoComplete="nickname"
         aria-describedby="screen-name-rule"
-        className="mt-3 w-full rounded-lg border border-hairline bg-paper-bright px-4 py-3 text-lg text-ink focus:border-clay"
+        className="mt-3 w-full rounded-[0.875rem] bg-mist focus:bg-paper-bright focus:outline-none focus:ring-2 focus:ring-clay px-4 py-3 text-lg text-ink"
       />
       <p id="screen-name-rule" className="mt-2 text-[0.85rem] leading-relaxed text-ink-mute">
         {SCREEN_NAME_RULE}

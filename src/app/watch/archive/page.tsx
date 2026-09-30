@@ -240,7 +240,7 @@ export default async function ArchivePage() {
                           src={first.thumbnail}
                           alt=""
                           loading="lazy"
-                          className="h-16 w-28 shrink-0 border border-hairline object-cover"
+                          className="h-16 w-28 shrink-0 rounded-lg object-cover"
                         />
                       ) : null}
                       <span className="min-w-0">

@@ -92,7 +92,7 @@ export default function VisitPage() {
 
             <div className="lg:pt-2">
               <Eyebrow>The pin</Eyebrow>
-              <address className="font-display mt-5 text-2xl not-italic leading-snug sm:text-3xl">
+              <address className="font-display mt-5 text-2xl not-italic leading-snug sm:text-2xl">
                 {SITE.addressLines.map((l) => (
                   <span key={l} className="block">
                     {l}
@@ -152,7 +152,7 @@ export default function VisitPage() {
                 </p>
                 <figure>
                   <figcaption className="label text-clay">{r.media.label}</figcaption>
-                  <div className="relative mt-3 aspect-[4/3] overflow-hidden border border-hairline bg-paper">
+                  <div className="relative mt-3 aspect-[4/3] overflow-hidden rounded-2xl bg-paper">
                     {r.id === "car" ? (
                       <iframe
                         title={`Map showing ${PARKING.name}`}

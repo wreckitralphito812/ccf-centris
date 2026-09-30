@@ -203,7 +203,7 @@ export default async function WatchLivePage() {
           <Container>
             <p className="label text-clay">Next Sunday service</p>
             <div className="mt-4 grid gap-6 surface p-5 sm:grid-cols-[20rem_1fr] sm:items-center sm:p-6">
-              <div className="relative aspect-video overflow-hidden border border-hairline">
+              <div className="relative aspect-video overflow-hidden rounded-2xl">
                 {nextService.thumbnail && nextService.videoId ? (
                   <YouTubeThumb
                     videoId={nextService.videoId}
@@ -340,7 +340,7 @@ export default async function WatchLivePage() {
                   rel="noreferrer"
                   className="group w-[17rem] shrink-0 sm:w-auto"
                 >
-                  <div className="relative aspect-video overflow-hidden border border-hairline">
+                  <div className="relative aspect-video overflow-hidden rounded-2xl">
                     <YouTubeThumb
                       src={v.thumbnail}
                       fallbackSrc={v.thumbnailFallback}

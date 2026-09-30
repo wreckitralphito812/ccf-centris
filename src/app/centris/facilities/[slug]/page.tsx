@@ -90,7 +90,7 @@ export default async function FacilityPage({
               ) : null}
             </div>
 
-            <div className="aspect-[4/3] overflow-hidden border border-hairline">
+            <div className="aspect-[4/3] overflow-hidden rounded-2xl">
               <MessageArt seed={f.slug} label={f.name} className="h-full w-full" />
             </div>
           </div>

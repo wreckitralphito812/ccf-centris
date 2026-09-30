@@ -88,7 +88,7 @@ export function RegisterForm({
           <>
             <div className="mt-6 border border-dashed border-ink/25 bg-paper-bright p-5 text-center">
               <p className="label text-ink-mute">Your reference</p>
-              <p className="font-display mt-1 text-3xl tracking-wider tabular">
+              <p className="font-display mt-1 text-2xl tracking-wider tabular">
                 {ref}
               </p>
               {/* Stand-in for the QR ticket the live system will issue. */}
@@ -213,7 +213,7 @@ export function RegisterForm({
         </Field>
 
         {!full ? (
-          <div className="flex items-center justify-between border border-hairline px-4 py-3">
+          <div className="flex items-center justify-between rounded-xl bg-mist px-4 py-3">
             <span className="label text-ink-mute">How many coming?</span>
             <span className="flex items-center gap-4">
               <button

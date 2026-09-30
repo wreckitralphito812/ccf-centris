@@ -51,7 +51,7 @@ export default function JoinDgroupPage() {
               ["Works", "One thing each person will do before the group meets again."],
             ].map(([t, b]) => (
               <div key={t} className="bg-paper-bright p-7">
-                <p className="font-display text-4xl leading-none text-clay/25">{t}</p>
+                <p className="font-display text-3xl leading-none text-clay/25">{t}</p>
                 <p className="mt-4 text-[0.9rem] leading-relaxed text-ink-soft">{b}</p>
               </div>
             ))}
@@ -99,7 +99,7 @@ export default function JoinDgroupPage() {
               ["Go along and see", "Try it for a few weeks. If it's not the right fit, the team can help you find another one."],
             ].map(([t, b], i) => (
               <li key={t} className="flex gap-6 bg-paper-bright p-7">
-                <span className="font-display shrink-0 text-4xl leading-none text-clay/30">
+                <span className="font-display shrink-0 text-3xl leading-none text-clay/30">
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <div>

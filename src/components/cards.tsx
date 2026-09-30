@@ -90,7 +90,7 @@ export function MessageCard({ m, compact }: { m: Message; compact?: boolean }) {
   return (
     <article className="group">
       <Link href={`/watch/messages/${m.slug}`} className="block">
-        <div className="relative aspect-[16/10] overflow-hidden border border-hairline">
+        <div className="relative aspect-[16/10] overflow-hidden rounded-2xl">
           {m.sermon_video_key ? (
             <YouTubeThumb
               videoId={m.sermon_video_key}
