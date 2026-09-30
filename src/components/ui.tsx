@@ -111,17 +111,20 @@ export function Section({
     mist: "bg-mist text-ink",
   } as const;
   return (
-    <section id={id} className={cx("py-12 sm:py-24", tones[tone], className)}>
+    <section id={id} className={cx("py-14 sm:py-24", tones[tone], className)}>
       {children}
     </section>
   );
 }
 
-/** Eyebrow label with a rule, used above most section headings. */
+/**
+ * The short label above a section heading. Since the calm redesign
+ * (2026-09-30) it's plain sentence-case teal, not tracked capitals with a
+ * rule; `rule` is still accepted so older call sites keep compiling.
+ */
 export function Eyebrow({
   children,
   tone = "clay",
-  rule = true,
   className,
 }: {
   children: ReactNode;
@@ -137,10 +140,7 @@ export function Eyebrow({
     paper: "text-paper-bright/60",
   }[tone];
   return (
-    <p className={cx("label flex items-center", rule && "gap-3", c, className)}>
-      {rule ? (
-        <span aria-hidden className="h-[2px] w-6 rounded-full bg-current opacity-70" />
-      ) : null}
+    <p className={cx("flex items-center gap-2 text-[0.95rem] font-semibold", c, className)}>
       {children}
     </p>
   );

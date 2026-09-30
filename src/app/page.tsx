@@ -38,7 +38,8 @@ export const revalidate = 1800;
  * life.church, whose campus pages lead with one card holding the service
  * times, the address, and "Invite a friend".
  *
- *   1. Welcome: photo hero, with the visit card beside the headline
+ *   1. Welcome: the photo in a rounded frame (the calm look, 2026-09-30),
+ *      with the visit card overlapping its bottom edge
  *   2. Take your next step: prayer, a Dgroup, a team
  *   3. Last Sunday: the CCF Net replay and this week's 4Ws
  */
@@ -62,107 +63,65 @@ export default async function HomePage() {
 
 function Welcome({ live }: { live: boolean }) {
   return (
-    /* The ground is --night, set without the .bg-night class on purpose.
-       globals.css lifts --clay for everything under .bg-night, and the
-       visit card is a paper surface inside this section: under that rule
-       its links and "Get directions" button would turn pale teal on cream. */
-    <section className="relative isolate flex flex-col justify-center overflow-hidden bg-[var(--night)] lg:min-h-[calc(100svh-var(--chrome,4.875rem))]">
-      <Image
-        src="/photos/hero-welcome.jpg"
-        alt=""
-        fill
-        priority
-        sizes="100vw"
-        className="no-frame -z-10 object-cover"
-        style={{ objectPosition: "center 30%" }}
-      />
-      {/* Darkens the photo under the white headline: from the bottom on
-          phones, where the copy stacks, and from the left on desktop. */}
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10 bg-gradient-to-t from-night/95 via-night/65 to-night/30 lg:bg-gradient-to-r lg:from-night/90 lg:via-night/55 lg:to-night/15"
-      />
+    <section className="bg-paper px-3 pt-3 sm:px-5 sm:pt-5">
+      {/* The photo sits in a big rounded frame with space around it, like a
+          card on the page (Ralph's pick, 2026-09-30). The ground is --night,
+          set without the .bg-night class on purpose: globals.css lifts --clay
+          for everything under .bg-night. */}
+      <div className="relative isolate mx-auto flex min-h-[78svh] max-w-[110rem] flex-col justify-center overflow-hidden rounded-[2rem] bg-[var(--night)] lg:min-h-[72svh]">
+        <Image
+          src="/photos/hero-welcome.jpg"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="no-frame -z-10 object-cover"
+          style={{ objectPosition: "center 30%" }}
+        />
+        {/* Darkens the photo under the white headline: from the bottom on
+            phones, where the copy stacks, and from the left on desktop. */}
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-10 bg-gradient-to-t from-night/95 via-night/60 to-night/25 lg:bg-gradient-to-r lg:from-night/90 lg:via-night/50 lg:to-night/10"
+        />
 
-      <Container className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_23rem] lg:items-center lg:gap-16 lg:py-24">
-        {/* Exactly one screen tall on phones and tablets, so the welcome is
-            all there is until you scroll — the visit card used to crowd into
-            the first view under the headline. `--chrome` is measured by
-            ChromeOffset; the fallback is the header's own height, used for the
-            first paint before that runs. */}
-        <div className="relative flex min-h-[calc(100svh-var(--chrome,4.875rem))] flex-col justify-center py-14 lg:min-h-0 lg:py-0">
-        <HeroStage className="max-w-3xl">
-          <p className="label text-clay-lift">
-            Christ&rsquo;s Commission Fellowship
-          </p>
-          {/* Two lines, broken by hand: at display-xl "to" was left alone on
-              the middle line. */}
-          <h1 className="display-lg brand-face mt-4 text-paper-bright">
-            Welcome to
-            <br />
-            CCF&nbsp;Centris.
-          </h1>
-          {/* CCF's own welcome line, quoted verbatim from ccf.org.ph. */}
-          <p className="mt-5 max-w-xl text-[1.05rem] leading-relaxed text-paper-bright/90 sm:text-[1.15rem]">
-            Regardless of who you are or where life has taken you, you are more
-            than welcome here.
-          </p>
-          {/* Full width while they stack, so two buttons of different word
-              lengths do not leave a ragged edge down the phone screen. */}
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <ButtonLink
-              href="/visit/new-here"
-              tone="on-dark"
-              size="lg"
-              className="w-full sm:w-auto"
-            >
-              Plan your visit
-            </ButtonLink>
-            <ButtonLink
-              href="/watch"
-              tone="outline-on-dark"
-              size="lg"
-              className="w-full sm:w-auto"
-            >
-              Watch last Sunday
-            </ButtonLink>
-          </div>
-        </HeroStage>
-          <ScrollCue />
-        </div>
+        <Container className="pb-28 pt-16 sm:pb-32 lg:py-24">
+          <HeroStage className="max-w-3xl">
+            <p className="text-[1rem] font-semibold text-clay-lift">Christ&rsquo;s Commission Fellowship</p>
+            {/* Two lines, broken by hand: at display-xl "to" was left alone on
+                the middle line. */}
+            <h1 className="display-lg brand-face mt-4 text-paper-bright">
+              Welcome to
+              <br />
+              CCF&nbsp;Centris.
+            </h1>
+            {/* CCF's own welcome line, quoted verbatim from ccf.org.ph. */}
+            <p className="mt-5 max-w-xl text-[1.05rem] leading-relaxed text-paper-bright/90 sm:text-[1.15rem]">
+              Regardless of who you are or where life has taken you, you are more
+              than welcome here.
+            </p>
+            {/* Full width while they stack, so two buttons of different word
+                lengths do not leave a ragged edge down the phone screen. */}
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <ButtonLink href="/visit/new-here" tone="on-dark" size="lg" className="w-full sm:w-auto">
+                Plan your visit
+              </ButtonLink>
+              <ButtonLink href="/watch" tone="outline-on-dark" size="lg" className="w-full sm:w-auto">
+                Watch last Sunday
+              </ButtonLink>
+            </div>
+          </HeroStage>
+        </Container>
+      </div>
 
-        {/* Container carries no vertical padding below `lg` now that the block
-            above owns the first screen, so the card supplies its own. */}
-        <div className="pb-14 lg:pb-0">
+      {/* The visit card overlaps the frame's bottom edge, so the page plainly
+          continues past the photo (it replaces the old "Scroll" cue). */}
+      <Container className="relative -mt-20 sm:-mt-24">
+        <div className="mx-auto max-w-md lg:mr-0 lg:max-w-[26rem]">
           <VisitCard live={live} />
         </div>
       </Container>
     </section>
-  );
-}
-
-/**
- * The nudge that says the page continues. A full-bleed hero that ends exactly
- * at the fold gives no edge to read as "cut off", so without this it looks
- * like the whole page. Hidden from assistive tech, which does not need it, and
- * dropped at `lg` where the visit card is already in view beside the headline.
- */
-function ScrollCue() {
-  return (
-    <span
-      aria-hidden
-      className="absolute inset-x-0 bottom-5 flex flex-col items-center gap-1.5 text-paper-bright/70 lg:hidden"
-    >
-      <span className="label text-[0.65rem]">Scroll</span>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M12 5v13m0 0 5-5m-5 5-5-5"
-          stroke="currentColor"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </span>
   );
 }
 
@@ -175,7 +134,7 @@ function VisitCard({ live }: { live: boolean }) {
   const invite = `Join me at CCF Centris this Sunday, at ${SERVICE_TIMES_TEXT.replace(" and ", " or ")}. We meet at 2/F Centris Station, Eton Centris, right off MRT Quezon Avenue.`;
 
   return (
-    <div className="surface p-6 text-ink shadow-[0_30px_80px_-40px_rgba(0,0,0,0.75)] sm:p-7">
+    <div className="surface p-7 text-ink sm:p-8">
       {live ? (
         <Link
           href="/watch"
@@ -185,12 +144,12 @@ function VisitCard({ live }: { live: boolean }) {
           Service happening now
         </Link>
       ) : (
-        <p className="label text-clay">Join us this Sunday</p>
+        <p className="text-[0.95rem] font-semibold text-clay">Join us this Sunday</p>
       )}
 
-      <p className="font-display mt-4 text-2xl leading-tight text-ink">{SERVICE_TIMES_TEXT}</p>
+      <p className="mt-2 text-balance text-[1.5rem] font-semibold leading-tight tracking-[-0.01em] text-ink sm:text-[1.6rem]">{SERVICE_TIMES_TEXT}</p>
 
-      <address className="mt-5 border-t border-hairline pt-4 text-[0.95rem] not-italic leading-relaxed text-ink-soft">
+      <address className="mt-5 border-t border-rule pt-4 text-[0.95rem] not-italic leading-relaxed text-ink-soft">
         {SITE.addressLines.slice(0, 2).join(", ")}
         <br />
         {SITE.addressLines.slice(2).join(", ")}
@@ -210,7 +169,7 @@ function VisitCard({ live }: { live: boolean }) {
         <InviteFriend message={invite} />
       </div>
 
-      <p className="mt-5 flex flex-wrap gap-x-4 gap-y-2 border-t border-hairline pt-4">
+      <p className="mt-5 flex flex-wrap gap-x-4 gap-y-2 border-t border-rule pt-4">
         <Link href="/prayer-wall" className="link label tap text-clay underline underline-offset-4">
           Ask for prayer
         </Link>
@@ -279,7 +238,7 @@ const NEXT_STEPS: {
 
 function NextSteps() {
   return (
-    <Section tone="bright" className="py-12! sm:py-20!">
+    <Section tone="paper" className="pb-14! pt-20! sm:pb-24! sm:pt-28!">
       <Container>
         <RevealHead
           align="center"
@@ -307,14 +266,14 @@ function NextSteps() {
 function StepCard({ icon, title, body, href, external }: (typeof NEXT_STEPS)[number]) {
   const inner = (
     <>
-      <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-clay text-paper-bright">
+      <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-clay-wash text-clay">
         <SectionIcon name={icon} className="h-6 w-6" />
       </span>
       <span className="min-w-0">
-        <span className="font-display block text-xl leading-tight group-hover:text-clay">
+        <span className="block text-[1.2rem] font-semibold leading-tight tracking-[-0.01em] group-hover:text-clay">
           {title}
         </span>
-        <span className="mt-1.5 block text-[0.95rem] leading-relaxed text-ink-soft">
+        <span className="mt-1.5 block text-[0.98rem] leading-relaxed text-ink-mute">
           {body}
         </span>
         {external ? (
@@ -326,7 +285,7 @@ function StepCard({ icon, title, body, href, external }: (typeof NEXT_STEPS)[num
     </>
   );
   const cls =
-    "group flex h-full items-start gap-5 surface p-6 shadow-[0_18px_40px_-34px_rgba(23,21,15,0.55)] transition-colors hover:border-ink";
+    "group flex h-full items-start gap-5 surface p-7";
 
   return external ? (
     <a href={href} target="_blank" rel="noreferrer" className={cls}>
@@ -354,7 +313,7 @@ function LastSunday({
     : "";
 
   return (
-    <Section tone="paper" className="py-12! sm:py-20!">
+    <Section tone="paper" className="pt-0! pb-16! sm:pb-28!">
       <Container>
         <Reveal className="grid overflow-hidden surface md:grid-cols-[minmax(0,1.15fr)_1fr]">
           {replay ? (
@@ -372,7 +331,7 @@ function LastSunday({
           ) : null}
 
           <div className="flex flex-col p-6 sm:p-9">
-            <p className="label flex items-center gap-2.5 text-clay">
+            <p className="flex items-center gap-2.5 text-[0.95rem] font-semibold text-clay">
               <SectionIcon name="play" className="h-4 w-4" />
               Last Sunday
             </p>
@@ -389,7 +348,7 @@ function LastSunday({
             {/* Names the guide's week, since the replay and the 4Ws can belong
                 to different Sundays early in the week. */}
             {fourWs ? (
-              <p className="label mt-4 text-ink-mute">
+              <p className="mt-4 text-[0.92rem] font-medium text-ink-mute">
                 4Ws for{" "}
                 {fourWs.week.weekNumber ? `Week ${fourWs.week.weekNumber} · ` : ""}
                 {fourWs.week.dateSpan ?? fourWs.week.serviceDateLabel}

@@ -30,7 +30,7 @@
      The inks are near-black in the same teal family, dark enough that body
      and secondary copy read as strongly as the headings. --clay still
      clears 4.5:1 on the deepest ground (--paper-deep). */
-  --paper: #f4f7f7;
+  --paper: #f7f9f9; /* the calm pale ground (2026-09-30; was #f4f7f7) */
   --paper-deep: #e6eef0;
   --paper-bright: #ffffff;
   --ink: #142021;
@@ -452,13 +452,15 @@ a.link,
 
 @layer components {
 .surface {
+  /* The calm card, site-wide (2026-09-30, after Calendly): no outline ring,
+     big soft corners, a three-layer teal-tinted shadow. Same as .calm-card. */
   background: var(--paper-bright);
-  border-radius: 0.875rem;
+  border-radius: 1.5rem;
   overflow: hidden;
   box-shadow:
-    0 0 0 1px rgb(20 32 33 / 0.07),
-    0 1px 2px rgb(20 32 33 / 0.04),
-    0 14px 34px -22px rgb(20 32 33 / 0.28);
+    0 1px 2px rgb(0 95 104 / 0.04),
+    0 8px 24px -8px rgb(0 95 104 / 0.08),
+    0 30px 60px -30px rgb(0 95 104 / 0.12);
   transition:
     box-shadow 220ms var(--ease),
     transform 220ms var(--ease);
@@ -468,9 +470,9 @@ a.link,
 a.surface:hover,
 .surface.group:hover {
   box-shadow:
-    0 0 0 1px rgb(20 32 33 / 0.1),
-    0 2px 4px rgb(20 32 33 / 0.05),
-    0 22px 44px -22px rgb(20 32 33 / 0.34);
+    0 1px 2px rgb(0 95 104 / 0.05),
+    0 12px 28px -8px rgb(0 95 104 / 0.12),
+    0 36px 70px -30px rgb(0 95 104 / 0.18);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -480,20 +482,20 @@ a.surface:hover,
   }
 }
 
-/* The "grid lines" layout: cells separated by 1px gaps over a hairline
-   ground. Same corners and lift as a surface, so the two sit together. */
+/* The "grid lines" layout: cells separated by 1px gaps. Same corners and
+   lift as a surface, so the two sit together. */
 .surface-grid {
-  background: var(--hairline);
-  border-radius: 0.875rem;
+  background: var(--rule);
+  border-radius: 1.5rem;
   overflow: hidden;
   box-shadow:
-    0 0 0 1px rgb(20 32 33 / 0.07),
-    0 14px 34px -22px rgb(20 32 33 / 0.28);
+    0 1px 2px rgb(0 95 104 / 0.04),
+    0 30px 60px -30px rgb(0 95 104 / 0.12);
 }
 
 /* Photos inside content get the same softened corners. */
 .photo {
-  border-radius: 0.875rem;
+  border-radius: 1.5rem;
   overflow: hidden;
 }
 
@@ -528,10 +530,10 @@ a.surface:hover,
 }
 }
 
-/* Text links and small controls styled with `.label` inside the page read in
-   sentence case. Uppercase tracked type is kept for what it is good at:
-   eyebrows, badges and headings (non-interactive `.label`). */
-:where(main, footer) :is(a, button, summary).label {
+/* Every `.label` inside the page reads in sentence case (the calm look,
+   2026-09-30; before that only links and buttons did). Tracked capitals are
+   gone from content; the header keeps none either. */
+:where(main, footer) .label {
   text-transform: none;
   letter-spacing: 0.005em;
   font-size: 0.9rem;
