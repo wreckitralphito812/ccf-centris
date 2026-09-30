@@ -102,6 +102,27 @@ export function closedReason(slug: string, date: string, start: Minutes, end: Mi
   return `Open ${timeLabel(w.from)} to ${timeLabel(w.to)}`;
 }
 
+/**
+ * The three usual times, so most requests are one tap. Anything else goes
+ * through "Other time". Design review, 2026-09-30.
+ */
+export const TIME_BLOCKS: { id: string; label: string; from: Minutes; to: Minutes }[] = [
+  { id: "morning", label: "Morning", from: OPEN, to: NOON },
+  { id: "afternoon", label: "Afternoon", from: toMinutes("13:00"), to: toMinutes("17:00") },
+  { id: "evening", label: "Evening", from: toMinutes("18:00"), to: CLOSE },
+];
+
+/** Today, unless it's Sunday or the rooms are about to close; else the next open day. */
+export function firstOpenDay(today: string, nowMinutes: Minutes): string {
+  if (weekdayOf(today) !== 0 && nowMinutes < CLOSE - 60) return today;
+  const [y, m, d] = today.split("-").map(Number);
+  for (let i = 1; i <= 7; i++) {
+    const next = new Date(Date.UTC(y, m - 1, d + i)).toISOString().slice(0, 10);
+    if (weekdayOf(next) !== 0) return next;
+  }
+  return today;
+}
+
 /** Plain-language hours, for the page and the policies. */
 export const HOURS_SUMMARY: [string, string][] = [
   ["John, Luke, Matthew, Mark", "Monday to Saturday, 9:00 AM to 9:30 PM"],

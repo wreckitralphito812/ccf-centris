@@ -1,7 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { closedReason, ministryWindow, timeLabel, toMinutes, weekdayOf } from "./ministry-rooms";
+import {
+  MINISTRY_ROOMS,
+  TIME_BLOCKS,
+  closedReason,
+  firstOpenDay,
+  ministryWindow,
+  timeLabel,
+  toMinutes,
+  weekdayOf,
+} from "./ministry-rooms";
 import { parseRoomRequest } from "./validation";
 
 // 2099-06-01 is a Monday; the 6th a Saturday; the 7th a Sunday.
@@ -117,4 +126,27 @@ test("parseRoomRequest needs the policies, a mobile number and a known ministry"
   const other = parseRoomRequest(request({ ministry: "Other", ministry_other: "Prayer Ministry" }));
   assert.ok(other.ok);
   assert.equal(other.value.ministry, "Prayer Ministry");
+});
+
+test("the first open day skips Sundays and a day that's nearly over", () => {
+  assert.equal(firstOpenDay("2026-10-05", toMinutes("10:00")), "2026-10-05"); // Monday morning
+  assert.equal(firstOpenDay("2026-10-05", toMinutes("21:00")), "2026-10-06"); // Monday, closing soon
+  assert.equal(firstOpenDay("2026-10-04", toMinutes("08:00")), "2026-10-05"); // Sunday
+  assert.equal(firstOpenDay("2026-10-10", toMinutes("21:00")), "2026-10-12"); // Saturday night skips Sunday
+});
+
+test("every time block fits the big halls' hours, on the half hour", () => {
+  const hall = MINISTRY_ROOMS.find((r) => !r.dgroupRoom)!;
+  for (const b of TIME_BLOCKS) {
+    assert.equal(b.from % 30, 0);
+    assert.equal(b.to % 30, 0);
+    assert.equal(closedReason(hall.slug, "2026-10-06", b.from, b.to), null, b.id);
+  }
+});
+
+test("on weekdays only the morning block suits the Dgroup rooms", () => {
+  const [morning, afternoon] = TIME_BLOCKS;
+  assert.equal(closedReason("welcome-center", "2026-10-06", morning.from, morning.to), null);
+  assert.notEqual(closedReason("welcome-center", "2026-10-06", afternoon.from, afternoon.to), null);
+  assert.equal(closedReason("welcome-center", "2026-10-10", afternoon.from, afternoon.to), null); // Saturday
 });
