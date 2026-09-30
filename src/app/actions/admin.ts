@@ -133,6 +133,7 @@ export async function setReservationStatus(
         equipment: (first.equipment as Record<string, number> | null) ?? null,
         food: (first.food as string | null) ?? null,
         notes: (first.purpose as string | null) ?? null,
+        span: m ? { startsAt, endsAt } : undefined,
       }),
     });
   }

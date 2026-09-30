@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { cx } from "./ui";
 import { Field, controlClass } from "./form";
+import { googleCalendarLink, icsHref, type CalendarEvent } from "@/lib/calendar";
 
 /* ---------------------------------------------------------------------------
    Pieces shared by the booking flows (Dgroup tables, courts and rooms), so
@@ -254,5 +255,38 @@ export function BookingBar({ width = "max-w-3xl", children }: { width?: string; 
     <div className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-paper-bright/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-12px_rgba(20,32,33,0.18)] backdrop-blur">
       <div className={cx("mx-auto flex items-center gap-3 px-5 py-3.5 sm:gap-4 sm:px-8", width)}>{children}</div>
     </div>
+  );
+}
+
+/**
+ * Add to calendar, on a booking's confirmation: Google Calendar in a new tab,
+ * or an .ics file for Apple Calendar and Outlook.
+ */
+export function AddToCalendar({ event }: { event: CalendarEvent }) {
+  const pill =
+    "btn-press inline-flex min-h-12 items-center gap-2 rounded-full border border-clay px-5 py-2.5 text-[1rem] font-semibold text-clay transition-colors hover:bg-clay hover:text-paper-bright";
+  return (
+    <div>
+      <p className="text-[1rem] font-semibold text-ink">Add it to your calendar</p>
+      <div className="mt-3 flex flex-wrap gap-2.5">
+        <a href={googleCalendarLink(event)} target="_blank" rel="noreferrer" className={pill}>
+          <CalendarGlyph />
+          Google Calendar
+        </a>
+        <a href={icsHref(event)} download="ccf-centris.ics" className={pill}>
+          <CalendarGlyph />
+          Apple or Outlook
+        </a>
+      </div>
+    </div>
+  );
+}
+
+function CalendarGlyph() {
+  return (
+    <svg aria-hidden viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" className="h-4 w-4">
+      <rect x="2" y="3" width="12" height="11" rx="2" />
+      <path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" />
+    </svg>
   );
 }

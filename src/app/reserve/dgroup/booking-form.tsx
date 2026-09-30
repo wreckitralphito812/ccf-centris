@@ -4,6 +4,7 @@ import Link from "next/link";
 import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { reserveDgroupTable, type DgroupBookingResult } from "@/app/actions/dgroup-tables";
 import {
+  AddToCalendar,
   BookingBar,
   ContactFields,
   FieldError,
@@ -15,6 +16,7 @@ import {
 } from "@/components/booking";
 import { cx } from "@/components/ui";
 import { FloorPlanDrawing } from "@/components/floor-plan";
+import { dgroupEvent } from "@/lib/calendar";
 import {
   DGROUP_POLICIES,
   MAX_GROUP_SIZE,
@@ -152,6 +154,11 @@ function BookingAttempt({
         </p>
         <div className="mt-6 max-w-sm">
           <FloorPlanDrawing room={b.roomSlug} highlight={b.labels} width={320} />
+        </div>
+        <div className="mt-6">
+          <AddToCalendar
+            event={dgroupEvent({ date: b.date, slotId: b.slotId, roomSlug: b.roomSlug, labels: b.labels })}
+          />
         </div>
         <p className="mt-6 border-t border-hairline pt-4 text-[1rem] leading-relaxed text-ink-soft">
           {b.emailed

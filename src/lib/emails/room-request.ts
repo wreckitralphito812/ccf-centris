@@ -1,11 +1,14 @@
 import { equipmentSummary, foodLabel, setupLabel } from "@/lib/ministry-rooms";
+import { googleCalendarLink, icsFile, manilaParts, roomEvent } from "@/lib/calendar";
 import { CONTACT, SITE } from "@/lib/site";
 
 /**
  * Room request emails: the receipt the requester gets, the alert the admin
  * inbox gets, and the decision (approved, declined, cancelled) sent back.
  * Same look as the Dgroup booking emails: table layout, inline styles,
- * absolute links.
+ * absolute links. The approval carries an "Add to Google Calendar" link and
+ * an .ics invite (design review, 2026-09-30); nothing earlier does, so an
+ * unconfirmed request never lands in anyone's calendar.
  */
 
 export type RoomEmailKind = "received" | "admin" | "approved" | "rejected" | "cancelled";
@@ -27,6 +30,8 @@ export interface RoomEmailData {
   equipment: Record<string, number> | null;
   food: string | null;
   notes: string | null;
+  /** The booked time as UTC ISO strings, for the calendar invite. */
+  span?: { startsAt: string; endsAt: string };
 }
 
 const TEAL = "#007682";
@@ -39,9 +44,31 @@ const FONT = "Montserrat, 'Helvetica Neue', Arial, sans-serif";
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-export function roomRequestEmail(d: RoomEmailData): { subject: string; html: string; text: string } {
+export function roomRequestEmail(d: RoomEmailData): {
+  subject: string;
+  html: string;
+  text: string;
+  attachments?: { filename: string; content: string }[];
+} {
   const first = d.requester.split(" ")[0];
   const rooms = d.rooms.join(", ");
+  const event =
+    d.kind === "approved" && d.span
+      ? (() => {
+          const from = manilaParts(d.span.startsAt);
+          const to = manilaParts(d.span.endsAt);
+          return roomEvent({
+            reference: d.reference,
+            activity: d.activity,
+            rooms: d.rooms,
+            date: from.date,
+            start: from.time,
+            end: to.time,
+            confirmed: true,
+          });
+        })()
+      : null;
+  const calendar = event ? googleCalendarLink(event) : null;
 
   const subject = {
     received: `Request received: ${d.activity}, ${d.when}`,
@@ -130,6 +157,12 @@ export function roomRequestEmail(d: RoomEmailData): { subject: string; html: str
         <a href="${button.href}" style="display:inline-block;padding:14px 28px;font:700 13px/1 ${FONT};letter-spacing:2px;text-transform:uppercase;color:#ffffff;text-decoration:none;">${button.label}</a>
       </td>
     </tr></table>
+    ${
+      calendar
+        ? `<p style="margin:18px 0 0;font:600 15px/1.5 ${FONT};"><a href="${esc(calendar)}" style="color:${TEAL};">Add to Google Calendar</a></p>
+    <p style="margin:4px 0 0;font:400 13px/1.5 ${FONT};color:${MUTE};">Using Apple Calendar or Outlook? Open the attached invite.</p>`
+        : ""
+    }
   </td></tr>
   <tr><td align="center" style="background:${GROUND};padding:28px 24px 34px;border-top:1px solid #ffffff;">
     <p style="margin:0;font:400 13px/1.7 ${FONT};color:${MUTE};">${esc(SITE.addressLines.join(", "))}</p>
@@ -149,9 +182,12 @@ export function roomRequestEmail(d: RoomEmailData): { subject: string; html: str
     ...rows.map(([k, v]) => `${k}: ${v}`),
     "",
     `${button.label}: ${button.href}`,
+    ...(calendar ? [`Add to Google Calendar: ${calendar}`] : []),
     "",
     `Questions? ${CONTACT.messageEmail}`,
   ].join("\n");
 
-  return { subject, html, text };
+  return event
+    ? { subject, html, text, attachments: [{ filename: "room-booking.ics", content: icsFile(event) }] }
+    : { subject, html, text };
 }
