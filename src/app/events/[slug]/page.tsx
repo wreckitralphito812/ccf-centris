@@ -147,7 +147,7 @@ export default async function EventPage({
               </dl>
             </div>
 
-            <div className="aspect-[4/3] overflow-hidden border border-hairline">
+            <div className="aspect-[4/3] overflow-hidden rounded-2xl">
               <MessageArt
                 seed={e.slug}
                 label={e.category ?? "Event"}

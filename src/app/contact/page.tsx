@@ -189,7 +189,7 @@ function Gate({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="border-l-2 border-clay bg-paper-bright p-6 sm:p-7">
       <p className="label text-clay">Before you write</p>
-      <h2 className="font-display mt-3 text-2xl leading-tight sm:text-3xl">{title}</h2>
+      <h2 className="font-display mt-3 text-2xl leading-tight sm:text-2xl">{title}</h2>
       <div className="mt-4 max-w-xl text-[1.02rem] leading-relaxed text-ink-soft">
         {children}
       </div>

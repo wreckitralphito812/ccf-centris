@@ -326,7 +326,7 @@ function EventGrid({
             <div className="mt-10 space-y-14">
               {[...byMonth.entries()].map(([month, list]) => (
                 <div key={month}>
-                  <h2 className="font-display text-3xl">{month}</h2>
+                  <h2 className="font-display text-2xl">{month}</h2>
                   <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     {list.map((e) => (
                       <EventCard key={e.id} e={e} />

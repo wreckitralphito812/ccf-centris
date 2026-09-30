@@ -52,7 +52,7 @@ export default async function FourWsPage() {
                   <span className="label text-ink-mute">· {current.seriesTitle}</span>
                 ) : null}
               </div>
-              <h2 className="font-display mt-4 text-3xl leading-tight">
+              <h2 className="font-display mt-4 text-2xl leading-tight">
                 {current.title}
               </h2>
               <div className="mt-6 flex flex-wrap gap-3">

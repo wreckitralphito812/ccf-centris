@@ -79,7 +79,7 @@ export default function AboutPage() {
               <p className="mt-5 text-[1.05rem] leading-relaxed text-ink-soft">
                 {VISION}
               </p>
-              <p className="font-display font-light tracking-wide mt-8 text-3xl text-ink-soft">
+              <p className="font-display tracking-wide mt-8 text-2xl text-ink-soft">
                 small groups, transformed lives
               </p>
             </div>
@@ -99,7 +99,7 @@ export default function AboutPage() {
             {CORE_VALUES.map((v) => (
               <div key={v.letter} className="bg-paper-bright p-7">
                 <div className="flex items-baseline gap-4">
-                  <span className="font-display text-6xl leading-none text-clay">
+                  <span className="font-display text-5xl leading-none text-clay">
                     {v.letter}
                   </span>
                   <h3 className="font-display text-2xl leading-tight">
@@ -183,7 +183,7 @@ export default function AboutPage() {
                 <ButtonLink href="/centris">See the center</ButtonLink>
               </div>
             </div>
-            <div className="border border-hairline bg-paper p-8">
+            <div className="surface p-8">
               <Eyebrow>Find us</Eyebrow>
               <address className="font-display mt-5 text-2xl not-italic leading-snug">
                 {SITE.addressLines.map((l) => (

@@ -36,7 +36,7 @@
   --ink: #142021;
   --ink-soft: #223032; /* body copy — near-black, cool */
   --ink-mute: #4d5c5e; /* labels, dates, counts — still a step down, but dark */
-  --hairline: #d3dfe1;
+  --hairline: #e1e9eb; /* softer since the calm pass (2026-09-30; was #d3dfe1) */
 
   /* Accents.
      Teal is CCF's real brand colour, lifted from the ccf.org.ph logo mark
@@ -287,7 +287,7 @@ a.link,
 .display-lg {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: clamp(2.15rem, 6.5vw, 5rem);
+  font-size: clamp(2.15rem, 5.5vw, 4.25rem);
   line-height: 1.02;
   letter-spacing: -0.025em;
 }
@@ -295,8 +295,9 @@ a.link,
 .display-md {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: clamp(1.7rem, 3.6vw, 3rem);
-  line-height: 1.1;
+  /* Calmer top end (2026-09-30): section titles were reaching 3rem. */
+  font-size: clamp(1.5rem, 2.2vw, 2rem);
+  line-height: 1.12;
   letter-spacing: -0.02em;
 }
 
@@ -305,8 +306,8 @@ a.link,
 .page-title {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: clamp(2rem, 4.2vw, 3.25rem);
-  line-height: 1.08;
+  font-size: clamp(1.9rem, 3.4vw, 2.75rem);
+  line-height: 1.1;
   letter-spacing: -0.022em;
 }
 
@@ -314,7 +315,7 @@ a.link,
    hero and other moments that need more weight than .display-*. */
 .brand-face {
   font-family: var(--font-sans);
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1;
   letter-spacing: -0.02em;
 }
@@ -491,6 +492,14 @@ a.surface:hover,
   box-shadow:
     0 1px 2px rgb(0 95 104 / 0.04),
     0 30px 60px -30px rgb(0 95 104 / 0.12);
+}
+
+/* One heading weight site-wide (2026-09-30). Most headings set only
+   font-display and so rendered at 400, beside semibold ones in the calm
+   pages; a weight utility on the same element still wins (utilities layer). */
+.font-display {
+  font-weight: 600;
+  letter-spacing: -0.012em;
 }
 
 /* Photos inside content get the same softened corners. */

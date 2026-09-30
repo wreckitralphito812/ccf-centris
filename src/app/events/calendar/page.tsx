@@ -94,7 +94,7 @@ export default async function CalendarPage({
       <Section>
         <Container>
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <h2 className="font-display text-3xl">{monthLabel}</h2>
+            <h2 className="font-display text-2xl">{monthLabel}</h2>
             <div className="flex gap-2">
               <NavLink to={offset - 1} disabled={offset === 0}>
                 ← Previous
@@ -117,7 +117,7 @@ export default async function CalendarPage({
           </div>
 
           {/* Desktop grid */}
-          <div className="mt-6 hidden overflow-hidden border border-hairline sm:block">
+          <div className="mt-6 hidden overflow-hidden rounded-2xl border border-rule bg-paper-bright sm:block">
             <div className="grid grid-cols-7 border-b border-hairline bg-paper-bright">
               {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
                 <div key={d} className="label px-3 py-3 text-ink-mute">

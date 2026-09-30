@@ -39,7 +39,7 @@ export default async function SpeakersPage() {
                 >
                   <span
                     aria-hidden
-                    className="font-display flex h-16 w-16 items-center justify-center border border-hairline bg-paper text-2xl text-clay"
+                    className="font-display flex h-16 w-16 items-center justify-center rounded-full bg-clay-wash text-2xl text-clay"
                   >
                     {s.name
                       .split(" ")

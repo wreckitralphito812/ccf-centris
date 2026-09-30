@@ -61,7 +61,7 @@ export default async function SearchPage({
               defaultValue={q}
               autoFocus
               placeholder="Try a topic, a passage, a room, or a question"
-              className="w-full rounded-lg border border-hairline bg-paper-bright px-5 py-4 text-[1.05rem] focus:border-ink"
+              className="w-full rounded-[0.875rem] bg-mist focus:bg-paper-bright focus:outline-none focus:ring-2 focus:ring-clay px-5 py-4 text-[1.05rem]"
             />
             <button
               type="submit"

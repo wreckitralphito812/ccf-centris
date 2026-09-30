@@ -322,7 +322,7 @@ export default async function FourWsGuidePage({ params }: { params: Params }) {
                       body ? (
                         <div
                           key={label}
-                          className="rounded-lg border border-hairline bg-paper p-4"
+                          className="rounded-2xl bg-mist p-5"
                         >
                           <p className="label text-clay">{label}</p>
                           <p className="mt-2 text-[0.88rem] leading-relaxed text-ink-soft">
@@ -350,7 +350,7 @@ export default async function FourWsGuidePage({ params }: { params: Params }) {
                       <details
                         key={g.heading}
                         open={i === 0}
-                        className="rounded-lg border border-hairline bg-paper [&_summary]:list-none"
+                        className="rounded-2xl bg-mist [&_summary]:list-none"
                       >
                         <summary className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3">
                           <span className="text-[0.95rem] font-semibold text-ink">

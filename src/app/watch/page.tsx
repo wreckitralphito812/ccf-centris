@@ -98,7 +98,7 @@ function ReplayPanel({
 
   return (
     <article>
-      <div className="photo aspect-video w-full border border-hairline bg-ink">
+      <div className="photo aspect-video w-full bg-ink">
         <iframe
           src={youtubeEmbed(replay.videoId)}
           title={replay.title}
