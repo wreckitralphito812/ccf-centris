@@ -144,3 +144,115 @@ export function ContactFields({ fields }: { fields: ContactField[] }) {
     </div>
   );
 }
+
+/* ---------------------------------------------------------------------------
+   The step-by-step layout both booking flows use since the design review of
+   2026-09-30: numbered questions with big targets, and a bar pinned to the
+   bottom with the answers so far and the one button.
+   --------------------------------------------------------------------------- */
+
+/** A choice card's look: teal ring when chosen, greyed when it can't be picked. */
+export function choiceClass(on: boolean, disabled = false) {
+  return cx(
+    "rounded-2xl border transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-clay has-[:focus-visible]:ring-offset-2",
+    disabled
+      ? "cursor-not-allowed border-hairline bg-paper"
+      : on
+        ? "cursor-pointer border-clay bg-clay/[0.06] ring-2 ring-clay"
+        : "cursor-pointer border-hairline bg-paper-bright hover:border-ink/40",
+  );
+}
+
+/** One numbered question. Its heading (by `id`) labels the choices inside. */
+export function Question({
+  n,
+  id,
+  title,
+  note,
+  error,
+  level = 3,
+  children,
+}: {
+  n: number;
+  id: string;
+  title: string;
+  note?: ReactNode;
+  error?: string;
+  level?: 2 | 3;
+  children: ReactNode;
+}) {
+  const H = level === 2 ? "h2" : "h3";
+  return (
+    <section className="border-t border-hairline py-8 first:border-t-0 first:pt-0">
+      <H
+        id={id}
+        tabIndex={-1}
+        className="flex scroll-mt-28 items-center gap-3 text-[1.3rem] font-semibold leading-tight text-ink outline-none sm:text-[1.4rem]"
+      >
+        <span
+          aria-hidden
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-clay text-[0.95rem] text-paper-bright"
+        >
+          {n}
+        </span>
+        {title}
+      </H>
+      {note ? <p className="mt-1.5 pl-11 text-[1rem] leading-relaxed text-ink-mute">{note}</p> : null}
+      <div className="mt-5">{children}</div>
+      <FieldError text={error} />
+    </section>
+  );
+}
+
+export function FieldError({ text }: { text?: string }) {
+  return text ? (
+    <p role="alert" className="mt-3 text-[1rem] font-semibold text-clay-deep">
+      {text}
+    </p>
+  ) : null;
+}
+
+/** A big round − or + for a headcount. */
+export function StepButton({
+  label,
+  disabled,
+  onClick,
+  children,
+}: {
+  label: string;
+  disabled: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="btn-press grid h-14 w-14 shrink-0 place-items-center rounded-full border border-ink/25 bg-paper-bright text-2xl text-ink transition-colors hover:border-ink disabled:opacity-35 disabled:hover:border-ink/25"
+    >
+      {children}
+    </button>
+  );
+}
+
+/** The headcount box between the − and + buttons. Digits only; empty until chosen. */
+export const countInputClass =
+  "h-14 w-20 rounded-2xl border border-hairline bg-paper-bright text-center text-3xl font-semibold tabular-nums text-ink focus:border-clay focus:outline-none focus:ring-2 focus:ring-clay";
+
+/** The main button in the pinned bar. */
+export const barButtonClass =
+  "btn-press shrink-0 rounded-full bg-clay px-6 py-4 text-[1.05rem] font-semibold text-paper-bright transition-colors hover:bg-clay-deep disabled:cursor-not-allowed disabled:bg-ink/15 disabled:text-ink-mute sm:px-8";
+
+/**
+ * The bar pinned to the bottom of the screen. The form above it needs bottom
+ * padding (pb-36) so the bar never covers the last field.
+ */
+export function BookingBar({ width = "max-w-3xl", children }: { width?: string; children: ReactNode }) {
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-paper-bright/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-12px_rgba(20,32,33,0.18)] backdrop-blur">
+      <div className={cx("mx-auto flex items-center gap-3 px-5 py-3.5 sm:gap-4 sm:px-8", width)}>{children}</div>
+    </div>
+  );
+}

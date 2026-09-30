@@ -1,9 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { startTransition, useActionState, useEffect, useRef, useState, type ReactNode } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { reserveDgroupTable, type DgroupBookingResult } from "@/app/actions/dgroup-tables";
-import { ContactFields } from "@/components/booking";
+import {
+  BookingBar,
+  ContactFields,
+  FieldError,
+  Question,
+  StepButton,
+  barButtonClass,
+  choiceClass,
+  countInputClass,
+} from "@/components/booking";
 import { cx } from "@/components/ui";
 import { FloorPlanDrawing } from "@/components/floor-plan";
 import {
@@ -236,14 +245,7 @@ function BookingAttempt({
             return (
               <label
                 key={s.id}
-                className={cx(
-                  "flex min-h-16 items-center justify-between gap-4 rounded-2xl border px-5 py-3.5 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-clay has-[:focus-visible]:ring-offset-2",
-                  !ok
-                    ? "cursor-not-allowed border-hairline bg-paper"
-                    : on
-                      ? "cursor-pointer border-clay bg-clay/[0.06] ring-2 ring-clay"
-                      : "cursor-pointer border-hairline bg-paper-bright hover:border-ink/40",
-                )}
+                className={cx("flex min-h-16 items-center justify-between gap-4 px-5 py-3.5", choiceClass(on, !ok))}
               >
                 <input
                   type="radio"
@@ -289,7 +291,7 @@ function BookingAttempt({
             value={count}
             onChange={(ev) => setCount(ev.target.value.replace(/\D/g, ""))}
             aria-invalid={e.groupSize ? true : undefined}
-            className="h-14 w-20 rounded-2xl border border-hairline bg-paper-bright text-center text-3xl font-semibold tabular-nums text-ink focus:border-clay focus:outline-none focus:ring-2 focus:ring-clay"
+            className={countInputClass}
           />
           <StepButton
             label="One more"
@@ -394,75 +396,23 @@ function BookingAttempt({
       ) : null}
 
       {/* The answers so far and the one button, pinned to the bottom. */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-paper-bright/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-12px_rgba(20,32,33,0.18)] backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center gap-4 px-5 py-3.5 sm:px-8">
-          <div className="min-w-0 flex-1 leading-snug" aria-live="polite">
-            {night ? (
-              <span className="block truncate text-[1rem] font-semibold text-ink">
-                {chosen ? `${night.label.slice(0, 3)} · ${startTime(chosen.label)}` : shortNight(night.label)}
-              </span>
-            ) : null}
-            <span className="block truncate text-[0.92rem] text-ink-mute">
-              {missing ?? `${people} ${people === 1 ? "person" : "people"}`}
+      <BookingBar>
+        <div className="min-w-0 flex-1 leading-snug" aria-live="polite">
+          {night ? (
+            <span className="block truncate text-[1rem] font-semibold text-ink">
+              {chosen ? `${night.label.slice(0, 3)} · ${startTime(chosen.label)}` : shortNight(night.label)}
             </span>
-          </div>
-          <button
-            type="submit"
-            disabled={!!missing || pending}
-            className="btn-press shrink-0 rounded-full bg-clay px-7 py-4 text-[1.05rem] font-semibold text-paper-bright transition-colors hover:bg-clay-deep disabled:cursor-not-allowed disabled:bg-ink/15 disabled:text-ink-mute"
-          >
-            {pending ? "Booking…" : "Book my table"}
-          </button>
+          ) : null}
+          <span className="block truncate text-[0.92rem] text-ink-mute">
+            {missing ?? `${people} ${people === 1 ? "person" : "people"}`}
+          </span>
         </div>
-      </div>
+        <button type="submit" disabled={!!missing || pending} className={barButtonClass}>
+          {pending ? "Booking…" : "Book my table"}
+        </button>
+      </BookingBar>
     </form>
   );
-}
-
-/** One numbered question. Its heading labels the choices inside it. */
-function Question({
-  n,
-  id,
-  title,
-  note,
-  error,
-  children,
-}: {
-  n: number;
-  id: string;
-  title: string;
-  note?: string;
-  error?: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className="border-t border-hairline py-8 first:border-t-0 first:pt-0">
-      <h3
-        id={id}
-        tabIndex={-1}
-        className="flex scroll-mt-28 items-center gap-3 text-[1.3rem] font-semibold leading-tight text-ink outline-none sm:text-[1.4rem]"
-      >
-        <span
-          aria-hidden
-          className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-clay text-[0.95rem] text-paper-bright"
-        >
-          {n}
-        </span>
-        {title}
-      </h3>
-      {note ? <p className="mt-1.5 pl-11 text-[1rem] text-ink-mute">{note}</p> : null}
-      <div className="mt-5">{children}</div>
-      <FieldError text={error} />
-    </section>
-  );
-}
-
-function FieldError({ text }: { text?: string }) {
-  return text ? (
-    <p role="alert" className="mt-3 text-[1rem] font-semibold text-clay-deep">
-      {text}
-    </p>
-  ) : null;
 }
 
 /** "12 tables free", "Only 2 left", "Full", or "Too full for 9". */
@@ -477,28 +427,4 @@ function SlotStatus({ s, people, on }: { s: SlotOption; people: number; on: bool
           ? [`Only ${s.free} ${s.free === 1 ? "table" : "tables"} left`, "font-semibold text-clay-deep"]
           : [`${s.free} tables free`, on ? "font-semibold text-clay" : "text-moss"];
   return <span className={cx("shrink-0 text-right text-[0.95rem]", tone)}>{text}</span>;
-}
-
-function StepButton({
-  label,
-  disabled,
-  onClick,
-  children,
-}: {
-  label: string;
-  disabled: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      disabled={disabled}
-      onClick={onClick}
-      className="btn-press grid h-14 w-14 place-items-center rounded-full border border-ink/25 bg-paper-bright text-2xl text-ink transition-colors hover:border-ink disabled:opacity-35 disabled:hover:border-ink/25"
-    >
-      {children}
-    </button>
-  );
 }

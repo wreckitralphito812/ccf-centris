@@ -5,7 +5,9 @@ import { currentUser } from "@/lib/auth/session";
 import { getMyContact } from "@/lib/queries";
 import { hasSupabase } from "@/lib/supabase/server";
 import { manilaDateKey } from "@/lib/format";
-import { HOURS_SUMMARY, MINISTRY_ROOMS, SETUPS } from "@/lib/ministry-rooms";
+import { manilaMinutes } from "@/lib/dgroup-tables";
+import { roomBusyTimes } from "@/app/actions/reservations";
+import { HOURS_SUMMARY, MINISTRY_ROOMS, SETUPS, firstOpenDay } from "@/lib/ministry-rooms";
 import { BookingFlow } from "./booking";
 import { ROOM_POLICIES } from "./policies";
 
@@ -21,7 +23,13 @@ export const dynamic = "force-dynamic";
 export default async function ReservePage() {
   const user = hasSupabase() ? await currentUser() : null;
 
-  const contact = user ? await getMyContact() : null;
+  // The first day's busy times come with the page, read alongside the
+  // member's details, so the room cards show what's free on first paint.
+  const today = manilaDateKey();
+  const firstDay = firstOpenDay(today, manilaMinutes());
+  const [contact, initialBusy] = user
+    ? await Promise.all([getMyContact(), roomBusyTimes(firstDay).catch(() => null)])
+    : [null, null];
   const name = contact?.name ?? "";
   const mobile = contact?.mobile ?? "";
 
@@ -36,7 +44,14 @@ export default async function ReservePage() {
       <Section>
         <Container>
           {user?.email ? (
-            <BookingFlow today={manilaDateKey()} name={name} email={user.email} mobile={mobile} />
+            <BookingFlow
+              today={today}
+              firstDay={firstDay}
+              initialBusy={initialBusy}
+              name={name}
+              email={user.email}
+              mobile={mobile}
+            />
           ) : (
             <div className="grid gap-8 surface p-7 sm:p-9 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div>
