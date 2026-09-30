@@ -119,6 +119,8 @@ there too.
   (`@theme inline`). There is no `tailwind.config.ts`. Use the CCF tokens
   (`paper`, `ink`, `clay`, `hairline`, `moss`, `sky`, …), not raw colours or
   shadcn's `hsl(var(--*))`. Montserrat is the only typeface.
+  `DESIGN.md` covers the look (colour roles, surfaces, buttons, page anatomy)
+  and the booking-flow pattern. Read it before building a page.
 - **Content with no value yet:** it stays `null` in `src/lib/site.ts`, and the
   UI hides it rather than showing a placeholder.
 - **Rendering:** pages opt in with `export const revalidate` / `dynamic`.
