@@ -71,3 +71,50 @@ export function safeNext(raw: unknown, fallback = "/prayer-wall"): string {
   const next = String(raw ?? "");
   return next.startsWith("/") && !next.startsWith("//") ? next : fallback;
 }
+
+/** Topics a request can carry (0014_prayer_wall_interactive.sql), in chip order. */
+export const TOPICS = [
+  { id: "health", label: "Health" },
+  { id: "family", label: "Family" },
+  { id: "work", label: "Work and school" },
+  { id: "guidance", label: "Guidance" },
+  { id: "thanks", label: "Thanksgiving" },
+  { id: "other", label: "Other" },
+] as const;
+
+export type Topic = (typeof TOPICS)[number]["id"];
+
+export const isTopic = (v: unknown): v is Topic => TOPICS.some((t) => t.id === v);
+
+export const topicLabel = (t: Topic) => TOPICS.find((x) => x.id === t)!.label;
+
+/**
+ * A screen name to offer a member who hasn't chosen one: first name and last
+ * initial ("Ralph R"), so one tap gets them onto the wall. Empty when their
+ * name wouldn't make a valid screen name.
+ */
+export function suggestScreenName(first: string | null, last: string | null): string {
+  const f = normalizeScreenName(first ?? "").split(" ")[0] ?? "";
+  const l = normalizeScreenName(last ?? "").charAt(0).toUpperCase();
+  const name = l ? `${f} ${l}` : f;
+  return screenNameProblem(name) ? "" : name;
+}
+
+/** Up to two initials for an avatar: "Ralph R" → "RR", "tita_beth" → "TI". */
+export function initials(name: string): string {
+  const words = name.trim().split(/[\s._-]+/).filter(Boolean);
+  const letters = words.length > 1 ? words[0][0] + words[1][0] : (words[0] ?? "").slice(0, 2);
+  return letters.toUpperCase();
+}
+
+const shortDay = new Intl.DateTimeFormat("en-PH", { month: "short", day: "numeric", timeZone: "Asia/Manila" });
+
+/** "Just now", "5m", "3h", "2d", then a date ("Oct 1") after a week. */
+export function timeAgo(iso: string, now: Date = new Date()): string {
+  const mins = Math.floor((now.getTime() - new Date(iso).getTime()) / 60_000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m`;
+  if (mins < 60 * 24) return `${Math.floor(mins / 60)}h`;
+  if (mins < 60 * 24 * 7) return `${Math.floor(mins / (60 * 24))}d`;
+  return shortDay.format(new Date(iso));
+}
