@@ -5,7 +5,8 @@ import { useState } from "react";
 import { FirebaseError } from "firebase/app";
 import { createUserWithEmailAndPassword, sendEmailVerification, signOut, updateProfile } from "firebase/auth";
 import { checkSignUp, type SignUpCheck } from "@/app/actions/auth";
-import { FormNote, IconField, OrDivider, PasswordField, submitClass } from "@/components/auth-fields";
+import { FormNote, IconField, OrDivider, PasswordField, PhoneField, submitClass } from "@/components/auth-fields";
+import { rememberSignUp } from "@/lib/auth/pending-profile";
 import { authErrorMessage, passwordProblem, PASSWORD_MIN } from "@/lib/auth/password";
 import { firebaseAuth } from "@/lib/firebase/client";
 import { ProviderButton } from "@/app/sign-in/provider-button";
@@ -22,6 +23,7 @@ export function SignUpForm({ next, accounts }: { next: string; accounts: boolean
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [errors, setErrors] = useState<SignUpCheck["fieldErrors"] & { password?: string }>({});
@@ -34,7 +36,7 @@ export function SignUpForm({ next, accounts }: { next: string; accounts: boolean
     if (!accounts) return setFormError("Accounts aren’t available yet. Check back soon.");
 
     const pw = passwordProblem(password);
-    const check = await checkSignUp({ firstName, lastName, email });
+    const check = await checkSignUp({ firstName, lastName, email, mobile });
     const fieldErrors = { ...(check.fieldErrors ?? {}), ...(pw ? { password: pw } : {}) };
     setErrors(fieldErrors);
     if (!check.ok || pw) {
@@ -52,6 +54,8 @@ export function SignUpForm({ next, accounts }: { next: string; accounts: boolean
         url: `${window.location.origin}/sign-in?verified=1&next=${encodeURIComponent(next)}`,
       });
       await signOut(auth);
+      // Kept in this browser until the first sign-in saves it to the profile.
+      rememberSignUp(check.email!, { firstName: check.firstName!, lastName: check.lastName!, mobile: check.mobile! });
       setSentTo(check.email!);
     } catch (e) {
       setFormError(authErrorMessage(e instanceof FirebaseError ? e.code : ""));
@@ -117,6 +121,14 @@ export function SignUpForm({ next, accounts }: { next: string; accounts: boolean
           value={email}
           onChange={(ev) => setEmail(ev.target.value)}
           error={errors.email}
+        />
+        <PhoneField
+          id="mobile"
+          label="Mobile number"
+          value={mobile}
+          onValue={setMobile}
+          error={errors.mobile}
+          hint="For bookings and same-day changes."
         />
         <PasswordField
           id="password"

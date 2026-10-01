@@ -18,6 +18,7 @@
  * The page, the form, the actions, the email and the floor plans all read from
  * here, so changing a value here changes it everywhere.
  */
+import { normalizePhMobile } from "@/lib/phone";
 
 // --- Configuration -----------------------------------------------------------
 
@@ -419,9 +420,10 @@ export function parseDgroupBooking(
     errors.leaderName = "Enter the Dgroup leader's name.";
   }
 
-  const contactMobile = get("contact_mobile").replace(/[^\d+()\-\s]/g, "").replace(/\s+/g, " ");
-  if (contactMobile.replace(/\D/g, "").length < 7 || contactMobile.length > 30) {
-    errors.contactMobile = "Enter a contact number we can reach.";
+  // A PH mobile, stored as 0917 123 4567 (2026-10-01).
+  const contactMobile = normalizePhMobile(get("contact_mobile")) ?? "";
+  if (!contactMobile) {
+    errors.contactMobile = "Enter a mobile number like 0917 123 4567.";
   }
 
   const leaderEmail = get("leader_email").toLowerCase();

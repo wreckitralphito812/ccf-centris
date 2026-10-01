@@ -9,8 +9,8 @@ import {
   Confirmation,
   ContactFields,
   DayCircle,
-  FieldError,
   IconLine,
+  PolicyAgreement,
   Question,
   StepButton,
   barButtonClass,
@@ -111,7 +111,6 @@ function BookingAttempt({
   const [slot, setSlot] = useState("");
   const [count, setCount] = useState("");
   const [agreed, setAgreed] = useState(false);
-  const [showPolicies, setShowPolicies] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const doneRef = useRef<HTMLDivElement>(null);
   const e = state?.fieldErrors ?? {};
@@ -157,6 +156,19 @@ function BookingAttempt({
     return (
       <Confirmation
         focusRef={doneRef}
+        aside={
+          <div className="flex justify-center overflow-hidden rounded-2xl bg-mist p-4 lg:p-6">
+            <div className="sm:hidden">
+              <FloorPlanDrawing room={b.roomSlug} highlight={b.labels} width={250} />
+            </div>
+            <div className="hidden sm:block lg:hidden">
+              <FloorPlanDrawing room={b.roomSlug} highlight={b.labels} width={440} />
+            </div>
+            <div className="hidden lg:block">
+              <FloorPlanDrawing room={b.roomSlug} highlight={b.labels} width={460} />
+            </div>
+          </div>
+        }
         title="You’re booked"
         note={
           b.emailed
@@ -174,15 +186,6 @@ function BookingAttempt({
             {b.groupSize} {b.groupSize === 1 ? "person" : "people"}
           </IconLine>
           <IconLine icon="pin">{SITE.addressLines.slice(0, 2).join(", ")}</IconLine>
-        </div>
-        {/* The drawing is fixed-size (it doubles as the email image), so phones get a smaller one. */}
-        <div className="flex justify-center overflow-hidden rounded-2xl bg-mist p-4">
-          <div className="sm:hidden">
-            <FloorPlanDrawing room={b.roomSlug} highlight={b.labels} width={250} />
-          </div>
-          <div className="hidden sm:block">
-            <FloorPlanDrawing room={b.roomSlug} highlight={b.labels} width={440} />
-          </div>
         </div>
         <AddToCalendar
           bare
@@ -357,42 +360,17 @@ function BookingAttempt({
           />
 
           <div className="mt-6">
-            <label className="flex cursor-pointer items-start gap-3.5 text-[1.05rem] leading-snug text-ink">
-              <input
-                id="policies-ok"
-                type="checkbox"
-                checked={agreed}
-                onChange={(ev) => setAgreed(ev.target.checked)}
-                aria-invalid={e.policies ? true : undefined}
-                aria-describedby="policies-list"
-                className="mt-0.5 h-6 w-6 shrink-0 rounded-md accent-clay"
-              />
-              <span>I agree to the Dgroup policies for my group.</span>
-            </label>
+            <PolicyAgreement
+              id="policies-ok"
+              policies={[...DGROUP_POLICIES]}
+              label="I agree to the Dgroup policies for my group."
+              checked={agreed}
+              onChange={setAgreed}
+              error={e.policies}
+            />
             {agreed
               ? DGROUP_POLICIES.map((p) => <input key={p.id} type="hidden" name={`policy_${p.id}`} value="on" />)
               : null}
-            <button
-              type="button"
-              onClick={() => setShowPolicies((v) => !v)}
-              aria-expanded={showPolicies}
-              aria-controls="policies-list"
-              className="mt-2 ml-[2.4rem] min-h-11 text-[0.98rem] font-semibold text-clay underline underline-offset-4 hover:text-clay-deep"
-            >
-              {showPolicies ? "Hide the policies" : `Read the ${DGROUP_POLICIES.length} policies`}
-            </button>
-            <ul
-              id="policies-list"
-              hidden={!showPolicies}
-              className="mt-2 space-y-2.5 rounded-2xl bg-mist p-5 text-[0.98rem] leading-relaxed text-ink-soft"
-            >
-              {DGROUP_POLICIES.map((p) => (
-                <li key={p.id}>
-                  <span className="font-semibold text-ink">{p.title}.</span> {p.body}
-                </li>
-              ))}
-            </ul>
-            <FieldError text={e.policies} />
           </div>
         </Question>
       </div>

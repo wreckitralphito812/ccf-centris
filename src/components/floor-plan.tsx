@@ -14,14 +14,14 @@ import { DGROUP_ROOMS } from "@/lib/dgroup-tables";
  * understands. Don't reach for Tailwind classes or percentages here.
  */
 
-const WALL = "#1d2b2d";
-const FLOOR = "#f7fafa";
-const TABLE_LINE = "#9db3b6";
-const TABLE_TEXT = "#324548";
-const CHAIR = "#d3e0e2";
-const FURNITURE = "#e9f0f1";
+const WALL = "#142021";
+const FLOOR = "#ffffff";
+const TABLE_LINE = "#5f7478";
+const TABLE_TEXT = "#142021";
+const CHAIR = "#b8c9cc";
+const FURNITURE = "#e6edee";
 const PICKED = "#007682";
-const PICKED_CHAIR = "#8cc4c9";
+const PICKED_CHAIR = "#00a6b6";
 
 /** Wall thickness for a drawing of this width. */
 const wallFor = (width: number) => Math.max(3, Math.round(width / 140));
@@ -162,7 +162,7 @@ export function FloorPlanDrawing({
       pieces.push(
         <div
           key={`f${i}`}
-          style={{ position: "absolute", display: "flex", ...box, borderRadius: Math.round(Math.min(box.width, box.height) * 0.25), background: FURNITURE }}
+          style={{ position: "absolute", display: "flex", ...box, borderRadius: Math.round(Math.min(box.width, box.height) * 0.12), background: FURNITURE }}
         />,
       );
       return;
@@ -187,9 +187,9 @@ export function FloorPlanDrawing({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          borderRadius: item.shape === "round" ? Math.max(top.width, top.height) : Math.max(3, Math.round(Math.min(top.width, top.height) * 0.14)),
+          borderRadius: item.shape === "round" ? Math.max(top.width, top.height) : Math.max(2, Math.round(Math.min(top.width, top.height) * 0.08)),
           background: on ? PICKED : "#ffffff",
-          border: `${on ? 2 : 1.5}px solid ${on ? PICKED : TABLE_LINE}`,
+          border: `${on ? 2 : 1.25}px solid ${on ? PICKED : TABLE_LINE}`,
           color: on ? "#ffffff" : TABLE_TEXT,
           fontSize: item.shape === "round" ? Math.max(9, Math.round(labelSize * 0.8)) : labelSize,
           fontWeight: 700,
@@ -228,7 +228,7 @@ export function FloorPlanDrawing({
             style={{
               position: "absolute",
               display: "flex",
-              color: "#7b8d90",
+              color: "#4d5c5e",
               fontSize: doorLabel,
               fontWeight: 600,
               letterSpacing: 0.5,

@@ -13,6 +13,7 @@ import {
 import { startSession } from "@/app/actions/auth";
 import { FormNote, IconField, OrDivider, PasswordField, submitClass } from "@/components/auth-fields";
 import { authErrorMessage } from "@/lib/auth/password";
+import { forgetSignUp, recallSignUp } from "@/lib/auth/pending-profile";
 import { firebaseAuth } from "@/lib/firebase/client";
 import { ProviderButton } from "./provider-button";
 
@@ -48,7 +49,17 @@ export function SignInForm({ next, accounts }: { next: string; accounts: boolean
         setPending(false);
         return;
       }
-      const res = await startSession({ idToken: await user.getIdToken(), next, remember });
+      // Name and mobile from the sign-up form, if it was in this browser.
+      const pending = recallSignUp(user.email ?? email.trim());
+      const res = await startSession({
+        idToken: await user.getIdToken(),
+        next,
+        remember,
+        firstName: pending?.firstName ?? null,
+        lastName: pending?.lastName ?? null,
+        phone: pending?.mobile ?? null,
+      });
+      if (res.ok) forgetSignUp(user.email ?? email.trim());
       await signOut(auth);
       if (!res.ok || !res.redirectTo) {
         setError(res.formError ?? "Could not sign you in. Please try again.");
