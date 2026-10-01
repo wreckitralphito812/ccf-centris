@@ -31,7 +31,7 @@ export function BookAgain({ id, target, label }: { id: string; target: string | 
         type="button"
         disabled={pending}
         onClick={() => start(async () => setResult(await rebookDgroupTable(id)))}
-        className="btn-press inline-flex min-h-11 items-center rounded-full border border-clay px-5 text-[0.95rem] font-semibold text-clay transition-colors hover:bg-clay-wash disabled:opacity-50"
+        className="btn-press inline-flex min-h-11 items-center rounded-lg border border-clay px-5 text-[0.95rem] font-semibold text-clay transition-colors hover:bg-clay-wash disabled:opacity-50"
       >
         {pending ? "Booking…" : (label ?? `Book again for ${day}, ${nightLabel(target).split(", ")[1]}`)}
       </button>

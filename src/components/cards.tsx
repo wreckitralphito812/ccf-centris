@@ -39,7 +39,7 @@ export function MessageArt({
     ["#00a6b6", "#ffffff"],
     ["#72042c", "#f4f7f7"],
     ["#10262b", "#00a6b6"],
-    ["#007682", "#e6eef0"],
+    ["#007a87", "#e6eef0"],
     ["#4a5d3a", "#ffffff"],
   ];
   const [bg, fg] = palettes[h % palettes.length];
@@ -260,7 +260,7 @@ export function DgroupCard({ d }: { d: Dgroup }) {
         </p>
         <Link
           href={`/grow/find-a-dgroup/${d.id}`}
-          className="btn-press label rounded-full border border-ink px-3.5 py-2 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+          className="btn-press label rounded-lg border border-ink px-3.5 py-2 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
         >
           I&rsquo;m interested
         </Link>

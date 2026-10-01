@@ -30,7 +30,7 @@ export const TONES = [
 export type ButtonTone = (typeof TONES)[number];
 
 export const buttonVariants = cva(
-  "btn-press inline-flex items-center justify-center gap-2 rounded-full border font-semibold tracking-[0.005em] transition-colors duration-200 disabled:opacity-40 disabled:pointer-events-none",
+  "btn-press inline-flex items-center justify-center gap-2 rounded-lg border font-semibold tracking-[0.005em] transition-colors duration-200 disabled:opacity-40 disabled:pointer-events-none",
   {
     variants: {
       variant: {

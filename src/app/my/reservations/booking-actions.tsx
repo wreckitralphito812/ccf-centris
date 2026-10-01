@@ -51,7 +51,7 @@ export function BookingActions({
       : null;
 
   const ghost =
-    "btn-press inline-flex min-h-11 items-center rounded-full px-4 text-[0.95rem] font-semibold transition-colors";
+    "btn-press inline-flex min-h-11 items-center rounded-lg px-4 text-[0.95rem] font-semibold transition-colors";
 
   return (
     <div className="space-y-5">
@@ -242,7 +242,7 @@ function ChangeForm({
       <button
         type="submit"
         disabled={pending}
-        className="btn-press inline-flex min-h-12 items-center rounded-full bg-clay px-6 text-[1rem] font-semibold text-paper-bright hover:bg-clay-deep disabled:opacity-50"
+        className="btn-press inline-flex min-h-12 items-center rounded-lg bg-clay px-6 text-[1rem] font-semibold text-paper-bright hover:bg-clay-deep disabled:opacity-50"
       >
         {pending ? "Saving…" : "Save changes"}
       </button>

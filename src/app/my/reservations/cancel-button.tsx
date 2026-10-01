@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { cancelMyBooking } from "@/app/actions/my-bookings";
 
 const pill =
-  "btn-press inline-flex min-h-11 items-center rounded-full px-4 text-[0.95rem] font-semibold transition-colors disabled:opacity-50";
+  "btn-press inline-flex min-h-11 items-center rounded-lg px-4 text-[0.95rem] font-semibold transition-colors disabled:opacity-50";
 
 /** Cancel a room booking, with one confirm step. */
 export function CancelButton({ id }: { id: string }) {

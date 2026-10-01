@@ -114,7 +114,7 @@ export function SeriesDisclosure({ row }: { row: SeriesRow }) {
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-controls={panelId}
-          className="btn-press label rounded-full tap gap-2 self-start border border-ink px-4 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright sm:self-center"
+          className="btn-press label rounded-lg tap gap-2 self-start border border-ink px-4 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright sm:self-center"
         >
           {open ? "Hide videos" : "Show videos"}
           <ChevronIcon open={open} />

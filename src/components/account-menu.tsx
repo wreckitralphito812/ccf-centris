@@ -52,13 +52,13 @@ export function AccountMenu() {
       <div className="hidden shrink-0 items-center gap-1 sm:flex">
         <Link
           href="/sign-in"
-          className="whitespace-nowrap rounded-full px-3 py-2 text-[0.95rem] font-medium text-ink transition-colors hover:bg-mist hover:text-clay"
+          className="whitespace-nowrap rounded-lg px-3 py-2 text-[0.95rem] font-medium text-ink transition-colors hover:bg-mist hover:text-clay"
         >
           Sign in
         </Link>
         <Link
           href="/sign-up"
-          className="btn-press inline-flex items-center rounded-full bg-clay px-4 py-2.5 text-[0.92rem] font-semibold whitespace-nowrap text-paper-bright shadow-[0_8px_20px_-8px_rgba(0,118,130,0.55)] transition-colors hover:bg-clay-deep"
+          className="btn-press inline-flex items-center rounded-lg bg-clay px-4 py-2.5 text-[0.92rem] font-semibold whitespace-nowrap text-paper-bright shadow-[0_8px_20px_-8px_rgba(0,118,130,0.55)] transition-colors hover:bg-clay-deep"
         >
           Sign up
         </Link>

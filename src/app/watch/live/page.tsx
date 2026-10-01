@@ -237,7 +237,7 @@ export default async function WatchLivePage() {
                       href={nextService.watchUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="btn-press label rounded-full tap border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
+                      className="btn-press label rounded-lg tap border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
                     >
                       Set a reminder on YouTube
                     </a>
@@ -246,7 +246,7 @@ export default async function WatchLivePage() {
                       href={`${YOUTUBE.channelUrl}/streams`}
                       target="_blank"
                       rel="noreferrer"
-                      className="btn-press label rounded-full tap border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+                      className="btn-press label rounded-lg tap border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
                     >
                       See the schedule on YouTube
                     </a>

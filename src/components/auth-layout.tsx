@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { IconLine } from "./booking";
+import { Glows, IconLine } from "./booking";
 import { Container, Section } from "./ui";
 
 /**
@@ -33,7 +33,10 @@ export function AuthLayout({
             <IconLine icon="check">See, change and cancel your bookings in one place</IconLine>
           </div>
         </div>
-        <div className="calm-card w-full px-6 py-8 sm:px-10 sm:py-10">{children}</div>
+        <div className="relative isolate">
+          <Glows className="-inset-x-12 -bottom-16 top-1/4 hidden sm:block" />
+          <div className="calm-card w-full px-6 py-8 sm:px-10 sm:py-10">{children}</div>
+        </div>
       </Container>
     </Section>
   );

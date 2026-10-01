@@ -124,7 +124,7 @@ export default async function MessagePage({
                 {m.series ? (
                   <Link
                     href={`/watch/series/${m.series.slug}`}
-                    className="btn-press label rounded-full border border-white/25 px-4 py-2.5 text-paper-bright transition-colors hover:bg-white/10"
+                    className="btn-press label rounded-lg border border-white/25 px-4 py-2.5 text-paper-bright transition-colors hover:bg-white/10"
                   >
                     More from this series
                   </Link>

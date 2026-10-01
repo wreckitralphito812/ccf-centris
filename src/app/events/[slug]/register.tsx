@@ -118,13 +118,13 @@ export function RegisterForm({
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
             href="/events"
-            className="btn-press label rounded-full border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
+            className="btn-press label rounded-lg border border-clay bg-clay px-5 py-2.5 text-paper-bright transition-colors hover:bg-clay-deep"
           >
             More events
           </Link>
           <Link
             href="/events/calendar"
-            className="btn-press label rounded-full border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+            className="btn-press label rounded-lg border border-ink px-5 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
           >
             See the calendar
           </Link>
@@ -220,7 +220,7 @@ export function RegisterForm({
                 type="button"
                 aria-label="One fewer"
                 onClick={() => setParty((n) => Math.max(1, n - 1))}
-                className="btn-press flex rounded-full h-8 w-8 items-center justify-center border border-ink/25 transition-colors hover:border-ink"
+                className="btn-press flex rounded-lg h-8 w-8 items-center justify-center border border-ink/25 transition-colors hover:border-ink"
               >
                 −
               </button>
@@ -234,7 +234,7 @@ export function RegisterForm({
                 type="button"
                 aria-label="One more"
                 onClick={() => setParty((n) => Math.min(10, n + 1))}
-                className="btn-press flex rounded-full h-8 w-8 items-center justify-center border border-ink/25 transition-colors hover:border-ink"
+                className="btn-press flex rounded-lg h-8 w-8 items-center justify-center border border-ink/25 transition-colors hover:border-ink"
               >
                 +
               </button>

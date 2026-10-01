@@ -56,11 +56,11 @@ export function DgroupFinder({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search by name, area, or description"
-          className="w-full rounded-[0.875rem] bg-mist focus:bg-paper-bright focus:outline-none focus:ring-2 focus:ring-clay px-4 py-3 text-[0.95rem]"
+          className="w-full rounded-lg bg-mist focus:bg-paper-bright focus:outline-none focus:ring-2 focus:ring-clay px-4 py-3 text-[0.95rem]"
         />
         <button
           type="submit"
-          className="btn-press label rounded-full shrink-0 border border-ink bg-ink px-5 text-paper-bright transition-colors hover:bg-night"
+          className="btn-press label rounded-lg shrink-0 border border-ink bg-ink px-5 text-paper-bright transition-colors hover:bg-night"
         >
           Search
         </button>
@@ -79,7 +79,7 @@ export function DgroupFinder({
                 aria-pressed={on}
                 onClick={() => set("day", on ? "" : String(d))}
                 className={cx(
-                  "btn-press label rounded-full border px-3.5 py-2 transition-colors",
+                  "btn-press label rounded-lg border px-3.5 py-2 transition-colors",
                   on
                     ? "border-clay bg-clay text-paper-bright"
                     : "border-ink/25 text-ink hover:border-ink",
@@ -161,7 +161,7 @@ function Select({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-[0.875rem] bg-mist focus:bg-paper-bright focus:outline-none focus:ring-2 focus:ring-clay px-3 py-2.5 text-[0.9rem]"
+        className="w-full rounded-lg bg-mist focus:bg-paper-bright focus:outline-none focus:ring-2 focus:ring-clay px-3 py-2.5 text-[0.9rem]"
       >
         <option value="">Any</option>
         {options.map(([v, l]) => (

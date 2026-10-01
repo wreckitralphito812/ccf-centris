@@ -31,7 +31,7 @@ export function CopyLink({ url }: { url: string }) {
         type="button"
         onClick={copy}
         aria-live="polite"
-        className="btn-press label rounded-full border border-ink px-4 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
+        className="btn-press label rounded-lg border border-ink px-4 py-2.5 text-ink transition-colors hover:bg-ink hover:text-paper-bright"
       >
         {copied ? "Copied" : "Copy link"}
       </button>

@@ -810,8 +810,8 @@ function EquipmentChip({ label, max, count, onChange }: { label: string; max: nu
     );
   }
   return (
-    <span className="inline-flex min-h-12 items-stretch rounded-full bg-clay text-[1rem] text-paper-bright">
-      <button type="button" aria-label={`One fewer ${label.toLowerCase()}`} onClick={() => onChange(count - 1)} className="w-11 cursor-pointer rounded-l-full hover:bg-clay-deep">
+    <span className="inline-flex min-h-12 items-stretch rounded-lg bg-clay text-[1rem] text-paper-bright">
+      <button type="button" aria-label={`One fewer ${label.toLowerCase()}`} onClick={() => onChange(count - 1)} className="w-11 cursor-pointer rounded-l-lg hover:bg-clay-deep">
         &minus;
       </button>
       <span aria-live="polite" className="flex items-center px-1 tabular-nums">
@@ -822,7 +822,7 @@ function EquipmentChip({ label, max, count, onChange }: { label: string; max: nu
         aria-label={`One more ${label.toLowerCase()}`}
         onClick={() => onChange(Math.min(max, count + 1))}
         disabled={count >= max}
-        className="w-11 cursor-pointer rounded-r-full hover:bg-clay-deep disabled:cursor-not-allowed disabled:text-paper-bright/40"
+        className="w-11 cursor-pointer rounded-r-lg hover:bg-clay-deep disabled:cursor-not-allowed disabled:text-paper-bright/40"
       >
         +
       </button>

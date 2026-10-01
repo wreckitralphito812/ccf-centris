@@ -1,20 +1,24 @@
 # CCF Centris design
 
-How the site looks and why, as settled after the design polish (PR #10) and
-the booking-flow review (2026-09-30). Read this before adding a page or a
+How the site looks and why, as settled after the design polish (PR #10), the
+booking-flow review (2026-09-30) and design A, "Calendly, in CCF teal"
+(2026-10-01; spec in `docs/superpowers/specs/2026-10-01-design-a-calendly-teal.md`). Read this before adding a page or a
 component. The tokens themselves live in `src/app/globals.css`; the shared
 pieces in `src/components/ui.tsx` and `src/components/booking.tsx`.
 
 ## The feel
 
-Professional and minimalist, but not bland. Most of the page is quiet white
-and near-black type; life comes from a few deliberate things:
+Sharp, professional and modern, patterned on Calendly, with CCF teal as the
+DNA. Ralph found the earlier soft look bland (2026-10-01). Most of the page is
+white cards and deep navy-teal type on a faintly dotted canvas; life comes
+from a few deliberate things:
 
-- soft white **surfaces** with rounded corners and a gentle lift, on a cool
-  off-white ground;
-- a **teal wash** in the top corner of every page header;
+- crisp white **surfaces**: 16px corners, a 1px hairline edge and a soft lift;
+- a faint **dot grid** on the page canvas, which white cards cover;
+- **colour glows**, blurred teal and maroon shapes, in every page header and
+  behind the home welcome card and the sign-in card (`Glows`);
 - **one full-strength teal moment** per page, the footer's gradient strip;
-- **pill buttons** in sentence case;
+- **8px-cornered buttons** in sentence case, not pills;
 - real photos of Centris, never stock.
 
 If a page feels flat, reach for one of those before inventing something new.
@@ -23,21 +27,21 @@ If a page feels flat, reach for one of those before inventing something new.
 
 | Token | Hex | Use |
 |---|---|---|
-| `paper` | `#f7f9f9` | Page ground (the calm pale) |
-| `paper-deep` | `#e6eef0` | Deeper sections, skeletons |
+| `paper` | `#f8fafb` | Page canvas (carries the dot grid) |
+| `paper-deep` | `#eef3f5` | Deeper sections, skeletons |
 | `paper-bright` | `#ffffff` | Surfaces, cards, inputs |
-| `bone` | `#e2ebed` | Hover ground |
-| `ink` | `#142021` | Headings |
-| `ink-soft` | `#223032` | Body copy |
-| `ink-mute` | `#4d5c5e` | Labels, dates, hints |
-| `hairline` | `#e1e9eb` | Borders and rules (softened in the calm pass) |
-| `clay` | `#007682` | The working teal: links, buttons, focus, accents on paper |
-| `clay-deep` | `#005f68` | Hover for clay; error text |
+| `bone` | `#e9f0f3` | Hover ground |
+| `ink` | `#0d2b3a` | Headings: deep navy-teal, never pure black |
+| `ink-soft` | `#2b4654` | Body copy |
+| `ink-mute` | `#4d6878` | Labels, dates, hints |
+| `hairline` | `#dbe5ea` | Card, input and choice borders; rules |
+| `clay` | `#007a87` | The working teal: links, buttons, focus, accents on paper |
+| `clay-deep` | `#006a76` | Hover for clay; error text |
 | `clay-lift` | `#3ec6d0` | Teal type on the dark ground |
 | `brand-teal` | `#00a6b6` | The exact CCF mark. Large flat shapes only, **never text** |
 | `sky` | `#7d1235` | CCF maroon, the secondary |
 | `moss` | `#55643f` | "Free" and other good-news statuses |
-| `night` | `#16292a` | The dark ground (footer, dark sections) |
+| `night` | `#0b2532` | The dark ground (footer, dark sections), navy-teal |
 
 Rules:
 
@@ -50,7 +54,9 @@ Rules:
 
 ## Type
 
-Montserrat only, loaded once in the root layout.
+Manrope only, loaded once in the root layout (`--font-manrope`). It is the
+closest free match to Calendly's Gilroy, and replaced Montserrat on
+2026-10-01.
 
 | Class | Use |
 |---|---|
@@ -66,23 +72,27 @@ Montserrat only, loaded once in the root layout.
   `tabular-nums`.
 - Booking flows use a larger reading size: 1.05rem body, 1.3–1.4rem question
   titles, because older members book too.
-- **One heading weight and a gentle scale** (page polish, 2026-09-30). Every
-  heading is semibold (`.font-display` defaults to 600; a weight utility on the
-  same element still wins). On a laptop: page titles about 44px, section
+- **One heading weight and a gentle scale** (page polish, 2026-09-30; bolder
+  in design A). Every heading is bold (`.font-display` defaults to 700; a
+  weight utility on the same element still wins), and `.page-title` is 800. On a laptop: page titles about 44px, section
   titles (`.display-md`) about 30px, card titles 20–24px, body 16–17px. Big
   feature words and numbers stay at or under 30px. Nothing thin (300) at
   large sizes.
 
 ## Shape and depth
 
-- **Surfaces**: `.surface` for any card or panel: white, `0.875rem` corners,
-  a hairline ring and a soft lift. A surface that is a link rises 2px on hover.
+- **Surfaces**: `.surface` for any card or panel: white, 16px (`1rem`)
+  corners, a 1px hairline ring and a soft three-layer lift. A surface that is a link rises 2px on hover.
   `.surface-grid` is the "cells with 1px gaps" layout with the same corners.
   `.photo` gives images the same corners.
 - **Choice cards** in forms: `rounded-2xl`, via `choiceClass()` in
   `components/booking.tsx`.
-- **Buttons and chips**: `rounded-full`.
-- **Inputs**: `rounded-lg` (forms) or `rounded-xl` (booking flows).
+- **Buttons and chips**: `rounded-lg` (8px). Round icon buttons (− / +,
+  arrows), badges and date circles stay `rounded-full`.
+- **Inputs**: `rounded-lg` (forms) and `.calm-input` (8px, booking flows).
+- **Glows**: `Glows` from `components/booking.tsx`, inside a `relative
+  isolate` wrapper, behind a card. `PageHeader` has its own. `body` clips
+  sideways overflow so glows never cause a horizontal scroll.
 - These styles sit in `@layer components`, so a Tailwind utility on the same
   element still wins. Keep new shared classes there too.
 
@@ -146,16 +156,16 @@ booking or sign-up flow.
 | Piece | What it is |
 |---|---|
 | `bg-mist` / `Section tone="mist"` | The booking ground, one step lighter than `paper` |
-| `.calm-card` | White, 24px corners, no border, a soft three-layer teal-tinted shadow |
-| `.calm-input` | Filled (`mist`), borderless, 14px corners, a teal ring on focus |
+| `.calm-card` | White, 16px corners, a 1px hairline ring, a soft three-layer shadow |
+| `.calm-input` | Filled (`mist`), borderless, 8px corners, a teal ring on focus |
 | `border-rule` | The faint line between questions |
 | `border-edge` | The soft outline of an unchosen choice |
 | `StatusBadge` | Confirmed `clay-wash`/`clay-deep`, Awaiting approval `sky-wash`/`sky` (CCF maroon), the rest `rule`/`ink-mute` |
 | `UiIcon` | Line icons (calendar, clock, people, pin, check), 1.5px stroke |
 
 Teal appears only where someone has chosen something, or on the one main
-button. Pill buttons stay as everywhere else. This look is on the reservation
-pages first; the rest of the site follows in a later pass.
+button. Buttons have 8px corners, as everywhere else. The whole site uses
+this look since 2026-09-30.
 
 ## Accessibility floor
 
@@ -182,7 +192,8 @@ pages first; the rest of the site follows in a later pass.
 ## Don't
 
 - Don't add a second typeface, drop shadows beyond `.surface`, gradients
-  other than the header wash and footer strip, or emoji in the UI.
+  other than the glows and the footer strip, or emoji in the UI.
+- Don't bring back pill buttons or the paper grain; they made the site soft.
 - Don't use `brand-teal` for text, or put white text on it.
 - Don't write ALL-CAPS buttons or links.
 - Don't show a control that can't work; hide it or say why it's off.

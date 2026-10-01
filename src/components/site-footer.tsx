@@ -93,7 +93,7 @@ export function SiteFooter() {
                 contrast. Matches the "on-dark" button tone in ui.tsx. */}
             <Link
               href="/visit#getting-here"
-              className="btn-press label rounded-full tap border border-paper-bright bg-paper-bright px-4 py-2.5 text-night transition-colors hover:border-bone hover:bg-bone"
+              className="btn-press label rounded-lg tap border border-paper-bright bg-paper-bright px-4 py-2.5 text-night transition-colors hover:border-bone hover:bg-bone"
             >
               Getting here
             </Link>
@@ -137,7 +137,7 @@ export function SiteFooter() {
                 href={MAPS_LINK}
                 target="_blank"
                 rel="noreferrer"
-                className="label tap rounded-full border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
+                className="label tap rounded-lg border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
               >
                 Get directions
               </a>
@@ -147,7 +147,7 @@ export function SiteFooter() {
                   target="_blank"
                   rel="noreferrer"
                   aria-label="CCF Centris on Instagram"
-                  className="label tap gap-2 rounded-full border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
+                  className="label tap gap-2 rounded-lg border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
                 >
                   <InstagramGlyph className="h-4 w-4" />
                   Instagram
@@ -159,7 +159,7 @@ export function SiteFooter() {
                   target="_blank"
                   rel="noreferrer"
                   aria-label="CCF Centris on Facebook"
-                  className="label tap gap-2 rounded-full border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
+                  className="label tap gap-2 rounded-lg border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
                 >
                   <FacebookGlyph className="h-4 w-4" />
                   Facebook
@@ -170,7 +170,7 @@ export function SiteFooter() {
                 target="_blank"
                 rel="noreferrer"
                 aria-label="CCF on YouTube"
-                className="label tap gap-2 rounded-full border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
+                className="label tap gap-2 rounded-lg border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
               >
                 <YouTubeGlyph className="h-4 w-4" />
                 YouTube
