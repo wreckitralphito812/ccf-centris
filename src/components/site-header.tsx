@@ -103,7 +103,7 @@ export function SiteHeader() {
               aria-current={isActive(group.href) ? "page" : undefined}
               className={cx(
                 // Sentence case, not tracked capitals: the calm look (2026-09-30).
-                "relative whitespace-nowrap rounded-full px-2.5 py-2 text-[0.95rem] font-medium transition-colors xl:px-3.5",
+                "relative whitespace-nowrap rounded-lg px-2.5 py-2 text-[0.95rem] font-medium transition-colors xl:px-3.5",
                 isActive(group.href) ? "text-clay" : "text-ink hover:bg-mist hover:text-clay",
               )}
             >
@@ -125,7 +125,7 @@ export function SiteHeader() {
           </Link>
           <Link
             href="/watch"
-            className="btn-press hidden items-center gap-2 rounded-full border border-clay px-4 py-2 text-[0.92rem] font-semibold whitespace-nowrap text-clay transition-colors hover:bg-clay-wash md:inline-flex lg:hidden 2xl:inline-flex"
+            className="btn-press hidden items-center gap-2 rounded-lg border border-clay px-4 py-2 text-[0.92rem] font-semibold whitespace-nowrap text-clay transition-colors hover:bg-clay-wash md:inline-flex lg:hidden 2xl:inline-flex"
           >
             Last Sunday
           </Link>
@@ -152,13 +152,13 @@ export function SiteHeader() {
             <div className="flex gap-2">
               <Link
                 href="/watch"
-                className="btn-press flex-1 rounded-full bg-clay px-4 py-3.5 text-center text-[1rem] font-semibold text-paper-bright"
+                className="btn-press flex-1 rounded-lg bg-clay px-4 py-3.5 text-center text-[1rem] font-semibold text-paper-bright"
               >
                 Last Sunday
               </Link>
               <Link
                 href="/visit#getting-here"
-                className="btn-press flex-1 rounded-full border border-clay px-4 py-3.5 text-center text-[1rem] font-semibold text-clay"
+                className="btn-press flex-1 rounded-lg border border-clay px-4 py-3.5 text-center text-[1rem] font-semibold text-clay"
               >
                 Getting here
               </Link>
@@ -168,7 +168,7 @@ export function SiteHeader() {
 
             <Link
               href="/search"
-              className="mt-3 flex items-center gap-2 rounded-[0.875rem] bg-mist px-4 py-3.5 text-[0.95rem] text-ink-mute"
+              className="mt-3 flex items-center gap-2 rounded-lg bg-mist px-4 py-3.5 text-[0.95rem] text-ink-mute"
             >
               <SearchIcon />
               Search CCF Centris
@@ -256,7 +256,7 @@ function SheetAccount() {
     return (
       <Link
         href="/my/reservations"
-        className="btn-press mt-3 flex items-center justify-center rounded-full border border-clay px-4 py-3.5 text-[1rem] font-semibold text-clay"
+        className="btn-press mt-3 flex items-center justify-center rounded-lg border border-clay px-4 py-3.5 text-[1rem] font-semibold text-clay"
       >
         My reservations
       </Link>
@@ -266,13 +266,13 @@ function SheetAccount() {
     <div className="mt-3 flex gap-2">
       <Link
         href="/sign-up"
-        className="btn-press flex-1 rounded-full bg-clay px-4 py-3.5 text-center text-[1rem] font-semibold text-paper-bright"
+        className="btn-press flex-1 rounded-lg bg-clay px-4 py-3.5 text-center text-[1rem] font-semibold text-paper-bright"
       >
         Sign up
       </Link>
       <Link
         href="/sign-in"
-        className="btn-press flex-1 rounded-full border border-edge px-4 py-3.5 text-center text-[1rem] font-semibold text-ink"
+        className="btn-press flex-1 rounded-lg border border-edge px-4 py-3.5 text-center text-[1rem] font-semibold text-ink"
       >
         Sign in
       </Link>

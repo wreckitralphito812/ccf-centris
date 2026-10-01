@@ -34,7 +34,7 @@ export function Chip({
       disabled={disabled}
       onClick={onClick}
       className={cx(
-        "btn-press rounded-full border px-4 py-2.5 text-[0.9rem] font-semibold transition-colors",
+        "btn-press rounded-lg border px-4 py-2.5 text-[0.9rem] font-semibold transition-colors",
         disabled && "cursor-not-allowed border-transparent bg-ink/5 text-ink-mute/50 line-through",
         !disabled && on && "border-clay bg-clay text-paper-bright",
         !disabled && !on && "border-ink/25 bg-paper-bright text-ink hover:border-ink",
@@ -162,7 +162,7 @@ export function ContactFields({ fields }: { fields: ContactField[] }) {
 /** A choice row's look: soft edge, solid teal when chosen, faded when it can't be picked. */
 export function choiceClass(on: boolean, disabled = false) {
   return cx(
-    "rounded-[0.875rem] border transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-clay has-[:focus-visible]:ring-offset-2",
+    "rounded-lg border transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-clay has-[:focus-visible]:ring-offset-2",
     disabled
       ? "cursor-not-allowed border-rule bg-mist text-ink-mute"
       : on
@@ -174,7 +174,7 @@ export function choiceClass(on: boolean, disabled = false) {
 /** A soft pill choice (set-up, food, equipment). */
 export const calmChipClass = (on: boolean) =>
   cx(
-    "btn-press inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-full border px-5 text-[1rem] transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-clay",
+    "btn-press inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-lg border px-5 text-[1rem] transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-clay",
     on ? "border-clay bg-clay text-paper-bright" : "border-edge bg-paper-bright text-ink hover:border-clay/50",
   );
 
@@ -283,6 +283,19 @@ export function StatusBadge({ tone, children }: { tone: BadgeTone; children: Rea
   );
 }
 
+/**
+ * Soft teal and maroon glows behind a card (design A, 2026-10-01, after
+ * Calendly's blobs). Put it first inside a `relative isolate` wrapper.
+ */
+export function Glows({ className }: { className?: string }) {
+  return (
+    <div aria-hidden className={cx("pointer-events-none absolute -z-10", className ?? "-inset-12")}>
+      <span className="absolute -right-6 bottom-[8%] h-3/4 w-3/4 rounded-full bg-brand-teal opacity-40 blur-3xl" />
+      <span className="absolute -left-6 bottom-0 h-2/3 w-2/3 rounded-full bg-[#b0174a] opacity-[0.22] blur-3xl" />
+    </div>
+  );
+}
+
 /** One fact with its line icon. */
 export function IconLine({ icon, children }: { icon: UiIconName; children: ReactNode }) {
   return (
@@ -320,11 +333,11 @@ export function StepButton({
 
 /** The headcount box between the − and + buttons. Digits only; empty until chosen. */
 export const countInputClass =
-  "h-[3.25rem] w-[4.5rem] rounded-[0.875rem] bg-mist text-center text-[1.5rem] font-semibold tabular-nums text-ink focus:bg-paper-bright focus:outline-none focus:ring-2 focus:ring-clay";
+  "h-[3.25rem] w-[4.5rem] rounded-lg bg-mist text-center text-[1.5rem] font-semibold tabular-nums text-ink focus:bg-paper-bright focus:outline-none focus:ring-2 focus:ring-clay";
 
 /** The main button in the pinned bar. */
 export const barButtonClass =
-  "btn-press shrink-0 rounded-full bg-clay px-6 py-4 text-[1rem] font-semibold text-paper-bright shadow-[0_8px_20px_-8px_rgba(0,118,130,0.55)] transition-colors hover:bg-clay-deep disabled:cursor-not-allowed disabled:bg-ink/10 disabled:text-ink-mute disabled:shadow-none sm:px-8";
+  "btn-press shrink-0 rounded-lg bg-clay px-6 py-4 text-[1rem] font-semibold text-paper-bright shadow-[0_8px_20px_-8px_rgba(0,118,130,0.55)] transition-colors hover:bg-clay-deep disabled:cursor-not-allowed disabled:bg-ink/10 disabled:text-ink-mute disabled:shadow-none sm:px-8";
 
 /**
  * The bar pinned to the bottom of the screen. The form above it needs bottom
@@ -396,7 +409,7 @@ export function Confirmation({
  */
 export function AddToCalendar({ event, bare = false }: { event: CalendarEvent; bare?: boolean }) {
   const base =
-    "btn-press inline-flex min-h-12 items-center gap-2 rounded-full border border-clay px-5 py-2.5 text-[0.98rem] font-semibold transition-colors";
+    "btn-press inline-flex min-h-12 items-center gap-2 rounded-lg border border-clay px-5 py-2.5 text-[0.98rem] font-semibold transition-colors";
   return (
     <div>
       {bare ? null : <p className="text-[1rem] font-semibold text-ink">Add it to your calendar</p>}

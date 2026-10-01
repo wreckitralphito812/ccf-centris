@@ -36,7 +36,7 @@ export default function OpengraphImage() {
               width: 56,
               height: 56,
               borderRadius: 999,
-              background: "#007682",
+              background: "#007a87",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -64,7 +64,7 @@ export default function OpengraphImage() {
           <div style={{ display: "flex", fontSize: 96, fontWeight: 700, lineHeight: 1.05 }}>
             CCF Centris
           </div>
-          <div style={{ display: "flex", fontSize: 38, color: "#007682" }}>
+          <div style={{ display: "flex", fontSize: 38, color: "#007a87" }}>
             Sundays, 10:00 AM and 3:00 PM
           </div>
         </div>

@@ -29,6 +29,7 @@ import {
 } from "@/components/icons";
 import { YouTubeThumb } from "@/components/youtube-thumb";
 import { InviteFriend } from "@/components/invite-friend";
+import { Glows } from "@/components/booking";
 
 /** Last Sunday's replay is read from CCF Net, which changes weekly. */
 export const revalidate = 1800;
@@ -118,7 +119,8 @@ function Welcome({ live }: { live: boolean }) {
       {/* The visit card overlaps the frame's bottom edge, so the page plainly
           continues past the photo (it replaces the old "Scroll" cue). */}
       <Container className="relative -mt-20 sm:-mt-24">
-        <div className="mx-auto max-w-md lg:mr-0 lg:max-w-[26rem]">
+        <div className="relative isolate mx-auto max-w-md lg:mr-0 lg:max-w-[26rem]">
+          <Glows className="-inset-x-16 -bottom-20 top-1/3" />
           <VisitCard live={live} />
         </div>
       </Container>

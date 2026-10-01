@@ -36,6 +36,6 @@ test("base always includes btn-press", () => {
 test("base pins the full type + reset string", () => {
   assert.match(
     buttonVariants({}),
-    /rounded-full border font-semibold tracking-\[0\.005em\] transition-colors duration-200 disabled:opacity-40 disabled:pointer-events-none/,
+    /rounded-lg border font-semibold tracking-\[0\.005em\] transition-colors duration-200 disabled:opacity-40 disabled:pointer-events-none/,
   );
 });

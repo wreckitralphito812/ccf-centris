@@ -30,13 +30,13 @@
      The inks are near-black in the same teal family, dark enough that body
      and secondary copy read as strongly as the headings. --clay still
      clears 4.5:1 on the deepest ground (--paper-deep). */
-  --paper: #f7f9f9; /* the calm pale ground (2026-09-30; was #f4f7f7) */
-  --paper-deep: #e6eef0;
+  --paper: #f8fafb; /* design A canvas (2026-10-01) */
+  --paper-deep: #eef3f5;
   --paper-bright: #ffffff;
-  --ink: #142021;
-  --ink-soft: #223032; /* body copy — near-black, cool */
-  --ink-mute: #4d5c5e; /* labels, dates, counts — still a step down, but dark */
-  --hairline: #e1e9eb; /* softer since the calm pass (2026-09-30; was #d3dfe1) */
+  --ink: #0d2b3a; /* deep navy-teal (design A): text never pure black */
+  --ink-soft: #2b4654; /* body copy */
+  --ink-mute: #4d6878; /* labels, dates, counts */
+  --hairline: #dbe5ea; /* crisp 1px borders (design A) */
 
   /* Accents.
      Teal is CCF's real brand colour, lifted from the ccf.org.ph logo mark
@@ -49,8 +49,8 @@
      type, buttons and icons, while --brand-teal stays exact for logo fills,
      big flat panels and graphic shapes where contrast rules don't apply. */
   --brand-teal: #00a6b6;    /* exact CCF mark. Graphics only, never text */
-  --clay: #007682;          /* accessible teal for type and controls ON PAPER */
-  --clay-deep: #005f68;     /* hover */
+  --clay: #007a87;          /* primary teal for actions and links (5.1:1 on white, 4.6:1 on mist; design A) */
+  --clay-deep: #006a76;     /* hover */
   /* Teal for type on the dark ground. --clay is tuned against paper and only
      reaches 2.8:1 on --night, so it fails there; this is the same hue lifted
      until it passes (6.6:1), and is what dark sections use for accent type,
@@ -58,21 +58,21 @@
   --clay-lift: #3ec6d0;
   --sky: #7d1235;           /* CCF maroon, warmed slightly off pure oxblood */
   --moss: #55643f;
-  --bone: #e2ebed; /* hover surface, one step under --paper-deep */
+  --bone: #e9f0f3; /* hover surface */
   /* Calm booking ground and rule (design review 2026-09-30): one step lighter
      than --paper, and the faint line between questions. */
-  --mist: #f7f9f9;
-  --rule: #edf2f3;
+  --mist: #f1f5f7;
+  --rule: #e6edf1;
   /* Soft outline for choice rows, and the pale washes behind open days and
      status badges (teal for confirmed, maroon for awaiting approval). */
-  --edge: #dfe8e9;
-  --clay-wash: #e9f4f5;
+  --edge: #dbe5ea;
+  --clay-wash: #e2f3f5;
   --sky-wash: #f8ecf0;
   /* Dark ground. The old #10262b was a cold slate-teal that read severe under
      the display face. This keeps the same teal family but pulls it warm and
      green, so a full-bleed dark section feels like deep pine rather than
      wet stone, and cream type sits on it warmly. */
-  --night: #16292a;
+  --night: #0b2532; /* navy-teal (design A) */
 
   --focus: var(--clay);
 
@@ -102,13 +102,13 @@
   --color-sky-wash: var(--sky-wash);
   --color-night: var(--night);
 
-  /* One face, Montserrat, for display and body (chosen 2026-09-24). The CCF
-     Brand Book's Futura and Proxima Nova are Adobe-licensed; Montserrat is
-     already in ccf.org.ph's own font stack, so it still reads as CCF. Both
-     tokens are kept so a licensed display face can return with a one-line
+  /* One face, Manrope, for display and body (design A, 2026-10-01). It
+     replaced Montserrat: Ralph wanted a sharper, Calendly-like voice and
+     allowed leaving the Brand Book's Adobe-licensed Futura / Proxima Nova.
+     Both tokens are kept so a display face can return with a one-line
      change. */
-  --font-display: var(--font-montserrat), "Helvetica Neue", Arial, sans-serif;
-  --font-sans: var(--font-montserrat), "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-manrope), "Helvetica Neue", Arial, sans-serif;
+  --font-sans: var(--font-manrope), "Helvetica Neue", Arial, sans-serif;
 }
 
 * {
@@ -127,33 +127,24 @@ body {
   color: var(--ink);
   font-family: var(--font-sans);
   font-synthesis-weight: none;
+  /* The colour glows reach past their cards; clip them at the viewport edge
+     without making body a scroll container (the sticky header needs that). */
+  overflow-x: clip;
 }
 
-/* Grain. One tiny inline SVG, fixed, never repainted on scroll.
-
-   `mix-blend-mode: multiply` darkens and desaturates whatever sits under it.
-   Over the page grounds that's the whole point; over a small saturated
-   control it hazes the fill until the button reads as a hollow outline.
-   So the grain is pinned just under the interactive layer — page content
-   and grounds still get textured, but the header (z-50) and every
-   button-styled element (`.btn-press`, given its own layer below) paint
-   clean above it. */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 3;
-  pointer-events: none;
-  /* Kept faint on the white grounds: at 0.4 it greyed them into looking
-     unwashed. Enough to feel like paper up close, invisible at a glance. */
-  opacity: 0.22;
-  mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.22'/%3E%3C/svg%3E");
+/* Design A texture (2026-10-01): a faint dot grid on the page canvas, behind
+   sections. White cards cover it. It replaces the paper grain, which made
+   everything feel soft. */
+:where(section, header).bg-paper,
+:where(section).bg-mist,
+body {
+  background-image: radial-gradient(rgb(13 43 58 / 0.085) 1px, transparent 1.2px);
+  background-size: 22px 22px;
 }
 
-/* Lift button-styled elements clear of the grain's multiply pass so their
-   fills stay true. A local stacking context (position + z-index) is enough;
-   isolation keeps any blend modes inside the button from reaching through. */
+/* Buttons get their own stacking context. This began as a fix for the old
+   paper grain (gone since 2026-10-01); it now keeps buttons above the colour
+   glows, and isolation keeps blend modes inside a button from reaching out. */
 .btn-press {
   position: relative;
   z-index: 4;
@@ -268,14 +259,13 @@ a.link,
   font-optical-sizing: auto;
 }
 
-/* Montserrat is wide with tall caps: display sizes run at 600 with tighter
-   tracking than a narrower face would want, and line-height sits near 1 so
-   descenders on a wrapped headline clear the next line. */
+/* Display sizes run bold (700) with slightly tight tracking, and line-height
+   sits near 1 so descenders on a wrapped headline clear the next line. */
 
 /* Oversized editorial heading that may crop at the viewport edge. */
 .display-xl {
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 700;
   /* Bounded by both axes so two lines clear the fold on short viewports. The
      floor is kept modest so a two-word line fits a ~340px phone with the
      hero card's padding subtracted. */
@@ -286,7 +276,7 @@ a.link,
 
 .display-lg {
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 700;
   font-size: clamp(2.15rem, 5.5vw, 4.25rem);
   line-height: 1.02;
   letter-spacing: -0.025em;
@@ -294,7 +284,7 @@ a.link,
 
 .display-md {
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 700;
   /* Calmer top end (2026-09-30): section titles were reaching 3rem. */
   font-size: clamp(1.5rem, 2.2vw, 2rem);
   line-height: 1.12;
@@ -305,17 +295,17 @@ a.link,
    to anchor the page, small enough that a two-line title never dominates. */
 .page-title {
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 800;
   font-size: clamp(1.9rem, 3.4vw, 2.75rem);
   line-height: 1.1;
   letter-spacing: -0.022em;
 }
 
-/* Heavier headline voice: Montserrat ExtraBold with tight tracking, for the
+/* Heavier headline voice: Manrope ExtraBold with tight tracking, for the
    hero and other moments that need more weight than .display-*. */
 .brand-face {
   font-family: var(--font-sans);
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1;
   letter-spacing: -0.02em;
 }
@@ -456,12 +446,14 @@ a.link,
   /* The calm card, site-wide (2026-09-30, after Calendly): no outline ring,
      big soft corners, a three-layer teal-tinted shadow. Same as .calm-card. */
   background: var(--paper-bright);
-  border-radius: 1.5rem;
+  border-radius: 1rem;
   overflow: hidden;
+  /* Design A: a crisp 1px border plus Calendly's three-layer shadow. */
   box-shadow:
-    0 1px 2px rgb(0 95 104 / 0.04),
-    0 8px 24px -8px rgb(0 95 104 / 0.08),
-    0 30px 60px -30px rgb(0 95 104 / 0.12);
+    0 0 0 1px var(--hairline),
+    0 4px 5px rgb(13 43 58 / 0.04),
+    0 8px 15px rgb(13 43 58 / 0.03),
+    0 30px 50px -20px rgb(13 43 58 / 0.14);
   transition:
     box-shadow 220ms var(--ease),
     transform 220ms var(--ease);
@@ -471,9 +463,10 @@ a.link,
 a.surface:hover,
 .surface.group:hover {
   box-shadow:
-    0 1px 2px rgb(0 95 104 / 0.05),
-    0 12px 28px -8px rgb(0 95 104 / 0.12),
-    0 36px 70px -30px rgb(0 95 104 / 0.18);
+    0 0 0 1px var(--edge),
+    0 6px 8px rgb(13 43 58 / 0.05),
+    0 14px 24px rgb(13 43 58 / 0.05),
+    0 36px 60px -20px rgb(13 43 58 / 0.2);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -486,8 +479,8 @@ a.surface:hover,
 /* The "grid lines" layout: cells separated by 1px gaps. Same corners and
    lift as a surface, so the two sit together. */
 .surface-grid {
-  background: var(--rule);
-  border-radius: 1.5rem;
+  background: var(--hairline);
+  border-radius: 1rem;
   overflow: hidden;
   box-shadow:
     0 1px 2px rgb(0 95 104 / 0.04),
@@ -498,13 +491,13 @@ a.surface:hover,
    font-display and so rendered at 400, beside semibold ones in the calm
    pages; a weight utility on the same element still wins (utilities layer). */
 .font-display {
-  font-weight: 600;
-  letter-spacing: -0.012em;
+  font-weight: 700;
+  letter-spacing: -0.015em;
 }
 
 /* Photos inside content get the same softened corners. */
 .photo {
-  border-radius: 1.5rem;
+  border-radius: 1rem;
   overflow: hidden;
 }
 
@@ -512,17 +505,18 @@ a.surface:hover,
    corners, a teal-tinted shadow in three layers. */
 .calm-card {
   background: var(--paper-bright);
-  border-radius: 1.5rem;
+  border-radius: 1rem;
   box-shadow:
-    0 1px 2px rgb(0 95 104 / 0.04),
-    0 8px 24px -8px rgb(0 95 104 / 0.08),
-    0 30px 60px -30px rgb(0 95 104 / 0.12);
+    0 0 0 1px var(--hairline),
+    0 4px 5px rgb(13 43 58 / 0.04),
+    0 8px 15px rgb(13 43 58 / 0.03),
+    0 30px 50px -20px rgb(13 43 58 / 0.14);
 }
 
 /* Inputs in the booking flows: filled, borderless, a teal ring on focus. */
 .calm-input {
   width: 100%;
-  border-radius: 0.875rem;
+  border-radius: 0.5rem;
   background: var(--mist);
   padding: 0.95rem 1.1rem;
   font-size: 1.05rem;

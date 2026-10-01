@@ -35,11 +35,10 @@ export function PageHeader({
   align?: "left" | "center";
 }) {
   const tones = {
-    // A soft wash of CCF teal from the top corner, over white, rather than a
-    // flat grey band (2026-09-29): enough colour to feel like CCF's, light
-    // enough that the page stays calm.
+    // Colour glows (design A, 2026-10-01): CCF teal from the top corner and a
+    // touch of CCF maroon below it, over white, after Calendly's blobs.
     deep:
-      "bg-paper-bright bg-[radial-gradient(80%_150%_at_100%_0%,rgb(0_166_182/0.22),transparent_62%),radial-gradient(55%_100%_at_0%_100%,rgb(0_118_130/0.08),transparent_70%)] text-ink",
+      "bg-paper-bright bg-[radial-gradient(42%_95%_at_94%_8%,rgb(0_166_182/0.30),transparent_70%),radial-gradient(30%_75%_at_74%_115%,rgb(176_23_74/0.13),transparent_70%),radial-gradient(40%_80%_at_0%_100%,rgb(0_128_143/0.06),transparent_70%)] text-ink",
     paper: "bg-paper text-ink",
     ink: "bg-night text-paper-bright",
     clay: "bg-clay text-paper-bright",

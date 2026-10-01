@@ -34,12 +34,12 @@ export interface RoomEmailData {
   span?: { startsAt: string; endsAt: string };
 }
 
-const TEAL = "#007682";
+const TEAL = "#007a87";
 const INK = "#142021";
 const SOFT = "#223032";
 const MUTE = "#4d5c5e";
 const GROUND = "#f4f7f7";
-const FONT = "Montserrat, 'Helvetica Neue', Arial, sans-serif";
+const FONT = "Manrope, 'Helvetica Neue', Arial, sans-serif";
 
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

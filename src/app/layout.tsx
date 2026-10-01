@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Montserrat } from "next/font/google";
+import { Manrope } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -7,13 +7,13 @@ import { ChromeOffset } from "@/components/chrome-offset";
 import { SITE } from "@/lib/site";
 
 /**
- * Montserrat is the site's only face, for headlines and body alike. The CCF
- * Brand Book names Futura (primary) and Proxima Nova (secondary), both
- * Adobe-licensed; Montserrat is already in ccf.org.ph's own font stack and is
- * the face the Centris team chose to launch with (2026-09-24).
+ * Manrope is the site's face for headlines and body alike (2026-10-01, design
+ * A): the closest free match to Calendly's Gilroy, sharper than the
+ * Montserrat it replaces. Ralph allowed leaving the Brand Book's Futura /
+ * Proxima Nova pairing; CCF teal carries the brand instead.
  */
-const montserrat = Montserrat({
-  variable: "--font-montserrat",
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
 });
 
@@ -44,7 +44,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${montserrat.variable} h-full antialiased`}
+      className={`${manrope.variable} h-full antialiased`}
     >
       <body className="min-h-svh flex flex-col bg-paper text-ink">
         <a

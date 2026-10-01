@@ -19,7 +19,7 @@ import { cx } from "./ui";
  */
 /** Every form input: the calm filled field (2026-09-30), a teal ring on focus. */
 export const controlClass =
-  "w-full rounded-[0.875rem] bg-mist px-4 py-3.5 text-[1rem] text-ink transition-[box-shadow,background-color] " +
+  "w-full rounded-lg bg-mist px-4 py-3.5 text-[1rem] text-ink transition-[box-shadow,background-color] " +
   "focus:bg-paper-bright focus:outline-none focus:ring-2 focus:ring-clay " +
   "aria-[invalid=true]:bg-sky-wash aria-[invalid=true]:ring-1 aria-[invalid=true]:ring-sky/40";
 

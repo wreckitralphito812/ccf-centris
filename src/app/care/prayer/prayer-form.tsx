@@ -205,7 +205,7 @@ export function PrayerForm() {
               aria-pressed={category === c}
               onClick={() => setCategory(category === c ? "" : c)}
               className={cx(
-                "btn-press label rounded-full border px-3.5 py-2 transition-colors",
+                "btn-press label rounded-lg border px-3.5 py-2 transition-colors",
                 category === c
                   ? "border-clay bg-clay text-paper-bright"
                   : "border-ink/25 text-ink hover:border-ink",

@@ -11,7 +11,7 @@ import { formatPhMobile } from "@/lib/phone";
  */
 
 const FIELD =
-  "flex min-h-[3.4rem] items-center gap-3 rounded-[0.875rem] bg-mist px-4 transition-[box-shadow,background-color] focus-within:bg-paper-bright focus-within:ring-2 focus-within:ring-clay";
+  "flex min-h-[3.4rem] items-center gap-3 rounded-lg bg-mist px-4 transition-[box-shadow,background-color] focus-within:bg-paper-bright focus-within:ring-2 focus-within:ring-clay";
 
 type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "className">;
 
@@ -132,7 +132,7 @@ export function FormNote({ tone = "error", children }: { tone?: "error" | "ok" |
 }
 
 export const submitClass =
-  "btn-press w-full rounded-full bg-clay px-6 py-3.5 text-[1rem] font-semibold text-paper-bright shadow-[0_8px_20px_-8px_rgba(0,118,130,0.55)] transition-colors hover:bg-clay-deep disabled:cursor-not-allowed disabled:opacity-60";
+  "btn-press w-full rounded-lg bg-clay px-6 py-3.5 text-[1rem] font-semibold text-paper-bright shadow-[0_8px_20px_-8px_rgba(0,118,130,0.55)] transition-colors hover:bg-clay-deep disabled:cursor-not-allowed disabled:opacity-60";
 
 function FieldIcon({ name }: { name: "email" | "person" | "lock" | "phone" }) {
   const p = {

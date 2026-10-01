@@ -45,8 +45,8 @@ export async function GET(req: NextRequest) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", height: head - 12 }}>
           <div style={{ display: "flex", fontSize: 20, fontWeight: 700, color: "#142021" }}>{def.name}</div>
           {tables.length ? (
-            <div style={{ display: "flex", alignItems: "center", fontSize: 16, color: "#007682", fontWeight: 700 }}>
-              <div style={{ display: "flex", width: 14, height: 14, borderRadius: 3, background: "#007682", marginRight: 8 }} />
+            <div style={{ display: "flex", alignItems: "center", fontSize: 16, color: "#007a87", fontWeight: 700 }}>
+              <div style={{ display: "flex", width: 14, height: 14, borderRadius: 3, background: "#007a87", marginRight: 8 }} />
               {`Your ${tablesLabel(tables).toLowerCase()}`}
             </div>
           ) : null}

@@ -20,7 +20,7 @@ const TABLE_LINE = "#5f7478";
 const TABLE_TEXT = "#142021";
 const CHAIR = "#b8c9cc";
 const FURNITURE = "#e6edee";
-const PICKED = "#007682";
+const PICKED = "#007a87";
 const PICKED_CHAIR = "#00a6b6";
 
 /** Wall thickness for a drawing of this width. */

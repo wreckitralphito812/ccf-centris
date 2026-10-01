@@ -119,7 +119,7 @@ there too.
 - **Styling:** Tailwind v4 with the theme in `src/app/globals.css`
   (`@theme inline`). There is no `tailwind.config.ts`. Use the CCF tokens
   (`paper`, `ink`, `clay`, `hairline`, `moss`, `sky`, …), not raw colours or
-  shadcn's `hsl(var(--*))`. Montserrat is the only typeface.
+  shadcn's `hsl(var(--*))`. Manrope is the only typeface (design A, 2026-10-01).
   `DESIGN.md` covers the look (colour roles, surfaces, buttons, page anatomy)
   and the booking-flow pattern. Read it before building a page.
 - **Content with no value yet:** it stays `null` in `src/lib/site.ts`, and the
