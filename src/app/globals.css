@@ -561,3 +561,16 @@ a.surface:hover,
   from { background-position: 100% 0; }
   to { background-position: -100% 0; }
 }
+
+/* Prayer Wall: the hands icon gives a small lift when someone taps "I prayed". */
+@keyframes pray-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35) rotate(-6deg); }
+  100% { transform: scale(1); }
+}
+.pray-pop {
+  animation: pray-pop 380ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pray-pop { animation: none; }
+}

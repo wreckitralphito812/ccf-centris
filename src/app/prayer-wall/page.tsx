@@ -3,12 +3,18 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Section } from "@/components/ui";
-import { deletePrayerPost, setPrayerItemHidden } from "@/app/actions/prayer-wall";
 import { currentUser, hasAccounts, memberHasRole } from "@/lib/auth/session";
 import { getMemberProfile } from "@/lib/auth/profile";
-import { MODERATOR_ROLES, openRequests, visibleReplies } from "@/lib/prayer-wall";
+import {
+  isTopic,
+  MODERATOR_ROLES,
+  openRequests,
+  suggestScreenName,
+  timeAgo,
+  visibleReplies,
+} from "@/lib/prayer-wall";
 import { SATELLITE_ID, supabaseAdmin } from "@/lib/supabase/server";
-import { PostForm, ReplyForm, ReportButton } from "./wall-forms";
+import { PrayerWall, type WallPost } from "./wall";
 
 export const metadata: Metadata = {
   title: "Prayer Wall",
@@ -34,14 +40,11 @@ interface Post {
   created_at: string;
   expires_at: string;
   hidden_at: string | null;
+  topic: string | null;
+  answered_at: string | null;
   prayer_wall_replies: Reply[];
+  prayer_wall_prayers: { count: number }[];
 }
-
-const day = new Intl.DateTimeFormat("en-PH", {
-  month: "short",
-  day: "numeric",
-  timeZone: "Asia/Manila",
-});
 
 /**
  * The Prayer Wall. Members only: signed-out visitors see an explanation and a
@@ -91,25 +94,14 @@ async function Wall() {
     );
   }
 
-  const screenName = (await getMemberProfile(user.id))?.screen_name;
-  if (!screenName) {
-    return (
-      <Notice label="One step first">
-        <p>
-          Choose the screen name other members will see beside your requests
-          and prayers. It doesn&rsquo;t need to be your real name.
-        </p>
-        <ButtonLink href="/my/screen-name?next=/prayer-wall">Choose a screen name</ButtonLink>
-      </Notice>
-    );
-  }
-
+  const profile = await getMemberProfile(user.id);
+  const screenName = profile?.screen_name ?? null;
   const isModerator = await memberHasRole(user.id, SATELLITE_ID, MODERATOR_ROLES);
 
   let query = supabaseAdmin()
     .from("prayer_wall_posts")
     .select(
-      "id, author_id, author_name, body, created_at, expires_at, hidden_at, prayer_wall_replies(id, author_id, author_name, kind, body, created_at, hidden_at)",
+      "id, author_id, author_name, body, created_at, expires_at, hidden_at, topic, answered_at, prayer_wall_replies(id, author_id, author_name, kind, body, created_at, hidden_at), prayer_wall_prayers(count)",
     )
     .eq("satellite_id", SATELLITE_ID);
   // Members see open requests plus their own; moderators see everything.
@@ -118,10 +110,13 @@ async function Wall() {
       `and(hidden_at.is.null,expires_at.gt."${new Date().toISOString()}"),author_id.eq.${user.id}`,
     );
   }
-  const { data, error } = await query
-    .order("created_at", { ascending: false })
-    .order("created_at", { referencedTable: "prayer_wall_replies", ascending: true })
-    .limit(60);
+  const [{ data, error }, { data: prayedRows }] = await Promise.all([
+    query
+      .order("created_at", { ascending: false })
+      .order("created_at", { referencedTable: "prayer_wall_replies", ascending: true })
+      .limit(60),
+    supabaseAdmin().from("prayer_wall_prayers").select("post_id").eq("member_id", user.id),
+  ]);
 
   if (error) {
     console.error("prayer wall read failed", error);
@@ -132,136 +127,44 @@ async function Wall() {
     );
   }
 
-  const posts = openRequests((data ?? []) as Post[]).map((p) => ({
-    ...p,
-    prayer_wall_replies: visibleReplies(p.prayer_wall_replies ?? [], user.id, isModerator),
+  const prayed = new Set((prayedRows ?? []).map((r) => r.post_id as string));
+  const now = new Date();
+  const posts: WallPost[] = openRequests((data ?? []) as Post[], now).map((p) => ({
+    id: p.id,
+    authorName: p.author_name,
+    mine: p.author_id === user.id,
+    body: p.body,
+    topic: isTopic(p.topic) ? p.topic : null,
+    answered: Boolean(p.answered_at),
+    when: timeAgo(p.created_at, now),
+    hidden: Boolean(p.hidden_at),
+    prayed: p.prayer_wall_prayers?.[0]?.count ?? 0,
+    prayedByMe: prayed.has(p.id),
+    replies: visibleReplies(p.prayer_wall_replies ?? [], user.id, isModerator).map((r) => ({
+      id: r.id,
+      authorName: r.author_name,
+      mine: r.author_id === user.id,
+      kind: r.kind,
+      body: r.body,
+      when: timeAgo(r.created_at, now),
+      hidden: Boolean(r.hidden_at),
+    })),
   }));
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
-      <div className="space-y-6">
-        <PostForm screenName={screenName} />
-
-        {posts.length === 0 ? (
-          <p className="border border-dashed border-hairline p-8 text-center text-ink-mute">
-            No prayer requests yet. Yours can be the first.
-          </p>
-        ) : (
-          posts.map((p) => (
-            <PostCard key={p.id} post={p} mine={p.author_id === user.id} isModerator={isModerator} userId={user.id} />
-          ))
-        )}
-      </div>
-
-      <aside className="space-y-5 border-l-2 border-clay bg-paper-bright p-6 text-[0.92rem] leading-relaxed text-ink-soft lg:sticky lg:top-28">
-        <p className="label text-clay">How the wall works</p>
-        <p>Only signed-in members can see it. Everyone appears by screen name.</p>
-        <p>Requests stay up for two months, then leave the wall on their own.</p>
-        <p>
-          If something doesn&rsquo;t belong here, tap Report. Three reports hide
-          it until a moderator takes a look.
-        </p>
-        <p>
-          You&rsquo;re posting as <strong className="text-ink">{screenName}</strong>.{" "}
-          <a href="/my/screen-name?next=/prayer-wall" className="text-clay underline underline-offset-4">
-            Change
-          </a>
-        </p>
-      </aside>
-    </div>
-  );
-}
-
-function PostCard({
-  post,
-  mine,
-  isModerator,
-  userId,
-}: {
-  post: Post;
-  mine: boolean;
-  isModerator: boolean;
-  userId: string;
-}) {
-  return (
-    <article className="surface p-6">
-      <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <p className="font-display text-lg text-ink">{post.author_name}</p>
-        <p className="text-[0.8rem] text-ink-mute">
-          {day.format(new Date(post.created_at))} &middot; up until{" "}
-          {day.format(new Date(post.expires_at))}
-        </p>
-      </header>
-
-      {post.hidden_at ? (
-        <p className="label mt-3 text-sky">
-          {isModerator ? "Hidden from members" : "Hidden by a moderator"}
-        </p>
-      ) : null}
-
-      <p className="mt-3 whitespace-pre-line text-[1rem] leading-relaxed text-ink-soft">
-        {post.body}
-      </p>
-
-      {post.prayer_wall_replies.length ? (
-        <ul className="mt-5 space-y-3 border-t border-hairline pt-4">
-          {post.prayer_wall_replies.map((r) => (
-            <li key={r.id} className="border-l-2 border-hairline pl-4">
-              <p className="text-[0.8rem] text-ink-mute">
-                <span className="label mr-2 text-clay">
-                  {r.kind === "prayer" ? "Prayed" : "Message"}
-                </span>
-                <span className="text-ink">{r.author_name}</span> &middot;{" "}
-                {day.format(new Date(r.created_at))}
-                {r.hidden_at ? <span className="label ml-2 text-sky">Hidden</span> : null}
-              </p>
-              <p className="mt-1 whitespace-pre-line text-[0.95rem] leading-relaxed text-ink-soft">
-                {r.body}
-              </p>
-              <div className="mt-1.5 flex gap-4">
-                {r.author_id !== userId ? <ReportButton target={`reply:${r.id}`} /> : null}
-                {isModerator ? <HideButton target={`reply:${r.id}`} hidden={Boolean(r.hidden_at)} /> : null}
-              </div>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
-      {!post.hidden_at ? <ReplyForm postId={post.id} /> : null}
-
-      <footer className="mt-4 flex flex-wrap gap-5 border-t border-hairline pt-3">
-        {mine ? (
-          <form action={deletePrayerPost}>
-            <input type="hidden" name="id" value={post.id} />
-            <button type="submit" className="label text-ink-mute transition-colors hover:text-sky">
-              Delete my request
-            </button>
-          </form>
-        ) : (
-          <ReportButton target={`post:${post.id}`} />
-        )}
-        {isModerator ? <HideButton target={`post:${post.id}`} hidden={Boolean(post.hidden_at)} /> : null}
-      </footer>
-    </article>
-  );
-}
-
-function HideButton({ target, hidden }: { target: string; hidden: boolean }) {
-  return (
-    <form action={setPrayerItemHidden}>
-      <input type="hidden" name="target" value={target} />
-      <input type="hidden" name="hide" value={hidden ? "0" : "1"} />
-      <button type="submit" className="label text-ink-mute transition-colors hover:text-sky">
-        {hidden ? "Unhide" : "Hide"}
-      </button>
-    </form>
+    <PrayerWall
+      posts={posts}
+      screenName={screenName}
+      suggestion={screenName ?? suggestScreenName(profile?.first_name ?? null, profile?.last_name ?? null)}
+      isModerator={isModerator}
+    />
   );
 }
 
 function Notice({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="max-w-2xl border-l-2 border-clay bg-paper-bright p-6">
-      <p className="label text-clay">{label}</p>
+    <div className="calm-card mx-auto max-w-2xl p-7 sm:p-9">
+      <p className="text-[0.95rem] font-semibold text-clay">{label}</p>
       <div className="mt-3 space-y-5 text-[1.02rem] leading-relaxed text-ink-soft">{children}</div>
     </div>
   );

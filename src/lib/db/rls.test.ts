@@ -197,6 +197,27 @@ test("members can't read reports; moderators can", async () => {
   assert.ok((await as(MOD, "select id from prayer_wall_reports")).length >= 3);
 });
 
+test("an “I prayed” counts once per member and is server-only", async () => {
+  const id = await post(ANA, "Pray for my dad's recovery.");
+  await db.exec(`insert into prayer_wall_prayers (post_id, member_id) values ('${id}', '${BEN}')`);
+  await assert.rejects(
+    db.exec(`insert into prayer_wall_prayers (post_id, member_id) values ('${id}', '${BEN}')`),
+    /duplicate key/,
+  );
+  await assert.rejects(as(BEN, "select * from prayer_wall_prayers"), /permission denied/);
+  await assert.rejects(as(null, "select * from prayer_wall_prayers"), /permission denied/);
+  // Deleting the request takes its prayers with it.
+  await db.exec(`delete from prayer_wall_posts where id = '${id}'`);
+  const left = await db.query(`select 1 from prayer_wall_prayers where post_id = '${id}'`);
+  assert.equal(left.rows.length, 0);
+});
+
+test("a request's topic must be one the wall knows", async () => {
+  const id = await post(ANA);
+  await db.exec(`update prayer_wall_posts set topic = 'health', answered_at = now() where id = '${id}'`);
+  await assert.rejects(db.exec(`update prayer_wall_posts set topic = 'gossip' where id = '${id}'`), /check/);
+});
+
 test("screen names are unique regardless of case, and renames follow past posts", async () => {
   const rename = (who: string, name: string) =>
     db.query("update profiles set screen_name = $2 where id = $1", [who, name]);

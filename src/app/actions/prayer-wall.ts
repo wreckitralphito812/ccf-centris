@@ -8,6 +8,7 @@ import { setMemberScreenName } from "@/lib/auth/profile";
 import {
   bodyProblem,
   cleanBody,
+  isTopic,
   MODERATOR_ROLES,
   normalizeScreenName,
   safeNext,
@@ -82,10 +83,12 @@ export async function postPrayerRequest(
   const body = cleanBody(formData.get("body"));
   const problem = bodyProblem(body);
   if (problem) return { ok: false, error: problem };
+  const rawTopic = formData.get("topic");
+  const topic = isTopic(rawTopic) ? rawTopic : null;
 
   const { error } = await s.db
     .from("prayer_wall_posts")
-    .insert({ satellite_id: SATELLITE_ID, author_id: s.user.id, body });
+    .insert({ satellite_id: SATELLITE_ID, author_id: s.user.id, body, topic });
   if (error) return { ok: false, error: wallError(error, "postPrayerRequest") };
 
   revalidatePath("/prayer-wall");
@@ -113,6 +116,61 @@ export async function replyToPrayer(
 
   revalidatePath("/prayer-wall");
   return { ok: true };
+}
+
+/**
+ * "I prayed": one tap adds the member to a request's count, a second tap takes
+ * it back. Only open requests (not hidden, not expired) can be prayed for.
+ */
+export async function togglePrayed(postId: string): Promise<WallResult> {
+  const s = await memberSession();
+  if (!s) return { ok: false, error: "Sign in to pray for this request." };
+
+  const { data: open } = await s.db
+    .from("prayer_wall_posts")
+    .select("id")
+    .eq("id", postId)
+    .eq("satellite_id", SATELLITE_ID)
+    .is("hidden_at", null)
+    .gt("expires_at", new Date().toISOString())
+    .maybeSingle();
+  if (!open) return { ok: false, error: "That prayer request is no longer open." };
+
+  const mine = { post_id: postId, member_id: s.user.id };
+  const { data: removed, error: delError } = await s.db
+    .from("prayer_wall_prayers")
+    .delete()
+    .match(mine)
+    .select("post_id");
+  if (delError) {
+    console.error("togglePrayed: delete failed", delError);
+    return { ok: false, error: GENERIC };
+  }
+  if (!removed?.length) {
+    const { error } = await s.db.from("prayer_wall_prayers").insert(mine);
+    // A double tap that raced itself is still "prayed".
+    if (error && error.code !== "23505") {
+      console.error("togglePrayed: insert failed", error);
+      return { ok: false, error: GENERIC };
+    }
+  }
+
+  revalidatePath("/prayer-wall");
+  return { ok: true };
+}
+
+/** The author marks their own request answered (a praise report), or undoes it. */
+export async function markAnswered(formData: FormData): Promise<void> {
+  const s = await memberSession();
+  if (!s) return;
+  const answered = formData.get("answered") === "1";
+  const { error } = await s.db
+    .from("prayer_wall_posts")
+    .update({ answered_at: answered ? new Date().toISOString() : null })
+    .eq("id", String(formData.get("id") ?? ""))
+    .eq("author_id", s.user.id);
+  if (error) console.error("markAnswered failed", error);
+  revalidatePath("/prayer-wall");
 }
 
 export async function reportPrayerItem(
