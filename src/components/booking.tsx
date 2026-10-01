@@ -180,6 +180,22 @@ export const calmChipClass = (on: boolean) =>
     on ? "border-clay bg-clay text-paper-bright" : "border-edge bg-paper-bright text-ink hover:border-clay/50",
   );
 
+/**
+ * On phones, bring the next question up once one is answered, the way
+ * Calendly does (2026-10-02). Laptops show the whole form, so nothing moves
+ * there, and nothing moves if the question is already in comfortable view.
+ */
+export function revealNext(id: string) {
+  if (typeof window === "undefined" || window.innerWidth >= 1024) return;
+  const el = document.getElementById(id);
+  if (!el) return;
+  const top = el.getBoundingClientRect().top;
+  if (top > 90 && top < window.innerHeight * 0.45) return;
+  const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // After React paints the answer, so the page doesn't jump mid-update.
+  requestAnimationFrame(() => el.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "start" }));
+}
+
 /** One question in a booking card. Its heading (by `id`) labels the choices inside. */
 export function Question({
   id,

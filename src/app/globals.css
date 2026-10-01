@@ -120,6 +120,9 @@ html {
   scroll-behavior: smooth;
   /* Keep anchor targets clear of the sticky header. */
   scroll-padding-top: 5rem;
+  /* Glows reach past their cards. Clip on the root too: some phone browsers
+     still let the page pan sideways when only body clips (2026-10-02). */
+  overflow-x: clip;
 }
 
 body {

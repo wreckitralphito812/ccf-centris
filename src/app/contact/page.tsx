@@ -156,7 +156,7 @@ async function LeaveAMessage() {
         <p>
           Anyone can write to us. We ask you to sign in first so every message
           comes with a real name and email address, and we can reply to you
-          directly. There&rsquo;s no password: we email you a link.
+          directly. It takes a minute to make an account.
         </p>
         <ButtonLink href="/sign-in?next=/contact" size="lg" className="mt-6">
           Sign in to continue

@@ -183,12 +183,12 @@ export default async function CalendarPage({
                     <p className="font-display w-10 shrink-0 text-2xl leading-none text-clay">
                       {day}
                     </p>
-                    <ul className="min-w-0 flex-1 space-y-2">
+                    <ul className="min-w-0 flex-1">
                       {items.map((it, n) => (
                         <li key={n}>
                           <Link
                             href={it.href}
-                            className="block text-[0.9rem] leading-snug text-ink-soft"
+                            className="flex min-h-11 items-center text-[0.95rem] leading-snug text-ink-soft"
                           >
                             {it.label}
                           </Link>

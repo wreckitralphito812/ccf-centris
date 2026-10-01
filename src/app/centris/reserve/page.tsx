@@ -60,8 +60,8 @@ export default async function ReservePage() {
                   Requests come from a signed-in account.
                 </p>
                 <p className="mt-3 max-w-xl leading-relaxed text-ink-soft">
-                  So each request has a real name and email, and we can confirm the room with you. There&rsquo;s no
-                  password: we email you a link.
+                  So each request has a real name and email, and we can confirm the room with you. Making an
+                  account takes a minute.
                 </p>
               </div>
               <ButtonLink href="/sign-in?next=/centris/reserve" size="lg">

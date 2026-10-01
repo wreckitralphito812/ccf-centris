@@ -49,16 +49,18 @@ export function AccountMenu() {
 
   if (!email) {
     return (
-      <div className="hidden shrink-0 items-center gap-1 sm:flex">
+      // On phones only Sign up shows here (Sign in is in the menu), so the
+      // way in is one tap from every page (2026-10-02).
+      <div className="flex shrink-0 items-center gap-1">
         <Link
           href="/sign-in"
-          className="whitespace-nowrap rounded-lg px-3 py-2 text-[0.95rem] font-medium text-ink transition-colors hover:bg-mist hover:text-clay"
+          className="hidden whitespace-nowrap rounded-lg px-3 py-2 text-[0.95rem] font-medium text-ink transition-colors hover:bg-mist hover:text-clay sm:inline-flex"
         >
           Sign in
         </Link>
         <Link
           href="/sign-up"
-          className="btn-press inline-flex items-center rounded-lg bg-clay px-4 py-2.5 text-[0.92rem] font-semibold whitespace-nowrap text-paper-bright shadow-[0_8px_20px_-8px_rgba(0,118,130,0.55)] transition-colors hover:bg-clay-deep"
+          className="btn-press inline-flex min-h-10 items-center rounded-lg bg-clay px-3.5 text-[0.9rem] font-semibold whitespace-nowrap text-paper-bright shadow-[0_8px_20px_-8px_rgba(0,118,130,0.55)] transition-colors hover:bg-clay-deep sm:px-4 sm:text-[0.92rem]"
         >
           Sign up
         </Link>
@@ -156,6 +158,66 @@ function SignedInMenu({ email }: { email: string }) {
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+/**
+ * The account section at the foot of the phone menu, where the header's
+ * account menu is hidden. Signed in, it also holds Sign out, which phones had
+ * no way to reach before (2026-10-02).
+ */
+export function MobileAccount() {
+  const { email, ready } = useAccount();
+  if (!ready) return null;
+  if (!email) {
+    return (
+      <div className="grid grid-cols-2 gap-2">
+        <Link
+          href="/sign-in"
+          className="btn-press flex min-h-12 items-center justify-center rounded-lg border border-edge text-[1rem] font-semibold text-ink"
+        >
+          Sign in
+        </Link>
+        <Link
+          href="/sign-up"
+          className="btn-press flex min-h-12 items-center justify-center rounded-lg bg-clay text-[1rem] font-semibold text-paper-bright"
+        >
+          Sign up
+        </Link>
+      </div>
+    );
+  }
+  return (
+    <div>
+      <p className="flex items-center gap-3 text-[0.95rem] text-ink-mute">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink text-[0.85rem] font-semibold uppercase text-paper-bright">
+          {email[0]}
+        </span>
+        <span className="truncate">{email}</span>
+      </p>
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <Link
+          href="/my/reservations"
+          className="btn-press flex min-h-12 items-center justify-center rounded-lg bg-clay text-[1rem] font-semibold text-paper-bright"
+        >
+          My reservations
+        </Link>
+        <form
+          action={async () => {
+            await signOut();
+            // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+            window.location.assign("/");
+          }}
+        >
+          <button
+            type="submit"
+            className="btn-press flex min-h-12 w-full items-center justify-center rounded-lg border border-edge text-[1rem] font-semibold text-ink"
+          >
+            Sign out
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
