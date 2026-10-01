@@ -339,7 +339,7 @@ function Request({
   const whenText = timed ? range(start!, end!) : null;
 
   return (
-    <form ref={formRef} action={action} className="mx-auto max-w-2xl pb-36">
+    <form ref={formRef} action={action} className="mx-auto max-w-2xl pb-36 lg:max-w-6xl">
       {/* Everything the server needs, whichever step is showing. */}
       <input type="hidden" name="participants" value={count} />
       <input type="hidden" name="setup" value={setup} />
@@ -371,8 +371,12 @@ function Request({
           : "A few details for the facilities team, then send."}
       </p>
 
+      {/* On laptops each step splits in two, Calendly-style: the when on the
+          left, the rooms (step 1) or the request so far (step 2) on the right.
+          Ralph found the single phone-width column cramped (2026-10-01). */}
       {step === 1 ? (
-        <div className="calm-card mt-8 px-6 py-8 sm:px-9 sm:py-10">
+        <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
+        <div className="calm-card px-6 py-8 sm:px-9 sm:py-10">
           <Question id="q-day" title="Which day?" note="Monday to Saturday." error={e.date}>
             <div className="flex items-center justify-between gap-4">
               <p className="text-[1rem] font-semibold text-ink">
@@ -513,6 +517,8 @@ function Request({
             <p className="mt-2.5 text-[0.95rem] text-ink-mute">{setupInfo.hint}.</p>
           </Question>
 
+        </div>
+        <div className="calm-card px-6 py-8 sm:px-9 sm:py-10">
           <Question
             id="q-room"
             title="Pick a room"
@@ -596,8 +602,10 @@ function Request({
             ) : null}
           </Question>
         </div>
+        </div>
       ) : (
-        <div className="calm-card mt-8 px-6 py-8 sm:px-9 sm:py-10">
+        <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
+        <div className="calm-card px-6 py-8 sm:px-9 sm:py-10">
           <Question id="q-event" title="About your event">
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="sm:col-span-2">
@@ -677,8 +685,10 @@ function Request({
             </div>
           </Question>
 
+        </div>
+        <div className="calm-card px-6 py-8 sm:px-9 sm:py-10 lg:sticky lg:top-24">
           {/* The whole request in one place before it goes. */}
-          <section aria-labelledby="check-h" className="mt-8 rounded-2xl bg-mist p-6">
+          <section aria-labelledby="check-h" className="rounded-2xl bg-mist p-6">
             <div className="flex items-start justify-between gap-4">
               <h3 id="check-h" className="text-[1.2rem] font-semibold text-ink">
                 Your request
@@ -733,10 +743,11 @@ function Request({
             </p>
           ) : null}
         </div>
+        </div>
       )}
 
       {/* The request so far and the next step, pinned to the bottom of the screen */}
-      <BookingBar width="max-w-2xl">
+      <BookingBar width="max-w-2xl lg:max-w-6xl">
         {step === 2 ? (
           <button
             type="button"
