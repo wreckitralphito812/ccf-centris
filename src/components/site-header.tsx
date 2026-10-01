@@ -125,7 +125,7 @@ export function SiteHeader() {
           </Link>
           <Link
             href="/watch"
-            className="btn-press hidden items-center gap-2 rounded-full border border-clay px-4 py-2 text-[0.92rem] font-semibold whitespace-nowrap text-clay transition-colors hover:bg-clay-wash md:inline-flex lg:hidden xl:inline-flex"
+            className="btn-press hidden items-center gap-2 rounded-full border border-clay px-4 py-2 text-[0.92rem] font-semibold whitespace-nowrap text-clay transition-colors hover:bg-clay-wash md:inline-flex lg:hidden 2xl:inline-flex"
           >
             Last Sunday
           </Link>

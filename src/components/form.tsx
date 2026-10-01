@@ -24,7 +24,7 @@ export const controlClass =
   "aria-[invalid=true]:bg-sky-wash aria-[invalid=true]:ring-1 aria-[invalid=true]:ring-sky/40";
 
 /**
- * Label + optional hint + optional error, wrapping one control.
+ * Label, one control, then an optional hint and error under it.
  *
  * Pass the control as a function so it receives the generated id and aria
  * props: `<Field label="Email" name="email" error={err}>{p => <input {...p} />}</Field>`.
@@ -67,11 +67,6 @@ export function Field({
         {label}
         {required ? <span className="text-clay"> *</span> : null}
       </label>
-      {hint ? (
-        <span id={hintId} className="mt-1 block text-[0.8rem] text-ink-mute">
-          {hint}
-        </span>
-      ) : null}
       <span className="mt-2 block">
         {children({
           id,
@@ -81,6 +76,13 @@ export function Field({
           "aria-required": required || undefined,
         })}
       </span>
+      {/* Hints sit under the control (2026-10-01), so fields side by side
+          line up whatever their hints say. */}
+      {hint ? (
+        <span id={hintId} className="mt-1.5 block text-[0.82rem] text-ink-mute">
+          {hint}
+        </span>
+      ) : null}
       {error ? (
         <span
           id={errId}

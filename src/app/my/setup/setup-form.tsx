@@ -1,84 +1,55 @@
 "use client";
 
-import { useActionState, type ReactNode } from "react";
+import { useActionState, useState } from "react";
 import { completeProfile, type SetupResult } from "@/app/actions/account";
-import { SCREEN_NAME_RULE } from "@/lib/prayer-wall";
+import { FormNote, IconField, PhoneField, submitClass } from "@/components/auth-fields";
 
-const input =
-  "mt-2 w-full rounded-lg border border-hairline bg-paper-bright px-4 py-3 text-lg text-ink focus:border-clay";
-
+/**
+ * "About you", once after the first sign-in: name and mobile number
+ * (2026-10-01: the Prayer Wall screen name moved to the Wall itself).
+ */
 export function SetupForm({
   next,
   email,
   first,
   last,
-  screen,
+  mobile: initialMobile,
 }: {
   next: string;
   email: string;
   first: string;
   last: string;
-  screen: string;
+  mobile: string;
 }) {
   const [state, action, pending] = useActionState<SetupResult | null, FormData>(completeProfile, null);
+  const [mobile, setMobile] = useState(initialMobile);
   const e = state?.fieldErrors ?? {};
 
   return (
-    <form action={action} className="max-w-xl space-y-6">
+    <form action={action} className="space-y-5">
       <input type="hidden" name="next" value={next} />
       {email ? (
-        <p className="text-[0.95rem] text-ink-soft">
-          Signed in as <span className="font-semibold text-ink">{email}</span>
+        <p className="text-[0.95rem] text-ink-mute">
+          Signed in as <span className="font-medium text-ink">{email}</span>
         </p>
       ) : null}
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="First name" error={e.first}>
-          <input name="first_name" defaultValue={first} required autoComplete="given-name" maxLength={60} className={input} />
-        </Field>
-        <Field label="Surname" error={e.last}>
-          <input name="last_name" defaultValue={last} required autoComplete="family-name" maxLength={60} className={input} />
-        </Field>
+        <IconField id="first_name" name="first_name" label="First name" icon="person" defaultValue={first} autoComplete="given-name" maxLength={60} error={e.first} />
+        <IconField id="last_name" name="last_name" label="Surname" icon="person" defaultValue={last} autoComplete="family-name" maxLength={60} error={e.last} />
       </div>
-      <Field label="Screen name" error={e.screen} hint={`Shown on the Prayer Wall instead of your real name. ${SCREEN_NAME_RULE}`}>
-        <input name="screen_name" defaultValue={screen} required minLength={3} maxLength={24} autoComplete="nickname" className={input} />
-      </Field>
-      {state?.formError ? (
-        <p role="alert" className="border-l-2 border-sky pl-4 text-[0.95rem] text-sky">
-          {state.formError}
-        </p>
-      ) : null}
-      <button
-        type="submit"
-        disabled={pending}
-        className="btn-press label rounded-full border border-clay bg-clay px-6 py-3.5 text-paper-bright transition-colors hover:bg-clay-deep disabled:opacity-50"
-      >
+      <PhoneField
+        id="mobile"
+        name="mobile"
+        label="Mobile number"
+        value={mobile}
+        onValue={setMobile}
+        error={e.mobile}
+        hint="For bookings and same-day changes. We don't share it."
+      />
+      {state?.formError ? <FormNote>{state.formError}</FormNote> : null}
+      <button type="submit" disabled={pending} className={submitClass}>
         {pending ? "Saving…" : "Save and continue"}
       </button>
     </form>
-  );
-}
-
-function Field({
-  label,
-  error,
-  hint,
-  children,
-}: {
-  label: string;
-  error?: string;
-  hint?: string;
-  children: ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="label text-clay">{label}</span>
-      {children}
-      {hint ? <span className="mt-1.5 block text-[0.82rem] leading-relaxed text-ink-mute">{hint}</span> : null}
-      {error ? (
-        <span role="alert" className="mt-1.5 block text-[0.85rem] text-sky">
-          {error}
-        </span>
-      ) : null}
-    </label>
   );
 }

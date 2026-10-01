@@ -41,7 +41,7 @@ export default async function MyReservationsPage() {
         lead="Everything you’ve booked at CCF Centris, soonest first. If plans change, cancel early so someone else can use the space."
       />
       <Section tone="mist">
-        <Container className="max-w-3xl space-y-10">
+        <Container className="max-w-3xl space-y-10 lg:max-w-5xl">
           {next ? (
             <NextUp item={next} today={today} nights={nights} rebookTarget={rebook(next)} reference={reference(next)} />
           ) : (

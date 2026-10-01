@@ -28,6 +28,9 @@ export function NextUp({
   const t = item.table;
   return (
     <article aria-labelledby="next-h" className="calm-card p-7 sm:p-9">
+      {/* Landscape on laptops (2026-10-01): details and actions left, the plan right. */}
+      <div className={t ? "lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-10" : undefined}>
+      <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-[0.85rem] font-semibold uppercase tracking-[0.08em] text-clay">
           Next up · {whenLabel(item.date, today)}
@@ -45,18 +48,23 @@ export function NextUp({
         </IconLine>
         {item.room?.facility_name ? <IconLine icon="pin">{item.room.facility_name}</IconLine> : null}
       </div>
+      <div className="mt-7 border-t border-rule pt-6">
+        <BookingActions item={item} nights={nights} rebookTarget={rebookTarget} reference={reference} />
+      </div>
+      </div>
       {t ? (
-        <div className="mt-6 flex justify-center overflow-hidden rounded-2xl bg-mist p-4">
+        <div className="mt-6 flex justify-center self-start overflow-hidden rounded-2xl bg-mist p-4 lg:mt-0">
           <div className="sm:hidden">
             <FloorPlanDrawing room={t.room_slug} highlight={t.table_labels} width={250} />
           </div>
-          <div className="hidden sm:block">
+          <div className="hidden sm:block lg:hidden">
             <FloorPlanDrawing room={t.room_slug} highlight={t.table_labels} width={440} />
+          </div>
+          <div className="hidden lg:block">
+            <FloorPlanDrawing room={t.room_slug} highlight={t.table_labels} width={420} />
           </div>
         </div>
       ) : null}
-      <div className="mt-7 border-t border-rule pt-6">
-        <BookingActions item={item} nights={nights} rebookTarget={rebookTarget} reference={reference} />
       </div>
     </article>
   );

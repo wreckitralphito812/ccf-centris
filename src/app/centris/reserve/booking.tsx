@@ -9,8 +9,8 @@ import {
   Confirmation,
   DayCircle,
   IconLine,
+  PolicyAgreement,
   calmChipClass,
-  FieldError,
   Question,
   StepButton,
   barButtonClass,
@@ -709,31 +709,14 @@ function Request({
           </section>
 
           <div className="mt-6">
-            <label className="flex cursor-pointer items-start gap-3.5 text-[1.05rem] leading-snug text-ink">
-              <input
-                id="f-accept"
-                type="checkbox"
-                checked={agreed}
-                onChange={(ev) => setAgreed(ev.target.checked)}
-                aria-invalid={e.accept ? true : undefined}
-                className="mt-0.5 h-6 w-6 shrink-0 rounded-md accent-clay"
-              />
-              <span>I accept the room policies on behalf of my ministry.</span>
-            </label>
-            <details className="group mt-2 ml-[2.4rem]">
-              <summary className="flex min-h-11 cursor-pointer list-none items-center text-[0.98rem] font-semibold text-clay underline underline-offset-4 [&::-webkit-details-marker]:hidden">
-                <span className="group-open:hidden">Read the {ROOM_POLICIES.length} policies</span>
-                <span className="hidden group-open:inline">Hide the policies</span>
-              </summary>
-              <ul className="mt-2 space-y-2.5 rounded-2xl bg-mist p-5 text-[0.98rem] leading-relaxed text-ink-soft">
-                {ROOM_POLICIES.map(([t, b]) => (
-                  <li key={t}>
-                    <span className="font-semibold text-ink">{t}.</span> {b}
-                  </li>
-                ))}
-              </ul>
-            </details>
-            <FieldError text={e.accept} />
+            <PolicyAgreement
+              id="f-accept"
+              policies={ROOM_POLICIES.map(([title, body]) => ({ title, body }))}
+              label="I accept the room policies on behalf of my ministry."
+              checked={agreed}
+              onChange={setAgreed}
+              error={e.accept}
+            />
           </div>
 
           {state?.formError ? (
@@ -890,21 +873,8 @@ function Sent({
   return (
     <Confirmation
       focusRef={doneRef}
-      title="Request sent"
-      note={
-        <>
-          Reference <span className="font-semibold tabular-nums text-ink">{reference}</span>
-        </>
-      }
-    >
-      <div className="space-y-3">
-        <p className="text-[1.3rem] font-semibold leading-snug text-ink">{details.event}</p>
-        <IconLine icon="calendar">{details.date}</IconLine>
-        <IconLine icon="clock">{details.time}</IconLine>
-        <IconLine icon="pin">{details.rooms}</IconLine>
-        <IconLine icon="people">{details.people} people</IconLine>
-      </div>
-      <div>
+      aside={
+        <div className="rounded-2xl bg-mist p-6 lg:p-8">
         <p className="text-[1rem] font-semibold text-ink">What happens next</p>
         <ol className="mt-4 space-y-4">
           {steps.map(([t, b, done], i) => (
@@ -925,6 +895,21 @@ function Sent({
             </li>
           ))}
         </ol>
+      </div>
+      }
+      title="Request sent"
+      note={
+        <>
+          Reference <span className="font-semibold tabular-nums text-ink">{reference}</span>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <p className="text-[1.3rem] font-semibold leading-snug text-ink">{details.event}</p>
+        <IconLine icon="calendar">{details.date}</IconLine>
+        <IconLine icon="clock">{details.time}</IconLine>
+        <IconLine icon="pin">{details.rooms}</IconLine>
+        <IconLine icon="people">{details.people} people</IconLine>
       </div>
       {event ? (
         <div>

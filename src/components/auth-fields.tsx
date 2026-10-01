@@ -2,6 +2,7 @@
 
 import { useState, type InputHTMLAttributes, type ReactNode } from "react";
 import { cx } from "./ui";
+import { formatPhMobile } from "@/lib/phone";
 
 /*
  * The sign-in and sign-up form pieces (2026-09-30), after the Uiverse form Ralph
@@ -26,7 +27,7 @@ export function IconField({
 }: InputProps & {
   id: string;
   label: string;
-  icon: "email" | "person" | "lock";
+  icon: "email" | "person" | "lock" | "phone";
   error?: string;
   hint?: string;
   children?: ReactNode;
@@ -80,6 +81,30 @@ export function PasswordField(props: Omit<Parameters<typeof IconField>[0], "icon
   );
 }
 
+/** A Philippine mobile number, formatted as typed: 0917 123 4567. */
+export function PhoneField({
+  value,
+  onValue,
+  ...props
+}: Omit<Parameters<typeof IconField>[0], "icon" | "type" | "value" | "onChange"> & {
+  value: string;
+  onValue: (v: string) => void;
+}) {
+  return (
+    <IconField
+      {...props}
+      icon="phone"
+      type="tel"
+      inputMode="tel"
+      autoComplete="tel-national"
+      placeholder="0917 123 4567"
+      maxLength={13}
+      value={value}
+      onChange={(ev) => onValue(formatPhMobile(ev.target.value))}
+    />
+  );
+}
+
 /** "Or with", between the password form and Google. */
 export function OrDivider({ children = "Or with" }: { children?: ReactNode }) {
   return (
@@ -109,7 +134,7 @@ export function FormNote({ tone = "error", children }: { tone?: "error" | "ok" |
 export const submitClass =
   "btn-press w-full rounded-full bg-clay px-6 py-3.5 text-[1rem] font-semibold text-paper-bright shadow-[0_8px_20px_-8px_rgba(0,118,130,0.55)] transition-colors hover:bg-clay-deep disabled:cursor-not-allowed disabled:opacity-60";
 
-function FieldIcon({ name }: { name: "email" | "person" | "lock" }) {
+function FieldIcon({ name }: { name: "email" | "person" | "lock" | "phone" }) {
   const p = {
     viewBox: "0 0 24 24",
     fill: "none",
@@ -125,6 +150,13 @@ function FieldIcon({ name }: { name: "email" | "person" | "lock" }) {
       <svg {...p}>
         <circle cx="12" cy="12" r="4" />
         <path d="M16 8v5a2.5 2.5 0 0 0 5 0v-1a9 9 0 1 0-3.5 7.1" />
+      </svg>
+    );
+  if (name === "phone")
+    return (
+      <svg {...p}>
+        <rect x="7" y="2.5" width="10" height="19" rx="2.5" />
+        <path d="M11 18.5h2" />
       </svg>
     );
   if (name === "person")

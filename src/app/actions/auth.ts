@@ -6,6 +6,7 @@ import { hasAccounts, SESSION_COOKIE, SESSION_MAX_AGE_S } from "@/lib/auth/sessi
 import { firebaseAdminAuth } from "@/lib/firebase/admin";
 import { cleanName, isDisposableEmail, nameProblem } from "@/lib/member";
 import { safeNext } from "@/lib/prayer-wall";
+import { normalizePhMobile, phMobileProblem } from "@/lib/phone";
 import { supabaseAdmin } from "@/lib/supabase/server";
 
 /**
@@ -33,22 +34,12 @@ const UNAVAILABLE = "Accounts aren't available in this environment yet.";
 const DISPOSABLE =
   "Please use an email address you'll keep. We use it for your bookings and to reach you.";
 
-/** Optional; kept only if it holds phone-ish characters after a light clean. */
-function cleanPhone(raw: unknown): string | null {
-  return (
-    String(raw ?? "")
-      .replace(/[^\d+()\-\s]/g, "")
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 40) || null
-  );
-}
-
 export interface SignUpCheck extends AuthResult {
   email?: string;
   firstName?: string;
   lastName?: string;
-  fieldErrors?: Partial<Record<"firstName" | "lastName" | "email", string>>;
+  mobile?: string;
+  fieldErrors?: Partial<Record<"firstName" | "lastName" | "email" | "mobile", string>>;
 }
 
 /**
@@ -61,6 +52,7 @@ export async function checkSignUp(input: {
   firstName: string;
   lastName: string;
   email: string;
+  mobile: string;
 }): Promise<SignUpCheck> {
   if (!hasAccounts()) return { ok: false, formError: UNAVAILABLE };
 
@@ -74,9 +66,11 @@ export async function checkSignUp(input: {
   if (l) fieldErrors.lastName = l;
   if (!EMAIL.test(email)) fieldErrors.email = "Enter a valid email address.";
   else if (isDisposableEmail(email)) fieldErrors.email = DISPOSABLE;
+  const m = phMobileProblem(input.mobile);
+  if (m) fieldErrors.mobile = m;
   if (Object.keys(fieldErrors).length) return { ok: false, fieldErrors };
 
-  return { ok: true, email, firstName, lastName };
+  return { ok: true, email, firstName, lastName, mobile: normalizePhMobile(input.mobile)! };
 }
 
 export interface SessionStart {
@@ -128,7 +122,7 @@ export async function startSession(
     p_first: first && !nameProblem(first, "first name") ? first : null,
     p_last: last && !nameProblem(last, "surname") ? last : null,
     p_avatar: typeof token.picture === "string" ? token.picture : null,
-    p_mobile: cleanPhone(input.phone),
+    p_mobile: normalizePhMobile(String(input.phone ?? "")),
   });
   if (error || typeof memberId !== "string") {
     console.error("startSession: link_firebase_member failed", error);
@@ -156,14 +150,14 @@ export async function startSession(
   });
 
   // First sign-in (or anything missing): ask for first name, surname and a
-  // Prayer Wall screen name before going on.
+  // mobile number before going on (the screen name moved to the Prayer Wall).
   const next = safeNext(input.next, "/my/reservations");
   const { data: profile } = await db
     .from("profiles")
-    .select("first_name, last_name, screen_name")
+    .select("first_name, last_name, mobile")
     .eq("id", memberId)
     .maybeSingle();
-  const incomplete = !profile?.first_name || !profile?.last_name || !profile?.screen_name;
+  const incomplete = !profile?.first_name || !profile?.last_name || !profile?.mobile;
   return {
     ok: true,
     redirectTo: incomplete ? `/my/setup?next=${encodeURIComponent(next)}` : next,

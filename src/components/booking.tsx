@@ -6,6 +6,7 @@ import { Field } from "./form";
 import { UiIcon, type UiIconName } from "./icons";
 import { googleCalendarLink, icsHref, type CalendarEvent } from "@/lib/calendar";
 import type { BadgeTone } from "@/lib/booking-status";
+import { formatPhMobile } from "@/lib/phone";
 
 /* ---------------------------------------------------------------------------
    Pieces shared by the booking flows (Dgroup tables, courts and rooms), so
@@ -138,7 +139,10 @@ export function ContactFields({ fields }: { fields: ContactField[] }) {
               type={f.type ?? "text"}
               inputMode={f.type === "email" ? "email" : f.type === "tel" ? "tel" : undefined}
               autoComplete={f.autoComplete}
-              defaultValue={f.value}
+              defaultValue={f.type === "tel" ? formatPhMobile(f.value) : f.value}
+              onInput={f.type === "tel" ? (ev) => (ev.currentTarget.value = formatPhMobile(ev.currentTarget.value)) : undefined}
+              placeholder={f.type === "tel" ? "0917 123 4567" : undefined}
+              maxLength={f.type === "tel" ? 13 : undefined}
               className="calm-input"
             />
           )}
@@ -339,29 +343,49 @@ export function Confirmation({
   title,
   note,
   focusRef,
+  aside,
   children,
 }: {
   title: string;
   note: ReactNode;
   focusRef?: Ref<HTMLDivElement>;
+  /** Shown beside the details on laptops (the floor plan, what happens next), under them on phones. */
+  aside?: ReactNode;
   children: ReactNode;
 }) {
-  return (
-    <div
-      ref={focusRef}
-      tabIndex={-1}
-      role="status"
-      className="calm-card mx-auto max-w-[35rem] px-7 py-10 text-center outline-none sm:px-10"
-    >
+  const head = (
+    <>
       <span
         aria-hidden
-        className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-clay text-paper-bright shadow-[0_8px_20px_-8px_rgba(0,118,130,0.55)]"
+        className="grid h-14 w-14 place-items-center rounded-full bg-clay text-paper-bright shadow-[0_8px_20px_-8px_rgba(0,118,130,0.55)] max-lg:mx-auto"
       >
         <UiIcon name="check" className="h-7 w-7" />
       </span>
       <h2 className="mt-5 text-[1.75rem] font-semibold tracking-[-0.02em] text-ink">{title}</h2>
       <p className="mt-2 text-[1rem] text-ink-mute">{note}</p>
-      <div className="mt-8 space-y-6 border-t border-rule pt-7 text-left">{children}</div>
+    </>
+  );
+  if (!aside) {
+    return (
+      <div ref={focusRef} tabIndex={-1} role="status" className="calm-card mx-auto max-w-[35rem] px-7 py-10 text-center outline-none sm:px-10">
+        <div className="[&>span]:mx-auto">{head}</div>
+        <div className="mt-8 space-y-6 border-t border-rule pt-7 text-left">{children}</div>
+      </div>
+    );
+  }
+  // Landscape on laptops (Ralph, 2026-10-01): details left, the visual right.
+  return (
+    <div
+      ref={focusRef}
+      tabIndex={-1}
+      role="status"
+      className="calm-card mx-auto max-w-[35rem] px-7 py-10 outline-none sm:px-10 lg:grid lg:max-w-5xl lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-start lg:gap-12 lg:p-12"
+    >
+      <div>
+        <div className="max-lg:text-center">{head}</div>
+        <div className="mt-8 space-y-6 border-t border-rule pt-7">{children}</div>
+      </div>
+      <div className="mt-8 lg:mt-0">{aside}</div>
     </div>
   );
 }
@@ -391,6 +415,79 @@ export function AddToCalendar({ event, bare = false }: { event: CalendarEvent; b
           Apple or Outlook
         </a>
       </div>
+    </div>
+  );
+}
+
+/**
+ * The policies and the one tick to accept them. The tick stays off until the
+ * policies have been opened, so nobody agrees to rules they haven't seen
+ * (Ralph, 2026-10-01).
+ */
+export function PolicyAgreement({
+  id,
+  policies,
+  label,
+  checked,
+  onChange,
+  error,
+}: {
+  id: string;
+  policies: { title: string; body: string }[];
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  error?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [read, setRead] = useState(false);
+  const listId = `${id}-list`;
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => {
+          setOpen((v) => !v);
+          setRead(true);
+        }}
+        aria-expanded={open}
+        aria-controls={listId}
+        className="inline-flex min-h-11 items-center gap-2 text-[0.98rem] font-semibold text-clay hover:text-clay-deep"
+      >
+        <UiIcon name="chevron-right" className={cx("h-4 w-4 transition-transform", open ? "-rotate-90" : "rotate-90")} />
+        {open ? "Hide the policies" : `Read the ${policies.length} policies`}
+      </button>
+      <ul id={listId} hidden={!open} className="mt-2 space-y-2.5 rounded-2xl bg-mist p-5 text-[0.98rem] leading-relaxed text-ink-soft">
+        {policies.map((p) => (
+          <li key={p.title}>
+            <span className="font-semibold text-ink">{p.title}.</span> {p.body}
+          </li>
+        ))}
+      </ul>
+      <label
+        className={cx(
+          "mt-4 flex items-start gap-3.5 text-[1.05rem] leading-snug",
+          read ? "cursor-pointer text-ink" : "cursor-not-allowed text-ink-mute",
+        )}
+      >
+        <input
+          id={id}
+          type="checkbox"
+          checked={checked}
+          disabled={!read}
+          onChange={(ev) => onChange(ev.target.checked)}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={read ? listId : `${id}-why`}
+          className="mt-0.5 h-6 w-6 shrink-0 rounded-md accent-clay disabled:opacity-50"
+        />
+        <span>{label}</span>
+      </label>
+      {!read ? (
+        <p id={`${id}-why`} className="mt-1.5 pl-[2.4rem] text-[0.88rem] text-ink-mute">
+          Read the policies first, then tick to agree.
+        </p>
+      ) : null}
+      <FieldError text={error} />
     </div>
   );
 }
