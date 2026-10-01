@@ -228,6 +228,9 @@ function BookingAttempt({
         startTransition(() => action(fd));
       }}
     >
+      {/* On laptops: when and how many on the left, details and policies on
+          the right (2026-10-01). Phones keep one column. */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
       <div className="calm-card px-6 py-8 sm:px-9 sm:py-10">
         <Question
           id="q-day"
@@ -326,6 +329,8 @@ function BookingAttempt({
           </div>
         </Question>
 
+      </div>
+      <div className="calm-card px-6 py-8 sm:px-9 sm:py-10 lg:sticky lg:top-24">
         <Question id="q-details" title="Your details">
           <ContactFields
             fields={[
@@ -374,6 +379,7 @@ function BookingAttempt({
           </div>
         </Question>
       </div>
+      </div>
 
       {state?.formError ? (
         <p
@@ -395,7 +401,7 @@ function BookingAttempt({
       ) : null}
 
       {/* The answers so far and the one button, pinned to the bottom. */}
-      <BookingBar>
+      <BookingBar width="max-w-2xl lg:max-w-6xl">
         <div className="min-w-0 flex-1 leading-snug" aria-live="polite">
           {night ? (
             <span className="block truncate text-[1rem] font-semibold text-ink">

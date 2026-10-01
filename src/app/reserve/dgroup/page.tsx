@@ -43,8 +43,8 @@ export default function DgroupTablesPage() {
         lead="Four quick questions. We'll pick the table."
       />
       <Section tone="mist">
-        <Container className="max-w-2xl">
-          <div className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
+        <Container className="max-w-2xl lg:max-w-6xl">
+          <div className="grid gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
             <IconLine icon="calendar">Monday to Friday</IconLine>
             <IconLine icon="clock">Starts at {SLOT_STARTS}</IconLine>
             <IconLine icon="people">Groups up to {MAX_GROUP_SIZE}</IconLine>

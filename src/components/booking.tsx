@@ -122,7 +122,9 @@ export function ContactFields({ fields }: { fields: ContactField[] }) {
   }
 
   return (
-    <div className="grid gap-5 sm:grid-cols-2">
+    // Paired on tablets; stacked again on laptops, where the fields sit in the
+    // form's narrower right-hand column.
+    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
       {fields.map((f, i) => (
         <Field
           key={f.name}
@@ -131,7 +133,7 @@ export function ContactFields({ fields }: { fields: ContactField[] }) {
           hint={f.hint}
           error={f.error}
           required={f.required}
-          className={i === 0 ? "sm:col-span-2" : undefined}
+          className={i === 0 ? "sm:col-span-2 lg:col-span-1" : undefined}
         >
           {(p) => (
             <input
