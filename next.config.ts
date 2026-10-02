@@ -28,6 +28,21 @@ const PARKED: { source: string; destination: string }[] = [
   { source: "/visit/new-here", destination: "/visit" },
 ];
 
+/**
+ * Firebase's sign-in pages, served from our own domain (2026-10-02). Google's
+ * account chooser names the auth domain ("to continue to …"), and Ralph wanted
+ * it to say ccfcentris.org.ph instead of ccf-centris-4ad56.firebaseapp.com.
+ * With these rewrites NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN can be our domain; the
+ * OAuth client must also list https://<domain>/__/auth/handler as a redirect URI.
+ * See https://firebase.google.com/docs/auth/web/redirect-best-practices.
+ */
+const FIREBASE_HOST = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+  ? `https://${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.firebaseapp.com`
+  : null;
+
+/** One address for everyone, so sign-in and cookies live on a single domain. */
+const CANONICAL_HOST = "ccfcentris.org.ph";
+
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
@@ -36,7 +51,22 @@ const nextConfig: NextConfig = {
     ],
   },
   async redirects() {
-    return PARKED.map((r) => ({ ...r, permanent: false }));
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host" as const, value: `www.${CANONICAL_HOST}` }],
+        destination: `https://${CANONICAL_HOST}/:path*`,
+        permanent: true,
+      },
+      ...PARKED.map((r) => ({ ...r, permanent: false })),
+    ];
+  },
+  async rewrites() {
+    if (!FIREBASE_HOST) return [];
+    return [
+      { source: "/__/auth/:path*", destination: `${FIREBASE_HOST}/__/auth/:path*` },
+      { source: "/__/firebase/:path*", destination: `${FIREBASE_HOST}/__/firebase/:path*` },
+    ];
   },
 };
 
