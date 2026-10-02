@@ -78,8 +78,8 @@ async function Booking() {
       <div className="space-y-10">
         <Notice label="Sign in to book">
           <p>
-            Sign in with your email so you can change or cancel your bookings later. We send you
-            a link; there&rsquo;s no password.
+            Sign in so you can change or cancel your bookings later. New here? Making an
+            account takes a minute.
           </p>
           <ButtonLink href="/sign-in?next=/reserve/dgroup">Sign in to book a table</ButtonLink>
         </Notice>

@@ -101,10 +101,10 @@ export function SiteFooter() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-[110rem] px-5 pb-14 pt-14 sm:px-8">
+      <div className="mx-auto max-w-[110rem] px-5 pb-10 pt-10 sm:px-8 sm:pb-14 sm:pt-14">
         <h2 className="sr-only">Site footer</h2>
 
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,20rem)_1fr]">
+        <div className="grid gap-10 sm:gap-12 lg:grid-cols-[minmax(0,20rem)_1fr]">
           {/* Brand block */}
           <div>
             <Wordmark variant="full" />
@@ -147,10 +147,10 @@ export function SiteFooter() {
                   target="_blank"
                   rel="noreferrer"
                   aria-label="CCF Centris on Instagram"
-                  className="label tap gap-2 rounded-lg border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
+                  className="label tap min-w-11 justify-center gap-2 rounded-lg border border-paper-bright/45 px-3 py-2.5 sm:px-4 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
                 >
                   <InstagramGlyph className="h-4 w-4" />
-                  Instagram
+                  <span className="hidden sm:inline">Instagram</span>
                 </a>
               ) : null}
               {SOCIALS.facebook ? (
@@ -159,10 +159,10 @@ export function SiteFooter() {
                   target="_blank"
                   rel="noreferrer"
                   aria-label="CCF Centris on Facebook"
-                  className="label tap gap-2 rounded-lg border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
+                  className="label tap min-w-11 justify-center gap-2 rounded-lg border border-paper-bright/45 px-3 py-2.5 sm:px-4 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
                 >
                   <FacebookGlyph className="h-4 w-4" />
-                  Facebook
+                  <span className="hidden sm:inline">Facebook</span>
                 </a>
               ) : null}
               <a
@@ -170,14 +170,14 @@ export function SiteFooter() {
                 target="_blank"
                 rel="noreferrer"
                 aria-label="CCF on YouTube"
-                className="label tap gap-2 rounded-lg border border-paper-bright/45 px-4 py-2.5 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
+                className="label tap min-w-11 justify-center gap-2 rounded-lg border border-paper-bright/45 px-3 py-2.5 sm:px-4 text-paper-bright transition-colors hover:border-paper-bright hover:bg-paper-bright hover:text-night"
               >
                 <YouTubeGlyph className="h-4 w-4" />
-                YouTube
+                <span className="hidden sm:inline">YouTube</span>
               </a>
             </div>
 
-            <p className="mt-8 max-w-xs text-[0.9rem] leading-relaxed text-paper-bright/65">
+            <p className="mt-6 max-w-xs text-[0.9rem] leading-relaxed text-paper-bright/65 sm:mt-8">
               A satellite center of {SITE.parent}, making disciples who make
               disciples since 1984.
             </p>
@@ -186,7 +186,7 @@ export function SiteFooter() {
           {/* Sitemap columns */}
           <nav
             aria-label="Footer"
-            className="grid gap-x-8 gap-y-10 min-[480px]:grid-cols-2 md:grid-cols-4"
+            className="grid grid-cols-2 gap-x-6 gap-y-8 md:grid-cols-4 md:gap-x-8 md:gap-y-10"
           >
             {COLUMNS.map((col) => (
               <div key={col.id}>
@@ -196,12 +196,12 @@ export function SiteFooter() {
                 >
                   {col.heading}
                 </h2>
-                <ul aria-labelledby={col.id} className="mt-3 space-y-1 lg:mt-4 lg:space-y-3">
+                <ul aria-labelledby={col.id} className="mt-2 lg:mt-4 lg:space-y-3">
                   {col.links.map((link) => (
                     <li key={link.href}>
                       <Link
                         href={link.href}
-                        className="tap-dense text-[0.92rem] text-paper-bright/85 underline-offset-4 transition-colors hover:text-paper-bright hover:underline"
+                        className="tap text-[0.95rem] text-paper-bright/85 underline-offset-4 transition-colors hover:text-paper-bright hover:underline"
                       >
                         {link.label}
                       </Link>
@@ -213,7 +213,7 @@ export function SiteFooter() {
           </nav>
         </div>
 
-        <div className="mt-14 flex flex-col gap-3 border-t border-white/15 pt-6 text-[0.85rem] text-paper-bright/65 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-10 flex flex-col gap-3 border-t border-white/15 pt-6 sm:mt-14 text-[0.85rem] text-paper-bright/65 sm:flex-row sm:items-center sm:justify-between">
           <p>
             © {new Date().getFullYear()} {SITE.parent}. All rights reserved.
           </p>

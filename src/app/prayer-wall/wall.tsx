@@ -133,7 +133,7 @@ export function PrayerWall({
               aria-pressed={topic === t.id}
               onClick={() => setTopic((cur) => (cur === t.id ? null : t.id))}
               className={cx(
-                "min-h-9 rounded-full border px-3.5 text-[0.9rem] font-medium transition-colors",
+                "min-h-10 rounded-full border px-3.5 text-[0.9rem] font-medium transition-colors",
                 topic === t.id ? "border-clay bg-clay-wash text-clay-deep" : "border-edge bg-paper-bright text-ink-soft hover:border-clay/50",
               )}
             >
@@ -467,7 +467,7 @@ function PrayerCard({ post, canWrite, isModerator }: { post: WallPost; canWrite:
         {post.body}
       </p>
       {long ? (
-        <button type="button" onClick={() => setMore((m) => !m)} className="mt-1 self-start text-[0.92rem] font-semibold text-clay hover:text-clay-deep">
+        <button type="button" onClick={() => setMore((m) => !m)} className="inline-flex min-h-10 items-center self-start text-[0.92rem] font-semibold text-clay hover:text-clay-deep">
           {more ? "Show less" : "Read more"}
         </button>
       ) : null}
@@ -478,7 +478,7 @@ function PrayerCard({ post, canWrite, isModerator }: { post: WallPost; canWrite:
           type="button"
           aria-expanded={thread}
           onClick={() => setThread((t) => !t)}
-          className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-2.5 text-[0.92rem] font-semibold text-ink-soft transition-colors hover:bg-mist"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg px-2.5 text-[0.92rem] font-semibold text-ink-soft transition-colors hover:bg-mist"
         >
           <SectionIcon name="message" className="h-4 w-4" />
           {post.replies.length ? post.replies.length : null}
@@ -680,7 +680,7 @@ function CardMenu({ post, isModerator }: { post: WallPost; isModerator: boolean 
         aria-label="More"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className="grid h-9 w-9 place-items-center rounded-lg text-ink-mute transition-colors hover:bg-mist hover:text-ink"
+        className="grid h-11 w-11 place-items-center rounded-lg text-ink-mute transition-colors hover:bg-mist hover:text-ink sm:h-9 sm:w-9"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
           <circle cx="5" cy="12" r="1.8" />
@@ -689,7 +689,7 @@ function CardMenu({ post, isModerator }: { post: WallPost; isModerator: boolean 
         </svg>
       </button>
       {open ? (
-        <div className="absolute right-0 top-10 z-20 w-56 overflow-hidden rounded-xl border border-edge bg-paper-bright py-1.5 shadow-lg">
+        <div className="absolute right-0 top-12 z-20 sm:top-10 w-56 overflow-hidden rounded-xl border border-edge bg-paper-bright py-1.5 shadow-lg">
           {post.mine ? (
             <>
               <form action={markAnswered}>

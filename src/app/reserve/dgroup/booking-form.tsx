@@ -16,6 +16,7 @@ import {
   barButtonClass,
   choiceClass,
   countInputClass,
+  revealNext,
 } from "@/components/booking";
 import { cx } from "@/components/ui";
 import { FloorPlanDrawing } from "@/components/floor-plan";
@@ -257,7 +258,10 @@ function BookingAttempt({
                   on={date === n.date}
                   disabled={full}
                   note={full ? "Full" : undefined}
-                  onChange={() => setDate(n.date)}
+                  onChange={() => {
+                    setDate(n.date);
+                    revealNext("q-time");
+                  }}
                 />
               );
             })}
@@ -280,7 +284,10 @@ function BookingAttempt({
                     value={s.id}
                     checked={on}
                     disabled={!ok}
-                    onChange={() => setSlot(s.id)}
+                    onChange={() => {
+                      setSlot(s.id);
+                      revealNext("q-people");
+                    }}
                     className="sr-only"
                   />
                   <span className={cx("whitespace-nowrap text-[1.05rem]", ok && "font-semibold")}>

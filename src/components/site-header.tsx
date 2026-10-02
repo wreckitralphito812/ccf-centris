@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { NAV } from "@/lib/nav";
 import { cx } from "./ui";
 import { Wordmark } from "./wordmark";
-import { AccountMenu, useAccount } from "./account-menu";
+import { AccountMenu, MobileAccount } from "./account-menu";
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -129,7 +129,10 @@ export function SiteHeader() {
           >
             Last Sunday
           </Link>
-          <AccountMenu />
+          {/* The open phone menu has its own account section at the foot. */}
+          <div className={cx(mobile && "max-lg:hidden")}>
+            <AccountMenu />
+          </div>
           <button
             type="button"
             className="btn-press grid h-11 w-11 place-items-center lg:hidden"
@@ -148,54 +151,53 @@ export function SiteHeader() {
           style={{ top: barH || undefined }}
           className="fixed inset-x-0 bottom-0 top-[3.75rem] z-50 overflow-y-auto overscroll-contain border-t border-rule bg-paper-bright lg:hidden"
         >
-          <div className="px-5 py-6">
-            <div className="flex gap-2">
-              <Link
-                href="/watch"
-                className="btn-press flex-1 rounded-lg bg-clay px-4 py-3.5 text-center text-[1rem] font-semibold text-paper-bright"
-              >
-                Last Sunday
-              </Link>
-              <Link
-                href="/visit#getting-here"
-                className="btn-press flex-1 rounded-lg border border-clay px-4 py-3.5 text-center text-[1rem] font-semibold text-clay"
-              >
-                Getting here
-              </Link>
-            </div>
-
-            <SheetAccount />
-
+          {/* The phone menu (2026-10-02): search, the pages, then your
+              account. Ralph found the four buttons that used to sit on top
+              (Last Sunday, Getting here, Sign up, Sign in) cluttered; Watch
+              and Visit cover the first two, and the account is at the foot. */}
+          <div className="flex min-h-full flex-col px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-5">
             <Link
               href="/search"
-              className="mt-3 flex items-center gap-2 rounded-lg bg-mist px-4 py-3.5 text-[0.95rem] text-ink-mute"
+              className="flex min-h-12 items-center gap-2.5 rounded-lg bg-mist px-4 text-[1rem] text-ink-mute"
             >
               <SearchIcon />
               Search CCF Centris
             </Link>
 
-            <nav aria-label="Mobile" className="mt-6">
+            <nav aria-label="Mobile" className="mt-4">
               {NAV.map((group) =>
                 group.items.length === 0 ? (
                   <Link
                     key={group.label}
                     href={group.href}
-                    className="flex items-center justify-between border-b border-rule py-4"
+                    aria-current={isActive(group.href) ? "page" : undefined}
+                    className={cx(
+                      "flex min-h-14 items-center justify-between border-b border-rule",
+                      isActive(group.href) ? "text-clay" : "text-ink",
+                    )}
                   >
-                    <span className="text-[1.35rem] font-semibold tracking-[-0.01em]">{group.label}</span>
+                    <span className="text-[1.15rem] font-semibold tracking-[-0.01em]">{group.label}</span>
+                    <ChevronIcon dir="right" />
                   </Link>
                 ) : (
-                  <details key={group.label} className="border-b border-rule">
-                    <summary className="flex cursor-pointer list-none items-center justify-between py-4">
-                      <span className="text-[1.35rem] font-semibold tracking-[-0.01em]">{group.label}</span>
-                      <ChevronIcon />
+                  <details key={group.label} className="group border-b border-rule">
+                    <summary
+                      className={cx(
+                        "flex min-h-14 cursor-pointer list-none items-center justify-between [&::-webkit-details-marker]:hidden",
+                        isActive(group.href) ? "text-clay" : "text-ink",
+                      )}
+                    >
+                      <span className="text-[1.15rem] font-semibold tracking-[-0.01em]">{group.label}</span>
+                      <span className="transition-transform group-open:rotate-180">
+                        <ChevronIcon />
+                      </span>
                     </summary>
-                    <ul className="pb-4">
+                    <ul className="pb-3">
                       {group.items.map((item) => (
                         <li key={item.href}>
                           <Link
                             href={item.href}
-                            className="block py-2.5 text-[0.95rem] text-ink-soft"
+                            className="flex min-h-11 items-center pl-3 text-[1rem] text-ink-soft"
                           >
                             {item.label}
                           </Link>
@@ -206,6 +208,10 @@ export function SiteHeader() {
                 ),
               )}
             </nav>
+
+            <div className="mt-auto pt-8">
+              <MobileAccount />
+            </div>
           </div>
         </div>
       ) : null}
@@ -240,42 +246,16 @@ function CloseIcon() {
   );
 }
 
-function ChevronIcon() {
+function ChevronIcon({ dir = "down" }: { dir?: "down" | "right" }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden>
-      <path d="m5 8 5 5 5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden className="text-ink-mute">
+      <path
+        d={dir === "down" ? "m5 8 5 5 5-5" : "m8 5 5 5-5 5"}
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
-  );
-}
-
-/** Sign up and Sign in in the phone menu, where the header control is hidden. */
-function SheetAccount() {
-  const { email, ready } = useAccount();
-  if (!ready) return null;
-  if (email) {
-    return (
-      <Link
-        href="/my/reservations"
-        className="btn-press mt-3 flex items-center justify-center rounded-lg border border-clay px-4 py-3.5 text-[1rem] font-semibold text-clay"
-      >
-        My reservations
-      </Link>
-    );
-  }
-  return (
-    <div className="mt-3 flex gap-2">
-      <Link
-        href="/sign-up"
-        className="btn-press flex-1 rounded-lg bg-clay px-4 py-3.5 text-center text-[1rem] font-semibold text-paper-bright"
-      >
-        Sign up
-      </Link>
-      <Link
-        href="/sign-in"
-        className="btn-press flex-1 rounded-lg border border-edge px-4 py-3.5 text-center text-[1rem] font-semibold text-ink"
-      >
-        Sign in
-      </Link>
-    </div>
   );
 }

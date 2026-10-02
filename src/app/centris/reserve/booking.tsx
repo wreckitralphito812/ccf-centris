@@ -16,6 +16,7 @@ import {
   barButtonClass,
   choiceClass,
   countInputClass,
+  revealNext,
 } from "@/components/booking";
 import { cx } from "@/components/ui";
 import { roomEvent, type CalendarEvent } from "@/lib/calendar";
@@ -404,7 +405,10 @@ function Request({
                     on={d === date}
                     disabled={past}
                     note={past ? "Past" : undefined}
-                    onChange={() => setDate(d)}
+                    onChange={() => {
+                      setDate(d);
+                      revealNext("q-time");
+                    }}
                   />
                 );
               })}
@@ -425,7 +429,10 @@ function Request({
                       value={b.id}
                       checked={on}
                       disabled={!ok}
-                      onChange={() => setWhen(b.id)}
+                      onChange={() => {
+                        setWhen(b.id);
+                        if (b.id !== "other") revealNext("q-people");
+                      }}
                       className="sr-only"
                     />
                     <span className={cx("text-[1.05rem]", ok && "font-semibold")}>{b.label}</span>
@@ -507,7 +514,10 @@ function Request({
                     name="setup_choice"
                     value={s.id}
                     checked={setup === s.id}
-                    onChange={() => setSetup(s.id)}
+                    onChange={() => {
+                      setSetup(s.id);
+                      revealNext("q-room");
+                    }}
                     className="sr-only"
                   />
                   {s.label}
