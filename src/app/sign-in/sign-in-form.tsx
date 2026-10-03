@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { FirebaseError } from "firebase/app";
+import { sendVerifyEmail } from "@/app/actions/verify-email";
 import {
   sendEmailVerification,
   sendPasswordResetEmail,
@@ -77,7 +78,8 @@ export function SignInForm({ next, accounts }: { next: string; accounts: boolean
   async function resend() {
     if (!unverified) return;
     try {
-      await sendEmailVerification(unverified, { url: `${window.location.origin}/sign-in?verified=1` });
+      const sent = await sendVerifyEmail(await unverified.getIdToken(true), "/sign-in?verified=1").catch(() => ({ ok: false }));
+      if (!sent.ok) await sendEmailVerification(unverified, { url: `${window.location.origin}/sign-in?verified=1` });
       setNote(`We’ve sent a new confirmation email to ${unverified.email}.`);
     } catch (e) {
       setError(authErrorMessage(e instanceof FirebaseError ? e.code : ""));

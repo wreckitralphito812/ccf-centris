@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { FirebaseError } from "firebase/app";
+import { sendVerifyEmail } from "@/app/actions/verify-email";
 import { createUserWithEmailAndPassword, sendEmailVerification, signOut, updateProfile } from "firebase/auth";
 import { checkSignUp, type SignUpCheck } from "@/app/actions/auth";
 import { FormNote, IconField, OrDivider, PasswordField, PhoneField, submitClass } from "@/components/auth-fields";
@@ -50,9 +51,10 @@ export function SignUpForm({ next, accounts }: { next: string; accounts: boolean
       const auth = await firebaseAuth();
       const { user } = await createUserWithEmailAndPassword(auth, check.email!, password);
       await updateProfile(user, { displayName: `${check.firstName} ${check.lastName}` });
-      await sendEmailVerification(user, {
-        url: `${window.location.origin}/sign-in?verified=1&next=${encodeURIComponent(next)}`,
-      });
+      // Our own email, linking to ccfcentris.org.ph; Firebase's if ours can't go.
+      const back = `/sign-in?verified=1&next=${encodeURIComponent(next)}`;
+      const sent = await sendVerifyEmail(await user.getIdToken(true), back).catch(() => ({ ok: false }));
+      if (!sent.ok) await sendEmailVerification(user, { url: `${window.location.origin}${back}` });
       await signOut(auth);
       // Kept in this browser until the first sign-in saves it to the profile.
       rememberSignUp(check.email!, { firstName: check.firstName!, lastName: check.lastName!, mobile: check.mobile! });
