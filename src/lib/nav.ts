@@ -73,6 +73,9 @@ export const ADMIN_NAV: { section: string; items: NavItem[] }[] = [
     section: "Operations",
     items: [
       { label: "Today", href: "/admin/today" },
+      { label: "Week", href: "/admin/week" },
+      { label: "Bookings", href: "/admin/bookings" },
+      { label: "Blocks", href: "/admin/blocks" },
       { label: "Events", href: "/admin/events" },
       { label: "Facilities", href: "/admin/facilities" },
       { label: "Reservations", href: "/admin/reservations" },

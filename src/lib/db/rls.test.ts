@@ -311,6 +311,29 @@ test("moving a booking swaps its tables, and a failed move changes nothing", asy
   );
 });
 
+test("blocked tables can't be booked or moved onto, and only the server sees blocks", async () => {
+  await db.exec(`
+    insert into dgroup_table_blocks (satellite_id, room_slug, table_label, booked_on, slot_id, reason)
+      values ('${SAT}', 'welcome-center', '9', '2026-10-12', null, 'Repairs'),
+             ('${SAT}', 'welcome-center', null, '2026-10-13', '1300', 'Leaders summit');
+  `);
+  // One table, all day.
+  await assert.rejects(db.query(book(DAN, ["9"], "1600", "2026-10-12")), /blocked/);
+  const [ok] = (await db.query<{ id: string }>(book(DAN, ["10"], "1600", "2026-10-12"))).rows;
+  assert.ok(ok.id);
+  // A whole room for one slot; other slots stay open.
+  await assert.rejects(db.query(book(BEN, ["1"], "1300", "2026-10-13")), /blocked/);
+  const [later] = (await db.query<{ id: string }>(book(BEN, ["1"], "1600", "2026-10-13"))).rows;
+  // Moving onto a blocked table is refused and changes nothing.
+  await assert.rejects(
+    db.query(`select move_dgroup_booking('${later.id}', '${BEN}', 'welcome-center', array['2'], 4, '2026-10-13', '1300', 3)`),
+    /blocked/,
+  );
+  assert.deepEqual(await holds(later.id), ["1"]);
+  await assert.rejects(as(BEN, "select * from dgroup_table_blocks"), /permission denied/);
+  await assert.rejects(as(null, "select * from dgroup_table_blocks"), /permission denied/);
+});
+
 test("members see only their own bookings and can't book or read holds directly", async () => {
   const mine = await as<{ user_id: string }>(BEN, "select user_id from dgroup_table_bookings");
   assert.ok(mine.length >= 1);
