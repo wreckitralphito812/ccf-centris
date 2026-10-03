@@ -52,12 +52,16 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      {
-        source: "/:path*",
-        has: [{ type: "host" as const, value: `www.${CANONICAL_HOST}` }],
-        destination: `https://${CANONICAL_HOST}/:path*`,
+      // www and the old Vercel address both land on the domain, so old links
+      // (emails, shared posts) keep working. /api/* is left alone: Vercel
+      // Cron may call the vercel.app address, and cron calls don't follow
+      // redirects.
+      ...[`www.${CANONICAL_HOST}`, "ccf-centris.vercel.app"].map((host) => ({
+        source: "/:path((?!api/).*)",
+        has: [{ type: "host" as const, value: host }],
+        destination: `https://${CANONICAL_HOST}/:path`,
         permanent: true,
-      },
+      })),
       ...PARKED.map((r) => ({ ...r, permanent: false })),
     ];
   },
