@@ -8,6 +8,8 @@ import { currentUser } from "@/lib/auth/session";
 import { markSlots, type Busy } from "@/lib/availability";
 import type { DgroupHold } from "@/lib/dgroup-tables";
 import { mergeUpcoming, type Upcoming } from "@/lib/my-bookings";
+import { buildSiteStats, type SiteStats, type StatsInput } from "@/lib/site-stats";
+import { manilaDateKey } from "@/lib/format";
 import { addons, communities, facilities } from "@/data/center";
 import {
   announcements,
@@ -975,4 +977,50 @@ export async function globalSearch(q: string): Promise<SearchHit[]> {
   }
 
   return hits;
+}
+
+/**
+ * Everything the admin Analytics page counts, in one go (2026-10-03).
+ * Null without a database; the page then says it isn't connected.
+ */
+export async function getSiteStats(): Promise<SiteStats | null> {
+  if (!hasSupabase()) return null;
+  const db = supabaseAdmin();
+  const month = new Date(Date.now() - 30 * 86_400_000).toISOString();
+  const [members, joined, tables, rooms, posts, prayers] = await Promise.all([
+    db.from("profiles").select("id", { count: "exact", head: true }),
+    db.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", month),
+    db
+      .from("dgroup_table_bookings")
+      .select("status, booked_on, slot_id, room_slug, group_size, created_at")
+      .eq("satellite_id", SATELLITE_ID),
+    db
+      .from("reservations")
+      .select("id, status, created_at, during, request_group, facilities(name)")
+      .eq("satellite_id", SATELLITE_ID),
+    db
+      .from("prayer_wall_posts")
+      .select("created_at, expires_at, hidden_at, answered_at")
+      .eq("satellite_id", SATELLITE_ID),
+    db.from("prayer_wall_prayers").select("post_id", { count: "exact", head: true }),
+  ]);
+  for (const r of [members, joined, tables, rooms, posts, prayers]) {
+    if (r.error) console.error("getSiteStats failed", r.error);
+  }
+  return buildSiteStats({
+    today: manilaDateKey(),
+    now: new Date(),
+    members: { total: members.count ?? 0, joined30: joined.count ?? 0 },
+    tables: (tables.data ?? []) as StatsInput["tables"],
+    rooms: (rooms.data ?? []).map((r) => ({
+      id: r.id as string,
+      status: r.status as string,
+      created_at: r.created_at as string,
+      starts_at: parseRange(r.during as string)[0],
+      request_group: (r.request_group as string | null) ?? null,
+      facility_name: one(r.facilities as { name: string } | { name: string }[] | null)?.name ?? null,
+    })),
+    posts: (posts.data ?? []) as StatsInput["posts"],
+    prayers: prayers.count ?? 0,
+  });
 }
