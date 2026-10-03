@@ -10,7 +10,6 @@ import {
   parseDgroupChange,
   rebookDate,
   slotLabel,
-  tableKey,
   tablesLabel,
   type DgroupBookingInput,
   type DgroupFieldErrors,
@@ -20,6 +19,7 @@ import { sendEmail, siteOrigin } from "@/lib/email";
 import { manilaDateKey } from "@/lib/format";
 import { hasSupabase, SATELLITE_ID, supabaseAdmin } from "@/lib/supabase/server";
 import { currentUser } from "@/lib/auth/session";
+import { takenTables } from "@/lib/dgroup-taken";
 
 export interface DgroupBookingResult {
   ok: boolean;
@@ -45,24 +45,6 @@ export interface DgroupBookingResult {
 }
 
 const GENERIC = "Something went wrong on our end. Try again in a moment.";
-
-/** Tables already held for a day and slot, as tableKey()s. */
-async function takenTables(date: string, slotId: string, exceptBooking?: string) {
-  const { data, error } = await supabaseAdmin()
-    .from("dgroup_table_bookings")
-    .select("id, room_slug, table_labels")
-    .eq("satellite_id", SATELLITE_ID)
-    .eq("booked_on", date)
-    .eq("slot_id", slotId)
-    .in("status", ["pending", "confirmed"]);
-  if (error) throw error;
-  const taken = new Set<string>();
-  for (const r of (data ?? []) as { id: string; room_slug: string; table_labels: string[] }[]) {
-    if (r.id === exceptBooking) continue;
-    for (const l of r.table_labels) taken.add(tableKey(r.room_slug, l));
-  }
-  return taken;
-}
 
 const isConflict = (e: { code?: string; message?: string; details?: string | null }, name: string) =>
   e.code === "23505" && `${e.message ?? ""} ${e.details ?? ""}`.includes(name);

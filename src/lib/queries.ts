@@ -9,6 +9,7 @@ import { markSlots, type Busy } from "@/lib/availability";
 import type { DgroupHold } from "@/lib/dgroup-tables";
 import { mergeUpcoming, type Upcoming } from "@/lib/my-bookings";
 import { buildSiteStats, type SiteStats, type StatsInput } from "@/lib/site-stats";
+import { blocksAsHolds, type TableBlock } from "@/lib/dgroup-blocks";
 import { manilaDateKey } from "@/lib/format";
 import { addons, communities, facilities } from "@/data/center";
 import {
@@ -658,17 +659,75 @@ export async function getMyUpcoming(today: string): Promise<Upcoming[]> {
  */
 export async function getDgroupHolds(dates: string[]): Promise<DgroupHold[] | null> {
   if (!hasSupabase() || !dates.length) return [];
-  const { data, error } = await supabaseAdmin()
-    .from("dgroup_table_bookings")
-    .select("booked_on, slot_id, room_slug, table_labels")
-    .eq("satellite_id", SATELLITE_ID)
-    .in("booked_on", dates)
-    .in("status", ["pending", "confirmed"]);
+  const [{ data, error }, blocks] = await Promise.all([
+    supabaseAdmin()
+      .from("dgroup_table_bookings")
+      .select("booked_on, slot_id, room_slug, table_labels")
+      .eq("satellite_id", SATELLITE_ID)
+      .in("booked_on", dates)
+      .in("status", ["pending", "confirmed"]),
+    getTableBlocks({ dates }),
+  ]);
   if (error) {
     console.error("getDgroupHolds failed", error);
     return null;
   }
-  return (data ?? []) as DgroupHold[];
+  // Blocked tables count as taken (2026-10-03).
+  return [...((data ?? []) as DgroupHold[]), ...blocksAsHolds(blocks)];
+}
+
+/** Admin blocks on Dgroup tables, for some dates or from a date on. */
+export async function getTableBlocks(when: { dates?: string[]; from?: string; to?: string }): Promise<TableBlock[]> {
+  if (!hasSupabase()) return [];
+  let q = supabaseAdmin()
+    .from("dgroup_table_blocks")
+    .select("id, room_slug, table_label, booked_on, slot_id, reason")
+    .eq("satellite_id", SATELLITE_ID);
+  if (when.dates) q = q.in("booked_on", when.dates);
+  if (when.from) q = q.gte("booked_on", when.from);
+  if (when.to) q = q.lte("booked_on", when.to);
+  const { data, error } = await q.order("booked_on").order("room_slug");
+  if (error) {
+    // Before migration 0015 the table doesn't exist; treat as no blocks.
+    console.error("getTableBlocks failed", error);
+    return [];
+  }
+  return (data ?? []) as TableBlock[];
+}
+
+export interface RoomBlock {
+  id: string;
+  facility_name: string;
+  starts_at: string;
+  ends_at: string;
+  reason: string | null;
+}
+
+/** Room blackouts (facility_blackouts) overlapping [from, to). */
+export async function getRoomBlocks(fromIso: string, toIso: string): Promise<RoomBlock[]> {
+  if (!hasSupabase()) return [];
+  const { data, error } = await supabaseAdmin()
+    .from("facility_blackouts")
+    .select("id, during, reason, facilities!inner(name, satellite_id)")
+    .eq("facilities.satellite_id", SATELLITE_ID)
+    .is("court_id", null)
+    .overlaps("during", `[${fromIso},${toIso})`);
+  if (error) {
+    console.error("getRoomBlocks failed", error);
+    return [];
+  }
+  return (data ?? [])
+    .map((r) => {
+      const [starts_at, ends_at] = parseRange(r.during as string);
+      return {
+        id: r.id as string,
+        facility_name: one(r.facilities as { name: string } | { name: string }[] | null)?.name ?? "Room",
+        starts_at,
+        ends_at,
+        reason: (r.reason as string | null) ?? null,
+      };
+    })
+    .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
 }
 
 // --- Admin queues ---------------------------------------------------------
@@ -1023,4 +1082,27 @@ export async function getSiteStats(): Promise<SiteStats | null> {
     posts: (posts.data ?? []) as StatsInput["posts"],
     prayers: prayers.count ?? 0,
   });
+}
+
+/**
+ * Admin search across Dgroup table bookings and room requests (2026-10-03):
+ * name, email, mobile, event or ministry, newest first, 40 of each at most.
+ * Filters the admin lists in memory: one satellite's bookings are few.
+ */
+export async function searchBookings(raw: string): Promise<{ tables: AdminDgroupTable[]; rooms: AdminReservation[] }> {
+  const q = raw.trim().toLowerCase().slice(0, 60);
+  if (!hasSupabase() || q.length < 2) return { tables: [], rooms: [] };
+  const digits = q.replace(/\s/g, "");
+  const has = (v: string | null | undefined) =>
+    Boolean(v && (v.toLowerCase().includes(q) || (/^[\d+]+$/.test(digits) && v.replace(/\s/g, "").includes(digits))));
+  const [tables, rooms] = await Promise.all([getDgroupTableBookings(), getReservations()]);
+  return {
+    tables: tables
+      .filter((t) => has(t.leader_name) || has(t.leader_email) || has(t.contact_mobile))
+      .sort((a, b) => b.booked_on.localeCompare(a.booked_on))
+      .slice(0, 40),
+    rooms: rooms
+      .filter((r) => has(r.contact_name) || has(r.contact_email) || has(r.activity_name) || has(r.organization) || has(r.contact_mobile))
+      .slice(0, 40),
+  };
 }

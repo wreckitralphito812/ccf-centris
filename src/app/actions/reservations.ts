@@ -174,6 +174,22 @@ export async function createRoomRequest(
     return { ok: false, formError: "One of those rooms could not be found. Refresh the page and try again." };
   }
 
+  // A room an admin has blocked (facility_blackouts) can't be requested, even
+  // if the form's free/busy view was stale (2026-10-03).
+  const { data: blocked, error: bErr } = await db
+    .from("facility_blackouts")
+    .select("id")
+    .in("facility_id", facilities.map((f) => f.id))
+    .overlaps("during", `[${r.starts_at},${r.ends_at})`)
+    .limit(1);
+  if (bErr) console.error("createRoomRequest: blackout check failed", bErr);
+  if (blocked?.length) {
+    return {
+      ok: false,
+      fieldErrors: { rooms: "One of those rooms isn't available at that time. Pick another room or time." },
+    };
+  }
+
   const group = randomUUID();
   const { error } = await db.from("reservations").insert(
     facilities.map((f) => ({

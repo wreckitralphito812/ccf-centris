@@ -5,7 +5,7 @@ import { PrintButton } from "./print-button";
 import { FloorPlanDrawing } from "@/components/floor-plan";
 import { cx } from "@/components/ui";
 import { setReservationStatus } from "@/app/actions/admin";
-import { tablesLabel, WEEKDAY_NAMES } from "@/lib/dgroup-tables";
+import { roomName, slotLabel, tablesLabel, WEEKDAY_NAMES } from "@/lib/dgroup-tables";
 import { timeLabel } from "@/lib/ministry-rooms";
 import {
   blockPosition,
@@ -17,7 +17,10 @@ import {
   weekOf,
   type DayRoomBooking,
   type DayTable,
+  manilaMinutesOf,
 } from "@/lib/admin-day";
+import { blockedLabels, describeBlock, type TableBlock } from "@/lib/dgroup-blocks";
+import type { RoomBlock } from "@/lib/queries";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -34,6 +37,8 @@ export function TodayBoard({
   rooms,
   readOnly,
   connected,
+  tableBlocks = [],
+  roomBlocks = [],
 }: {
   date: string;
   today: string;
@@ -41,8 +46,17 @@ export function TodayBoard({
   rooms: DayRoomBooking[];
   readOnly: boolean;
   connected: boolean;
+  /** This day's admin blocks (2026-10-03). */
+  tableBlocks?: TableBlock[];
+  roomBlocks?: RoomBlock[];
 }) {
   const board = buildDayBoard(date, tables, rooms);
+  const blocksIn = (slot: string) =>
+    tableBlocks.filter((b) => b.booked_on === date && (!b.slot_id || b.slot_id === slot));
+  const blockNote = (slot: string) =>
+    blocksIn(slot)
+      .map((b) => `${describeBlock(b, roomName, slotLabel).split(" · ")[0]}${b.reason ? ` (${b.reason})` : ""}`)
+      .join("; ");
 
   const week = weekOf(date);
   const countOn = (d: string) =>
@@ -132,9 +146,15 @@ export function TodayBoard({
             groups === 0 ? (
               <p key={slot.id} className="rounded-lg border border-dashed border-edge bg-paper-bright px-5 py-3.5 text-[0.95rem] text-ink-mute">
                 <span className="font-semibold text-ink">{slot.label}</span> · no tables booked
+                {blockNote(slot.id) ? <span> · blocked: {blockNote(slot.id)}</span> : null}
               </p>
             ) : (
               <AdminPanel key={slot.id} title={`${slot.label} · ${groups} ${groups === 1 ? "group" : "groups"}`} className="break-inside-avoid">
+                {blockNote(slot.id) ? (
+                  <p className="border-b border-hairline bg-ink/5 px-5 py-2.5 text-[0.88rem] text-ink-soft">
+                    <span className="font-semibold">Blocked:</span> {blockNote(slot.id)}
+                  </p>
+                ) : null}
                 <div className="grid gap-6 p-5 xl:grid-cols-2">
                   {slotRooms.map((r) => (
                     <div key={r.slug} className={cx(r.bookings.length === 0 && "hidden xl:block")}>
@@ -142,7 +162,12 @@ export function TodayBoard({
                         {r.name}
                         <span className="font-normal text-ink-mute">
                           {" "}
-                          · {r.bookings.length ? `${r.bookings.length} booked` : "free"}
+                          ·{" "}
+                          {r.bookings.length
+                            ? `${r.bookings.length} booked`
+                            : blockedLabels(tableBlocks, r.slug, date, slot.id).length
+                              ? "blocked"
+                              : "free"}
                         </span>
                       </p>
                       {r.bookings.length ? (
@@ -198,6 +223,22 @@ export function TodayBoard({
                       {[12, 15, 18].map((h) => (
                         <span key={h} aria-hidden className="absolute inset-y-0 w-px bg-edge" style={{ left: `${blockPosition(h * 60, h * 60).left}%` }} />
                       ))}
+                      {roomBlocks
+                        .filter((b) => b.facility_name === room.name)
+                        .map((b) => {
+                          const pos = blockPosition(manilaMinutesOf(b.starts_at), manilaMinutesOf(b.ends_at));
+                          return (
+                            <div
+                              key={b.id}
+                              title={`Blocked${b.reason ? `: ${b.reason}` : ""}`}
+                              className="absolute inset-y-1 overflow-hidden rounded-md bg-ink/10 px-2.5 py-1.5 text-[0.8rem] leading-tight text-ink-soft"
+                              style={{ left: `${pos.left}%`, width: `${pos.width}%` }}
+                            >
+                              <span className="block truncate font-semibold">Blocked</span>
+                              <span className="block truncate">{b.reason ?? ""}</span>
+                            </div>
+                          );
+                        })}
                       {room.blocks.map((b) => {
                         const pos = blockPosition(b.from, b.to);
                         const pendingBlock = b.status === "pending";
@@ -226,6 +267,7 @@ export function TodayBoard({
               <p className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-[0.82rem] text-ink-mute">
                 <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-clay" /> Confirmed</span>
                 <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm border-2 border-dashed border-sky/60 bg-sky-wash" /> Awaiting approval</span>
+                <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-ink/10" /> Blocked</span>
                 <span>{timeLabel(DAY_START)} – {timeLabel(DAY_END)}</span>
               </p>
             </div>
