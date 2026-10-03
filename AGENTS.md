@@ -11,8 +11,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 # CCF Centris
 
 The website for CCF Centris, a satellite of Christ's Commission Fellowship at
-Eton Centris, Quezon City. It is live at `https://ccf-centris.vercel.app` until
-CCF's own domain is connected.
+Eton Centris, Quezon City. It is live at `https://ccfcentris.org.ph` (since
+2026-10-03; the old `ccf-centris.vercel.app` address redirects there).
 
 Stack: Next.js 16 (App Router, React 19, React Compiler), TypeScript, Tailwind
 v4, Supabase Postgres (data), Firebase Auth (member sign-in), Resend (email),
