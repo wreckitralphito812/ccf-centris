@@ -1,0 +1,187 @@
+- generic [active] [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main"
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - link "CCF Centris home" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img "CCF Centris" [ref=e6]
+      - navigation "Main" [ref=e7]:
+        - link "Visit" [ref=e8] [cursor=pointer]:
+          - /url: /visit
+        - link "Watch" [ref=e9] [cursor=pointer]:
+          - /url: /watch
+        - link "Connect" [ref=e10] [cursor=pointer]:
+          - /url: /connect
+        - link "Prayer Wall" [ref=e11] [cursor=pointer]:
+          - /url: /prayer-wall
+        - link "What’s Happening" [ref=e12] [cursor=pointer]:
+          - /url: /events
+        - link "Reserve" [ref=e13] [cursor=pointer]:
+          - /url: /reserve
+        - link "Contact" [ref=e14] [cursor=pointer]:
+          - /url: /contact
+      - link "Search" [ref=e16] [cursor=pointer]:
+        - /url: /search
+  - main [ref=e20]:
+    - generic [ref=e24]:
+      - generic [ref=e25]:
+        - paragraph [ref=e27]: Christ’s Commission Fellowship
+        - heading "Welcome to CCF Centris." [level=1] [ref=e29]: Welcome toCCF Centris.
+        - paragraph [ref=e31]: Regardless of who you are or where life has taken you, you are more than welcome here.
+        - generic [ref=e33]:
+          - link "Plan your visit" [ref=e34] [cursor=pointer]:
+            - /url: /visit
+          - link "Watch last Sunday" [ref=e35] [cursor=pointer]:
+            - /url: /watch
+      - generic [ref=e37]:
+        - paragraph [ref=e38]: Join us this Sunday
+        - paragraph [ref=e39]: 10:00 AM and 3:00 PM
+        - generic [ref=e40]: 2/F Centris Station, Eton CentrisEDSA corner Quezon Avenue, Quezon City
+        - link "Where to park" [ref=e41] [cursor=pointer]:
+          - /url: /visit#car
+        - generic [ref=e42]:
+          - link "Get directions" [ref=e43] [cursor=pointer]:
+            - /url: https://www.google.com/maps/dir/?api=1&destination=14.6433095%2C121.0389583
+          - generic [ref=e44]:
+            - button "Invite a friend" [ref=e45]
+            - paragraph [ref=e46]
+        - paragraph [ref=e47]:
+          - link "Ask for prayer" [ref=e48] [cursor=pointer]:
+            - /url: /prayer-wall
+          - link "Contact us" [ref=e49] [cursor=pointer]:
+            - /url: /contact
+          - generic [ref=e50]:
+            - link "CCF Centris on Facebook" [ref=e51] [cursor=pointer]:
+              - /url: https://www.facebook.com/profile.php?id=61591537230410
+            - link "CCF Centris on Instagram" [ref=e54] [cursor=pointer]:
+              - /url: https://www.instagram.com/ccfcentris/
+            - link "CCF on YouTube" [ref=e59] [cursor=pointer]:
+              - /url: https://www.youtube.com/@CCFmainTV
+    - generic [ref=e63]:
+      - heading "Take your next step" [level=2] [ref=e66]
+      - generic [ref=e67]:
+        - link "Create your account Book Dgroup tables and rooms, and post on the Prayer Wall." [ref=e69] [cursor=pointer]:
+          - /url: /sign-up
+          - generic [ref=e74]:
+            - generic [ref=e75]: Create your account
+            - generic [ref=e76]: Book Dgroup tables and rooms, and post on the Prayer Wall.
+        - link "Ask for prayer Post a request on the Prayer Wall, and the church will pray with you." [ref=e78] [cursor=pointer]:
+          - /url: /prayer-wall
+          - generic [ref=e82]:
+            - generic [ref=e83]: Ask for prayer
+            - generic [ref=e84]: Post a request on the Prayer Wall, and the church will pray with you.
+        - link "Join a Dgroup Find a small group that meets every week. Sign-up form ↗" [ref=e86] [cursor=pointer]:
+          - /url: https://form.jotform.com/223131440974451
+          - generic [ref=e93]:
+            - generic [ref=e94]: Join a Dgroup
+            - generic [ref=e95]: Find a small group that meets every week.
+            - generic [ref=e96]: Sign-up form ↗
+        - link "Serve on a team Help run Sundays at Centris. Sign-up form ↗" [ref=e98] [cursor=pointer]:
+          - /url: https://volunteer-management.ccf.org.ph/recruitment/form
+          - generic [ref=e104]:
+            - generic [ref=e105]: Serve on a team
+            - generic [ref=e106]: Help run Sundays at Centris.
+            - generic [ref=e107]: Sign-up form ↗
+      - paragraph [ref=e108]:
+        - link "More ways to connect →" [ref=e109] [cursor=pointer]:
+          - /url: /connect
+    - generic [ref=e112]:
+      - link [ref=e113] [cursor=pointer]:
+        - /url: /watch
+        - img "Know The One Who Loved You First" [ref=e114]
+      - generic [ref=e115]:
+        - paragraph [ref=e116]: Last Sunday
+        - heading "Know The One Who Loved You First" [level=2] [ref=e120]
+        - paragraph [ref=e121]: Paul Tanchi · September 27, 2026
+        - paragraph [ref=e122]: Watch the message, then talk it through with your Dgroup using this week’s 4Ws guide.
+        - paragraph [ref=e123]: 4Ws for Week 39 · Sep 26–27, 2026
+        - generic [ref=e124]:
+          - link "Watch now" [ref=e125] [cursor=pointer]:
+            - /url: /watch
+          - link "Download the 4Ws" [ref=e126] [cursor=pointer]:
+            - /url: https://www.ccf.org.ph/download/42106/
+  - contentinfo [ref=e127]:
+    - generic [ref=e129]:
+      - paragraph [ref=e130]: Sunday services at 10:00 AM and 3:00 PM. See you there.
+      - link "Getting here" [ref=e132] [cursor=pointer]:
+        - /url: /visit#getting-here
+    - generic [ref=e133]:
+      - heading "Site footer" [level=2] [ref=e134]
+      - generic [ref=e135]:
+        - generic [ref=e136]:
+          - img "CCF Centris" [ref=e137]
+          - generic [ref=e139]:
+            - generic [ref=e140]: 2/F Centris Station
+            - generic [ref=e141]: Eton Centris
+            - generic [ref=e142]: EDSA corner Quezon Avenue
+            - generic [ref=e143]: Quezon City
+          - generic [ref=e144]:
+            - link "Get directions" [ref=e145] [cursor=pointer]:
+              - /url: https://www.google.com/maps/dir/?api=1&destination=14.6433095%2C121.0389583
+            - link "CCF Centris on Instagram" [ref=e146] [cursor=pointer]:
+              - /url: https://www.instagram.com/ccfcentris/
+              - generic [ref=e151]: Instagram
+            - link "CCF Centris on Facebook" [ref=e152] [cursor=pointer]:
+              - /url: https://www.facebook.com/profile.php?id=61591537230410
+              - generic [ref=e155]: Facebook
+            - link "CCF on YouTube" [ref=e156] [cursor=pointer]:
+              - /url: https://www.youtube.com/@CCFmainTV
+              - generic [ref=e159]: YouTube
+          - paragraph [ref=e160]: A satellite center of Christ's Commission Fellowship, making disciples who make disciples since 1984.
+        - navigation "Footer" [ref=e161]:
+          - generic [ref=e162]:
+            - heading "Plan a visit" [level=2] [ref=e163]
+            - list "Plan a visit" [ref=e164]:
+              - listitem [ref=e165]:
+                - link "Getting here" [ref=e166] [cursor=pointer]:
+                  - /url: /visit#getting-here
+          - generic [ref=e167]:
+            - heading "Watch" [level=2] [ref=e168]
+            - list "Watch" [ref=e169]:
+              - listitem [ref=e170]:
+                - link "Last Sunday" [ref=e171] [cursor=pointer]:
+                  - /url: /watch
+              - listitem [ref=e172]:
+                - link "Sunday archive" [ref=e173] [cursor=pointer]:
+                  - /url: /watch/archive
+              - listitem [ref=e174]:
+                - link "4Ws guides" [ref=e175] [cursor=pointer]:
+                  - /url: /watch/4ws
+          - generic [ref=e176]:
+            - heading "Connect" [level=2] [ref=e177]
+            - list "Connect" [ref=e178]:
+              - listitem [ref=e179]:
+                - link "Join a Dgroup" [ref=e180] [cursor=pointer]:
+                  - /url: /grow/join-a-dgroup
+              - listitem [ref=e181]:
+                - link "Events" [ref=e182] [cursor=pointer]:
+                  - /url: /events
+          - generic [ref=e183]:
+            - heading "Care" [level=2] [ref=e184]
+            - list "Care" [ref=e185]:
+              - listitem [ref=e186]:
+                - link "Prayer Wall" [ref=e187] [cursor=pointer]:
+                  - /url: /prayer-wall
+              - listitem [ref=e188]:
+                - link "Who we are" [ref=e189] [cursor=pointer]:
+                  - /url: /about
+              - listitem [ref=e190]:
+                - link "Contact" [ref=e191] [cursor=pointer]:
+                  - /url: /contact
+      - generic [ref=e192]:
+        - paragraph [ref=e193]: © 2026 Christ's Commission Fellowship. All rights reserved.
+        - generic [ref=e194]:
+          - link "Search" [ref=e195] [cursor=pointer]:
+            - /url: /search
+          - link "Privacy" [ref=e196] [cursor=pointer]:
+            - /url: /privacy
+          - link "Terms" [ref=e197] [cursor=pointer]:
+            - /url: /terms
+          - link "Accessibility" [ref=e198] [cursor=pointer]:
+            - /url: /accessibility
+          - link "Top" [ref=e199] [cursor=pointer]:
+            - /url: "#main"
+            - generic [aria-hidden] [ref=e200]: ↑
+            - text: Top
+  - button "Open Next.js Dev Tools" [ref=e206] [cursor=pointer]

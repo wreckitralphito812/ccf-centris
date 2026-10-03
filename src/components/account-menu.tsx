@@ -60,7 +60,7 @@ export function AccountMenu() {
         </Link>
         <Link
           href="/sign-up"
-          className="btn-press inline-flex min-h-10 items-center rounded-lg bg-clay px-3.5 text-[0.9rem] font-semibold whitespace-nowrap text-paper-bright shadow-[0_8px_20px_-8px_rgba(0,118,130,0.55)] transition-colors hover:bg-clay-deep sm:px-4 sm:text-[0.92rem]"
+          className="btn-press inline-flex min-h-10 items-center rounded-lg bg-clay px-3.5 text-[0.9rem] font-semibold whitespace-nowrap text-paper-bright shadow-sm transition-colors hover:shadow-md hover:bg-clay-deep sm:px-4 sm:text-[0.92rem]"
         >
           Sign up
         </Link>

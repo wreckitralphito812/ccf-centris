@@ -89,7 +89,7 @@ export default async function ReservePage() {
 
           <ul className="grid gap-6 md:grid-cols-3">
             {OPTIONS.map((o) => (
-              <li key={o.title} className="calm-card flex flex-col p-8">
+              <li key={o.title} className="calm-card flex flex-col p-6 lg:p-8">
                 <span>
                   <StatusBadge tone="ok">{o.badge}</StatusBadge>
                 </span>
@@ -101,14 +101,14 @@ export default async function ReservePage() {
                     </IconLine>
                   ))}
                 </div>
-                <div className="mt-auto pt-8">
-                  <ButtonLink href={o.href} size="lg">
+                <div className="mt-auto pt-6 lg:pt-8">
+                  <ButtonLink href={o.href} size="lg" className="w-full sm:w-auto">
                     {o.cta}
                   </ButtonLink>
                 </div>
               </li>
             ))}
-            <li className="calm-card flex flex-col p-8">
+            <li className="flex flex-col rounded-2xl border border-hairline bg-paper-deep p-6 lg:p-8">
               <span>
                 <StatusBadge tone="grey">Soon</StatusBadge>
               </span>

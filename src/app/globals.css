@@ -213,7 +213,7 @@ a.link,
    Covers every button and button-styled link, which all carry .btn-press. */
 @media (max-width: 63.9375rem), (pointer: coarse) {
   .btn-press {
-    min-height: 44px;
+    min-height: var(--button-min-height, 44px);
   }
 }
 
@@ -446,17 +446,16 @@ a.link,
 
 @layer components {
 .surface {
-  /* The calm card, site-wide (2026-09-30, after Calendly): no outline ring,
-     big soft corners, a three-layer teal-tinted shadow. Same as .calm-card. */
+  /* Restrained depth (2026-10-03): the hairline defines the card; a small
+     shadow separates it from the canvas. Same lift as .calm-card. */
   background: var(--paper-bright);
   border-radius: 1rem;
   overflow: hidden;
-  /* Design A: a crisp 1px border plus Calendly's three-layer shadow. */
+  /* Keep the edge crisp without a heavy halo under each card. */
   box-shadow:
     0 0 0 1px var(--hairline),
-    0 4px 5px rgb(13 43 58 / 0.04),
-    0 8px 15px rgb(13 43 58 / 0.03),
-    0 30px 50px -20px rgb(13 43 58 / 0.14);
+    0 2px 4px rgb(13 43 58 / 0.025),
+    0 8px 20px -8px rgb(13 43 58 / 0.09);
   transition:
     box-shadow 220ms var(--ease),
     transform 220ms var(--ease);
@@ -467,9 +466,8 @@ a.surface:hover,
 .surface.group:hover {
   box-shadow:
     0 0 0 1px var(--edge),
-    0 6px 8px rgb(13 43 58 / 0.05),
-    0 14px 24px rgb(13 43 58 / 0.05),
-    0 36px 60px -20px rgb(13 43 58 / 0.2);
+    0 3px 6px rgb(13 43 58 / 0.035),
+    0 12px 28px -10px rgb(13 43 58 / 0.13);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -504,16 +502,14 @@ a.surface:hover,
   overflow: hidden;
 }
 
-/* The calm booking card (Calendly-inspired, 2026-09-30): no border, big soft
-   corners, a teal-tinted shadow in three layers. */
+/* Booking cards share the same restrained edge and lift as .surface. */
 .calm-card {
   background: var(--paper-bright);
   border-radius: 1rem;
   box-shadow:
     0 0 0 1px var(--hairline),
-    0 4px 5px rgb(13 43 58 / 0.04),
-    0 8px 15px rgb(13 43 58 / 0.03),
-    0 30px 50px -20px rgb(13 43 58 / 0.14);
+    0 2px 4px rgb(13 43 58 / 0.025),
+    0 8px 20px -8px rgb(13 43 58 / 0.09);
 }
 
 /* Inputs in the booking flows: filled, borderless, a teal ring on focus. */

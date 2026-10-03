@@ -111,7 +111,7 @@ export function Section({
     mist: "bg-mist text-ink",
   } as const;
   return (
-    <section id={id} className={cx("py-14 sm:py-24", tones[tone], className)}>
+    <section id={id} className={cx("py-10 sm:py-16 lg:py-18", tones[tone], className)}>
       {children}
     </section>
   );

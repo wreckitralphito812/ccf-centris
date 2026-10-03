@@ -16,7 +16,7 @@ from a few deliberate things:
 - crisp white **surfaces**: 16px corners, a 1px hairline edge and a soft lift;
 - a faint **dot grid** on the page canvas, which white cards cover;
 - **colour glows**, blurred teal and maroon shapes, in every page header and
-  behind the home welcome card and the sign-in card (`Glows`);
+  behind the sign-in card (`Glows`);
 - **one full-strength teal moment** per page, the footer's gradient strip;
 - **8px-cornered buttons** in sentence case, not pills;
 - real photos of Centris, never stock.
@@ -82,7 +82,7 @@ closest free match to Calendly's Gilroy, and replaced Montserrat on
 ## Shape and depth
 
 - **Surfaces**: `.surface` for any card or panel: white, 16px (`1rem`)
-  corners, a 1px hairline ring and a soft three-layer lift. A surface that is a link rises 2px on hover.
+  corners, a 1px hairline ring and a restrained shadow (2026-10-03). A surface that is a link rises 2px on hover.
   `.surface-grid` is the "cells with 1px gaps" layout with the same corners.
   `.photo` gives images the same corners.
 - **Choice cards** in forms: `rounded-2xl`, via `choiceClass()` in
@@ -114,6 +114,13 @@ Use `Button` / `ButtonLink` from `@/components/ui`, never hand-rolled classes.
 2. `Section`s with `Container`. Tones `paper`, `deep`, `bright`, `ink`,
    alternating so long pages have rhythm.
 3. The footer, whose teal gradient strip is the page's one loud colour.
+
+Responsive spacing (2026-10-03): page headers use 40px vertical padding on
+phones, 56px on small screens and 64px on desktop. Sections use 40/64/72px.
+The home welcome and Sunday card share a desktop grid and stack on phones;
+the Visit address precedes the map in reading order, with the map to its left
+on desktop. Narrow card actions fill the available width, with 12px gaps and
+a 48px minimum height. Keep all existing content visible at every size.
 
 Content with no value yet stays `null` in `src/lib/site.ts`, and the UI hides
 it. No placeholders, no "coming soon" boxes unless something is truly about
@@ -156,7 +163,7 @@ booking or sign-up flow.
 | Piece | What it is |
 |---|---|
 | `bg-mist` / `Section tone="mist"` | The booking ground, one step lighter than `paper` |
-| `.calm-card` | White, 16px corners, a 1px hairline ring, a soft three-layer shadow |
+| `.calm-card` | White, 16px corners, a 1px hairline ring, the same restrained shadow as `.surface` |
 | `.calm-input` | Filled (`mist`), borderless, 8px corners, a teal ring on focus |
 | `border-rule` | The faint line between questions |
 | `border-edge` | The soft outline of an unchosen choice |

@@ -51,8 +51,8 @@ export function PageHeader({
     <header className={cx(tones[tone])}>
       <Container
         className={cx(
-          "py-16 sm:py-24",
-          image && "grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-14",
+          "py-10 sm:py-14 lg:py-16",
+          image && "grid gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-14",
           centered && "text-center",
         )}
       >
@@ -97,7 +97,7 @@ export function PageHeader({
         </div>
 
         {image ? (
-          <div className="photo relative aspect-[4/3] bg-paper shadow-[0_30px_60px_-30px_rgb(0_95_104/0.35)]">
+          <div className="photo relative aspect-[16/9] bg-paper shadow-sm lg:aspect-[3/2]">
             <Image
               src={image.src}
               alt={image.alt}

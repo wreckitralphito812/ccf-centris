@@ -80,17 +80,7 @@ export default function VisitPage() {
       <Section>
         <Container>
           <div className="grid gap-8 lg:grid-cols-[1.35fr_1fr] lg:items-start lg:gap-12">
-            <div className="surface p-2">
-              <iframe
-                title={`Map showing ${SITE.name} at Eton Centris, EDSA corner Quezon Avenue, Quezon City`}
-                src={MAPS_EMBED}
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                className="aspect-[4/3] w-full lg:aspect-[5/4]"
-              />
-            </div>
-
-            <div className="lg:pt-2">
+            <div className="lg:col-start-2 lg:row-start-1 lg:pt-2">
               <Eyebrow>The pin</Eyebrow>
               <address className="font-display mt-5 text-2xl not-italic leading-snug sm:text-2xl">
                 {SITE.addressLines.map((l) => (
@@ -100,7 +90,7 @@ export default function VisitPage() {
                 ))}
               </address>
 
-              <div className="mt-7 grid gap-2 sm:max-w-sm">
+              <div className="mt-6 grid gap-3 sm:max-w-sm">
                 <ButtonLink href={MAPS_LINK} target="_blank" rel="noreferrer" size="lg" full>
                   Get directions
                 </ButtonLink>
@@ -116,6 +106,16 @@ export default function VisitPage() {
                 </ButtonLink>
               </div>
 
+            </div>
+
+            <div className="surface p-2 lg:col-start-1 lg:row-start-1">
+              <iframe
+                title={`Map showing ${SITE.name} at Eton Centris, EDSA corner Quezon Avenue, Quezon City`}
+                src={MAPS_EMBED}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="aspect-[4/3] w-full lg:aspect-[5/4]"
+              />
             </div>
           </div>
         </Container>
