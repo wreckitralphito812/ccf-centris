@@ -101,10 +101,10 @@ export function SiteFooter() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-[110rem] px-5 pb-10 pt-10 sm:px-8 sm:pb-14 sm:pt-14">
+      <div className="mx-auto max-w-[110rem] px-5 pb-8 pt-8 sm:px-8 sm:pb-14 sm:pt-14">
         <h2 className="sr-only">Site footer</h2>
 
-        <div className="grid gap-10 sm:gap-12 lg:grid-cols-[minmax(0,20rem)_1fr]">
+        <div className="grid gap-7 sm:gap-12 lg:grid-cols-[minmax(0,20rem)_1fr]">
           {/* Brand block */}
           <div>
             <Wordmark variant="full" />
@@ -186,7 +186,7 @@ export function SiteFooter() {
           {/* Sitemap columns */}
           <nav
             aria-label="Footer"
-            className="grid grid-cols-2 gap-x-6 gap-y-8 md:grid-cols-4 md:gap-x-8 md:gap-y-10"
+            className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-4 md:gap-x-8 md:gap-y-10"
           >
             {COLUMNS.map((col) => (
               <div key={col.id}>
@@ -213,7 +213,7 @@ export function SiteFooter() {
           </nav>
         </div>
 
-        <div className="mt-10 flex flex-col gap-3 border-t border-white/15 pt-6 sm:mt-14 text-[0.85rem] text-paper-bright/65 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-8 flex flex-col gap-3 border-t border-white/15 pt-6 sm:mt-14 text-[0.85rem] text-paper-bright/65 sm:flex-row sm:items-center sm:justify-between">
           <p>
             © {new Date().getFullYear()} {SITE.parent}. All rights reserved.
           </p>

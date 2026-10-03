@@ -103,13 +103,13 @@ export function SiteHeader() {
               aria-current={isActive(group.href) ? "page" : undefined}
               className={cx(
                 // Sentence case, not tracked capitals: the calm look (2026-09-30).
-                "relative whitespace-nowrap rounded-lg px-2.5 py-2 text-[0.95rem] font-medium transition-colors xl:px-3.5",
-                isActive(group.href) ? "text-clay" : "text-ink hover:bg-mist hover:text-clay",
+                "relative whitespace-nowrap rounded-lg px-2.5 py-2 text-[0.95rem] transition-colors xl:px-3.5",
+                isActive(group.href) ? "bg-clay-wash font-semibold text-clay" : "font-medium text-ink hover:bg-mist hover:text-clay",
               )}
             >
               {group.label}
               {isActive(group.href) ? (
-                <span aria-hidden className="absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-clay" />
+                <span aria-hidden className="absolute bottom-0.5 left-1/2 h-0.5 w-5 -translate-x-1/2 rounded-full bg-clay" />
               ) : null}
             </Link>
           ))}
@@ -173,7 +173,7 @@ export function SiteHeader() {
                     aria-current={isActive(group.href) ? "page" : undefined}
                     className={cx(
                       "flex min-h-14 items-center justify-between border-b border-rule",
-                      isActive(group.href) ? "text-clay" : "text-ink",
+                      isActive(group.href) ? "rounded-lg bg-clay-wash px-3 text-clay" : "text-ink",
                     )}
                   >
                     <span className="text-[1.15rem] font-semibold tracking-[-0.01em]">{group.label}</span>
@@ -184,7 +184,7 @@ export function SiteHeader() {
                     <summary
                       className={cx(
                         "flex min-h-14 cursor-pointer list-none items-center justify-between [&::-webkit-details-marker]:hidden",
-                        isActive(group.href) ? "text-clay" : "text-ink",
+                        isActive(group.href) ? "rounded-lg bg-clay-wash px-3 text-clay" : "text-ink",
                       )}
                     >
                       <span className="text-[1.15rem] font-semibold tracking-[-0.01em]">{group.label}</span>
@@ -197,7 +197,11 @@ export function SiteHeader() {
                         <li key={item.href}>
                           <Link
                             href={item.href}
-                            className="flex min-h-11 items-center pl-3 text-[1rem] text-ink-soft"
+                            aria-current={pathname === item.href ? "page" : undefined}
+                            className={cx(
+                              "flex min-h-11 items-center rounded-lg pl-3 text-[1rem]",
+                              pathname === item.href ? "bg-clay-wash font-semibold text-clay" : "text-ink-soft",
+                            )}
                           >
                             {item.label}
                           </Link>

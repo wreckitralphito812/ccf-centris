@@ -35,7 +35,7 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "bg-clay text-paper-bright border-clay shadow-[0_8px_20px_-8px_rgba(0,118,130,0.55)] hover:bg-clay-deep hover:border-clay-deep",
+          "bg-clay text-paper-bright border-clay shadow-sm hover:shadow-md hover:bg-clay-deep hover:border-clay-deep",
         ink: "bg-ink text-paper-bright border-ink hover:bg-night hover:border-night",
         outline:
           "bg-transparent text-ink border-ink hover:bg-ink hover:text-paper-bright",
@@ -51,8 +51,8 @@ export const buttonVariants = cva(
       },
       size: {
         sm: "px-4 py-1.5 text-[0.85rem]",
-        md: "px-5 py-2.5 text-[0.92rem]",
-        lg: "px-6 py-3 text-[0.95rem] sm:px-7 sm:py-3.5 sm:text-[1rem]",
+        md: "[--button-min-height:3rem] px-5 py-2.5 text-[0.92rem] sm:[--button-min-height:2.75rem]",
+        lg: "[--button-min-height:3rem] px-6 py-3 text-[0.95rem] sm:px-7 sm:py-3.5 sm:text-[1rem]",
       },
       full: {
         true: "w-full",

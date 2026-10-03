@@ -1,0 +1,179 @@
+- generic [ref=f12e1]:
+  - link "Skip to content" [ref=f12e2] [cursor=pointer]:
+    - /url: "#main"
+  - banner [ref=f12e3]:
+    - generic [ref=f12e4]:
+      - link "CCF Centris home" [ref=f12e5] [cursor=pointer]:
+        - /url: /
+        - img "CCF Centris" [ref=f12e6]
+      - button "Close menu" [expanded] [active] [ref=f12e136]
+    - generic [ref=f12e140]:
+      - link "Search CCF Centris" [ref=f12e141] [cursor=pointer]:
+        - /url: /search
+      - navigation "Mobile" [ref=f12e145]:
+        - link "Visit" [ref=f12e146] [cursor=pointer]:
+          - /url: /visit
+        - link "Watch" [ref=f12e150] [cursor=pointer]:
+          - /url: /watch
+        - link "Connect" [ref=f12e154] [cursor=pointer]:
+          - /url: /connect
+        - link "Prayer Wall" [ref=f12e158] [cursor=pointer]:
+          - /url: /prayer-wall
+        - group [ref=f12e162]:
+          - generic "What’s Happening" [ref=f12e163] [cursor=pointer]
+        - link "Reserve" [ref=f12e168] [cursor=pointer]:
+          - /url: /reserve
+        - link "Contact" [ref=f12e172] [cursor=pointer]:
+          - /url: /contact
+      - generic [ref=f12e177]:
+        - link "Sign in" [ref=f12e178] [cursor=pointer]:
+          - /url: /sign-in
+        - link "Sign up" [ref=f12e179] [cursor=pointer]:
+          - /url: /sign-up
+  - main [ref=f12e14]:
+    - generic [ref=f12e17]:
+      - generic [ref=f12e18]:
+        - paragraph [ref=f12e19]: Watch
+        - img "CCF Net" [ref=f12e21]
+      - heading "Last Sunday’s message from our online church." [level=1] [ref=f12e22]
+      - paragraph [ref=f12e23]: Catch up on the message, then take it into your Dgroup with this week’s 4Ws.
+    - generic [ref=f12e25]:
+      - generic [ref=f12e26]:
+        - article [ref=f12e27]:
+          - iframe [ref=f12e29]:
+            - generic [ref=f13e1]:
+              - generic "YouTube Video Player" [ref=f13e3]
+              - generic [ref=f13e5]:
+                - generic:
+                  - generic:
+                    - generic [ref=f13e6] [cursor=pointer]
+                    - button "Play video" [ref=f13e10] [cursor=pointer]
+                    - button "Hide player controls" [ref=f13e14] [cursor=pointer]
+                    - generic [ref=f13e16]:
+                      - generic [ref=f13e21]:
+                        - generic [ref=f13e22]:
+                          - link "Know The One Who Loved You First | Paul Tanchi | September 27, 2026" [ref=f13e23] [cursor=pointer]:
+                            - /url: https://www.youtube.com/watch?v=I4sAzNXiAmo
+                          - link "CCF NET" [ref=f13e24] [cursor=pointer]:
+                            - /url: /channel/UCdKK_hbeLBGdaayu2cDnysw
+                        - generic [ref=f13e26]:
+                          - button [ref=f13e27] [cursor=pointer]:
+                            - img "thumbnail-image" [ref=f13e28]
+                          - generic [ref=f13e30]:
+                            - generic: CCF NET
+                            - generic: 22 subscribers
+                      - generic [ref=f13e31]:
+                        - button "Share" [ref=f13e34] [cursor=pointer]
+                        - link "Watch on YouTube" [ref=f13e45] [cursor=pointer]:
+                          - /url: https://www.youtube.com/watch?v=I4sAzNXiAmo
+                          - generic [ref=f13e46]: Watch on
+          - paragraph [ref=f12e30]: Paul Tanchi · September 27, 2026
+          - heading "Know The One Who Loved You First" [level=2] [ref=f12e31]
+          - paragraph [ref=f12e32]:
+            - text: Paul Tanchi preaches from Psalm 78:1-8. Dgroups study it this week in the 4Ws guide
+            - emphasis [ref=f12e33]: "Engage the Family: Know God and Make God Known."
+          - generic [ref=f12e34]:
+            - paragraph [ref=f12e35]: What it covers
+            - list [ref=f12e36]:
+              - listitem [ref=f12e37]: Intro
+              - listitem [ref=f12e38]: Know God
+              - listitem [ref=f12e39]: Make God Known
+        - complementary [ref=f12e40]:
+          - paragraph [ref=f12e41]: This week’s 4Ws
+          - 'heading "Engage the Family: Know God and Make God Known" [level=2] [ref=f12e42]'
+          - paragraph [ref=f12e43]: Sep 26–27, 2026
+          - paragraph [ref=f12e44]: The 4Ws (Welcome, Worship, Word, Works) is CCF’s weekly guide for Dgroups. It turns Sunday’s message into questions to talk through and one thing to put into practice.
+          - generic [ref=f12e45]:
+            - link "Download the 4Ws (PDF)" [ref=f12e46] [cursor=pointer]:
+              - /url: https://www.ccf.org.ph/download/42106/
+            - link "Read it online" [ref=f12e47] [cursor=pointer]:
+              - /url: /watch/4ws/4ws-engage-the-family-know-god-and-make-god-known
+      - generic [ref=f12e49]:
+        - paragraph [ref=f12e50]: Courtesy of CCF Net
+        - paragraph [ref=f12e51]: This video is courtesy of CCF Net, our online church community. If you know anyone who does not have a CCF satellite or home fellowship near their area, send them the link below to invite them to be part of our online church community.
+        - generic [ref=f12e52]:
+          - link "ccfnet.online.church" [ref=f12e53] [cursor=pointer]:
+            - /url: https://ccfnet.online.church/
+          - button "Copy link" [ref=f12e54]
+  - contentinfo [ref=f12e55]:
+    - generic [ref=f12e57]:
+      - paragraph [ref=f12e58]: Sunday services at 10:00 AM and 3:00 PM. See you there.
+      - link "Getting here" [ref=f12e60] [cursor=pointer]:
+        - /url: /visit#getting-here
+    - generic [ref=f12e61]:
+      - heading "Site footer" [level=2] [ref=f12e62]
+      - generic [ref=f12e63]:
+        - generic [ref=f12e64]:
+          - img "CCF Centris" [ref=f12e65]
+          - generic [ref=f12e67]:
+            - generic [ref=f12e68]: 2/F Centris Station
+            - generic [ref=f12e69]: Eton Centris
+            - generic [ref=f12e70]: EDSA corner Quezon Avenue
+            - generic [ref=f12e71]: Quezon City
+          - generic [ref=f12e72]:
+            - link "Get directions" [ref=f12e73] [cursor=pointer]:
+              - /url: https://www.google.com/maps/dir/?api=1&destination=14.6433095%2C121.0389583
+            - link "CCF Centris on Instagram" [ref=f12e74] [cursor=pointer]:
+              - /url: https://www.instagram.com/ccfcentris/
+            - link "CCF Centris on Facebook" [ref=f12e79] [cursor=pointer]:
+              - /url: https://www.facebook.com/profile.php?id=61591537230410
+            - link "CCF on YouTube" [ref=f12e82] [cursor=pointer]:
+              - /url: https://www.youtube.com/@CCFmainTV
+          - paragraph [ref=f12e85]: A satellite center of Christ's Commission Fellowship, making disciples who make disciples since 1984.
+        - navigation "Footer" [ref=f12e86]:
+          - generic [ref=f12e87]:
+            - heading "Plan a visit" [level=2] [ref=f12e88]
+            - list "Plan a visit" [ref=f12e89]:
+              - listitem [ref=f12e90]:
+                - link "Getting here" [ref=f12e91] [cursor=pointer]:
+                  - /url: /visit#getting-here
+          - generic [ref=f12e92]:
+            - heading "Watch" [level=2] [ref=f12e93]
+            - list "Watch" [ref=f12e94]:
+              - listitem [ref=f12e95]:
+                - link "Last Sunday" [ref=f12e96] [cursor=pointer]:
+                  - /url: /watch
+              - listitem [ref=f12e97]:
+                - link "Sunday archive" [ref=f12e98] [cursor=pointer]:
+                  - /url: /watch/archive
+              - listitem [ref=f12e99]:
+                - link "4Ws guides" [ref=f12e100] [cursor=pointer]:
+                  - /url: /watch/4ws
+          - generic [ref=f12e101]:
+            - heading "Connect" [level=2] [ref=f12e102]
+            - list "Connect" [ref=f12e103]:
+              - listitem [ref=f12e104]:
+                - link "Join a Dgroup" [ref=f12e105] [cursor=pointer]:
+                  - /url: /grow/join-a-dgroup
+              - listitem [ref=f12e106]:
+                - link "Events" [ref=f12e107] [cursor=pointer]:
+                  - /url: /events
+          - generic [ref=f12e108]:
+            - heading "Care" [level=2] [ref=f12e109]
+            - list "Care" [ref=f12e110]:
+              - listitem [ref=f12e111]:
+                - link "Prayer Wall" [ref=f12e112] [cursor=pointer]:
+                  - /url: /prayer-wall
+              - listitem [ref=f12e113]:
+                - link "Who we are" [ref=f12e114] [cursor=pointer]:
+                  - /url: /about
+              - listitem [ref=f12e115]:
+                - link "Contact" [ref=f12e116] [cursor=pointer]:
+                  - /url: /contact
+      - generic [ref=f12e117]:
+        - paragraph [ref=f12e118]: © 2026 Christ's Commission Fellowship. All rights reserved.
+        - generic [ref=f12e119]:
+          - link "Search" [ref=f12e120] [cursor=pointer]:
+            - /url: /search
+          - link "Privacy" [ref=f12e121] [cursor=pointer]:
+            - /url: /privacy
+          - link "Terms" [ref=f12e122] [cursor=pointer]:
+            - /url: /terms
+          - link "Accessibility" [ref=f12e123] [cursor=pointer]:
+            - /url: /accessibility
+          - link "Top" [ref=f12e124] [cursor=pointer]:
+            - /url: "#main"
+            - generic [aria-hidden] [ref=f12e125]: ↑
+            - text: Top
+  - button "Open Next.js Dev Tools" [ref=f12e131] [cursor=pointer]
+  - alert [ref=f12e135]

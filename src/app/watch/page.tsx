@@ -156,7 +156,7 @@ function ReplayMissing() {
           href={CCF_NET.url}
           target="_blank"
           rel="noreferrer"
-          className="mt-5"
+          className="mt-5 w-full sm:w-auto"
         >
           Watch on CCF Net
         </ButtonLink>
@@ -181,7 +181,7 @@ function FourWsPanel({ current }: { current: FourWsCurrent }) {
         Dgroups. It turns Sunday&rsquo;s message into questions to talk through
         and one thing to put into practice.
       </p>
-      <div className="mt-5 flex flex-col gap-2">
+      <div className="mt-5 flex flex-col gap-3">
         {pdf ? (
           <ButtonLink href={pdf} target="_blank" rel="noreferrer" full>
             Download the 4Ws (PDF)

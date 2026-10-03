@@ -29,7 +29,6 @@ import {
 } from "@/components/icons";
 import { YouTubeThumb } from "@/components/youtube-thumb";
 import { InviteFriend } from "@/components/invite-friend";
-import { Glows } from "@/components/booking";
 
 /** Last Sunday's replay is read from CCF Net, which changes weekly. */
 export const revalidate = 1800;
@@ -41,7 +40,7 @@ export const revalidate = 1800;
  * times, the address, and "Invite a friend".
  *
  *   1. Welcome: the photo in a rounded frame (the calm look, 2026-09-30),
- *      with the visit card overlapping its bottom edge
+ *      with the visit card beside the welcome on desktop and below on phones
  *   2. Take your next step: prayer, a Dgroup, a team
  *   3. Last Sunday: the CCF Net replay and this week's 4Ws
  */
@@ -70,29 +69,28 @@ function Welcome({ live }: { live: boolean }) {
           card on the page (Ralph's pick, 2026-09-30). The ground is --night,
           set without the .bg-night class on purpose: globals.css lifts --clay
           for everything under .bg-night. */}
-      <div className="relative isolate mx-auto flex min-h-[78svh] max-w-[110rem] flex-col justify-center overflow-hidden rounded-[2rem] bg-[var(--night)] lg:min-h-[72svh]">
+      <div className="relative isolate mx-auto max-w-[110rem] overflow-hidden rounded-[2rem] bg-[var(--night)]">
         <Image
           src="/photos/hero-welcome.jpg"
           alt=""
           fill
           priority
           sizes="100vw"
-          className="no-frame -z-10 object-cover"
-          style={{ objectPosition: "center 30%" }}
+          className="no-frame -z-10 object-cover object-[58%_30%] lg:object-[center_30%]"
         />
-        {/* Darkens the photo under the white headline: from the bottom on
-            phones, where the copy stacks, and from the left on desktop. */}
+        {/* A stronger phone overlay keeps the welcome readable over the
+            tighter crop; desktop darkens from the copy's left edge. */}
         <div
           aria-hidden
-          className="absolute inset-0 -z-10 bg-gradient-to-t from-night/95 via-night/60 to-night/25 lg:bg-gradient-to-r lg:from-night/90 lg:via-night/50 lg:to-night/10"
+          className="absolute inset-0 -z-10 bg-gradient-to-b from-night/80 via-night/75 to-night/90 lg:bg-gradient-to-r lg:from-night/90 lg:via-night/65 lg:to-night/30"
         />
 
-        <Container className="pb-28 pt-16 sm:pb-32 lg:py-24">
-          <HeroStage className="max-w-3xl">
+        <Container className="grid gap-8 py-8 sm:gap-10 sm:py-12 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,26rem)] lg:items-center lg:gap-12 lg:py-14">
+          <HeroStage className="min-w-0 max-w-3xl">
             <p className="text-[1rem] font-semibold text-clay-lift">Christ&rsquo;s Commission Fellowship</p>
             {/* Two lines, broken by hand: at display-xl "to" was left alone on
                 the middle line. */}
-            <h1 className="display-lg brand-face mt-4 text-paper-bright">
+            <h1 className="display-lg brand-face mt-4 text-paper-bright lg:text-[clamp(2.6rem,4.7vw,4.25rem)]">
               Welcome to
               <br />
               CCF&nbsp;Centris.
@@ -104,7 +102,7 @@ function Welcome({ live }: { live: boolean }) {
             </p>
             {/* Full width while they stack, so two buttons of different word
                 lengths do not leave a ragged edge down the phone screen. */}
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap">
               <ButtonLink href="/visit" tone="on-dark" size="lg" className="w-full sm:w-auto">
                 Plan your visit
               </ButtonLink>
@@ -113,17 +111,11 @@ function Welcome({ live }: { live: boolean }) {
               </ButtonLink>
             </div>
           </HeroStage>
+          <div className="mx-auto w-full max-w-md lg:max-w-none">
+            <VisitCard live={live} />
+          </div>
         </Container>
       </div>
-
-      {/* The visit card overlaps the frame's bottom edge, so the page plainly
-          continues past the photo (it replaces the old "Scroll" cue). */}
-      <Container className="relative -mt-20 sm:-mt-24">
-        <div className="relative isolate mx-auto max-w-md lg:mr-0 lg:max-w-[26rem]">
-          <Glows className="-inset-x-16 -bottom-20 top-1/3" />
-          <VisitCard live={live} />
-        </div>
-      </Container>
     </section>
   );
 }
@@ -137,7 +129,7 @@ function VisitCard({ live }: { live: boolean }) {
   const invite = `Join me at CCF Centris this Sunday, at ${SERVICE_TIMES_TEXT.replace(" and ", " or ")}. We meet at 2/F Centris Station, Eton Centris, right off MRT Quezon Avenue.`;
 
   return (
-    <div className="surface p-7 text-ink sm:p-8">
+    <div className="surface p-5 text-ink sm:p-7">
       {live ? (
         <Link
           href="/watch"
@@ -165,7 +157,7 @@ function VisitCard({ live }: { live: boolean }) {
           directions page: someone reading this card is usually already on the
           way, and the extra hop is one more tap before the route starts.
           /visit still carries the full route write-up for anyone planning. */}
-      <div className="mt-6 grid gap-2">
+      <div className="mt-5 grid gap-3">
         <ButtonLink href={MAPS_LINK} target="_blank" rel="noreferrer" full>
           Get directions
         </ButtonLink>
@@ -251,14 +243,14 @@ const SIGN_UP_STEP: (typeof NEXT_STEPS)[number] = {
 function NextSteps({ accounts }: { accounts: boolean }) {
   const steps = accounts ? [SIGN_UP_STEP, ...NEXT_STEPS] : NEXT_STEPS;
   return (
-    <Section tone="paper" className="pb-14! pt-20! sm:pb-24! sm:pt-28!">
+    <Section tone="paper">
       <Container>
         <RevealHead
           align="center"
           title="Take your next step"
           className="mx-auto max-w-2xl"
         />
-        <Stagger className={cx("mt-10 grid gap-4", steps.length === 4 ? "sm:grid-cols-2" : "lg:grid-cols-3")}>
+        <Stagger className={cx("mt-8 grid gap-4", steps.length === 4 ? "sm:grid-cols-2" : "lg:grid-cols-3")}>
           {steps.map((step) => (
             <StepCard key={step.title} {...step} />
           ))}
@@ -326,7 +318,7 @@ function LastSunday({
     : "";
 
   return (
-    <Section tone="paper" className="pt-0! pb-16! sm:pb-28!">
+    <Section tone="paper" className="pt-0!">
       <Container>
         <Reveal className="grid overflow-hidden surface md:grid-cols-[minmax(0,1.15fr)_1fr]">
           {replay ? (
@@ -367,7 +359,7 @@ function LastSunday({
                 {fourWs.week.dateSpan ?? fourWs.week.serviceDateLabel}
               </p>
             ) : null}
-            <div className="mt-auto flex flex-wrap gap-3 pt-7">
+            <div className="mt-auto flex flex-col gap-3 pt-7 sm:flex-row sm:flex-wrap">
               {replay ? (
                 <ButtonLink href="/watch">Watch now</ButtonLink>
               ) : (
