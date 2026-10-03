@@ -59,6 +59,11 @@ export default function PrivacyPage() {
                 choose to share. Prayer requests can be sent with no identifying
                 information at all.
               </li>
+              <li>
+                <strong>Visit counts:</strong> which pages are viewed, the kind
+                of device, and the country, counted by Vercel Web Analytics. It
+                uses no cookies and keeps nothing that identifies you.
+              </li>
             </ul>
 
             <h2>Who can see it</h2>

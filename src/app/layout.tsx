@@ -4,6 +4,7 @@ import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ChromeOffset } from "@/components/chrome-offset";
+import { SiteAnalytics } from "@/components/site-analytics";
 import { SITE } from "@/lib/site";
 
 /**
@@ -59,6 +60,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {children}
         </main>
         <SiteFooter />
+        <SiteAnalytics />
       </body>
     </html>
   );
