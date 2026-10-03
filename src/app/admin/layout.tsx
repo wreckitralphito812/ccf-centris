@@ -29,8 +29,8 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   const signedIn = gated ? await isAdmin() : true;
 
   return (
-    <div className="min-h-screen bg-paper-deep">
-      <div className="border-b border-hairline bg-night text-paper-bright">
+    <div className="min-h-screen bg-paper-deep print:bg-white">
+      <div className="border-b border-hairline bg-night text-paper-bright print:hidden">
         <div className="mx-auto flex max-w-[110rem] flex-wrap items-center gap-4 px-5 py-3 sm:px-8">
           <Link href="/admin" className="flex items-center gap-2.5">
             <CcfMark className="h-7 w-7 text-clay" />
@@ -82,7 +82,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
         <div className="mx-auto flex max-w-[110rem] flex-col gap-8 px-5 py-8 sm:px-8 lg:flex-row">
           <nav
           aria-label="Admin"
-          className="shrink-0 lg:w-56 lg:sticky lg:top-8 lg:self-start"
+          className="shrink-0 lg:w-56 lg:sticky lg:top-8 lg:self-start print:hidden"
         >
           <div className="no-bar flex gap-6 overflow-x-auto pb-2 lg:block lg:space-y-7 lg:overflow-visible lg:pb-0">
             {ADMIN_NAV.map((section) => (

@@ -139,6 +139,7 @@ export async function setReservationStatus(
   }
 
   revalidatePath("/admin/reservations");
+  revalidatePath("/admin/today");
   revalidatePath("/my/reservations");
   revalidatePath("/centris/reserve");
   return { ok: true };
@@ -211,6 +212,7 @@ export async function setDgroupTableStatus(
     });
   }
   revalidatePath("/admin/dgroup-tables");
+  revalidatePath("/admin/today");
   revalidatePath("/reserve/dgroup");
   return { ok: true };
 }
