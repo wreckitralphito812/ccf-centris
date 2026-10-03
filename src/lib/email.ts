@@ -1,14 +1,17 @@
 import "server-only";
 
-import { SITE } from "@/lib/site";
+import { CONTACT, SITE } from "@/lib/site";
 
 /**
  * Outgoing email, through Resend's HTTP API (no SDK: one POST is all it takes).
  *
- * Needs RESEND_API_KEY. EMAIL_FROM sets the sender once CCF Centris has its own
- * domain verified in Resend, e.g. "CCF Centris <reservations@ccfcentris.org>".
- * Until then it falls back to Resend's shared test sender, which only delivers
- * to the address that owns the Resend account.
+ * Needs RESEND_API_KEY. EMAIL_FROM sets the sender on the domain verified in
+ * Resend: "CCF Centris <noreply@ccfcentris.org.ph>" since 2026-10-03. Unset,
+ * it falls back to Resend's shared test sender, which only delivers to the
+ * address that owns the Resend account.
+ *
+ * Replies go to EMAIL_REPLY_TO, else the church's contact inbox, because the
+ * sending address has no mailbox behind it.
  *
  * Never throws: a booking must not fail because an email didn't go out. The
  * caller gets { ok: false } and tells the member.
@@ -32,6 +35,7 @@ export async function sendEmail(msg: {
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         from: process.env.EMAIL_FROM || "CCF Centris <onboarding@resend.dev>",
+        reply_to: process.env.EMAIL_REPLY_TO || CONTACT.messageEmail,
         to: [msg.to],
         subject: msg.subject,
         html: msg.html,
