@@ -94,9 +94,16 @@ export default async function EventsPage({
             <ButtonLink href="/events/calendar" tone="outline" size="lg">
               Month view
             </ButtonLink>
-            <Link href="/announce" className="text-[0.92rem] font-semibold text-clay hover:text-clay-deep">
-              Ministry rep? Post an announcement
-            </Link>
+            <p className="text-[0.92rem] text-ink-mute">
+              Ministry rep?{" "}
+              <Link href="/announce" className="font-semibold text-clay hover:text-clay-deep">
+                Post an announcement
+              </Link>{" "}
+              ·{" "}
+              <Link href="/announce/guide" className="font-semibold text-clay hover:text-clay-deep">
+                How it works
+              </Link>
+            </p>
           </div>
         </Container>
       </header>
