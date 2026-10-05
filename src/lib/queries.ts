@@ -235,8 +235,136 @@ export async function getDgroupsForCommunity(slug: string) {
 
 // --- Events -----------------------------------------------------------------
 
+/**
+ * Published events. With a database these are the ministries' approved
+ * announcements (2026-10-05); without one, the seed data.
+ */
 export async function getEvents(): Promise<CcfEvent[]> {
-  return [...events].sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  if (!hasSupabase()) return [...events].sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  const { data, error } = await supabaseAdmin()
+    .from("events")
+    .select(EVENT_COLUMNS)
+    .eq("satellite_id", SATELLITE_ID)
+    .eq("status", "published")
+    .order("starts_at");
+  if (error) {
+    console.error("getEvents failed", error);
+    return [];
+  }
+  return (data ?? []).map(eventFromRow);
+}
+
+const EVENT_COLUMNS =
+  "id, slug, title, summary, description, category, cover_image_url, starts_at, ends_at, location_note, organizer, capacity, seats_taken, requires_registration, price_cents, currency, requirements, ministry, registration_url, fee_note, artwork, status, review_note, submitted_by, created_at, event_dates(starts_at, ends_at)";
+
+function eventFromRow(r: Record<string, unknown>): CcfEvent {
+  const dates = ((r.event_dates as { starts_at: string; ends_at: string | null }[] | null) ?? [])
+    .slice()
+    .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  return {
+    id: r.id as string,
+    slug: r.slug as string,
+    title: r.title as string,
+    summary: (r.summary as string | null) ?? null,
+    description: (r.description as string | null) ?? null,
+    category: (r.category as string | null) ?? null,
+    cover_image_url: (r.cover_image_url as string | null) ?? null,
+    starts_at: r.starts_at as string,
+    ends_at: (r.ends_at as string | null) ?? null,
+    location_note: (r.location_note as string | null) ?? null,
+    organizer: (r.organizer as string | null) ?? null,
+    capacity: (r.capacity as number | null) ?? null,
+    seats_taken: (r.seats_taken as number) ?? 0,
+    requires_registration: Boolean(r.requires_registration),
+    price_cents: (r.price_cents as number) ?? 0,
+    currency: (r.currency as string) ?? "PHP",
+    requirements: (r.requirements as string | null) ?? null,
+    community_slug: null,
+    dates: dates.length ? dates : [{ starts_at: r.starts_at as string, ends_at: (r.ends_at as string | null) ?? null }],
+    registration_url: (r.registration_url as string | null) ?? null,
+    fee_note: (r.fee_note as string | null) ?? null,
+    ministry: (r.ministry as string | null) ?? null,
+    artwork: (r.artwork as Record<string, string> | null) ?? {},
+    status: r.status as string,
+    review_note: (r.review_note as string | null) ?? null,
+    submitted_by: (r.submitted_by as string | null) ?? null,
+    created_at: r.created_at as string,
+  };
+}
+
+/** A member's own announcements, newest first (2026-10-05). */
+export async function getMyAnnouncements(memberId: string): Promise<CcfEvent[]> {
+  if (!hasSupabase()) return [];
+  const { data, error } = await supabaseAdmin()
+    .from("events")
+    .select(EVENT_COLUMNS)
+    .eq("satellite_id", SATELLITE_ID)
+    .eq("submitted_by", memberId)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) console.error("getMyAnnouncements failed", error);
+  return (data ?? []).map(eventFromRow);
+}
+
+/** One of a member's own announcements, for editing. */
+export async function getMyAnnouncement(memberId: string, id: string): Promise<CcfEvent | null> {
+  if (!hasSupabase()) return null;
+  const { data } = await supabaseAdmin()
+    .from("events")
+    .select(EVENT_COLUMNS)
+    .eq("satellite_id", SATELLITE_ID)
+    .eq("submitted_by", memberId)
+    .eq("id", id)
+    .maybeSingle();
+  return data ? eventFromRow(data) : null;
+}
+
+/** Every submitted or published announcement, for the admin queue. */
+export async function getAnnouncementQueue(): Promise<CcfEvent[]> {
+  if (!hasSupabase()) return [];
+  const { data, error } = await supabaseAdmin()
+    .from("events")
+    .select(EVENT_COLUMNS)
+    .eq("satellite_id", SATELLITE_ID)
+    .in("status", ["pending", "changes_requested", "published", "declined", "cancelled"])
+    .order("starts_at")
+    .limit(300);
+  if (error) console.error("getAnnouncementQueue failed", error);
+  return (data ?? []).map(eventFromRow);
+}
+
+export interface AnnouncementRep {
+  id: string;
+  email: string;
+  name: string | null;
+  ministry: string | null;
+  requested_at: string;
+  approved_at: string | null;
+}
+
+/** Who may submit, and who's asking (approved_at null). */
+export async function getAnnouncementReps(): Promise<AnnouncementRep[]> {
+  if (!hasSupabase()) return [];
+  const { data, error } = await supabaseAdmin()
+    .from("announcement_reps")
+    .select("id, email, name, ministry, requested_at, approved_at")
+    .eq("satellite_id", SATELLITE_ID)
+    .order("requested_at", { ascending: false });
+  if (error) console.error("getAnnouncementReps failed", error);
+  return (data ?? []) as AnnouncementRep[];
+}
+
+/** This member's standing as a rep: approved, asked, or neither. */
+export async function getRepStatus(email: string): Promise<"approved" | "requested" | "none"> {
+  if (!hasSupabase() || !email) return "none";
+  const { data } = await supabaseAdmin()
+    .from("announcement_reps")
+    .select("approved_at")
+    .eq("satellite_id", SATELLITE_ID)
+    .ilike("email", email.replace(/[%_]/g, "\\$&"))
+    .maybeSingle();
+  if (!data) return "none";
+  return data.approved_at ? "approved" : "requested";
 }
 
 export async function getUpcomingEvents(limit?: number): Promise<CcfEvent[]> {
@@ -247,8 +375,16 @@ export async function getUpcomingEvents(limit?: number): Promise<CcfEvent[]> {
   return typeof limit === "number" ? out.slice(0, limit) : out;
 }
 
-export async function getEvent(slug: string) {
-  return events.find((e) => e.slug === slug) ?? null;
+export async function getEvent(slug: string): Promise<CcfEvent | null> {
+  if (!hasSupabase()) return events.find((e) => e.slug === slug) ?? null;
+  const { data } = await supabaseAdmin()
+    .from("events")
+    .select(EVENT_COLUMNS)
+    .eq("satellite_id", SATELLITE_ID)
+    .eq("slug", slug)
+    .in("status", ["published", "completed"])
+    .maybeSingle();
+  return data ? eventFromRow(data) : null;
 }
 
 export async function getEventsForCommunity(slug: string) {
@@ -262,7 +398,8 @@ export async function getEventsForCommunity(slug: string) {
 /** The fixed categories first (see lib/events), then any others in use. */
 export async function getEventCategories() {
   const fixed = EVENT_CATEGORIES.map((c) => c.name as string);
-  const used = [...new Set(events.map((e) => e.category).filter(Boolean))].sort() as string[];
+  const all = await getEvents();
+  const used = [...new Set(all.map((e) => e.category).filter(Boolean))].sort() as string[];
   return [...fixed, ...used.filter((c) => !fixed.includes(c))];
 }
 

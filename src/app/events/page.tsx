@@ -14,6 +14,9 @@ import { fmtDayShort, fmtMonthYear, fmtTime } from "@/lib/format";
 import type { CcfEvent } from "@/lib/types";
 import { EVENT_CATEGORIES } from "@/lib/events";
 
+/** Approved announcements appear within a minute (approval also revalidates). */
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: "What’s Happening",
   description:
@@ -87,9 +90,14 @@ export default async function EventsPage({
               </nav>
             ) : null}
           </div>
-          <ButtonLink href="/events/calendar" tone="outline" size="lg" className="shrink-0">
-            Month view
-          </ButtonLink>
+          <div className="flex shrink-0 flex-col items-start gap-3 md:items-end">
+            <ButtonLink href="/events/calendar" tone="outline" size="lg">
+              Month view
+            </ButtonLink>
+            <Link href="/announce" className="text-[0.92rem] font-semibold text-clay hover:text-clay-deep">
+              Ministry rep? Post an announcement
+            </Link>
+          </div>
         </Container>
       </header>
 

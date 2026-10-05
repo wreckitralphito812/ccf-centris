@@ -144,7 +144,13 @@ export function EventCard({ e }: { e: CcfEvent }) {
     <article className="group flex h-full flex-col surface hover:border-ink">
       <Link href={`/events/${e.slug}`} className="flex h-full flex-col">
         <div className="relative aspect-[16/9] overflow-hidden">
-          <MessageArt seed={e.slug} label={e.category ?? "Event"} className="h-full w-full" />
+          {e.cover_image_url ? (
+            // Uploaded announcement artwork (2026-10-05); its store's host isn't in next/image's list.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={e.cover_image_url} alt={`${e.title} poster`} loading="lazy" className="no-frame h-full w-full object-cover" />
+          ) : (
+            <MessageArt seed={e.slug} label={e.category ?? "Event"} className="h-full w-full" />
+          )}
           <div className="absolute left-0 top-0 bg-paper-bright px-3 py-2 text-center">
             <p className="font-display text-2xl leading-none">
               {new Date(e.starts_at).toLocaleDateString("en-PH", {
@@ -177,7 +183,7 @@ export function EventCard({ e }: { e: CcfEvent }) {
           <div className="mt-auto pt-4 text-[0.82rem] text-ink-mute">
             <p>{fmtTimeRange(e.starts_at, e.ends_at)}</p>
             {e.location_note ? <p className="mt-0.5">{e.location_note}</p> : null}
-            <p className="mt-1.5 font-semibold text-ink">{fmtPeso(e.price_cents)}</p>
+            <p className="mt-1.5 font-semibold text-ink">{e.fee_note ?? fmtPeso(e.price_cents)}</p>
           </div>
         </div>
       </Link>

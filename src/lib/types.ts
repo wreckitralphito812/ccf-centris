@@ -182,6 +182,17 @@ export interface CcfEvent {
   currency: string;
   requirements: string | null;
   community_slug: string | null;
+  /** Announcements (2026-10-05): every date of a series, the ministry's own
+   *  sign-up link, the fee as written, and artwork by screen. */
+  dates?: { starts_at: string; ends_at: string | null }[];
+  registration_url?: string | null;
+  fee_note?: string | null;
+  ministry?: string | null;
+  artwork?: Record<string, string>;
+  status?: string;
+  review_note?: string | null;
+  submitted_by?: string | null;
+  created_at?: string;
 }
 
 export interface Court {

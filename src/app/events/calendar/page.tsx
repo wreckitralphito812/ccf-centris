@@ -5,6 +5,9 @@ import { ButtonLink, Container, Pill, Section } from "@/components/ui";
 import { getUpcomingEvents, getUpcomingServices } from "@/lib/queries";
 import { fmtMonthYear, fmtTime, manilaDateKey } from "@/lib/format";
 
+/** Approved announcements appear within a minute. */
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: "Calendar",
   description:
@@ -58,16 +61,19 @@ export default async function CalendarPage({
       },
     ]);
   }
+  // Every date of a series lands on its own day (announcements, 2026-10-05).
   for (const e of events) {
-    const k = key(e.starts_at);
-    byDay.set(k, [
-      ...(byDay.get(k) ?? []),
-      {
-        label: `${fmtTime(e.starts_at)} ${e.title}`,
-        href: `/events/${e.slug}`,
-        kind: "event",
-      },
-    ]);
+    for (const d of e.dates ?? [{ starts_at: e.starts_at, ends_at: e.ends_at }]) {
+      const k = key(d.starts_at);
+      byDay.set(k, [
+        ...(byDay.get(k) ?? []),
+        {
+          label: `${fmtTime(d.starts_at)} ${e.title}`,
+          href: `/events/${e.slug}`,
+          kind: "event",
+        },
+      ]);
+    }
   }
 
   const todayKey = manilaDateKey();
