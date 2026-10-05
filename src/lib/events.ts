@@ -3,12 +3,18 @@
  * even before anything is announced in them. Other categories appear only once
  * they hold events.
  *
- * EVENTS is for the big ones: retreats and conferences.
+ * The two categories ministries post announcements under (Ralph, 2026-10-05):
+ * church-wide events, and trainings and classes.
  */
 export const EVENT_CATEGORIES = [
   {
-    name: "Events",
-    blurb: "Our big gatherings, like retreats and conferences.",
-    empty: "Nothing announced yet. Retreats and conferences will be posted here first.",
+    name: "Church-wide events",
+    blurb: "Camps, retreats, conferences and gatherings for everyone.",
+    empty: "Nothing announced yet. Camps, retreats and conferences will be posted here first.",
+  },
+  {
+    name: "Trainings and classes",
+    blurb: "Equipping classes, ministry trainings and workshops.",
+    empty: "Nothing announced yet. Trainings and classes will be posted here.",
   },
 ] as const;

@@ -334,6 +334,22 @@ test("blocked tables can't be booked or moved onto, and only the server sees blo
   await assert.rejects(as(null, "select * from dgroup_table_blocks"), /permission denied/);
 });
 
+test("announcements under review stay private; published ones are public", async () => {
+  await db.exec(`
+    insert into events (satellite_id, slug, title, starts_at, status)
+      values ('${SAT}', 'family-camp', 'Family Camp Lite', '2026-11-07T00:00:00Z', 'published'),
+             ('${SAT}', 'raised-around-jesus', 'Raised Around Jesus', '2026-10-10T07:30:00Z', 'pending');
+  `);
+  const seen = (await as<{ slug: string }>(null, "select slug from events where slug in ('family-camp', 'raised-around-jesus')")).map((r) => r.slug);
+  assert.deepEqual(seen, ["family-camp"]);
+  await assert.rejects(as(ANA, "select * from announcement_reps"), /permission denied/);
+  await assert.rejects(as(null, "select * from event_dates"), /permission denied/);
+  await assert.rejects(
+    db.exec(`insert into events (satellite_id, slug, title, starts_at, registration_url) values ('${SAT}', 'x', 'X', now(), 'javascript:alert(1)')`),
+    /check/,
+  );
+});
+
 test("members see only their own bookings and can't book or read holds directly", async () => {
   const mine = await as<{ user_id: string }>(BEN, "select user_id from dgroup_table_bookings");
   assert.ok(mine.length >= 1);
