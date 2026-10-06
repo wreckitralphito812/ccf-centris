@@ -10,9 +10,10 @@ import {
 import { EventCard, MessageArt } from "@/components/cards";
 import { PosterRail } from "@/components/poster-rail";
 import { getEventCategories, getUpcomingEvents } from "@/lib/queries";
-import { fmtDayShort, fmtMonthYear, fmtTime } from "@/lib/format";
+import { fmtMonthYear } from "@/lib/format";
 import type { CcfEvent } from "@/lib/types";
 import { EVENT_CATEGORIES } from "@/lib/events";
+import { shortWhen } from "@/lib/announcements";
 
 /** Approved announcements appear within a minute (approval also revalidates). */
 export const revalidate = 60;
@@ -90,14 +91,11 @@ export default async function EventsPage({
               </nav>
             ) : null}
           </div>
-          <div className="flex shrink-0 flex-col items-start gap-3 md:items-end">
-            <ButtonLink href="/events/calendar" tone="outline" size="lg">
-              Month view
-            </ButtonLink>
-            <Link href="/announce" className="text-[0.92rem] font-semibold text-clay hover:text-clay-deep">
-              Ministry rep? Post an announcement
-            </Link>
-          </div>
+          {/* The "Post an announcement" link came off at Adrian's request
+              (2026-10-06): the team posts events from the admin console. */}
+          <ButtonLink href="/events/calendar" tone="outline" size="lg" className="shrink-0">
+            Month view
+          </ButtonLink>
         </Container>
       </header>
 
@@ -257,7 +255,7 @@ function PosterCard({ e, dark }: { e: CcfEvent; dark?: boolean }) {
         )}
       </div>
       <p className={cx("label mt-3", dark ? "text-paper-bright/80" : "text-clay")}>
-        {fmtDayShort(e.starts_at)} · {fmtTime(e.starts_at)}
+        {shortWhen(e)}
       </p>
       <h3
         className={cx(

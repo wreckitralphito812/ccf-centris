@@ -2,40 +2,20 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Section, cx } from "@/components/ui";
-import { AnnounceForm, type AnnounceInitial } from "./announce-form";
+import { AnnounceForm } from "./announce-form";
+import { initialFrom } from "./initial";
 import { AccessForm } from "./access-form";
 import { withdrawAnnouncement } from "@/app/actions/announcements";
 import { currentUser, hasAccounts } from "@/lib/auth/session";
 import { getMyAnnouncement, getMyAnnouncements, getRepStatus } from "@/lib/queries";
-import { manilaDay, manilaMinutesOf } from "@/lib/admin-day";
+import { manilaDay } from "@/lib/admin-day";
 import { nightLabel } from "@/lib/dgroup-tables";
-import type { CcfEvent } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Post an announcement",
   description: "For ministry reps: send your event to What's Happening and the screens at CCF Centris.",
 };
 export const dynamic = "force-dynamic";
-
-const hhmm = (iso: string) => {
-  const m = manilaMinutesOf(iso);
-  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
-};
-
-function initialFrom(e: CcfEvent): AnnounceInitial {
-  return {
-    id: e.id,
-    title: e.title,
-    ministry: e.ministry ?? undefined,
-    category: e.category ?? undefined,
-    venue: e.location_note ?? undefined,
-    summary: e.summary ?? undefined,
-    dates: (e.dates ?? []).map((d) => ({ date: manilaDay(d.starts_at), start: hhmm(d.starts_at), end: hhmm(d.ends_at ?? d.starts_at) })),
-    registrationUrl: e.registration_url,
-    feeNote: e.fee_note,
-    artwork: e.artwork,
-  };
-}
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   pending: { label: "Waiting for review", cls: "bg-clay-wash text-clay-deep" },
