@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AdminHeader, AdminNote, AdminPanel } from "../admin-ui";
 import { AddRepForm, ReviewActions, TakeDown } from "./review-forms";
+import { AnnounceForm } from "@/app/announce/announce-form";
+import { initialFrom } from "@/app/announce/initial";
 import { approveAnnouncementRep, removeAnnouncementRep } from "@/app/actions/admin-announcements";
 import { cx } from "@/components/ui";
 import { getAnnouncementQueue, getAnnouncementReps } from "@/lib/queries";
@@ -16,6 +18,7 @@ export const metadata: Metadata = { title: "Announcements" };
 export const dynamic = "force-dynamic";
 
 const TABS = [
+  { id: "new", label: "+ Add event" },
   { id: "waiting", label: "Waiting" },
   { id: "live", label: "Live" },
   { id: "screens", label: "Screens" },
@@ -32,8 +35,9 @@ export default async function AdminAnnouncements({ searchParams }: PageProps<"/a
   const { readOnly: noCode } = await requireAdmin();
   const readOnly = noCode || !hasSupabase();
   const sp = await searchParams;
-  const tab = TABS.find((t) => t.id === sp.tab)?.id ?? "waiting";
   const [queue, reps] = await Promise.all([getAnnouncementQueue(), getAnnouncementReps()]);
+  const editing = typeof sp.edit === "string" ? queue.find((e) => e.id === sp.edit) ?? null : null;
+  const tab = editing ? "new" : (TABS.find((t) => t.id === sp.tab)?.id ?? "waiting");
 
   const now = new Date();
   const nowIso = now.toISOString();
@@ -78,6 +82,25 @@ export default async function AdminAnnouncements({ searchParams }: PageProps<"/a
         ))}
       </nav>
 
+      {tab === "new" ? (
+        readOnly ? (
+          <AdminNote>Sign in with the admin code to add events.</AdminNote>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-[0.95rem] text-ink-soft">
+              {editing ? (
+                <>
+                  Editing <span className="font-semibold text-ink">{editing.title}</span>. Saving publishes the changes.
+                </>
+              ) : (
+                "Post an event straight to What's Happening, or put a booking on the calendar only. It goes live when you save."
+              )}
+            </p>
+            <AnnounceForm key={editing?.id ?? "new"} admin initial={editing ? initialFrom(editing) : undefined} />
+          </div>
+        )
+      ) : null}
+
       {tab === "waiting" ? (
         <>
           <AdminPanel title="Waiting for review">
@@ -114,10 +137,19 @@ export default async function AdminAnnouncements({ searchParams }: PageProps<"/a
             <div className="divide-y divide-rule">
               {live.map((e) => (
                 <Review key={e.id} e={e}>
-                  <div className="flex gap-4">
-                    <Link href={`/events/${e.slug}`} className="label text-clay">
-                      View on site
-                    </Link>
+                  <div className="flex flex-wrap gap-4">
+                    {e.calendar_only ? (
+                      <span className="rounded-full bg-ink/10 px-2.5 py-0.5 text-[0.8rem] font-semibold text-ink-soft">Calendar only</span>
+                    ) : (
+                      <Link href={`/events/${e.slug}`} className="label text-clay">
+                        View on site
+                      </Link>
+                    )}
+                    {readOnly ? null : (
+                      <Link href={`/admin/announcements?edit=${e.id}`} className="label text-clay">
+                        Edit
+                      </Link>
+                    )}
                     {readOnly ? null : <TakeDown id={e.id} />}
                   </div>
                 </Review>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Pill, Section } from "@/components/ui";
 import { getUpcomingEvents, getUpcomingServices } from "@/lib/queries";
+import { daysCovered } from "@/lib/announcements";
 import { fmtMonthYear, fmtTime, manilaDateKey } from "@/lib/format";
 
 /** Approved announcements appear within a minute. */
@@ -27,7 +28,7 @@ export default async function CalendarPage({
   const offset = Math.max(0, Math.min(5, Number(offsetRaw ?? 0) || 0));
 
   const [events, services] = await Promise.all([
-    getUpcomingEvents(),
+    getUpcomingEvents(undefined, { includeCalendarOnly: true }),
     getUpcomingServices(40),
   ]);
 
@@ -44,8 +45,9 @@ export default async function CalendarPage({
 
   interface Entry {
     label: string;
-    href: string;
-    kind: "service" | "event";
+    /** Calendar-only bookings have no page. */
+    href: string | null;
+    kind: "service" | "event" | "booked";
   }
 
   const byDay = new Map<string, Entry[]>();
@@ -62,17 +64,20 @@ export default async function CalendarPage({
     ]);
   }
   // Every date of a series lands on its own day (announcements, 2026-10-05).
+  // All-day dates sit on every day they cover; calendar-only bookings (other
+  // satellites' events at Centris) show without a link (2026-10-06).
   for (const e of events) {
     for (const d of e.dates ?? [{ starts_at: e.starts_at, ends_at: e.ends_at }]) {
-      const k = key(d.starts_at);
-      byDay.set(k, [
-        ...(byDay.get(k) ?? []),
-        {
-          label: `${fmtTime(d.starts_at)} ${e.title}`,
-          href: `/events/${e.slug}`,
-          kind: "event",
-        },
-      ]);
+      for (const k of daysCovered(d)) {
+        byDay.set(k, [
+          ...(byDay.get(k) ?? []),
+          {
+            label: d.all_day ? e.title : `${fmtTime(d.starts_at)} ${e.title}`,
+            href: e.calendar_only ? null : `/events/${e.slug}`,
+            kind: e.calendar_only ? "booked" : "event",
+          },
+        ]);
+      }
     }
   }
 
@@ -152,16 +157,22 @@ export default async function CalendarPage({
                     <ul className="mt-1.5 space-y-1">
                       {items.slice(0, 3).map((it, n) => (
                         <li key={n}>
-                          <Link
-                            href={it.href}
-                            className={`block truncate border-l-2 pl-1.5 text-[0.72rem] leading-tight transition-colors hover:text-clay ${
-                              it.kind === "service"
-                                ? "border-clay text-ink-soft"
-                                : "border-sky text-ink-soft"
-                            }`}
-                          >
-                            {it.label}
-                          </Link>
+                          {it.href ? (
+                            <Link
+                              href={it.href}
+                              className={`block truncate border-l-2 pl-1.5 text-[0.72rem] leading-tight transition-colors hover:text-clay ${
+                                it.kind === "service"
+                                  ? "border-clay text-ink-soft"
+                                  : "border-sky text-ink-soft"
+                              }`}
+                            >
+                              {it.label}
+                            </Link>
+                          ) : (
+                            <span className="block truncate border-l-2 border-ink/25 pl-1.5 text-[0.72rem] leading-tight text-ink-mute">
+                              {it.label}
+                            </span>
+                          )}
                         </li>
                       ))}
                       {items.length > 3 ? (
@@ -192,12 +203,18 @@ export default async function CalendarPage({
                     <ul className="min-w-0 flex-1">
                       {items.map((it, n) => (
                         <li key={n}>
-                          <Link
-                            href={it.href}
-                            className="flex min-h-11 items-center text-[0.95rem] leading-snug text-ink-soft"
-                          >
-                            {it.label}
-                          </Link>
+                          {it.href ? (
+                            <Link
+                              href={it.href}
+                              className="flex min-h-11 items-center text-[0.95rem] leading-snug text-ink-soft"
+                            >
+                              {it.label}
+                            </Link>
+                          ) : (
+                            <span className="flex min-h-11 items-center text-[0.95rem] leading-snug text-ink-mute">
+                              {it.label}
+                            </span>
+                          )}
                         </li>
                       ))}
                     </ul>

@@ -8,7 +8,7 @@
  */
 export const EVENT_CATEGORIES = [
   {
-    name: "Church-wide events",
+    name: "Events",
     blurb: "Camps, retreats, conferences and gatherings for everyone.",
     empty: "Nothing announced yet. Camps, retreats and conferences will be posted here first.",
   },
