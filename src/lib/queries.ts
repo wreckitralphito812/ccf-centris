@@ -237,16 +237,19 @@ export async function getDgroupsForCommunity(slug: string) {
 
 /**
  * Published events. With a database these are the ministries' approved
- * announcements (2026-10-05); without one, the seed data.
+ * announcements (2026-10-05); without one, the seed data. Calendar-only
+ * bookings (other satellites' events at Centris) are left out unless asked
+ * for: only the month calendar shows them (2026-10-06).
  */
-export async function getEvents(): Promise<CcfEvent[]> {
+export async function getEvents(opts: { includeCalendarOnly?: boolean } = {}): Promise<CcfEvent[]> {
   if (!hasSupabase()) return [...events].sort((a, b) => a.starts_at.localeCompare(b.starts_at));
-  const { data, error } = await supabaseAdmin()
+  let q = supabaseAdmin()
     .from("events")
     .select(EVENT_COLUMNS)
     .eq("satellite_id", SATELLITE_ID)
-    .eq("status", "published")
-    .order("starts_at");
+    .eq("status", "published");
+  if (!opts.includeCalendarOnly) q = q.eq("calendar_only", false);
+  const { data, error } = await q.order("starts_at");
   if (error) {
     console.error("getEvents failed", error);
     return [];
@@ -255,10 +258,10 @@ export async function getEvents(): Promise<CcfEvent[]> {
 }
 
 const EVENT_COLUMNS =
-  "id, slug, title, summary, description, category, cover_image_url, starts_at, ends_at, location_note, organizer, capacity, seats_taken, requires_registration, price_cents, currency, requirements, ministry, registration_url, fee_note, artwork, status, review_note, submitted_by, created_at, event_dates(starts_at, ends_at)";
+  "id, slug, title, summary, description, category, cover_image_url, starts_at, ends_at, location_note, organizer, capacity, seats_taken, requires_registration, price_cents, currency, requirements, ministry, registration_url, fee_note, artwork, status, review_note, submitted_by, created_at, calendar_only, event_dates(starts_at, ends_at, all_day)";
 
 function eventFromRow(r: Record<string, unknown>): CcfEvent {
-  const dates = ((r.event_dates as { starts_at: string; ends_at: string | null }[] | null) ?? [])
+  const dates = ((r.event_dates as { starts_at: string; ends_at: string | null; all_day: boolean }[] | null) ?? [])
     .slice()
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
   return {
@@ -289,6 +292,7 @@ function eventFromRow(r: Record<string, unknown>): CcfEvent {
     review_note: (r.review_note as string | null) ?? null,
     submitted_by: (r.submitted_by as string | null) ?? null,
     created_at: r.created_at as string,
+    calendar_only: Boolean(r.calendar_only),
   };
 }
 
@@ -367,9 +371,9 @@ export async function getRepStatus(email: string): Promise<"approved" | "request
   return data.approved_at ? "approved" : "requested";
 }
 
-export async function getUpcomingEvents(limit?: number): Promise<CcfEvent[]> {
+export async function getUpcomingEvents(limit?: number, opts: { includeCalendarOnly?: boolean } = {}): Promise<CcfEvent[]> {
   const t = Date.now();
-  const out = (await getEvents()).filter(
+  const out = (await getEvents(opts)).filter(
     (e) => new Date(e.ends_at ?? e.starts_at).getTime() > t,
   );
   return typeof limit === "number" ? out.slice(0, limit) : out;
@@ -382,6 +386,7 @@ export async function getEvent(slug: string): Promise<CcfEvent | null> {
     .select(EVENT_COLUMNS)
     .eq("satellite_id", SATELLITE_ID)
     .eq("slug", slug)
+    .eq("calendar_only", false)
     .in("status", ["published", "completed"])
     .maybeSingle();
   return data ? eventFromRow(data) : null;

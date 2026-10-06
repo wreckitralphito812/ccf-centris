@@ -1,6 +1,10 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
+
+import { lastEnd, parseAnnouncement, slugFor, type AnnouncementErrors } from "@/lib/announcements";
+import { manilaDateKey } from "@/lib/format";
 
 import { isAdmin, isAdminConfigured } from "@/lib/admin-auth";
 import { sendEmail, siteOrigin } from "@/lib/email";
@@ -17,6 +21,7 @@ export interface ReviewResult {
   ok: boolean;
   formError?: string;
   message?: string;
+  errors?: AnnouncementErrors;
 }
 
 async function guard(): Promise<ReviewResult | null> {
@@ -137,4 +142,69 @@ export async function removeAnnouncementRep(fd: FormData): Promise<void> {
     .eq("satellite_id", SATELLITE_ID);
   if (error) console.error("removeAnnouncementRep failed", error);
   refresh();
+}
+
+/**
+ * Add or edit an event straight from the admin console, published at once
+ * (Adrian's review, 2026-10-06): the team posts the church's own events
+ * without the rep flow, artwork optional, and can mark a booking by another
+ * satellite or pastor as calendar-only (on the month calendar, not promoted).
+ */
+export async function adminSaveEvent(_prev: ReviewResult | null, fd: FormData): Promise<ReviewResult> {
+  const blocked = await guard();
+  if (blocked) return blocked;
+
+  const parsed = parseAnnouncement(fd, manilaDateKey(), { artworkRequired: false });
+  if (!parsed.ok) return { ok: false, errors: parsed.errors, formError: "A few things need fixing below." };
+  const a = parsed.value;
+  const calendarOnly = fd.get("calendar_only") === "1";
+
+  const db = supabaseAdmin();
+  const editId = String(fd.get("id") ?? "").trim();
+  const id = editId || randomUUID();
+  const row = {
+    title: a.title,
+    summary: a.summary,
+    description: a.description,
+    category: a.category,
+    location_note: a.venue,
+    organizer: a.ministry,
+    ministry: a.ministry,
+    starts_at: a.dates[0].startsAt,
+    ends_at: lastEnd(a.dates),
+    registration_url: calendarOnly ? null : a.registrationUrl,
+    requires_registration: !calendarOnly && Boolean(a.registrationUrl),
+    fee_note: a.feeNote,
+    price_cents: 0,
+    artwork: a.artwork,
+    cover_image_url: a.artwork.main_tv ?? null,
+    calendar_only: calendarOnly,
+    status: "published",
+    review_note: null,
+    reviewed_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+  const { data: saved, error } = editId
+    ? await db.from("events").update(row).eq("id", id).eq("satellite_id", SATELLITE_ID).select("slug").maybeSingle()
+    : await db
+        .from("events")
+        .insert({ ...row, id, satellite_id: SATELLITE_ID, slug: slugFor(a.title, manilaDateKey(new Date(a.dates[0].startsAt)), id) })
+        .select("slug")
+        .maybeSingle();
+  if (error || !saved) {
+    console.error("adminSaveEvent failed", error);
+    return { ok: false, formError: "Couldn't save it. Try again." };
+  }
+
+  await db.from("event_dates").delete().eq("event_id", id);
+  const { error: datesError } = await db
+    .from("event_dates")
+    .insert(a.dates.map((d) => ({ event_id: id, starts_at: d.startsAt, ends_at: d.endsAt, all_day: d.allDay })));
+  if (datesError) console.error("adminSaveEvent: dates failed", datesError);
+
+  refresh(saved.slug as string);
+  return {
+    ok: true,
+    message: calendarOnly ? "Saved. It's on the month calendar." : "Published. It's live on What's Happening and the calendar.",
+  };
 }

@@ -3,9 +3,11 @@
 import { useActionState, useState } from "react";
 import { upload } from "@vercel/blob/client";
 import { submitAnnouncement, type AnnounceResult } from "@/app/actions/announcements";
+import { adminSaveEvent } from "@/app/actions/admin-announcements";
 import { cx } from "@/components/ui";
 import {
   ANNOUNCEMENT_CATEGORIES,
+  DESCRIPTION_MAX,
   MAX_DATES,
   MAX_UPLOAD_MB,
   PLACEMENTS,
@@ -23,6 +25,15 @@ import {
  * as soon as it's chosen, after its shape is checked.
  */
 
+export interface DateRow {
+  date: string;
+  start: string;
+  end: string;
+  allDay?: boolean;
+  /** Last day of an all-day date that runs over several days. */
+  until?: string;
+}
+
 export interface AnnounceInitial {
   id?: string;
   title?: string;
@@ -30,7 +41,9 @@ export interface AnnounceInitial {
   category?: string;
   venue?: string;
   summary?: string;
-  dates?: { date: string; start: string; end: string }[];
+  dates?: DateRow[];
+  description?: string | null;
+  calendarOnly?: boolean;
   registrationUrl?: string | null;
   feeNote?: string | null;
   artwork?: Artwork;
@@ -68,10 +81,13 @@ function ArtworkSlot({
   p,
   slot,
   onChange,
+  optional = false,
 }: {
   p: (typeof PLACEMENTS)[number];
   slot: Slot;
   onChange: (s: Slot) => void;
+  /** The admin console posts without artwork (2026-10-06). */
+  optional?: boolean;
 }) {
   async function choose(file: File | undefined) {
     if (!file) return;
@@ -109,7 +125,7 @@ function ArtworkSlot({
       <div className="flex items-baseline justify-between gap-2">
         <p className="text-[0.95rem] font-semibold text-ink">
           {p.label}
-          {p.required ? <span className="text-sky"> *</span> : null}
+          {p.required && !optional ? <span className="text-sky"> *</span> : null}
         </p>
         <p className="text-[0.8rem] tabular-nums text-ink-mute">
           {p.w} × {p.h}
@@ -154,8 +170,18 @@ function ArtworkSlot({
   );
 }
 
-export function AnnounceForm({ initial, defaultMinistry }: { initial?: AnnounceInitial; defaultMinistry?: string }) {
-  const [state, action, pending] = useActionState<AnnounceResult | null, FormData>(submitAnnouncement, null);
+export function AnnounceForm({
+  initial,
+  defaultMinistry,
+  admin = false,
+}: {
+  initial?: AnnounceInitial;
+  defaultMinistry?: string;
+  /** The admin console's version (2026-10-06): publishes at once, artwork optional, calendar-only option. */
+  admin?: boolean;
+}) {
+  const [state, action, pending] = useActionState<AnnounceResult | null, FormData>(admin ? adminSaveEvent : submitAnnouncement, null);
+  const [calendarOnly, setCalendarOnly] = useState(Boolean(initial?.calendarOnly));
   const [slots, setSlots] = useState<Record<PlacementKey, Slot>>(
     () =>
       Object.fromEntries(
@@ -167,7 +193,8 @@ export function AnnounceForm({ initial, defaultMinistry }: { initial?: AnnounceI
   const [category, setCategory] = useState(initial?.category ?? ANNOUNCEMENT_CATEGORIES[0]);
   const knownVenue = !initial?.venue || (VENUES as readonly string[]).includes(initial.venue);
   const [venue, setVenue] = useState(initial?.venue ? (knownVenue ? initial.venue : "Other") : "Main Hall");
-  const [dates, setDates] = useState(initial?.dates?.length ? initial.dates : [{ date: "", start: "", end: "" }]);
+  const [dates, setDates] = useState<DateRow[]>(initial?.dates?.length ? initial.dates : [{ date: "", start: "", end: "" }]);
+  const setRow = (i: number, patch: Partial<DateRow>) => setDates((x) => x.map((y, j) => (j === i ? { ...y, ...patch } : y)));
   const [signup, setSignup] = useState(initial?.registrationUrl ? "link" : initial?.id ? "none" : "link");
   const [fee, setFee] = useState(initial?.feeNote ? "paid" : "free");
   const e = state?.errors ?? {};
@@ -176,10 +203,13 @@ export function AnnounceForm({ initial, defaultMinistry }: { initial?: AnnounceI
   if (state?.ok) {
     return (
       <div className="calm-card p-8 text-center sm:p-10">
-        <p className="text-[1.4rem] font-bold text-ink">{initial?.id ? "Changes sent" : "Sent for review"}</p>
+        <p className="text-[1.4rem] font-bold text-ink">{admin ? "Saved" : initial?.id ? "Changes sent" : "Sent for review"}</p>
         <p className="mx-auto mt-2 max-w-md leading-relaxed text-ink-soft">{state.message}</p>
-        <a href="/announce" className="btn-press mt-6 inline-flex min-h-12 items-center rounded-lg bg-clay px-6 font-semibold text-paper-bright hover:bg-clay-deep">
-          Back to your announcements
+        <a
+          href={admin ? "/admin/announcements?tab=live" : "/announce"}
+          className="btn-press mt-6 inline-flex min-h-12 items-center rounded-lg bg-clay px-6 font-semibold text-paper-bright hover:bg-clay-deep"
+        >
+          {admin ? "Back to announcements" : "Back to your announcements"}
         </a>
       </div>
     );
@@ -194,14 +224,39 @@ export function AnnounceForm({ initial, defaultMinistry }: { initial?: AnnounceI
   return (
     <form action={action} className="calm-card px-5 py-8 sm:px-9 sm:py-10">
       {initial?.id ? <input type="hidden" name="id" value={initial.id} /> : null}
+      {admin ? <input type="hidden" name="calendar_only" value={calendarOnly ? "1" : "0"} /> : null}
+      {admin ? (
+        <div className="mb-8 rounded-xl bg-mist p-4 sm:p-5">
+          <p className="text-[0.98rem] font-semibold text-ink">What is this?</p>
+          <div className="mt-2.5 flex flex-wrap gap-2">
+            <button type="button" aria-pressed={!calendarOnly} onClick={() => setCalendarOnly(false)} className={chip(!calendarOnly)}>
+              Promote it on What&rsquo;s Happening
+            </button>
+            <button type="button" aria-pressed={calendarOnly} onClick={() => setCalendarOnly(true)} className={chip(calendarOnly)}>
+              Calendar only (booked, not promoted)
+            </button>
+          </div>
+          <p className="mt-2 text-[0.88rem] text-ink-mute">
+            Calendar only is for events booked at Centris by other satellites or pastors: they show on the month calendar, with no page or sign-up.
+          </p>
+        </div>
+      ) : null}
       {PLACEMENTS.map((p) => (
         <input key={p.key} type="hidden" name={`artwork_${p.key}`} value={slots[p.key].url ?? ""} />
       ))}
 
       <div>
-      <Section n={1} title="Your artwork" hint="The same files you make for the screens. Main Hall TV is required; add the others if you have them.">
+      <Section
+        n={1}
+        title={admin ? "Artwork (optional)" : "Your artwork"}
+        hint={
+          admin
+            ? "The ministry's files for the screens. Main Hall TV becomes the picture on the website; you can add them later."
+            : "The same files you make for the screens. Main Hall TV is required; add the others if you have them."
+        }
+      >
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-          <ArtworkSlot p={PLACEMENTS[0]} slot={slots.main_tv} onChange={(s) => setSlots((x) => ({ ...x, main_tv: s }))} />
+          <ArtworkSlot p={PLACEMENTS[0]} optional={admin} slot={slots.main_tv} onChange={(s) => setSlots((x) => ({ ...x, main_tv: s }))} />
           <ArtworkSlot p={PLACEMENTS[1]} slot={slots.social} onChange={(s) => setSlots((x) => ({ ...x, social: s }))} />
         </div>
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
@@ -252,41 +307,78 @@ export function AnnounceForm({ initial, defaultMinistry }: { initial?: AnnounceI
             </p>
             <Err text={e.summary} />
           </label>
+          <label className="block sm:col-span-2">
+            <span className={LABEL}>
+              More details <span className="font-normal text-ink-mute">(optional)</span>
+            </span>
+            <textarea
+              name="description"
+              defaultValue={initial?.description ?? ""}
+              maxLength={DESCRIPTION_MAX}
+              rows={4}
+              placeholder="Who it's for, what to expect, what to bring."
+              className={cx(INPUT, "mt-1.5 py-3")}
+            />
+            <Err text={e.description} />
+          </label>
         </div>
       </Section>
 
       <Section n={3} title="When and where" hint="For a series, add every date.">
-        <div className="space-y-3">
+        <div className="space-y-4">
           {dates.map((d, i) => (
-            <div key={i} className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-2 sm:gap-3">
-              <label className="block">
-                <span className={cx(LABEL, i > 0 && "sr-only")}>Date</span>
-                <input type="date" name="date" value={d.date} onChange={(ev) => setDates((x) => x.map((y, j) => (j === i ? { ...y, date: ev.target.value } : y)))} className={cx(INPUT, "mt-1.5 px-3")} />
+            <div key={i} className="rounded-xl border border-edge bg-paper-bright p-3 sm:p-4">
+              <input type="hidden" name="allday" value={d.allDay ? "1" : "0"} />
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:gap-3">
+                <label className="block">
+                  <span className={LABEL}>{d.allDay ? "From" : "Date"}</span>
+                  <input type="date" name="date" value={d.date} onChange={(ev) => setRow(i, { date: ev.target.value })} className={cx(INPUT, "mt-1.5 px-3")} />
+                </label>
+                <button
+                  type="button"
+                  aria-label="Remove this date"
+                  disabled={dates.length === 1}
+                  onClick={() => setDates((x) => x.filter((_, j) => j !== i))}
+                  className="grid h-12 w-12 place-items-center rounded-lg text-ink-mute hover:bg-mist hover:text-sky disabled:opacity-30 sm:order-last"
+                >
+                  ×
+                </button>
+                {d.allDay ? (
+                  <label className="col-span-2 block sm:col-span-2">
+                    <span className={LABEL}>
+                      Until <span className="font-normal text-ink-mute">(for more than one day)</span>
+                    </span>
+                    <input type="date" name="until" min={d.date || undefined} value={d.until ?? ""} onChange={(ev) => setRow(i, { until: ev.target.value })} className={cx(INPUT, "mt-1.5 px-3")} />
+                    <input type="hidden" name="start" value="" />
+                    <input type="hidden" name="end" value="" />
+                  </label>
+                ) : (
+                  <>
+                    <label className="block">
+                      <span className={LABEL}>Starts</span>
+                      <input type="time" name="start" step={900} value={d.start} onChange={(ev) => setRow(i, { start: ev.target.value })} className={cx(INPUT, "mt-1.5 px-3")} />
+                    </label>
+                    <label className="block">
+                      <span className={LABEL}>
+                        Ends <span className="font-normal text-ink-mute">(optional)</span>
+                      </span>
+                      <input type="time" name="end" step={900} value={d.end} onChange={(ev) => setRow(i, { end: ev.target.value })} className={cx(INPUT, "mt-1.5 px-3")} />
+                      <input type="hidden" name="until" value="" />
+                    </label>
+                  </>
+                )}
+              </div>
+              <label className="mt-3 inline-flex cursor-pointer items-center gap-2 text-[0.95rem] text-ink">
+                <input type="checkbox" checked={Boolean(d.allDay)} onChange={(ev) => setRow(i, { allDay: ev.target.checked })} className="h-5 w-5 accent-clay" />
+                All day, or times not set yet
               </label>
-              <label className="block">
-                <span className={cx(LABEL, i > 0 && "sr-only")}>Starts</span>
-                <input type="time" name="start" step={900} value={d.start} onChange={(ev) => setDates((x) => x.map((y, j) => (j === i ? { ...y, start: ev.target.value } : y)))} className={cx(INPUT, "mt-1.5 px-3")} />
-              </label>
-              <label className="block">
-                <span className={cx(LABEL, i > 0 && "sr-only")}>Ends</span>
-                <input type="time" name="end" step={900} value={d.end} onChange={(ev) => setDates((x) => x.map((y, j) => (j === i ? { ...y, end: ev.target.value } : y)))} className={cx(INPUT, "mt-1.5 px-3")} />
-              </label>
-              <button
-                type="button"
-                aria-label="Remove this date"
-                disabled={dates.length === 1}
-                onClick={() => setDates((x) => x.filter((_, j) => j !== i))}
-                className="grid h-12 w-12 place-items-center rounded-lg text-ink-mute hover:bg-mist hover:text-sky disabled:opacity-30"
-              >
-                ×
-              </button>
             </div>
           ))}
         </div>
         {dates.length < MAX_DATES ? (
           <button
             type="button"
-            onClick={() => setDates((x) => [...x, { ...x[x.length - 1], date: "" }])}
+            onClick={() => setDates((x) => [...x, { ...x[x.length - 1], date: "", until: "" }])}
             className="mt-3 text-[0.95rem] font-semibold text-clay hover:text-clay-deep"
           >
             + Add another date
@@ -314,6 +406,7 @@ export function AnnounceForm({ initial, defaultMinistry }: { initial?: AnnounceI
         <Err text={e.venue} />
       </Section>
 
+      {calendarOnly ? null : (
       <Section n={4} title="Sign-up and fee" hint="Type these even if they're on the picture: phones can't scan a QR code on their own screen.">
         <input type="hidden" name="signup" value={signup} />
         <div className="flex flex-wrap gap-2">
@@ -350,6 +443,7 @@ export function AnnounceForm({ initial, defaultMinistry }: { initial?: AnnounceI
         ) : null}
         <Err text={e.fee} />
       </Section>
+      )}
 
       <Section n={5} title="How it will look" hint="The card on What's Happening. Tap it there to see the full details.">
         <div className="max-w-sm">
@@ -377,13 +471,15 @@ export function AnnounceForm({ initial, defaultMinistry }: { initial?: AnnounceI
         </p>
       ) : null}
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-rule pt-6">
-        <p className="text-[0.92rem] text-ink-mute">The team reviews it within 2 working days and emails you.</p>
+        <p className="text-[0.92rem] text-ink-mute">
+          {admin ? "It goes live as soon as you save." : "The team reviews it within 2 working days and emails you."}
+        </p>
         <button
           type="submit"
           disabled={pending || busy}
           className="btn-press min-h-12 rounded-lg bg-clay px-7 text-[1rem] font-semibold text-paper-bright transition-colors hover:bg-clay-deep disabled:opacity-50"
         >
-          {pending ? "Sending…" : busy ? "Waiting for uploads…" : initial?.id ? "Send changes" : "Send for review"}
+          {pending ? "Saving…" : busy ? "Waiting for uploads…" : admin ? (initial?.id ? "Save changes" : "Publish") : initial?.id ? "Send changes" : "Send for review"}
         </button>
       </div>
     </form>

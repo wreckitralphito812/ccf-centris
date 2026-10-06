@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { shortWhen } from "@/lib/announcements";
 import type { CcfEvent, Dgroup, Facility, Message, Service } from "@/lib/types";
 import {
   AUDIENCE_LABEL,
@@ -181,7 +182,7 @@ export function EventCard({ e }: { e: CcfEvent }) {
             </p>
           ) : null}
           <div className="mt-auto pt-4 text-[0.82rem] text-ink-mute">
-            <p>{fmtTimeRange(e.starts_at, e.ends_at)}</p>
+            <p>{e.dates ? shortWhen(e) : fmtTimeRange(e.starts_at, e.ends_at)}</p>
             {e.location_note ? <p className="mt-0.5">{e.location_note}</p> : null}
             <p className="mt-1.5 font-semibold text-ink">{e.fee_note ?? fmtPeso(e.price_cents)}</p>
           </div>

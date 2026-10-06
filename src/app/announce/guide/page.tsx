@@ -175,9 +175,10 @@ export default function AnnounceGuidePage() {
               {[
                 ["Title", "Up to 80 characters, e.g. Family Camp Lite."],
                 ["Ministry", "Who it's from, e.g. Elevate or The Neighborhood."],
-                ["Category", "Church-wide events, or Trainings and classes."],
+                ["Category", "Events, or Trainings and classes."],
                 ["In one sentence", `What it is and who it's for, up to ${SUMMARY_MAX} characters.`],
-                ["When", "Every date, with start and end times. Add another date for a series."],
+                ["When", "Every date. Add the start time (the end time is optional), or tick all day. Add another date for a series."],
+                ["More details", "Optional: a few lines for the event page."],
                 ["Where", "Main Hall, Welcome Center, a room, or another place."],
                 ["Sign-up", "The full link (the one your QR code opens), or no sign-up needed."],
                 ["Fee", "Free, or the fee as you'd say it, e.g. ₱600 adults, ₱400 kids, free for 6 and below."],

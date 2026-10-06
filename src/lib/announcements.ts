@@ -18,9 +18,11 @@ export type Artwork = Partial<Record<PlacementKey, string>>;
 
 export const placement = (key: string) => PLACEMENTS.find((p) => p.key === key) ?? null;
 
-export const ANNOUNCEMENT_CATEGORIES = ["Church-wide events", "Trainings and classes"] as const;
+/** Adrian's two sections (2026-10-06). */
+export const ANNOUNCEMENT_CATEGORIES = ["Events", "Trainings and classes"] as const;
 
 export const VENUES = [
+  "CCF Centris",
   "Main Hall",
   "Welcome Center",
   "Dgroup Lounge",
@@ -32,6 +34,7 @@ export const VENUES = [
 ] as const;
 
 export const SUMMARY_MAX = 160;
+export const DESCRIPTION_MAX = 1200;
 export const MAX_DATES = 8;
 export const MAX_UPLOAD_MB = 15;
 
@@ -80,29 +83,43 @@ export function downloadName(title: string, date: string, key: PlacementKey, url
   return `${date} ${clean} – ${placement(key)!.label}.${ext}`;
 }
 
+export interface AnnouncementDate {
+  /** ISO. An all-day date runs from its first day's 00:00 to its last day's 23:59, Manila. */
+  startsAt: string;
+  endsAt: string | null;
+  allDay: boolean;
+}
+
 export interface AnnouncementInput {
   title: string;
   ministry: string;
   category: (typeof ANNOUNCEMENT_CATEGORIES)[number];
   venue: string;
   summary: string;
+  description: string | null;
   registrationUrl: string | null;
   feeNote: string | null;
-  /** Manila times as ISO strings, soonest first. */
-  dates: { startsAt: string; endsAt: string }[];
+  /** Soonest first. */
+  dates: AnnouncementDate[];
   artwork: Artwork;
 }
 
-export type AnnouncementErrors = Partial<Record<"title" | "ministry" | "category" | "venue" | "summary" | "dates" | "registration" | "fee" | "artwork", string>>;
+export type AnnouncementErrors = Partial<
+  Record<"title" | "ministry" | "category" | "venue" | "summary" | "description" | "dates" | "registration" | "fee" | "artwork", string>
+>;
 
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const text = (v: FormDataEntryValue | null | undefined) => String(v ?? "").replace(/\s+/g, " ").trim();
 
-/** Validate a submission. `today` is Manila "YYYY-MM-DD". */
+/**
+ * Validate a submission. `today` is Manila "YYYY-MM-DD". Admins posting
+ * directly can skip the artwork (calendar-only bookings have none).
+ */
 export function parseAnnouncement(
   fd: FormData,
   today: string,
+  opts: { artworkRequired?: boolean } = {},
 ): { ok: true; value: AnnouncementInput } | { ok: false; errors: AnnouncementErrors } {
   const errors: AnnouncementErrors = {};
 
@@ -124,20 +141,43 @@ export function parseAnnouncement(
   if (summary.length < 10 || summary.length > SUMMARY_MAX)
     errors.summary = `One sentence, between 10 and ${SUMMARY_MAX} characters.`;
 
-  // Dates: parallel date / start / end fields, one row per date.
+  // Line breaks kept: it's shown as paragraphs.
+  const description = String(fd.get("description") ?? "").replace(/\r\n?/g, "\n").replace(/\n{3,}/g, "\n\n").trim() || null;
+  if (description && description.length > DESCRIPTION_MAX) errors.description = `Keep it under ${DESCRIPTION_MAX} characters.`;
+
+  // Dates: parallel fields, one row per date. A row is either timed (start,
+  // optional end) or all-day, optionally running to a later "until" day.
   const days = fd.getAll("date").map(text);
   const starts = fd.getAll("start").map(text);
   const ends = fd.getAll("end").map(text);
-  const dates: AnnouncementInput["dates"] = [];
+  const allDay = fd.getAll("allday").map(text);
+  const untils = fd.getAll("until").map(text);
+  const dates: AnnouncementDate[] = [];
   if (!days.length || days.length > MAX_DATES) errors.dates = `Add between 1 and ${MAX_DATES} dates.`;
   days.forEach((d, i) => {
     if (errors.dates) return;
+    if (!DATE.test(d)) return (errors.dates = "Each date needs a day.");
+    if (d < today) return (errors.dates = "One of the dates has already passed.");
+    if (allDay[i] === "1") {
+      const until = untils[i] || d;
+      if (!DATE.test(until) || until < d) return (errors.dates = "The last day can't be before the first.");
+      dates.push({
+        startsAt: new Date(`${d}T00:00:00+08:00`).toISOString(),
+        endsAt: new Date(`${until}T23:59:00+08:00`).toISOString(),
+        allDay: true,
+      });
+      return;
+    }
     const s = starts[i] ?? "";
     const e = ends[i] ?? "";
-    if (!DATE.test(d) || !HHMM.test(s) || !HHMM.test(e)) errors.dates = "Each date needs a day, a start and an end time.";
-    else if (d < today) errors.dates = "One of the dates has already passed.";
-    else if (e <= s) errors.dates = "Each end time must be after its start time.";
-    else dates.push({ startsAt: new Date(`${d}T${s}:00+08:00`).toISOString(), endsAt: new Date(`${d}T${e}:00+08:00`).toISOString() });
+    if (!HHMM.test(s)) return (errors.dates = "Give each date a start time, or mark it all day.");
+    if (e && !HHMM.test(e)) return (errors.dates = "Check the end times.");
+    if (e && e <= s) return (errors.dates = "Each end time must be after its start time.");
+    dates.push({
+      startsAt: new Date(`${d}T${s}:00+08:00`).toISOString(),
+      endsAt: e ? new Date(`${d}T${e}:00+08:00`).toISOString() : null,
+      allDay: false,
+    });
   });
   dates.sort((a, b) => a.startsAt.localeCompare(b.startsAt));
 
@@ -160,15 +200,82 @@ export function parseAnnouncement(
     if (url && !isOurUpload(url)) errors.artwork = "One of the files didn't upload properly. Upload it again.";
     else if (url) artwork[p.key] = url;
   }
-  if (!artwork.main_tv && !errors.artwork) errors.artwork = "The Main Hall TV picture is required.";
+  if ((opts.artworkRequired ?? true) && !artwork.main_tv && !errors.artwork) errors.artwork = "The Main Hall TV picture is required.";
 
   if (Object.keys(errors).length) return { ok: false, errors };
   return {
     ok: true,
-    value: { title, ministry, category: category as AnnouncementInput["category"], venue, summary, registrationUrl, feeNote, dates, artwork },
+    value: {
+      title,
+      ministry,
+      category: category as AnnouncementInput["category"],
+      venue,
+      summary,
+      description,
+      registrationUrl,
+      feeNote,
+      dates,
+      artwork,
+    },
   };
+}
+
+const MANILA = 8 * 3_600_000;
+const manilaDate = (iso: string) => new Date(new Date(iso).getTime() + MANILA);
+const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MO = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const dayLabel = (iso: string) => {
+  const d = manilaDate(iso);
+  return `${WD[d.getUTCDay()]}, ${MO[d.getUTCMonth()]} ${d.getUTCDate()}`;
+};
+const timeOf = (iso: string) => {
+  const d = manilaDate(iso);
+  const h = d.getUTCHours();
+  const m = d.getUTCMinutes();
+  if (h === 12 && m === 0) return "12 NN";
+  return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
+};
+
+/**
+ * One date as people read it: "Sat, Nov 7, 8:00 AM – 5:00 PM",
+ * "Sat, Oct 10, 3:30 PM onwards", "Fri, Oct 16 – Sun, Oct 18" or
+ * "Sat, Oct 24 · All day".
+ */
+export function dateText(d: { starts_at: string; ends_at: string | null; all_day?: boolean }): string {
+  if (d.all_day) {
+    const first = dayLabel(d.starts_at);
+    const last = d.ends_at ? dayLabel(d.ends_at) : first;
+    return first === last ? `${first} · All day` : `${first} – ${last}`;
+  }
+  return d.ends_at
+    ? `${dayLabel(d.starts_at)}, ${timeOf(d.starts_at)} – ${timeOf(d.ends_at)}`
+    : `${dayLabel(d.starts_at)}, ${timeOf(d.starts_at)} onwards`;
+}
+
+/** Every Manila day a date covers (a multi-day all-day date covers several). */
+export function daysCovered(d: { starts_at: string; ends_at: string | null; all_day?: boolean }): string[] {
+  const first = manilaDate(d.starts_at).toISOString().slice(0, 10);
+  if (!d.all_day || !d.ends_at) return [first];
+  const last = manilaDate(d.ends_at).toISOString().slice(0, 10);
+  const out: string[] = [];
+  for (let t = Date.parse(`${first}T00:00:00Z`); out.length < 31; t += 86_400_000) {
+    const k = new Date(t).toISOString().slice(0, 10);
+    out.push(k);
+    if (k >= last) break;
+  }
+  return out;
 }
 
 /** The last moment an announcement is relevant: when its last date ends. */
 export const lastEnd = (dates: { startsAt: string; endsAt: string | null }[]) =>
   dates.reduce((m, d) => ((d.endsAt ?? d.startsAt) > m ? (d.endsAt ?? d.startsAt) : m), "");
+
+/** A card's date line: the first date, plus how many more ("+ 2 more"). */
+export function shortWhen(e: { starts_at: string; ends_at: string | null; dates?: { starts_at: string; ends_at: string | null; all_day?: boolean }[] }): string {
+  const ds = e.dates?.length ? e.dates : [{ starts_at: e.starts_at, ends_at: e.ends_at }];
+  const first = ds[0];
+  const text = first.all_day
+    ? dateText(first).replace(" · All day", "")
+    : `${dayLabel(first.starts_at)} · ${timeOf(first.starts_at)}`;
+  return ds.length > 1 ? `${text} + ${ds.length - 1} more` : text;
+}

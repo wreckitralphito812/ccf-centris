@@ -5,8 +5,7 @@ import { AddToCalendar, IconLine } from "@/components/booking";
 import { ShareButton } from "./share-button";
 import { fmtPeso } from "@/lib/format";
 import { manilaDay, manilaMinutesOf } from "@/lib/admin-day";
-import { nightLabel } from "@/lib/dgroup-tables";
-import { timeLabel } from "@/lib/ministry-rooms";
+import { dateText } from "@/lib/announcements";
 import { SITE, MAPS_LINK } from "@/lib/site";
 import type { CcfEvent } from "@/lib/types";
 
@@ -80,14 +79,18 @@ export function EventDetail({ e, others }: { e: CcfEvent; others: CcfEvent[] }) 
               </p>
               <h1 className="mt-2 text-[1.9rem] font-extrabold leading-tight tracking-[-0.02em] text-ink sm:text-[2.2rem]">{e.title}</h1>
               {e.summary ? <p className="mt-3 text-[1.02rem] leading-relaxed text-ink-soft">{e.summary}</p> : null}
+              {e.description
+                ? e.description.split(/\n{2,}/).map((para) => (
+                    <p key={para.slice(0, 40)} className="mt-3 whitespace-pre-line text-[0.98rem] leading-relaxed text-ink-soft">
+                      {para}
+                    </p>
+                  ))
+                : null}
 
               <div className="mt-6 space-y-3">
                 {dates.map((d) => (
                   <IconLine key={d.starts_at} icon="calendar">
-                    <span className={(d.ends_at ?? d.starts_at) < now ? "text-ink-mute line-through" : undefined}>
-                      {nightLabel(manilaDay(d.starts_at))}, {timeLabel(manilaMinutesOf(d.starts_at))}
-                      {d.ends_at ? ` – ${timeLabel(manilaMinutesOf(d.ends_at))}` : ""}
-                    </span>
+                    <span className={(d.ends_at ?? d.starts_at) < now ? "text-ink-mute line-through" : undefined}>{dateText(d)}</span>
                   </IconLine>
                 ))}
                 <IconLine icon="pin">{e.location_note ?? "CCF Centris"}</IconLine>
@@ -124,8 +127,8 @@ export function EventDetail({ e, others }: { e: CcfEvent; others: CcfEvent[] }) 
                     uid: `event-${e.id}-${next.starts_at}`,
                     title: e.title,
                     date: manilaDay(next.starts_at),
-                    start: hhmm(next.starts_at),
-                    end: hhmm(next.ends_at ?? next.starts_at),
+                    start: next.all_day ? "00:00" : hhmm(next.starts_at),
+                    end: next.all_day ? "23:59" : hhmm(next.ends_at ?? next.starts_at),
                     details: [e.summary, `${SITE.url}/events/${e.slug}`].filter(Boolean).join("\n\n"),
                     location: e.location_note ? `${e.location_note}, ${SITE.name}` : undefined,
                   }}

@@ -1,7 +1,5 @@
-import { downloadName, PLACEMENTS, type PlacementKey } from "@/lib/announcements";
-import { manilaDay, manilaMinutesOf } from "@/lib/admin-day";
-import { nightLabel } from "@/lib/dgroup-tables";
-import { timeLabel } from "@/lib/ministry-rooms";
+import { dateText, downloadName, PLACEMENTS, type PlacementKey } from "@/lib/announcements";
+import { manilaDay } from "@/lib/admin-day";
 import type { CcfEvent } from "@/lib/types";
 
 /* The pieces of the announcements queue (2026-10-05): the review card and
@@ -9,7 +7,7 @@ import type { CcfEvent } from "@/lib/types";
 
 export const when = (e: CcfEvent) =>
   (e.dates ?? [{ starts_at: e.starts_at, ends_at: e.ends_at }])
-    .map((d) => `${nightLabel(manilaDay(d.starts_at))}, ${timeLabel(manilaMinutesOf(d.starts_at))}${d.ends_at ? ` – ${timeLabel(manilaMinutesOf(d.ends_at))}` : ""}`)
+    .map((d) => dateText(d))
     .join(" · ");
 
 /** Every file, with its placement and a download link named for the media team. */

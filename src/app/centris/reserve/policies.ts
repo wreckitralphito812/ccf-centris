@@ -3,7 +3,10 @@ import { PRIORITY_MEETINGS } from "@/lib/ministry-rooms";
 /** Shown on the request page and accepted with one tick in the form. */
 export const ROOM_POLICIES: [string, string][] = [
   ["Approval", "The facilities team checks every request and emails you to confirm. Please wait for that email before announcing your event."],
-  ["Free for ministries", "Rooms are free for ministry use."],
+  [
+    "Free for official CCF Centris ministries",
+    "Rooms are free for ministries officially organized and serving our church community.",
+  ],
   ["Set-up time", "Your time should include setting up and packing up, so the room is ready when people arrive and free for the next group."],
   ["Priority", `When requests clash, these come first: ${PRIORITY_MEETINGS.join("; ")}.`],
   ["Food", "Bringing your own food needs no permit. Catered food does, and the team will tell you how to get one."],

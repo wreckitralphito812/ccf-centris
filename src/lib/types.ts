@@ -184,7 +184,9 @@ export interface CcfEvent {
   community_slug: string | null;
   /** Announcements (2026-10-05): every date of a series, the ministry's own
    *  sign-up link, the fee as written, and artwork by screen. */
-  dates?: { starts_at: string; ends_at: string | null }[];
+  dates?: { starts_at: string; ends_at: string | null; all_day?: boolean }[];
+  /** Booked at Centris but not promoted: shows on the calendar only (2026-10-06). */
+  calendar_only?: boolean;
   registration_url?: string | null;
   fee_note?: string | null;
   ministry?: string | null;

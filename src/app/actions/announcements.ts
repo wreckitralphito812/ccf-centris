@@ -87,6 +87,7 @@ export async function submitAnnouncement(_prev: AnnounceResult | null, fd: FormD
   const row = {
     title: a.title,
     summary: a.summary,
+    description: a.description,
     category: a.category,
     location_note: a.venue,
     organizer: a.ministry,
@@ -122,7 +123,7 @@ export async function submitAnnouncement(_prev: AnnounceResult | null, fd: FormD
   await db.from("event_dates").delete().eq("event_id", id);
   const { error: datesError } = await db
     .from("event_dates")
-    .insert(a.dates.map((d) => ({ event_id: id, starts_at: d.startsAt, ends_at: d.endsAt })));
+    .insert(a.dates.map((d) => ({ event_id: id, starts_at: d.startsAt, ends_at: d.endsAt, all_day: d.allDay })));
   if (datesError) console.error("submitAnnouncement: dates failed", datesError);
 
   const origin = siteOrigin();
