@@ -35,14 +35,19 @@ function Steps() {
     "You'll get an email within 2 working days.",
   ];
   return (
-    <ol className="space-y-3">
-      {steps.map((s, i) => (
-        <li key={s} className="flex gap-3 text-[0.98rem] leading-relaxed text-ink-soft">
-          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-clay-wash text-[0.85rem] font-bold text-clay-deep">{i + 1}</span>
-          {s}
-        </li>
-      ))}
-    </ol>
+    <>
+      <ol className="space-y-3">
+        {steps.map((s, i) => (
+          <li key={s} className="flex gap-3 text-[0.98rem] leading-relaxed text-ink-soft">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-clay-wash text-[0.85rem] font-bold text-clay-deep">{i + 1}</span>
+            {s}
+          </li>
+        ))}
+      </ol>
+      <Link href="/announce/guide" className="mt-4 inline-block text-[0.95rem] font-semibold text-clay hover:text-clay-deep">
+        Read the full guide →
+      </Link>
+    </>
   );
 }
 
