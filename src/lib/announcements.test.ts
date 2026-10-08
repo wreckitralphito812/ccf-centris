@@ -114,3 +114,9 @@ test("dates read the way people say them", () => {
   assert.equal(dateText({ starts_at: "2026-10-23T16:00:00Z", ends_at: "2026-10-24T15:59:00Z", all_day: true }), "Sat, Oct 24 · All day");
   assert.deepEqual(daysCovered({ starts_at: "2026-10-15T16:00:00Z", ends_at: "2026-10-18T15:59:00Z", all_day: true }), ["2026-10-16", "2026-10-17", "2026-10-18"]);
 });
+
+test("admins can keep dates that have passed, for a series already under way", () => {
+  const series = form({ date: ["2026-10-10", "2026-11-07"], start: ["15:30", "15:30"], end: ["", ""] });
+  assert.equal(parseAnnouncement(series, "2026-10-20").ok, false);
+  assert.ok(parseAnnouncement(series, "2026-10-20", { allowPast: true }).ok);
+});

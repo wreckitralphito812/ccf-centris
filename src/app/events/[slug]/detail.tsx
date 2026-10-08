@@ -25,8 +25,10 @@ export function EventDetail({ e, others }: { e: CcfEvent; others: CcfEvent[] }) 
   const now = new Date().toISOString();
   const dates = datesOf(e);
   const next = dates.find((d) => (d.ends_at ?? d.starts_at) >= now) ?? dates[dates.length - 1];
-  const wide = e.artwork?.main_tv ?? e.cover_image_url;
-  const tall = e.artwork?.social;
+  // The poster the admin added (any shape) wins; otherwise the ministry's
+  // Main Hall TV file, with its phone version on small screens (2026-10-08).
+  const wide = e.cover_image_url ?? e.artwork?.main_tv ?? null;
+  const tall = wide && wide === e.artwork?.main_tv ? e.artwork?.social : undefined;
   const fee = e.fee_note ?? (e.price_cents ? fmtPeso(e.price_cents) : "Free");
 
   const jsonLd = {
@@ -66,7 +68,7 @@ export function EventDetail({ e, others }: { e: CcfEvent; others: CcfEvent[] }) 
                 <picture>
                   {tall ? <source media="(max-width: 639px)" srcSet={tall} /> : null}
                   {/* Uploaded artwork; its store's host isn't in next/image's list. */}
-                  <img src={wide} alt={`${e.title} poster`} className="block h-auto w-full" />
+                  <img src={wide} alt={`${e.title} poster`} className="mx-auto block h-auto max-h-[80vh] w-auto max-w-full" />
                 </picture>
               ) : (
                 <MessageArt seed={e.slug} label={e.category ?? "Event"} className="aspect-video w-full" />

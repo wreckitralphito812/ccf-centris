@@ -337,6 +337,37 @@ export async function getAnnouncementQueue(): Promise<CcfEvent[]> {
   return (data ?? []).map(eventFromRow);
 }
 
+/**
+ * Every event the admin events page manages (2026-10-08): published, hidden
+ * (`draft`) and calendar-only, past and future. Reps' submissions that are
+ * still in review stay on the announcements page.
+ */
+export async function getAdminEvents(): Promise<CcfEvent[]> {
+  if (!hasSupabase()) return [];
+  const { data, error } = await supabaseAdmin()
+    .from("events")
+    .select(EVENT_COLUMNS)
+    .eq("satellite_id", SATELLITE_ID)
+    .in("status", ["published", "draft", "completed"])
+    .order("starts_at")
+    .limit(500);
+  if (error) console.error("getAdminEvents failed", error);
+  return (data ?? []).map(eventFromRow);
+}
+
+/** One event for the admin edit page, whatever its status. */
+export async function getAdminEvent(id: string): Promise<CcfEvent | null> {
+  if (!hasSupabase() || !/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const { data, error } = await supabaseAdmin()
+    .from("events")
+    .select(EVENT_COLUMNS)
+    .eq("satellite_id", SATELLITE_ID)
+    .eq("id", id)
+    .maybeSingle();
+  if (error) console.error("getAdminEvent failed", error);
+  return data ? eventFromRow(data) : null;
+}
+
 export interface AnnouncementRep {
   id: string;
   email: string;

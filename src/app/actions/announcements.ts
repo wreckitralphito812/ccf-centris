@@ -24,6 +24,8 @@ export interface AnnounceResult {
   formError?: string;
   errors?: AnnouncementErrors;
   message?: string;
+  /** Set by the admin save (2026-10-08) for the success screen's links. */
+  event?: { id: string; slug: string; status: string; calendarOnly: boolean };
 }
 
 const GENERIC = "Something went wrong on our end. Try again in a moment.";

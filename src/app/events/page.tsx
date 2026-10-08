@@ -9,6 +9,7 @@ import {
 } from "@/components/ui";
 import { EventCard, MessageArt } from "@/components/cards";
 import { PosterRail } from "@/components/poster-rail";
+import { PosterImage } from "@/components/poster-image";
 import { getEventCategories, getUpcomingEvents } from "@/lib/queries";
 import { fmtMonthYear } from "@/lib/format";
 import type { CcfEvent } from "@/lib/types";
@@ -237,14 +238,10 @@ function PosterCard({ e, dark }: { e: CcfEvent; dark?: boolean }) {
     <Link href={`/events/${e.slug}`} className="group block">
       <div className="relative aspect-video overflow-hidden bg-ink/10">
         {e.cover_image_url ? (
-          // Posters are uploaded by the admin from anywhere, so they can't
-          // go through next/image's fixed list of allowed hosts.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <PosterImage
             src={e.cover_image_url}
             alt={`${e.title} poster`}
-            loading="lazy"
-            className="no-frame h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            imgClassName="transition-transform duration-500 group-hover:scale-[1.03]"
           />
         ) : (
           <MessageArt

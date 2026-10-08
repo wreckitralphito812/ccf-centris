@@ -26,5 +26,8 @@ export function initialFrom(e: CcfEvent): AnnounceInitial {
     registrationUrl: e.registration_url,
     feeNote: e.fee_note,
     artwork: e.artwork,
+    // A poster is "separate" when it isn't just the Main Hall TV file.
+    posterUrl: e.cover_image_url && e.cover_image_url !== e.artwork?.main_tv ? e.cover_image_url : null,
+    status: e.status,
   };
 }

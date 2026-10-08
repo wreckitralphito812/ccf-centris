@@ -1,15 +1,13 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { revalidatePath } from "next/cache";
-
-import { lastEnd, parseAnnouncement, slugFor, type AnnouncementErrors } from "@/lib/announcements";
+import { isOurUpload, lastEnd, parseAnnouncement, slugFor, type AnnouncementErrors } from "@/lib/announcements";
 import { manilaDateKey } from "@/lib/format";
 
-import { isAdmin, isAdminConfigured } from "@/lib/admin-auth";
+import { adminWriteBlocked, refreshEventPages } from "@/lib/admin-events";
 import { sendEmail, siteOrigin } from "@/lib/email";
 import { announcementEmail } from "@/lib/emails/announcement";
-import { hasSupabase, SATELLITE_ID, supabaseAdmin } from "@/lib/supabase/server";
+import { SATELLITE_ID, supabaseAdmin } from "@/lib/supabase/server";
 
 /**
  * Announcements, the review side (2026-10-05): approve, send back for
@@ -22,19 +20,16 @@ export interface ReviewResult {
   formError?: string;
   message?: string;
   errors?: AnnouncementErrors;
+  /** The saved event, for the admin form's success links. */
+  event?: { id: string; slug: string; status: string; calendarOnly: boolean };
 }
 
 async function guard(): Promise<ReviewResult | null> {
-  if (!isAdminConfigured()) return { ok: false, formError: "Admin is read-only: no access code configured." };
-  if (!(await isAdmin())) return { ok: false, formError: "Not signed in." };
-  if (!hasSupabase()) return { ok: false, formError: "Not connected to the database." };
-  return null;
+  const blocked = await adminWriteBlocked();
+  return blocked ? { ok: false, formError: blocked } : null;
 }
 
-function refresh(slug?: string) {
-  for (const p of ["/admin/announcements", "/announce", "/events", "/events/calendar", "/"]) revalidatePath(p);
-  if (slug) revalidatePath(`/events/${slug}`);
-}
+const refresh = refreshEventPages;
 
 const STATUS = { approve: "published", changes: "changes_requested", decline: "declined", takedown: "cancelled" } as const;
 
@@ -154,10 +149,20 @@ export async function adminSaveEvent(_prev: ReviewResult | null, fd: FormData): 
   const blocked = await guard();
   if (blocked) return blocked;
 
-  const parsed = parseAnnouncement(fd, manilaDateKey(), { artworkRequired: false });
+  const parsed = parseAnnouncement(fd, manilaDateKey(), { artworkRequired: false, allowPast: true });
   if (!parsed.ok) return { ok: false, errors: parsed.errors, formError: "A few things need fixing below." };
   const a = parsed.value;
   const calendarOnly = fd.get("calendar_only") === "1";
+  // The website poster can be any shape (2026-10-08); without one, the
+  // ministry's Main Hall TV file stands in, as for reps' announcements.
+  const posterField = String(fd.get("poster_url") ?? "").trim();
+  if (posterField && !isOurUpload(posterField)) {
+    return { ok: false, errors: { artwork: "The poster didn't upload properly. Upload it again." }, formError: "A few things need fixing below." };
+  }
+  // New events are published or saved hidden; an edit keeps the event's
+  // current status unless the form says otherwise.
+  const publish = fd.get("publish");
+  const status = publish === "1" ? "published" : publish === "0" ? "draft" : null;
 
   const db = supabaseAdmin();
   const editId = String(fd.get("id") ?? "").trim();
@@ -177,19 +182,19 @@ export async function adminSaveEvent(_prev: ReviewResult | null, fd: FormData): 
     fee_note: a.feeNote,
     price_cents: 0,
     artwork: a.artwork,
-    cover_image_url: a.artwork.main_tv ?? null,
+    cover_image_url: posterField || a.artwork.main_tv || null,
     calendar_only: calendarOnly,
-    status: "published",
+    ...(status || !editId ? { status: status ?? "published" } : {}),
     review_note: null,
     reviewed_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
   const { data: saved, error } = editId
-    ? await db.from("events").update(row).eq("id", id).eq("satellite_id", SATELLITE_ID).select("slug").maybeSingle()
+    ? await db.from("events").update(row).eq("id", id).eq("satellite_id", SATELLITE_ID).select("slug, status").maybeSingle()
     : await db
         .from("events")
         .insert({ ...row, id, satellite_id: SATELLITE_ID, slug: slugFor(a.title, manilaDateKey(new Date(a.dates[0].startsAt)), id) })
-        .select("slug")
+        .select("slug, status")
         .maybeSingle();
   if (error || !saved) {
     console.error("adminSaveEvent failed", error);
@@ -203,8 +208,14 @@ export async function adminSaveEvent(_prev: ReviewResult | null, fd: FormData): 
   if (datesError) console.error("adminSaveEvent: dates failed", datesError);
 
   refresh(saved.slug as string);
+  const hidden = saved.status !== "published";
   return {
     ok: true,
-    message: calendarOnly ? "Saved. It's on the month calendar." : "Published. It's live on What's Happening and the calendar.",
+    message: hidden
+      ? "Saved, and hidden. It won't show on the site until you show it from the events list."
+      : calendarOnly
+        ? "Saved. It's on the month calendar."
+        : "Saved. It's live on What's Happening and the calendar.",
+    event: { id, slug: saved.slug as string, status: saved.status as string, calendarOnly },
   };
 }

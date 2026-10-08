@@ -14,6 +14,7 @@ import {
 } from "@/lib/format";
 import { Pill, cx } from "./ui";
 import { YouTubeThumb } from "./youtube-thumb";
+import { PosterImage } from "@/components/poster-image";
 
 /* --- Message ---------------------------------------------------------------- */
 
@@ -146,9 +147,7 @@ export function EventCard({ e }: { e: CcfEvent }) {
       <Link href={`/events/${e.slug}`} className="flex h-full flex-col">
         <div className="relative aspect-[16/9] overflow-hidden">
           {e.cover_image_url ? (
-            // Uploaded announcement artwork (2026-10-05); its store's host isn't in next/image's list.
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={e.cover_image_url} alt={`${e.title} poster`} loading="lazy" className="no-frame h-full w-full object-cover" />
+            <PosterImage src={e.cover_image_url} alt={`${e.title} poster`} />
           ) : (
             <MessageArt seed={e.slug} label={e.category ?? "Event"} className="h-full w-full" />
           )}
