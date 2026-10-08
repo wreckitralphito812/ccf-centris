@@ -23,6 +23,7 @@ import {
   topicLabel,
   type Topic,
 } from "@/lib/prayer-wall";
+import { keepForm } from "@/lib/keep-form";
 
 /**
  * The Prayer Wall as cards (2026-10-01). Ralph found the old list of text
@@ -239,7 +240,7 @@ function NameForm({
 }) {
   const [state, action, pending] = useActionState<WallResult | null, FormData>(setScreenName, null);
   return (
-    <form action={action} className={className}>
+    <form action={action} onSubmit={keepForm(action)} className={className}>
       <input type="hidden" name="next" value="/prayer-wall" />
       <label htmlFor="screen_name" className="block text-[0.95rem] font-semibold text-ink">
         Screen name

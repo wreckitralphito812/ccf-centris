@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { addAnnouncementRep, reviewAnnouncement, type ReviewResult } from "@/app/actions/admin-announcements";
 import { cx } from "@/components/ui";
+import { keepForm } from "@/lib/keep-form";
 
 const BTN = "btn-press min-h-10 rounded-lg px-4 text-[0.92rem] font-semibold transition-colors disabled:opacity-50";
 
@@ -11,7 +12,7 @@ export function ReviewActions({ id }: { id: string }) {
   const [state, action, pending] = useActionState<ReviewResult | null, FormData>(reviewAnnouncement, null);
   if (state?.ok) return <p className="font-semibold text-moss">{state.message}</p>;
   return (
-    <form action={action} className="space-y-3">
+    <form action={action} onSubmit={keepForm(action)} className="space-y-3">
       <input type="hidden" name="id" value={id} />
       <label className="block">
         <span className="block text-[0.88rem] font-semibold text-ink">
@@ -43,7 +44,8 @@ export function TakeDown({ id }: { id: string }) {
     <form
       action={action}
       onSubmit={(e) => {
-        if (!window.confirm("Take this announcement off What's Happening?")) e.preventDefault();
+        if (!window.confirm("Take this announcement off What's Happening?")) return e.preventDefault();
+        keepForm(action)(e);
       }}
     >
       <input type="hidden" name="id" value={id} />
@@ -61,7 +63,7 @@ export function AddRepForm() {
   const [state, action, pending] = useActionState<ReviewResult | null, FormData>(addAnnouncementRep, null);
   const input = "calm-input min-h-11 w-full px-3.5 text-[0.95rem] text-ink";
   return (
-    <form action={action} className="space-y-3 p-5">
+    <form action={action} onSubmit={keepForm(action)} className="space-y-3 p-5">
       <div className="grid gap-3 sm:grid-cols-3">
         <input name="email" type="email" required placeholder="Email they sign in with" className={input} />
         <input name="name" placeholder="Name" maxLength={120} className={input} />

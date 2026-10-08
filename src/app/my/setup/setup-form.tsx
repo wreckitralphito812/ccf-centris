@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { completeProfile, type SetupResult } from "@/app/actions/account";
 import { FormNote, IconField, PhoneField, submitClass } from "@/components/auth-fields";
+import { keepForm } from "@/lib/keep-form";
 
 /**
  * "About you", once after the first sign-in: name and mobile number
@@ -26,7 +27,7 @@ export function SetupForm({
   const e = state?.fieldErrors ?? {};
 
   return (
-    <form action={action} className="space-y-5">
+    <form action={action} onSubmit={keepForm(action)} className="space-y-5">
       <input type="hidden" name="next" value={next} />
       {email ? (
         <p className="text-[0.95rem] text-ink-mute">

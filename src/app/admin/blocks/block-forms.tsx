@@ -5,6 +5,7 @@ import { addRoomBlock, addTableBlock, type ToolResult } from "@/app/actions/admi
 import { cx } from "@/components/ui";
 import { DGROUP_ROOMS, DGROUP_SLOTS } from "@/lib/dgroup-tables";
 import { MINISTRY_ROOMS } from "@/lib/ministry-rooms";
+import { keepForm } from "@/lib/keep-form";
 
 const INPUT = "calm-input min-h-11 w-full px-3.5 text-[0.95rem] text-ink";
 const LABEL = "block text-[0.88rem] font-semibold text-ink";
@@ -30,7 +31,7 @@ export function TableBlockForm({ today }: { today: string }) {
   const tables = DGROUP_ROOMS.find((r) => r.slug === room)?.tables ?? [];
 
   return (
-    <form action={action} className="space-y-4 p-5">
+    <form action={action} onSubmit={keepForm(action)} className="space-y-4 p-5">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <label className="block">
           <span className={LABEL}>Room</span>
@@ -88,7 +89,7 @@ export function TableBlockForm({ today }: { today: string }) {
 export function RoomBlockForm({ today }: { today: string }) {
   const [state, action, pending] = useActionState<ToolResult | null, FormData>(addRoomBlock, null);
   return (
-    <form action={action} className="space-y-4 p-5">
+    <form action={action} onSubmit={keepForm(action)} className="space-y-4 p-5">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <label className="block">
           <span className={LABEL}>Room</span>

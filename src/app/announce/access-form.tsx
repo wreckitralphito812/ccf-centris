@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { requestAnnouncementAccess, type AnnounceResult } from "@/app/actions/announcements";
+import { keepForm } from "@/lib/keep-form";
 
 /** Ask to post announcements; the admin inbox is told. */
 export function AccessForm() {
@@ -10,7 +11,7 @@ export function AccessForm() {
     return <p className="rounded-xl bg-clay-wash px-5 py-4 font-semibold text-clay-deep">{state.message}</p>;
   }
   return (
-    <form action={action} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+    <form action={action} onSubmit={keepForm(action)} className="flex flex-col gap-3 sm:flex-row sm:items-end">
       <label className="block flex-1">
         <span className="block text-[0.98rem] font-semibold text-ink">Which ministry do you post for?</span>
         <input name="ministry" maxLength={80} required placeholder="e.g. Elevate, Kids, Ushering" className="calm-input mt-1.5 min-h-12 w-full px-4 text-[1rem] text-ink" />

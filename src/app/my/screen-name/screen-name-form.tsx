@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { setScreenName, type WallResult } from "@/app/actions/prayer-wall";
 import { SCREEN_NAME_RULE } from "@/lib/prayer-wall";
+import { keepForm } from "@/lib/keep-form";
 
 export function ScreenNameForm({ next, current }: { next: string; current: string }) {
   const [state, action, pending] = useActionState<WallResult | null, FormData>(
@@ -11,7 +12,7 @@ export function ScreenNameForm({ next, current }: { next: string; current: strin
   );
 
   return (
-    <form action={action} className="max-w-md">
+    <form action={action} onSubmit={keepForm(action)} className="max-w-md">
       <input type="hidden" name="next" value={next} />
       <label htmlFor="screen_name" className="label text-clay">
         Screen name

@@ -18,6 +18,7 @@ import {
   type Artwork,
   type PlacementKey,
 } from "@/lib/announcements";
+import { keepForm } from "@/lib/keep-form";
 
 /**
  * The one form ministries use to post an announcement (2026-10-05): their
@@ -392,7 +393,7 @@ export function AnnounceForm({
     );
 
   return (
-    <form action={action} className="calm-card px-5 py-8 sm:px-9 sm:py-10">
+    <form action={action} onSubmit={keepForm(action)} className="calm-card px-5 py-8 sm:px-9 sm:py-10">
       <DropGuard />
       {initial?.id ? <input type="hidden" name="id" value={initial.id} /> : null}
       {admin ? <input type="hidden" name="calendar_only" value={calendarOnly ? "1" : "0"} /> : null}

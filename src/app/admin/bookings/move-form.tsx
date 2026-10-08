@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { adminMoveDgroupBooking, type ToolResult } from "@/app/actions/admin-tools";
 import { cx } from "@/components/ui";
 import { DGROUP_SLOTS } from "@/lib/dgroup-tables";
+import { keepForm } from "@/lib/keep-form";
 
 /** Move a Dgroup booking to another weekday and time; tables are reassigned. */
 export function MoveForm({ id, date, slot, today }: { id: string; date: string; slot: string; today: string }) {
@@ -20,7 +21,7 @@ export function MoveForm({ id, date, slot, today }: { id: string; date: string; 
   }
   const input = "calm-input min-h-10 px-3 text-[0.9rem] text-ink";
   return (
-    <form action={action} className="flex flex-wrap items-end gap-2">
+    <form action={action} onSubmit={keepForm(action)} className="flex flex-wrap items-end gap-2">
       <input type="hidden" name="id" value={id} />
       <label className="block">
         <span className="sr-only">New day</span>
