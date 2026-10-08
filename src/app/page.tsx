@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getServiceWindow } from "@/lib/queries";
+import { getServiceWindow, getUpcomingEvents, getUpcomingServices } from "@/lib/queries";
+import { featuredEvent, weekAgenda } from "@/lib/whats-on";
+import { FeaturedEvent, ThisWeek, WhatsHappening } from "@/components/home/whats-on";
 import type { Replay } from "@/lib/ccf-net";
 import { getWatchReplay } from "@/lib/watch";
 import {
@@ -41,19 +43,29 @@ export const revalidate = 1800;
  *
  *   1. Welcome: the photo in a rounded frame (the calm look, 2026-09-30),
  *      with the visit card beside the welcome on desktop and below on phones
- *   2. Take your next step: prayer, a Dgroup, a team
- *   3. Last Sunday: the CCF Net replay and this week's 4Ws
+ *   2. What's on (2026-10-08): a banner for the next big event, this week
+ *      at Centris, and What's Happening's posters. Each hides when empty.
+ *   3. Take your next step: prayer, a Dgroup, a team
+ *   4. Last Sunday: the CCF Net replay and this week's 4Ws
  */
 export default async function HomePage() {
-  const [service, { replay }, fourWs] = await Promise.all([
+  const [service, { replay }, fourWs, events, services] = await Promise.all([
     getServiceWindow(),
     getWatchReplay(),
     getCurrentFourWsGuide(),
+    getUpcomingEvents(undefined, { includeCalendarOnly: true }),
+    getUpcomingServices(12),
   ]);
+  const featured = featuredEvent(events);
+  const week = weekAgenda({ events, services, includeEmpty: true });
+  const posters = events.filter((e) => !e.calendar_only && e.id !== featured?.event.id).slice(0, 6);
 
   return (
     <>
       <Welcome live={service.current !== null} />
+      {featured ? <FeaturedEvent featured={featured} /> : null}
+      {week.some((d) => d.items.length) ? <ThisWeek days={week} /> : null}
+      {posters.length ? <WhatsHappening events={posters} /> : null}
       <NextSteps accounts={hasAccounts()} />
       <LastSunday replay={replay} fourWs={fourWs} />
     </>
