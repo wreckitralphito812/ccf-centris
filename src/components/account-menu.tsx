@@ -143,6 +143,9 @@ function SignedInMenu({ email }: { email: string }) {
             <Link href="/my/reservations" role="menuitem" className={item} onClick={() => setOpen(false)}>
               My reservations
             </Link>
+            <Link href="/my/dgroups" role="menuitem" className={item} onClick={() => setOpen(false)}>
+              My Dgroups
+            </Link>
             <form
               action={async () => {
                 await signOut();
@@ -203,7 +206,14 @@ export function MobileAccount() {
         >
           My reservations
         </Link>
+        <Link
+          href="/my/dgroups"
+          className="btn-press flex min-h-12 items-center justify-center rounded-lg border border-edge bg-paper-bright text-[1rem] font-semibold text-ink"
+        >
+          My Dgroups
+        </Link>
         <form
+          className="col-span-2"
           action={async () => {
             await signOut();
             // eslint-disable-next-line @next/next/no-location-assign-relative-destination

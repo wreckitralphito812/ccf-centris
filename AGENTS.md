@@ -41,7 +41,12 @@ to end against a local copy first: `scripts/local-db/start.sh` builds a
 throwaway Postgres + PostgREST with every migration and seed events, and
 prints the two `SUPABASE_*` lines for `.env.development.local` (add a local
 `ADMIN_ACCESS_CODE`). Needs `brew install postgresql@16 postgrest`. Never
-point local dev at the production database.
+point local dev at the production database. For member flows (sign-in, My Dgroups,
+bookings), also run the Firebase Auth emulator
+(`npx firebase-tools emulators:start --only auth --project demo-ccf-centris`),
+set `NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-ccf-centris` and both
+`*FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099` locally, and create test
+accounts there; leave `RESEND_API_KEY` empty so no real email goes out.
 
 ## Layout
 

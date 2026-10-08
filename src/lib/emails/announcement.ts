@@ -17,7 +17,7 @@ const FONT = "Manrope, 'Helvetica Neue', Arial, sans-serif";
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-function layout(d: {
+export function noticeLayout(d: {
   origin: string;
   eyebrow: string;
   headline: string;
@@ -101,7 +101,7 @@ export function announcementEmail(d: {
   }[d.kind];
   return {
     subject: copy.subject,
-    ...layout({ origin: d.origin, eyebrow: "What's Happening", headline: copy.headline, paragraphs: copy.paragraphs, note: d.note, button: copy.button }),
+    ...noticeLayout({ origin: d.origin, eyebrow: "What's Happening", headline: copy.headline, paragraphs: copy.paragraphs, note: d.note, button: copy.button }),
   };
 }
 
@@ -116,7 +116,7 @@ export function adminAnnouncementEmail(d: {
   if (d.kind === "access") {
     return {
       subject: `Announcement access request: ${d.who}`,
-      ...layout({
+      ...noticeLayout({
         origin: d.origin,
         eyebrow: "Announcements",
         headline: "Someone asked to post announcements.",
@@ -127,7 +127,7 @@ export function adminAnnouncementEmail(d: {
   }
   return {
     subject: `Waiting for review: ${d.title}`,
-    ...layout({
+    ...noticeLayout({
       origin: d.origin,
       eyebrow: "Announcements",
       headline: "An announcement is waiting for review.",

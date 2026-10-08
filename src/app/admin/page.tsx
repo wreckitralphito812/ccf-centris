@@ -11,8 +11,7 @@ import {
   Td,
 } from "./admin-ui";
 import {
-  findDgroups,
-  getDgroupInquiries,
+  getRegisteredDgroups,
   getReservations,
   getServiceWindow,
   getUpcomingEvents,
@@ -26,21 +25,21 @@ export const metadata: Metadata = { title: "Dashboard" };
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
-  const [window, events, dgroups, roles, reservations, inquiries, applications] =
+  const [window, events, dgroups, roles, reservations, applications] =
     await Promise.all([
       getServiceWindow(),
       getUpcomingEvents(5),
-      findDgroups({}),
+      getRegisteredDgroups(),
       getVolunteerRoles(),
       getReservations(),
-      getDgroupInquiries(),
       getVolunteerApplications(),
     ]);
 
   const pending = reservations.filter((r) => r.status === "pending");
-  const openInquiries = inquiries.filter(
-    (e) => e.status === "new" || e.status === "contacted",
-  );
+  // Real Dgroups registered by their leaders (2026-10-08); the template
+  // counted twelve sample groups here.
+  const dgroupsWaiting = dgroups.filter((d) => d.status === "pending");
+  const dgroupsApproved = dgroups.filter((d) => d.status === "approved");
   const freshApplications = applications.filter((a) => a.status === "submitted");
 
   return (
@@ -53,7 +52,7 @@ export default async function AdminDashboard() {
       {/* Queues first: the things a person has to act on. */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Awaiting approval" value={pending.length} tone="clay" note="Reservation requests" />
-        <Stat label="Dgroup enquiries" value={openInquiries.length} tone="clay" note="New or in conversation" />
+        <Stat label="Dgroups to approve" value={dgroupsWaiting.length} tone="clay" note="Registered by their leaders" />
         <Stat label="Volunteer applications" value={freshApplications.length} tone="clay" note="Awaiting a first reply" />
         <Stat
           label="Next service"
@@ -64,7 +63,11 @@ export default async function AdminDashboard() {
 
       {/* Then the picture. */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Open Dgroups" value={dgroups.length} note="Accepting new members" />
+        <Stat
+          label="Approved Dgroups"
+          value={dgroupsApproved.length}
+          note={`${dgroupsApproved.filter((d) => d.is_open).length} open to new members`}
+        />
         <Stat label="Upcoming events" value={events.length} note="Published and dated" />
         <Stat label="Volunteer roles" value={roles.length} note="Across all teams" />
         <Stat label="Reservations total" value={reservations.length} note="All statuses, all time" />
@@ -156,7 +159,7 @@ export default async function AdminDashboard() {
         <div className="grid gap-px bg-hairline sm:grid-cols-2 lg:grid-cols-4">
           <QuickLink href="/admin/services" title="Services" note="Schedule, speakers, and the livestream" />
           <QuickLink href="/admin/messages" title="Messages" note="Publish teaching and attach the 4Ws" />
-          <QuickLink href="/admin/dgroups" title="Dgroups" note="Groups, leaders, and enquiries" />
+          <QuickLink href="/admin/dgroups" title="Dgroups" note="Leaders' registrations, to approve" />
           <QuickLink href="/admin/reservations" title="Reservations" note="Approve, reject, and resolve clashes" />
           <QuickLink href="/admin/facilities" title="Facilities" note="Rates, hours, blackouts, and courts" />
           <QuickLink href="/admin/prayer" title="Prayer requests" note="Prayer and pastoral teams only" />

@@ -230,6 +230,9 @@ export async function getDgroup(id: string) {
 }
 
 export async function getDgroupsForCommunity(slug: string) {
+  // Registered Dgroups (2026-10-08) aren't tied to communities, and the seed
+  // groups are samples: with a database, there are none to count.
+  if (hasSupabase()) return [];
   return dgroups.filter((d) => d.community_slug === slug && d.is_open);
 }
 
@@ -933,6 +936,10 @@ export interface AdminReservation {
   food: string | null;
 }
 
+/** The `name` of a row PostgREST embedded (as an object, or a one-item list). */
+const embeddedName = (v: unknown): string | null =>
+  ((Array.isArray(v) ? v[0] : v) as { name?: string } | null | undefined)?.name ?? null;
+
 /** A Dgroup table request in the admin queue. */
 export interface AdminDgroupTable {
   id: string;
@@ -949,6 +956,8 @@ export interface AdminDgroupTable {
   status: string;
   created_at: string;
   decided_at: string | null;
+  /** The registered Dgroup the booking is for, when the leader picked one (2026-10-08). */
+  dgroup_name?: string | null;
 }
 
 export interface AdminInquiry {
@@ -973,7 +982,7 @@ export async function getDgroupTableBookings(): Promise<AdminDgroupTable[]> {
   const { data, error } = await supabaseAdmin()
     .from("dgroup_table_bookings")
     .select(
-      "id, leader_name, contact_mobile, leader_email, group_size, room_slug, table_label, table_labels, table_seats, booked_on, slot_id, status, created_at, decided_at",
+      "id, leader_name, contact_mobile, leader_email, group_size, room_slug, table_label, table_labels, table_seats, booked_on, slot_id, status, created_at, decided_at, dgroups(name)",
     )
     .eq("satellite_id", SATELLITE_ID)
     .order("booked_on", { ascending: true })
@@ -994,6 +1003,7 @@ export async function getDgroupTableBookings(): Promise<AdminDgroupTable[]> {
     table_labels: (r.table_labels as string[] | null) ?? [r.table_label as string],
     table_seats: r.table_seats as number,
     leader_email: (r.leader_email as string | null) ?? null,
+    dgroup_name: embeddedName(r.dgroups),
     booked_on: r.booked_on as string,
     slot_id: r.slot_id as string,
     status: r.status as string,
@@ -1271,11 +1281,92 @@ export async function searchBookings(raw: string): Promise<{ tables: AdminDgroup
   const [tables, rooms] = await Promise.all([getDgroupTableBookings(), getReservations()]);
   return {
     tables: tables
-      .filter((t) => has(t.leader_name) || has(t.leader_email) || has(t.contact_mobile))
+      .filter((t) => has(t.leader_name) || has(t.leader_email) || has(t.contact_mobile) || has(t.dgroup_name))
       .sort((a, b) => b.booked_on.localeCompare(a.booked_on))
       .slice(0, 40),
     rooms: rooms
       .filter((r) => has(r.contact_name) || has(r.contact_email) || has(r.activity_name) || has(r.organization) || has(r.contact_mobile))
       .slice(0, 40),
   };
+}
+
+// --- Dgroup registry (2026-10-08) --------------------------------------------
+
+/** A Dgroup a leader registered. Only admins and its own leader see it. */
+export interface RegisteredDgroup {
+  id: string;
+  name: string;
+  audience: string;
+  day_of_week: number | null;
+  start_time: string | null;
+  frequency: string;
+  meets_where: string;
+  general_area: string | null;
+  current_size: number;
+  is_open: boolean;
+  leader_id: string | null;
+  leader_name: string | null;
+  leader_mobile: string | null;
+  leader_email: string | null;
+  co_leader_name: string | null;
+  description: string | null;
+  status: string;
+  review_note: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+  updated_at: string;
+}
+
+const DGROUP_COLUMNS =
+  "id, name, audience, day_of_week, start_time, frequency, meets_where, general_area, current_size, is_open, leader_id, leader_name, leader_mobile, leader_email, co_leader_name, description, status, review_note, created_at, reviewed_at, updated_at";
+
+/** This member's Dgroups, newest first. Scoped to the member, never an id from the request. */
+export async function getMyDgroups(memberId: string): Promise<RegisteredDgroup[]> {
+  if (!hasSupabase()) return [];
+  const { data, error } = await supabaseAdmin()
+    .from("dgroups")
+    .select(DGROUP_COLUMNS)
+    .eq("satellite_id", SATELLITE_ID)
+    .eq("leader_id", memberId)
+    .order("created_at", { ascending: false });
+  if (error) console.error("getMyDgroups failed", error);
+  return (data ?? []) as RegisteredDgroup[];
+}
+
+/** One of this member's Dgroups, or null if it isn't theirs. */
+export async function getMyDgroup(memberId: string, id: string): Promise<RegisteredDgroup | null> {
+  if (!hasSupabase() || !/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const { data, error } = await supabaseAdmin()
+    .from("dgroups")
+    .select(DGROUP_COLUMNS)
+    .eq("satellite_id", SATELLITE_ID)
+    .eq("leader_id", memberId)
+    .eq("id", id)
+    .maybeSingle();
+  if (error) console.error("getMyDgroup failed", error);
+  return (data as RegisteredDgroup | null) ?? null;
+}
+
+/** Every registered Dgroup with how often it has booked tables, for the admin console. */
+export async function getRegisteredDgroups(): Promise<(RegisteredDgroup & { bookings: number; last_booked: string | null })[]> {
+  if (!hasSupabase()) return [];
+  const db = supabaseAdmin();
+  const [{ data, error }, { data: bookings }] = await Promise.all([
+    db.from("dgroups").select(DGROUP_COLUMNS).eq("satellite_id", SATELLITE_ID).order("created_at", { ascending: false }),
+    db
+      .from("dgroup_table_bookings")
+      .select("dgroup_id, booked_on")
+      .eq("satellite_id", SATELLITE_ID)
+      .eq("status", "confirmed")
+      .not("dgroup_id", "is", null),
+  ]);
+  if (error) console.error("getRegisteredDgroups failed", error);
+  const stats = new Map<string, { bookings: number; last_booked: string | null }>();
+  for (const b of (bookings ?? []) as { dgroup_id: string; booked_on: string }[]) {
+    const s = stats.get(b.dgroup_id) ?? { bookings: 0, last_booked: null };
+    s.bookings += 1;
+    if (!s.last_booked || b.booked_on > s.last_booked) s.last_booked = b.booked_on;
+    stats.set(b.dgroup_id, s);
+  }
+  return ((data ?? []) as RegisteredDgroup[]).map((d) => ({ ...d, ...(stats.get(d.id) ?? { bookings: 0, last_booked: null }) }));
 }

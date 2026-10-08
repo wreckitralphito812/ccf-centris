@@ -104,7 +104,30 @@ export async function reserveDgroupTable(
 
   const parsed = parseDgroupBooking(formData, today, manilaMinutes());
   if (!parsed.ok) return { ok: false, fieldErrors: parsed.fieldErrors };
-  return bookTables(user.id, parsed.value);
+  const result = await bookTables(user.id, parsed.value);
+  if (result.ok && result.booking) await linkDgroup(user.id, result.booking.id, String(formData.get("dgroup_id") ?? ""));
+  return result;
+}
+
+/**
+ * Note which Dgroup a booking is for (2026-10-08), so the team sees which
+ * groups meet at Centris. Only the member's own approved Dgroup counts; a
+ * failure here never undoes the booking.
+ */
+async function linkDgroup(memberId: string, bookingId: string, dgroupId: string | null) {
+  if (!dgroupId || !/^[0-9a-f-]{36}$/i.test(dgroupId)) return;
+  const db = supabaseAdmin();
+  const { data: mine } = await db
+    .from("dgroups")
+    .select("id")
+    .eq("id", dgroupId)
+    .eq("satellite_id", SATELLITE_ID)
+    .eq("leader_id", memberId)
+    .eq("status", "approved")
+    .maybeSingle();
+  if (!mine) return;
+  const { error } = await db.from("dgroup_table_bookings").update({ dgroup_id: dgroupId }).eq("id", bookingId).eq("user_id", memberId);
+  if (error) console.error("linkDgroup failed", error);
 }
 
 /**
@@ -121,7 +144,7 @@ export async function rebookDgroupTable(id: string): Promise<DgroupBookingResult
 
   const { data: row, error } = await supabaseAdmin()
     .from("dgroup_table_bookings")
-    .select("booked_on, slot_id, group_size, leader_name, leader_email, contact_mobile")
+    .select("booked_on, slot_id, group_size, leader_name, leader_email, contact_mobile, dgroup_id")
     .eq("id", id)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -130,7 +153,7 @@ export async function rebookDgroupTable(id: string): Promise<DgroupBookingResult
   const date = rebookDate(row.booked_on as string, row.slot_id as string, today, manilaMinutes());
   if (!date) return { ok: false, formError: "That week isn’t open yet. Next week opens on Sunday." };
 
-  return bookTables(user.id, {
+  const result = await bookTables(user.id, {
     date,
     slotId: row.slot_id as string,
     groupSize: row.group_size as number,
@@ -138,6 +161,8 @@ export async function rebookDgroupTable(id: string): Promise<DgroupBookingResult
     contactMobile: row.contact_mobile as string,
     leaderEmail: (row.leader_email as string | null) ?? user.email,
   });
+  if (result.ok && result.booking) await linkDgroup(user.id, result.booking.id, row.dgroup_id as string | null);
+  return result;
 }
 
 /**

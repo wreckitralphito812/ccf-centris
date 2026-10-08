@@ -16,7 +16,7 @@ import {
 } from "@/lib/dgroup-tables";
 import { manilaDateKey } from "@/lib/format";
 import { currentUser, hasAccounts } from "@/lib/auth/session";
-import { getDgroupHolds, getMyContact, getMyDgroupBookings } from "@/lib/queries";
+import { getDgroupHolds, getMyContact, getMyDgroupBookings, getMyDgroups } from "@/lib/queries";
 import { BookingForm } from "./booking-form";
 
 export const metadata: Metadata = {
@@ -89,11 +89,13 @@ async function Booking() {
   }
 
   const open = nightOptions(today, manilaMinutes());
-  const [contact, mine, holds] = await Promise.all([
+  const [contact, mine, holds, myDgroups] = await Promise.all([
     getMyContact(),
     getMyDgroupBookings(today),
     getDgroupHolds(open.map((n) => n.date)),
+    getMyDgroups(user.id),
   ]);
+  const approved = myDgroups.filter((d) => d.status === "approved");
   // Without the holds the form still books; it just can't show what's left.
   const nights = holds ? withAvailability(open, holds) : open;
 
@@ -111,6 +113,20 @@ async function Booking() {
         </Link>
       ) : null}
 
+      {approved.length ? null : (
+        <Link
+          href={myDgroups.length ? "/my/dgroups" : "/my/dgroups/new"}
+          className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-2xl border border-clay/25 bg-clay-wash px-6 py-4 text-[1rem] text-clay-deep transition-colors hover:border-clay"
+        >
+          <span>
+            {myDgroups.length
+              ? "Your Dgroup is waiting for approval. Once it's approved, booking takes one tap."
+              : "Lead a Dgroup? Register it once, and booking a table takes one tap."}
+          </span>
+          <span className="font-semibold">{myDgroups.length ? "See it →" : "Register your Dgroup →"}</span>
+        </Link>
+      )}
+
       <section aria-labelledby="book-h">
         <h2 id="book-h" className="sr-only">
           Book a table
@@ -121,6 +137,13 @@ async function Booking() {
             email={contact?.email || user.email}
             name={contact?.name ?? ""}
             mobile={contact?.mobile ?? ""}
+            dgroups={approved.map((d) => ({
+              id: d.id,
+              name: d.name,
+              size: d.current_size,
+              leaderName: d.leader_name ?? "",
+              leaderMobile: d.leader_mobile ?? "",
+            }))}
           />
         </div>
       </section>

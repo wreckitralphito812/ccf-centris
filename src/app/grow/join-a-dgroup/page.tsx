@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import {
   ButtonLink,
@@ -118,6 +119,14 @@ export default function JoinDgroupPage() {
               Ask us a question
             </ButtonLink>
           </div>
+          {/* Leaders register their own group with Centris (2026-10-08). */}
+          <p className="mt-6 text-[0.98rem] text-ink-soft">
+            Already lead a Dgroup?{" "}
+            <Link href="/my/dgroups" className="font-semibold text-clay underline underline-offset-4 hover:text-clay-deep">
+              Register it with CCF Centris
+            </Link>{" "}
+            so booking a Dgroup table takes one tap.
+          </p>
         </Container>
       </Section>
 

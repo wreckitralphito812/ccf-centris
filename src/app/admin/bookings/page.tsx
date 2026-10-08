@@ -76,6 +76,7 @@ export default async function AdminBookings({ searchParams }: PageProps<"/admin/
                     <tr key={b.id}>
                       <Td>
                         <span className="font-semibold">{b.leader_name}</span>
+                        {"dgroup_name" in b && b.dgroup_name ? <span className="block text-[0.85rem] text-clay-deep">{b.dgroup_name}</span> : null}
                         <span className="mt-0.5 block text-[0.82rem] text-ink-mute">
                           {b.contact_mobile}
                           {b.leader_email ? ` · ${b.leader_email}` : ""}
