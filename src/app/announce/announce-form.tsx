@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { submitAnnouncement, type AnnounceResult } from "@/app/actions/announcements";
 import { adminSaveEvent } from "@/app/actions/admin-announcements";
 import { cx } from "@/components/ui";
@@ -311,6 +311,12 @@ export function AnnounceForm({
   ) : null;
   const [fee, setFee] = useState(initial?.feeNote ? "paid" : "free");
   const e = state?.errors ?? {};
+  // The success card replaces the long form; bring it into view instead of
+  // leaving the page scrolled down at the footer (2026-10-08).
+  const doneRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (state?.ok) doneRef.current?.scrollIntoView({ block: "center" });
+  }, [state?.ok]);
   const busy = [...Object.values(slots), poster].some((s) => s.state === "uploading" || s.state === "checking");
   const shown = poster.url ?? slots.main_tv.url;
 
@@ -318,7 +324,7 @@ export function AnnounceForm({
     const ev = state.event;
     const live = ev && ev.status === "published" && !ev.calendarOnly;
     return (
-      <div className="calm-card p-8 text-center sm:p-10">
+      <div ref={doneRef} className="calm-card scroll-mt-24 p-8 text-center sm:p-10">
         <p className="text-[1.4rem] font-bold text-ink">{admin ? "Saved" : initial?.id ? "Changes sent" : "Sent for review"}</p>
         <p className="mx-auto mt-2 max-w-md leading-relaxed text-ink-soft">{state.message}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">

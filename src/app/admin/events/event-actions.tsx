@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { deleteEvent, setEventPoster, setEventVisibility } from "@/app/actions/admin-events";
 import { PosterImage } from "@/components/poster-image";
 import { cx } from "@/components/ui";
@@ -143,4 +143,12 @@ export function EventButtons({ id, title, hidden }: { id: string; title: string;
       ) : null}
     </>
   );
+}
+
+/** After a save, bring the saved event's row into view (2026-10-08). */
+export function ScrollToSaved({ id }: { id: string }) {
+  useEffect(() => {
+    document.getElementById(`event-${id}`)?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [id]);
+  return null;
 }
