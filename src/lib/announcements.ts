@@ -58,6 +58,30 @@ export function shapeCheck(key: PlacementKey, w: number, h: number): { level: "o
   return { level: "ok", message: `${w} × ${h}` };
 }
 
+/**
+ * Turn what a poster's QR code says into a sign-up link (2026-10-08), or
+ * null when it isn't a web link (a phone number, Wi-Fi details, plain text).
+ * Adds the missing https://, and drops bit.ly's `r=qr` tag, which marks a
+ * visit as a QR scan, so taps on the website aren't counted as scans.
+ */
+export function signupUrlFrom(text: string | null | undefined): string | null {
+  let t = (text ?? "").trim();
+  if (!t || /\s/.test(t)) return null;
+  if (!/^https?:\/\//i.test(t)) {
+    if (!/^(www\.)?[a-z0-9-]+(\.[a-z0-9-]+)+(\/\S*)?$/i.test(t)) return null;
+    t = `https://${t}`;
+  }
+  try {
+    const u = new URL(t);
+    if (!/^https?:$/.test(u.protocol) || !u.hostname.includes(".")) return null;
+    if (/(^|\.)bit\.ly$/i.test(u.hostname) && u.searchParams.get("r") === "qr") u.searchParams.delete("r");
+    const out = u.toString().replace(/\?$/, "");
+    return out.length <= 300 ? out : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Uploaded artwork must come from our own Vercel Blob store. */
 export const isOurUpload = (url: unknown): url is string =>
   typeof url === "string" && /^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\/[^\s"<>]+$/i.test(url);

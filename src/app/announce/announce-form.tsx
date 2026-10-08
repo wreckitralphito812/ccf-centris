@@ -5,7 +5,7 @@ import { submitAnnouncement, type AnnounceResult } from "@/app/actions/announcem
 import { adminSaveEvent } from "@/app/actions/admin-announcements";
 import { cx } from "@/components/ui";
 import { PosterImage } from "@/components/poster-image";
-import { readImage, uploadImage } from "@/lib/upload-image";
+import { findQrLink, readImage, uploadImage } from "@/lib/upload-image";
 import {
   ANNOUNCEMENT_CATEGORIES,
   DESCRIPTION_MAX,
@@ -86,15 +86,19 @@ function ArtworkSlot({
   slot,
   onChange,
   optional = false,
+  onQr,
 }: {
   p: (typeof PLACEMENTS)[number];
   slot: Slot;
   onChange: (s: Slot) => void;
   /** The admin console posts without artwork (2026-10-06). */
   optional?: boolean;
+  /** Called with the sign-up link from a QR code on the picture (2026-10-08). */
+  onQr?: (url: string) => void;
 }) {
   async function choose(file: File | undefined) {
     if (!file) return;
+    if (onQr) findQrLink(file).then((url) => url && onQr(url));
     onChange({ state: "checking" });
     try {
       const { w, h } = await readImage(file);
@@ -166,10 +170,11 @@ function ArtworkSlot({
  * portrait, square or 16:9; the site shows it whole. Drop a file on it or
  * tap to choose.
  */
-function PosterSlot({ slot, onChange }: { slot: Slot; onChange: (s: Slot) => void }) {
+function PosterSlot({ slot, onChange, onQr }: { slot: Slot; onChange: (s: Slot) => void; onQr?: (url: string) => void }) {
   const [over, setOver] = useState(false);
   async function choose(file: File | undefined) {
     if (!file) return;
+    if (onQr) findQrLink(file).then((url) => url && onQr(url));
     onChange({ state: "checking", message: "Checking…" });
     try {
       const { w, h } = await readImage(file);
@@ -263,6 +268,47 @@ export function AnnounceForm({
   const [dates, setDates] = useState<DateRow[]>(initial?.dates?.length ? initial.dates : [{ date: "", start: "", end: "" }]);
   const setRow = (i: number, patch: Partial<DateRow>) => setDates((x) => x.map((y, j) => (j === i ? { ...y, ...patch } : y)));
   const [signup, setSignup] = useState(initial?.registrationUrl ? "link" : initial?.id ? "none" : "link");
+  const [signupUrl, setSignupUrl] = useState(initial?.registrationUrl ?? "");
+  // A sign-up link read from a QR code on the artwork (2026-10-08): filled in
+  // when the field is empty, offered when it holds a different link.
+  const [qr, setQr] = useState<{ url: string; applied: boolean } | null>(null);
+  const onQr = (url: string) => {
+    if (calendarOnly) return;
+    const current = signupUrl.trim();
+    if (current === url) return;
+    if (!current) {
+      setSignupUrl(url);
+      setSignup("link");
+      setQr({ url, applied: true });
+    } else {
+      setQr({ url, applied: false });
+    }
+  };
+  const useQr = () => {
+    if (!qr) return;
+    setSignupUrl(qr.url);
+    setSignup("link");
+    setQr({ ...qr, applied: true });
+  };
+  const qrNote = qr ? (
+    <div role="status" className={cx("mt-4 rounded-xl px-4 py-3 text-[0.92rem]", qr.applied ? "bg-moss/10 text-ink" : "bg-sky-wash text-ink")}>
+      {qr.applied ? (
+        <>
+          <span className="font-semibold text-moss">✓ Sign-up link found in the QR code</span> and added under Sign-up:{" "}
+          <span className="break-all font-semibold">{qr.url.replace(/^https?:\/\//, "")}</span>
+        </>
+      ) : (
+        <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span>
+            The QR code links to <span className="break-all font-semibold">{qr.url.replace(/^https?:\/\//, "")}</span>, not the sign-up link below.
+          </span>
+          <button type="button" onClick={useQr} className="font-semibold text-clay underline underline-offset-2 hover:text-clay-deep">
+            Use the QR code&rsquo;s link
+          </button>
+        </span>
+      )}
+    </div>
+  ) : null;
   const [fee, setFee] = useState(initial?.feeNote ? "paid" : "free");
   const e = state?.errors ?? {};
   const busy = [...Object.values(slots), poster].some((s) => s.state === "uploading" || s.state === "checking");
@@ -343,8 +389,9 @@ export function AnnounceForm({
       {admin && calendarOnly ? null : admin ? (
         <Section n={nextStep()} title="Poster" hint="The picture on What's Happening and the event page. Any shape works; you can add it later.">
           <div className="max-w-xl">
-            <PosterSlot slot={poster} onChange={setPoster} />
+            <PosterSlot slot={poster} onChange={setPoster} onQr={onQr} />
           </div>
+          {qrNote}
           <details className="group mt-6 rounded-xl border border-edge bg-paper-bright" open={PLACEMENTS.some((p) => initial?.artwork?.[p.key])}>
             <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 text-[0.98rem] font-semibold text-ink">
               <span>
@@ -356,12 +403,12 @@ export function AnnounceForm({
             </summary>
             <div className="border-t border-rule p-4">
               <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-                <ArtworkSlot p={PLACEMENTS[0]} optional slot={slots.main_tv} onChange={(s) => setSlots((x) => ({ ...x, main_tv: s }))} />
-                <ArtworkSlot p={PLACEMENTS[1]} optional slot={slots.social} onChange={(s) => setSlots((x) => ({ ...x, social: s }))} />
+                <ArtworkSlot p={PLACEMENTS[0]} optional onQr={onQr} slot={slots.main_tv} onChange={(s) => setSlots((x) => ({ ...x, main_tv: s }))} />
+                <ArtworkSlot p={PLACEMENTS[1]} optional onQr={onQr} slot={slots.social} onChange={(s) => setSlots((x) => ({ ...x, social: s }))} />
               </div>
               <div className="mt-4 grid gap-4 sm:grid-cols-3">
                 {PLACEMENTS.slice(2).map((p) => (
-                  <ArtworkSlot key={p.key} p={p} optional slot={slots[p.key]} onChange={(s) => setSlots((x) => ({ ...x, [p.key]: s }))} />
+                  <ArtworkSlot key={p.key} p={p} optional onQr={onQr} slot={slots[p.key]} onChange={(s) => setSlots((x) => ({ ...x, [p.key]: s }))} />
                 ))}
               </div>
               <p className="mt-3 text-[0.85rem] text-ink-mute">The media team downloads these from Announcements → Screens.</p>
@@ -376,14 +423,15 @@ export function AnnounceForm({
         hint="The same files you make for the screens. Main Hall TV is required; add the others if you have them."
       >
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-          <ArtworkSlot p={PLACEMENTS[0]} slot={slots.main_tv} onChange={(s) => setSlots((x) => ({ ...x, main_tv: s }))} />
-          <ArtworkSlot p={PLACEMENTS[1]} slot={slots.social} onChange={(s) => setSlots((x) => ({ ...x, social: s }))} />
+          <ArtworkSlot p={PLACEMENTS[0]} onQr={onQr} slot={slots.main_tv} onChange={(s) => setSlots((x) => ({ ...x, main_tv: s }))} />
+          <ArtworkSlot p={PLACEMENTS[1]} onQr={onQr} slot={slots.social} onChange={(s) => setSlots((x) => ({ ...x, social: s }))} />
         </div>
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
           {PLACEMENTS.slice(2).map((p) => (
-            <ArtworkSlot key={p.key} p={p} slot={slots[p.key]} onChange={(s) => setSlots((x) => ({ ...x, [p.key]: s }))} />
+            <ArtworkSlot key={p.key} p={p} onQr={onQr} slot={slots[p.key]} onChange={(s) => setSlots((x) => ({ ...x, [p.key]: s }))} />
           ))}
         </div>
+        {qrNote}
         <Err text={e.artwork} />
       </Section>
       )}
@@ -541,8 +589,17 @@ export function AnnounceForm({
         {signup === "link" ? (
           <label className="mt-3 block">
             <span className="sr-only">Sign-up link</span>
-            <input name="registration_url" defaultValue={initial?.registrationUrl ?? ""} inputMode="url" placeholder="https://forms.gle/…" className={INPUT} />
-            <p className={HINT}>The same link your QR code opens.</p>
+            <input
+              name="registration_url"
+              value={signupUrl}
+              onChange={(ev) => setSignupUrl(ev.target.value)}
+              inputMode="url"
+              placeholder="https://forms.gle/…"
+              className={INPUT}
+            />
+            <p className={HINT}>
+              {qr?.applied && signupUrl === qr.url ? "Read from the QR code on the poster. Check it opens the right form." : "The same link your QR code opens. A QR code on the poster fills this in by itself."}
+            </p>
           </label>
         ) : null}
         <Err text={e.registration} />

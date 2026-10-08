@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { deleteEvent, setEventPoster, setEventVisibility } from "@/app/actions/admin-events";
 import { PosterImage } from "@/components/poster-image";
 import { cx } from "@/components/ui";
-import { readImage, uploadImage } from "@/lib/upload-image";
+import { findQrLink, readImage, uploadImage } from "@/lib/upload-image";
 
 /* The working parts of the admin events list (2026-10-08): the poster you
    can drop a file on, and the hide / show / delete buttons. Each calls a
@@ -17,7 +17,7 @@ const BTN =
 /** The event's poster thumbnail. Tap or drop a file to add or change it. */
 export function PosterDrop({ id, title, src, readOnly }: { id: string; title: string; src: string | null; readOnly: boolean }) {
   const router = useRouter();
-  const [state, setState] = useState<{ busy?: string; error?: string }>({});
+  const [state, setState] = useState<{ busy?: string; error?: string; note?: string }>({});
   const [over, setOver] = useState(false);
   const [, start] = useTransition();
 
@@ -26,12 +26,13 @@ export function PosterDrop({ id, title, src, readOnly }: { id: string; title: st
     setState({ busy: "Checking…" });
     try {
       await readImage(file);
+      const qr = findQrLink(file);
       setState({ busy: "Uploading…" });
       const url = await uploadImage(file, "poster");
       setState({ busy: "Saving…" });
-      const res = await setEventPoster(id, url);
+      const res = await setEventPoster(id, url, await qr);
       if (!res.ok) return setState({ error: res.error });
-      setState({});
+      setState(res.signupAdded ? { note: `Sign-up link added from the QR code: ${res.signupAdded.replace(/^https?:\/\//, "")}` } : {});
       start(() => router.refresh());
     } catch (e) {
       setState({ error: (e as Error).message });
@@ -88,6 +89,10 @@ export function PosterDrop({ id, title, src, readOnly }: { id: string; title: st
       {state.error ? (
         <p role="alert" className="mt-1.5 text-[0.82rem] font-semibold text-sky">
           {state.error}
+        </p>
+      ) : state.note ? (
+        <p role="status" className="mt-1.5 break-all text-[0.82rem] font-semibold text-moss">
+          ✓ {state.note}
         </p>
       ) : null}
     </div>
