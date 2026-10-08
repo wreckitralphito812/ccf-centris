@@ -5,7 +5,8 @@ import { submitAnnouncement, type AnnounceResult } from "@/app/actions/announcem
 import { adminSaveEvent } from "@/app/actions/admin-announcements";
 import { cx } from "@/components/ui";
 import { PosterImage } from "@/components/poster-image";
-import { findQrLink, readImage, uploadImage } from "@/lib/upload-image";
+import { fileFromDrop, findQrLink, PICTURE_ACCEPT, prepareScreenFile, preparePoster, uploadImage } from "@/lib/upload-image";
+import { DropGuard } from "@/components/drop-guard";
 import {
   ANNOUNCEMENT_CATEGORIES,
   DESCRIPTION_MAX,
@@ -45,6 +46,8 @@ export interface AnnounceInitial {
   description?: string | null;
   calendarOnly?: boolean;
   registrationUrl?: string | null;
+  /** People sign up, even if the link isn't in yet. */
+  signupWanted?: boolean;
   feeNote?: string | null;
   artwork?: Artwork;
   /** The website poster, when the admin added one separately (any shape). */
@@ -98,16 +101,17 @@ function ArtworkSlot({
 }) {
   async function choose(file: File | undefined) {
     if (!file) return;
-    if (onQr) findQrLink(file).then((url) => url && onQr(url));
     onChange({ state: "checking" });
     try {
-      const { w, h } = await readImage(file);
+      const prepared = await prepareScreenFile(file);
+      if (onQr) findQrLink(prepared.file).then((url) => url && onQr(url));
+      const { w, h } = prepared;
       const check = shapeCheck(p.key, w, h);
       if (check.level === "error") {
         return onChange({ state: "error", message: optional ? `${check.message} For a poster of any size, use the Poster box above.` : check.message });
       }
       onChange({ state: "uploading", message: "Uploading…" });
-      const url = await uploadImage(file, p.key);
+      const url = await uploadImage(prepared.file, p.key);
       onChange({ state: "done", url, message: check.message, level: check.level === "warn" ? "warn" : "ok" });
     } catch (e) {
       onChange({ state: "error", message: (e as Error).message });
@@ -134,9 +138,13 @@ function ArtworkSlot({
       >
         <input
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept={PICTURE_ACCEPT}
           className="sr-only"
-          onChange={(e) => choose(e.target.files?.[0])}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = "";
+            choose(file);
+          }}
         />
         {slot.url ? (
           // The upload's own address; next/image can't know the store's host ahead of time.
@@ -153,7 +161,16 @@ function ArtworkSlot({
           {slot.level === "warn" ? slot.message : "Uploaded"} ·{" "}
           <label className="cursor-pointer font-semibold text-clay underline underline-offset-2">
             Replace
-            <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(e) => choose(e.target.files?.[0])} />
+            <input
+              type="file"
+              accept={PICTURE_ACCEPT}
+              className="sr-only"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                choose(file);
+              }}
+            />
           </label>
         </p>
       ) : slot.state === "error" ? (
@@ -172,19 +189,27 @@ function ArtworkSlot({
  */
 function PosterSlot({ slot, onChange, onQr }: { slot: Slot; onChange: (s: Slot) => void; onQr?: (url: string) => void }) {
   const [over, setOver] = useState(false);
-  async function choose(file: File | undefined) {
-    if (!file) return;
-    if (onQr) findQrLink(file).then((url) => url && onQr(url));
+  async function choose(pick: () => File | undefined) {
     onChange({ state: "checking", message: "Checking…" });
     try {
-      const { w, h } = await readImage(file);
+      const file = pick();
+      if (!file) return onChange(slot);
+      const prepared = await preparePoster(file);
+      if (onQr) findQrLink(prepared.file).then((url) => url && onQr(url));
+      const { w, h } = prepared;
       onChange({ state: "uploading", message: "Uploading…" });
-      const url = await uploadImage(file, "poster");
+      const url = await uploadImage(prepared.file, "poster");
       onChange({ state: "done", url, message: `${w} × ${h}`, level: w < 800 && h < 800 ? "warn" : "ok" });
     } catch (e) {
       onChange({ state: "error", message: (e as Error).message });
     }
   }
+  // Clear the input after reading it, so choosing the same file again still counts.
+  const pickFrom = (el: HTMLInputElement) => {
+    const file = el.files?.[0];
+    el.value = "";
+    if (file) choose(() => file);
+  };
   const working = slot.state === "checking" || slot.state === "uploading";
   return (
     <div>
@@ -197,14 +222,14 @@ function PosterSlot({ slot, onChange, onQr }: { slot: Slot; onChange: (s: Slot) 
         onDrop={(ev) => {
           ev.preventDefault();
           setOver(false);
-          choose(ev.dataTransfer.files?.[0]);
+          choose(() => fileFromDrop(ev.dataTransfer));
         }}
         className={cx(
           "relative block aspect-video cursor-pointer overflow-hidden rounded-xl border-2 border-dashed transition-colors",
           over ? "border-clay bg-clay-wash" : slot.state === "error" ? "border-sky/60 bg-mist" : "border-edge bg-mist hover:border-clay",
         )}
       >
-        <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(ev) => choose(ev.target.files?.[0])} />
+        <input type="file" accept={PICTURE_ACCEPT} className="sr-only" onChange={(ev) => pickFrom(ev.target)} />
         {slot.url ? (
           <PosterImage src={slot.url} alt="Poster" className={working ? "opacity-40" : undefined} />
         ) : null}
@@ -229,7 +254,7 @@ function PosterSlot({ slot, onChange, onQr }: { slot: Slot; onChange: (s: Slot) 
             </p>
             <label className="cursor-pointer font-semibold text-clay underline underline-offset-2">
               Replace
-              <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(ev) => choose(ev.target.files?.[0])} />
+              <input type="file" accept={PICTURE_ACCEPT} className="sr-only" onChange={(ev) => pickFrom(ev.target)} />
             </label>
             <button type="button" onClick={() => onChange({ state: "empty" })} className="font-semibold text-ink-mute hover:text-sky">
               Remove
@@ -267,7 +292,7 @@ export function AnnounceForm({
   const [venue, setVenue] = useState(initial?.venue ? (knownVenue ? initial.venue : "Other") : "Main Hall");
   const [dates, setDates] = useState<DateRow[]>(initial?.dates?.length ? initial.dates : [{ date: "", start: "", end: "" }]);
   const setRow = (i: number, patch: Partial<DateRow>) => setDates((x) => x.map((y, j) => (j === i ? { ...y, ...patch } : y)));
-  const [signup, setSignup] = useState(initial?.registrationUrl ? "link" : initial?.id ? "none" : "link");
+  const [signup, setSignup] = useState(initial?.registrationUrl || initial?.signupWanted ? "link" : initial?.id ? "none" : "link");
   const [signupUrl, setSignupUrl] = useState(initial?.registrationUrl ?? "");
   // A sign-up link read from a QR code on the artwork (2026-10-08): filled in
   // when the field is empty, offered when it holds a different link.
@@ -368,6 +393,7 @@ export function AnnounceForm({
 
   return (
     <form action={action} className="calm-card px-5 py-8 sm:px-9 sm:py-10">
+      <DropGuard />
       {initial?.id ? <input type="hidden" name="id" value={initial.id} /> : null}
       {admin ? <input type="hidden" name="calendar_only" value={calendarOnly ? "1" : "0"} /> : null}
       {admin ? (
@@ -604,7 +630,11 @@ export function AnnounceForm({
               className={INPUT}
             />
             <p className={HINT}>
-              {qr?.applied && signupUrl === qr.url ? "Read from the QR code on the poster. Check it opens the right form." : "The same link your QR code opens. A QR code on the poster fills this in by itself."}
+              {qr?.applied && signupUrl === qr.url
+                ? "Read from the QR code on the poster. Check it opens the right form."
+                : admin
+                  ? "A QR code on the poster fills this in by itself. No link yet? Leave it empty: the event page says sign-up opens soon."
+                  : "The same link your QR code opens. A QR code on the poster fills this in by itself."}
             </p>
           </label>
         ) : null}

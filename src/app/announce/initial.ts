@@ -24,6 +24,7 @@ export function initialFrom(e: CcfEvent): AnnounceInitial {
         : { date: manilaDay(d.starts_at), start: hhmm(d.starts_at), end: d.ends_at ? hhmm(d.ends_at) : "" },
     ),
     registrationUrl: e.registration_url,
+    signupWanted: e.requires_registration,
     feeNote: e.fee_note,
     artwork: e.artwork,
     // A poster is "separate" when it isn't just the Main Hall TV file.

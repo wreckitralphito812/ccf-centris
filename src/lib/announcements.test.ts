@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { dateText, daysCovered, downloadName, isOurUpload, lastEnd, parseAnnouncement, shapeCheck, signupUrlFrom, slugFor } from "./announcements";
+import { dateText, daysCovered, downloadName, isOurUpload, lastEnd, parseAnnouncement, shapeCheck, signupUrlFrom, slugFor, venueKind } from "./announcements";
 
 const BLOB = "https://abc123.public.blob.vercel-storage.com/announcements/main-tv-x1y2.jpg";
 
@@ -129,4 +129,23 @@ test("a poster's QR code becomes a clean sign-up link, or nothing", () => {
   for (const no of ["", "tel:+639171234567", "WIFI:S:CCF;T:WPA;P:secret;;", "Join us on Sunday", "mailto:a@b.co", "javascript:alert(1)"]) {
     assert.equal(signupUrlFrom(no), null, no);
   }
+});
+
+test("venues at Centris, online, or somewhere else", () => {
+  assert.equal(venueKind(null), "centris");
+  assert.equal(venueKind("Main Hall"), "centris");
+  assert.equal(venueKind("CCF Centris"), "centris");
+  assert.equal(venueKind("Online"), "online");
+  assert.equal(venueKind("Online via Zoom"), "online");
+  assert.equal(venueKind("Canyon Woods Resort Club, Batangas"), "elsewhere");
+});
+
+test("admins can save a sign-up with the link still to come", () => {
+  const later = form({ registration_url: "" });
+  assert.equal(parseAnnouncement(later, "2026-10-05").ok, false);
+  const r = parseAnnouncement(later, "2026-10-05", { linkLater: true });
+  assert.ok(r.ok);
+  if (r.ok) assert.deepEqual([r.value.signup, r.value.registrationUrl], [true, null]);
+  const none = parseAnnouncement(form({ signup: "none", registration_url: "" }), "2026-10-05");
+  assert.ok(none.ok && none.value.signup === false);
 });
