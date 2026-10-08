@@ -42,7 +42,7 @@ function EventRow({ e, past, readOnly }: { e: CcfEvent; past: boolean; readOnly:
   const dates = e.dates?.length ? e.dates : [{ starts_at: e.starts_at, ends_at: e.ends_at }];
   const shownOnSite = !hidden && !past && !e.calendar_only;
   return (
-    <li className={cx("grid gap-4 p-4 sm:grid-cols-[12rem_minmax(0,1fr)] sm:p-5 lg:grid-cols-[14rem_minmax(0,1fr)_auto]", hidden && "bg-mist/60")}>
+    <li className={cx("grid gap-4 p-4 sm:grid-cols-[12rem_minmax(0,1fr)] sm:p-5 lg:grid-cols-[14rem_minmax(0,1fr)] xl:grid-cols-[14rem_minmax(0,1fr)_auto]", hidden && "bg-mist/60")}>
       <div className={cx(hidden || past ? "opacity-70" : undefined)}>
         {e.calendar_only ? (
           // Calendar-only bookings never show a poster, so they get a date block.
@@ -89,7 +89,7 @@ function EventRow({ e, past, readOnly }: { e: CcfEvent; past: boolean; readOnly:
         <p className="mt-1 text-[0.88rem] text-ink-mute">{[e.location_note, e.ministry].filter(Boolean).join(" · ")}</p>
       </div>
 
-      <div className="flex flex-wrap items-start gap-2 sm:col-start-2 lg:col-start-auto lg:w-[21rem] lg:justify-end">
+      <div className="flex flex-wrap items-start gap-2 sm:col-start-2 xl:col-start-auto xl:w-[21rem] xl:justify-end">
         {readOnly ? null : (
           <Link
             href={`/admin/events/${e.id}`}
