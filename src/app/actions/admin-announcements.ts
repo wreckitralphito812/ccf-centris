@@ -150,7 +150,7 @@ export async function adminSaveEvent(_prev: ReviewResult | null, fd: FormData): 
   const blocked = await guard();
   if (blocked) return blocked;
 
-  const parsed = parseAnnouncement(fd, manilaDateKey(), { artworkRequired: false, allowPast: true });
+  const parsed = parseAnnouncement(fd, manilaDateKey(), { artworkRequired: false, allowPast: true, linkLater: true });
   if (!parsed.ok) return { ok: false, errors: parsed.errors, formError: "A few things need fixing below." };
   const a = parsed.value;
   const calendarOnly = fd.get("calendar_only") === "1";
@@ -179,7 +179,8 @@ export async function adminSaveEvent(_prev: ReviewResult | null, fd: FormData): 
     starts_at: a.dates[0].startsAt,
     ends_at: lastEnd(a.dates),
     registration_url: calendarOnly ? null : a.registrationUrl,
-    requires_registration: !calendarOnly && Boolean(a.registrationUrl),
+    // Sign-up wanted but no link yet reads as "Sign-up opens soon" on the event page.
+    requires_registration: !calendarOnly && a.signup,
     fee_note: a.feeNote,
     price_cents: 0,
     artwork: a.artwork,

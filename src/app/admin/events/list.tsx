@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AdminHeader, AdminNote } from "../admin-ui";
 import { EventButtons, PosterDrop, ScrollToSaved } from "./event-actions";
+import { DropGuard } from "@/components/drop-guard";
 import { cx } from "@/components/ui";
 import { dateText } from "@/lib/announcements";
 import { manilaDay } from "@/lib/admin-day";
@@ -20,7 +21,8 @@ function gaps(e: CcfEvent): string[] {
   if (e.calendar_only) return [];
   const out: string[] = [];
   if (!e.cover_image_url) out.push("No poster");
-  if (!e.registration_url) out.push("No sign-up link");
+  if (!e.registration_url && e.requires_registration) out.push("Sign-up link to add");
+  else if (!e.registration_url) out.push("No sign-up link");
   // A one-day "all day" date is usually a time nobody has confirmed yet.
   if ((e.dates ?? []).some((d) => d.all_day && (!d.ends_at || manilaDay(d.ends_at) === manilaDay(d.starts_at)))) out.push("Time not set");
   return out;
@@ -214,6 +216,7 @@ export function EventsManager({
         }
       />
 
+      {readOnly ? null : <DropGuard />}
       {notice ? <AdminNote>{notice}</AdminNote> : null}
 
       {saved ? (

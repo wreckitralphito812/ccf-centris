@@ -58,3 +58,6 @@ next-env.d.ts
 # python bytecode
 __pycache__/
 .superpowers/
+
+# Local test database (scripts/local-db)
+/.local-db/

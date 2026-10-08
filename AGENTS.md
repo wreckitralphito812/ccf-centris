@@ -36,6 +36,13 @@ Run `typecheck` and `build` before calling work done. `page.e2e.test.mjs`
 files aren't part of `test:content`. They fetch from a running server
 (`NEW_HERE_PAGE_URL`, default `http://localhost:3001`).
 
+For anything that writes to the database (admin actions, forms), test it end
+to end against a local copy first: `scripts/local-db/start.sh` builds a
+throwaway Postgres + PostgREST with every migration and seed events, and
+prints the two `SUPABASE_*` lines for `.env.development.local` (add a local
+`ADMIN_ACCESS_CODE`). Needs `brew install postgresql@16 postgrest`. Never
+point local dev at the production database.
+
 ## Layout
 
 - `src/app/`: routes. Server actions live in `src/app/actions/*`.

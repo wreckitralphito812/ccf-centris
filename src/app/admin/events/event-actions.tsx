@@ -1,11 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { deleteEvent, setEventPoster, setEventVisibility } from "@/app/actions/admin-events";
 import { PosterImage } from "@/components/poster-image";
 import { cx } from "@/components/ui";
-import { findQrLink, readImage, uploadImage } from "@/lib/upload-image";
+import { fileFromDrop, findQrLink, PICTURE_ACCEPT, preparePoster, uploadImage } from "@/lib/upload-image";
 
 /* The working parts of the admin events list (2026-10-08): the poster you
    can drop a file on, and the hide / show / delete buttons. Each calls a
@@ -14,30 +14,80 @@ import { findQrLink, readImage, uploadImage } from "@/lib/upload-image";
 const BTN =
   "inline-flex min-h-10 items-center justify-center rounded-lg border px-3.5 text-[0.9rem] font-semibold transition-colors disabled:opacity-50";
 
-/** The event's poster thumbnail. Tap or drop a file to add or change it. */
+/**
+ * The event's poster. Tap it (or "Change poster") to choose a file, or drop
+ * a file anywhere on the event's row. Reworked 2026-10-08 after "Change
+ * poster" seemed to do nothing: picking the same file twice, drops from web
+ * pages and drops that missed the small picture all failed silently.
+ */
 export function PosterDrop({ id, title, src, readOnly }: { id: string; title: string; src: string | null; readOnly: boolean }) {
   const router = useRouter();
   const [state, setState] = useState<{ busy?: string; error?: string; note?: string }>({});
   const [over, setOver] = useState(false);
   const [, start] = useTransition();
+  const root = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLInputElement>(null);
 
-  async function choose(file: File | undefined) {
-    if (!file) return;
+  async function choose(pick: () => File) {
     setState({ busy: "Checking…" });
     try {
-      await readImage(file);
-      const qr = findQrLink(file);
+      const prepared = await preparePoster(pick());
+      const qr = findQrLink(prepared.file);
       setState({ busy: "Uploading…" });
-      const url = await uploadImage(file, "poster");
+      const url = await uploadImage(prepared.file, "poster");
       setState({ busy: "Saving…" });
       const res = await setEventPoster(id, url, await qr);
       if (!res.ok) return setState({ error: res.error });
-      setState(res.signupAdded ? { note: `Sign-up link added from the QR code: ${res.signupAdded.replace(/^https?:\/\//, "")}` } : {});
+      setState(res.signupAdded ? { note: `Poster saved. Sign-up link added from the QR code: ${res.signupAdded.replace(/^https?:\/\//, "")}` } : { note: "Poster saved." });
       start(() => router.refresh());
     } catch (e) {
       setState({ error: (e as Error).message });
     }
   }
+
+  async function remove() {
+    if (!window.confirm(`Remove the poster from "${title}"?`)) return;
+    setState({ busy: "Removing…" });
+    const res = await setEventPoster(id, "");
+    if (!res.ok) return setState({ error: res.error });
+    setState({ note: "Poster removed." });
+    start(() => router.refresh());
+  }
+
+  // The whole row takes a dropped file, not just the small picture.
+  useEffect(() => {
+    const row = root.current?.closest("li");
+    if (!row || readOnly) return;
+    let depth = 0;
+    const enter = (ev: DragEvent) => {
+      if (!ev.dataTransfer?.types.includes("Files") && !ev.dataTransfer?.types.includes("text/uri-list")) return;
+      ev.preventDefault();
+      depth += 1;
+      setOver(true);
+    };
+    const overRow = (ev: DragEvent) => ev.preventDefault();
+    const leave = () => {
+      depth = Math.max(0, depth - 1);
+      if (!depth) setOver(false);
+    };
+    const drop = (ev: DragEvent) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      depth = 0;
+      setOver(false);
+      choose(() => fileFromDrop(ev.dataTransfer));
+    };
+    row.addEventListener("dragenter", enter);
+    row.addEventListener("dragover", overRow);
+    row.addEventListener("dragleave", leave);
+    row.addEventListener("drop", drop);
+    return () => {
+      row.removeEventListener("dragenter", enter);
+      row.removeEventListener("dragover", overRow);
+      row.removeEventListener("dragleave", leave);
+      row.removeEventListener("drop", drop);
+    };
+  });
 
   const frame = "relative block aspect-video w-full overflow-hidden rounded-lg";
   if (readOnly) {
@@ -48,46 +98,71 @@ export function PosterDrop({ id, title, src, readOnly }: { id: string; title: st
     );
   }
 
+  const busy = Boolean(state.busy);
   return (
-    <div>
-      <label
-        title={src ? "Change the poster" : "Add a poster"}
-        onDragOver={(ev) => {
-          ev.preventDefault();
-          setOver(true);
+    <div ref={root}>
+      <input
+        ref={input}
+        type="file"
+        accept={PICTURE_ACCEPT}
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden
+        onChange={(ev) => {
+          const file = ev.target.files?.[0];
+          // Clear it, so choosing the same file again still counts.
+          ev.target.value = "";
+          if (file) choose(() => file);
         }}
-        onDragLeave={() => setOver(false)}
-        onDrop={(ev) => {
-          ev.preventDefault();
-          setOver(false);
-          choose(ev.dataTransfer.files?.[0]);
-        }}
+      />
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => input.current?.click()}
+        aria-label={src ? `Change the poster for ${title}` : `Add a poster for ${title}`}
         className={cx(
           frame,
-          "group cursor-pointer",
+          "group cursor-pointer text-left disabled:cursor-wait",
           src ? "bg-mist" : "border-2 border-dashed bg-mist",
-          over ? "border-clay ring-2 ring-clay" : src ? "" : "border-edge hover:border-clay",
+          over ? "border-clay ring-4 ring-clay/40" : src ? "" : "border-edge hover:border-clay",
         )}
       >
-        <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={Boolean(state.busy)} onChange={(ev) => choose(ev.target.files?.[0])} />
         {src ? <PosterImage src={src} alt={`${title} poster`} /> : null}
-        {state.busy ? (
-          <span className="absolute inset-0 grid place-items-center bg-paper-bright/80 text-[0.9rem] font-semibold text-clay">{state.busy}</span>
-        ) : src ? (
-          <span className="absolute inset-x-0 bottom-0 bg-ink/70 py-1.5 text-center text-[0.8rem] font-semibold text-paper-bright opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-            Change poster
-          </span>
-        ) : (
+        {busy ? (
+          <span className="absolute inset-0 grid place-items-center bg-paper-bright/85 text-[0.95rem] font-semibold text-clay">{state.busy}</span>
+        ) : over ? (
+          <span className="absolute inset-0 grid place-items-center bg-clay/80 text-[0.95rem] font-bold text-paper-bright">Drop to use this poster</span>
+        ) : src ? null : (
           <span className="absolute inset-0 grid place-items-center p-2 text-center">
             <span>
               <span className="block text-[0.95rem] font-bold text-clay">+ Add poster</span>
-              <span className="block text-[0.78rem] text-ink-mute">tap or drop a file</span>
+              <span className="block text-[0.78rem] text-ink-mute">tap, or drop a file on this event</span>
             </span>
           </span>
         )}
-      </label>
+      </button>
+      {src ? (
+        <div className="mt-1 flex gap-1 text-[0.88rem] font-semibold">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => input.current?.click()}
+            className="-ml-2 inline-flex min-h-10 items-center rounded-lg px-2 text-clay hover:bg-clay-wash hover:text-clay-deep disabled:opacity-50"
+          >
+            Change poster
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={remove}
+            className="inline-flex min-h-10 items-center rounded-lg px-2 text-ink-mute hover:bg-sky-wash hover:text-sky disabled:opacity-50"
+          >
+            Remove
+          </button>
+        </div>
+      ) : null}
       {state.error ? (
-        <p role="alert" className="mt-1.5 text-[0.82rem] font-semibold text-sky">
+        <p role="alert" className="mt-2 rounded-lg bg-sky-wash px-3 py-2 text-[0.85rem] font-semibold text-sky">
           {state.error}
         </p>
       ) : state.note ? (

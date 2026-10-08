@@ -33,6 +33,16 @@ export const VENUES = [
   "Online",
 ] as const;
 
+/**
+ * Where an event's venue is (2026-10-08): one of the rooms at Centris (or no
+ * venue given), online, or somewhere else, which gets its own map link and
+ * calendar location instead of the Centris address.
+ */
+export function venueKind(venue: string | null | undefined): "centris" | "online" | "elsewhere" {
+  if (!venue || (VENUES as readonly string[]).includes(venue)) return venue === "Online" ? "online" : "centris";
+  return /^online\b/i.test(venue) ? "online" : "elsewhere";
+}
+
 export const SUMMARY_MAX = 160;
 export const DESCRIPTION_MAX = 1200;
 export const MAX_DATES = 8;
@@ -122,6 +132,8 @@ export interface AnnouncementInput {
   summary: string;
   description: string | null;
   registrationUrl: string | null;
+  /** People sign up (with a link, or a link still to come). */
+  signup: boolean;
   feeNote: string | null;
   /** Soonest first. */
   dates: AnnouncementDate[];
@@ -143,7 +155,7 @@ const text = (v: FormDataEntryValue | null | undefined) => String(v ?? "").repla
 export function parseAnnouncement(
   fd: FormData,
   today: string,
-  opts: { artworkRequired?: boolean; allowPast?: boolean } = {},
+  opts: { artworkRequired?: boolean; allowPast?: boolean; linkLater?: boolean } = {},
 ): { ok: true; value: AnnouncementInput } | { ok: false; errors: AnnouncementErrors } {
   const errors: AnnouncementErrors = {};
 
@@ -207,9 +219,12 @@ export function parseAnnouncement(
   dates.sort((a, b) => a.startsAt.localeCompare(b.startsAt));
 
   let registrationUrl: string | null = null;
-  if (text(fd.get("signup")) === "link") {
+  const wantsSignup = text(fd.get("signup")) === "link";
+  if (wantsSignup) {
     const url = text(fd.get("registration_url"));
-    if (!/^https?:\/\/\S+\.\S+/.test(url) || url.length > 300) errors.registration = "Paste the full sign-up link, starting with https://";
+    // Admins can save before the ministry sends the link (2026-10-08).
+    if (!url && opts.linkLater) registrationUrl = null;
+    else if (!/^https?:\/\/\S+\.\S+/.test(url) || url.length > 300) errors.registration = "Paste the full sign-up link, starting with https://";
     else registrationUrl = url;
   }
 
@@ -238,6 +253,7 @@ export function parseAnnouncement(
       summary,
       description,
       registrationUrl,
+      signup: wantsSignup,
       feeNote,
       dates,
       artwork,

@@ -5,12 +5,18 @@ import { AddToCalendar, IconLine } from "@/components/booking";
 import { ShareButton } from "./share-button";
 import { fmtPeso } from "@/lib/format";
 import { manilaDay, manilaMinutesOf } from "@/lib/admin-day";
-import { dateText } from "@/lib/announcements";
+import { dateText, venueKind } from "@/lib/announcements";
 import { SITE, MAPS_LINK } from "@/lib/site";
 import type { CcfEvent } from "@/lib/types";
 
 const hhmm = (iso: string) => {
   const m = manilaMinutesOf(iso);
+  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+};
+
+/** "HH:MM" plus some minutes, kept within the same day. */
+const laterBy = (t: string, minutes: number) => {
+  const m = Math.min(23 * 60 + 59, Number(t.slice(0, 2)) * 60 + Number(t.slice(3)) + minutes);
   return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 };
 
@@ -30,6 +36,15 @@ export function EventDetail({ e, others }: { e: CcfEvent; others: CcfEvent[] }) 
   const wide = e.cover_image_url ?? e.artwork?.main_tv ?? null;
   const tall = wide && wide === e.artwork?.main_tv ? e.artwork?.social : undefined;
   const fee = e.fee_note ?? (e.price_cents ? fmtPeso(e.price_cents) : "Free");
+  // Off-site events (a retreat in Batangas) get their own map link and
+  // address, not Centris's (2026-10-08).
+  const where = venueKind(e.location_note);
+  const directions =
+    where === "centris"
+      ? MAPS_LINK
+      : where === "elsewhere"
+        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.location_note ?? "")}`
+        : null;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -40,17 +55,23 @@ export function EventDetail({ e, others }: { e: CcfEvent; others: CcfEvent[] }) 
     endDate: next.ends_at ?? undefined,
     image: wide ?? undefined,
     eventStatus: "https://schema.org/EventScheduled",
-    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
-    location: {
-      "@type": "Place",
-      name: e.location_note ?? "CCF Centris",
-      address: {
-        "@type": "PostalAddress",
-        streetAddress: SITE.addressLines.slice(0, 2).join(", "),
-        addressLocality: "Quezon City",
-        addressCountry: "PH",
-      },
-    },
+    eventAttendanceMode:
+      where === "online" ? "https://schema.org/OnlineEventAttendanceMode" : "https://schema.org/OfflineEventAttendanceMode",
+    location:
+      where === "online"
+        ? { "@type": "VirtualLocation", name: e.location_note ?? "Online" }
+        : where === "elsewhere"
+          ? { "@type": "Place", name: e.location_note, address: e.location_note }
+          : {
+              "@type": "Place",
+              name: e.location_note ?? "CCF Centris",
+              address: {
+                "@type": "PostalAddress",
+                streetAddress: SITE.addressLines.slice(0, 2).join(", "),
+                addressLocality: "Quezon City",
+                addressCountry: "PH",
+              },
+            },
     organizer: { "@type": "Organization", name: e.ministry ?? e.organizer ?? "CCF Centris" },
   };
 
@@ -109,18 +130,22 @@ export function EventDetail({ e, others }: { e: CcfEvent; others: CcfEvent[] }) 
                   >
                     Register
                   </a>
+                ) : e.requires_registration ? (
+                  <p className="w-full text-[0.95rem] font-semibold text-ink-soft">Sign-up opens soon. Check back here for the link.</p>
                 ) : (
                   <p className="w-full text-[0.95rem] text-ink-mute">No sign-up needed. Just come.</p>
                 )}
                 <ShareButton title={e.title} />
-                <a
-                  href={MAPS_LINK}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn-press inline-flex min-h-12 items-center rounded-lg border border-edge bg-paper-bright px-5 text-[0.98rem] font-semibold text-ink hover:border-clay hover:text-clay"
-                >
-                  Directions
-                </a>
+                {directions ? (
+                  <a
+                    href={directions}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn-press inline-flex min-h-12 items-center rounded-lg border border-edge bg-paper-bright px-5 text-[0.98rem] font-semibold text-ink hover:border-clay hover:text-clay"
+                  >
+                    Directions
+                  </a>
+                ) : null}
               </div>
 
               <div className="mt-6 border-t border-rule pt-6">
@@ -130,9 +155,11 @@ export function EventDetail({ e, others }: { e: CcfEvent; others: CcfEvent[] }) 
                     title: e.title,
                     date: manilaDay(next.starts_at),
                     start: next.all_day ? "00:00" : hhmm(next.starts_at),
-                    end: next.all_day ? "23:59" : hhmm(next.ends_at ?? next.starts_at),
+                    // "7:00 PM onwards" has no end; give calendars two hours, not zero minutes.
+                    end: next.all_day ? "23:59" : next.ends_at ? hhmm(next.ends_at) : laterBy(hhmm(next.starts_at), 120),
                     details: [e.summary, `${SITE.url}/events/${e.slug}`].filter(Boolean).join("\n\n"),
-                    location: e.location_note ? `${e.location_note}, ${SITE.name}` : undefined,
+                    location:
+                      where === "elsewhere" ? (e.location_note ?? undefined) : e.location_note ? `${e.location_note}, ${SITE.name}` : undefined,
                   }}
                 />
                 {dates.length > 1 ? <p className="mt-2 text-[0.85rem] text-ink-mute">Adds the next date. Each date is listed above.</p> : null}
