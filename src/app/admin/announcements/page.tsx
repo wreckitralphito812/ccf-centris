@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AdminHeader, AdminNote, AdminPanel } from "../admin-ui";
 import { AddRepForm, ReviewActions, TakeDown } from "./review-forms";
-import { AnnounceForm } from "@/app/announce/announce-form";
-import { initialFrom } from "@/app/announce/initial";
+import { redirect } from "next/navigation";
 import { approveAnnouncementRep, removeAnnouncementRep } from "@/app/actions/admin-announcements";
 import { cx } from "@/components/ui";
 import { getAnnouncementQueue, getAnnouncementReps } from "@/lib/queries";
@@ -18,7 +17,6 @@ export const metadata: Metadata = { title: "Announcements" };
 export const dynamic = "force-dynamic";
 
 const TABS = [
-  { id: "new", label: "+ Add event" },
   { id: "waiting", label: "Waiting" },
   { id: "live", label: "Live" },
   { id: "screens", label: "Screens" },
@@ -35,9 +33,11 @@ export default async function AdminAnnouncements({ searchParams }: PageProps<"/a
   const { readOnly: noCode } = await requireAdmin();
   const readOnly = noCode || !hasSupabase();
   const sp = await searchParams;
+  // Adding and editing events moved to /admin/events (2026-10-08).
+  if (typeof sp.edit === "string") redirect(`/admin/events/${sp.edit}`);
+  if (sp.tab === "new") redirect("/admin/events/new");
   const [queue, reps] = await Promise.all([getAnnouncementQueue(), getAnnouncementReps()]);
-  const editing = typeof sp.edit === "string" ? queue.find((e) => e.id === sp.edit) ?? null : null;
-  const tab = editing ? "new" : (TABS.find((t) => t.id === sp.tab)?.id ?? "waiting");
+  const tab = TABS.find((t) => t.id === sp.tab)?.id ?? "waiting";
 
   const now = new Date();
   const nowIso = now.toISOString();
@@ -58,6 +58,11 @@ export default async function AdminAnnouncements({ searchParams }: PageProps<"/a
       <AdminHeader
         title="Announcements"
         lead="Ministry reps post at /announce. Approve to publish on What's Happening; it comes down after its last date."
+        action={
+          <Link href="/admin/events" className="inline-flex min-h-11 items-center rounded-lg border border-edge bg-paper-bright px-4 font-semibold text-ink hover:border-clay">
+            Manage events →
+          </Link>
+        }
       />
       {!hasSupabase() ? <AdminNote>Not connected to a database.</AdminNote> : null}
 
@@ -81,25 +86,6 @@ export default async function AdminAnnouncements({ searchParams }: PageProps<"/a
           </Link>
         ))}
       </nav>
-
-      {tab === "new" ? (
-        readOnly ? (
-          <AdminNote>Sign in with the admin code to add events.</AdminNote>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-[0.95rem] text-ink-soft">
-              {editing ? (
-                <>
-                  Editing <span className="font-semibold text-ink">{editing.title}</span>. Saving publishes the changes.
-                </>
-              ) : (
-                "Post an event straight to What's Happening, or put a booking on the calendar only. It goes live when you save."
-              )}
-            </p>
-            <AnnounceForm key={editing?.id ?? "new"} admin initial={editing ? initialFrom(editing) : undefined} />
-          </div>
-        )
-      ) : null}
 
       {tab === "waiting" ? (
         <>
@@ -146,7 +132,7 @@ export default async function AdminAnnouncements({ searchParams }: PageProps<"/a
                       </Link>
                     )}
                     {readOnly ? null : (
-                      <Link href={`/admin/announcements?edit=${e.id}`} className="label text-clay">
+                      <Link href={`/admin/events/${e.id}`} className="label text-clay">
                         Edit
                       </Link>
                     )}

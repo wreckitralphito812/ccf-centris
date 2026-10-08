@@ -1,87 +1,36 @@
 import type { Metadata } from "next";
-import {
-  AdminHeader,
-  AdminNote,
-  AdminPanel,
-  RowActions,
-  Stat,
-  Status,
-  Table,
-  Td,
-} from "../admin-ui";
-import { getUpcomingEvents } from "@/lib/queries";
-import { fmtDayShort, fmtPeso, fmtTime } from "@/lib/format";
+import { EventsManager } from "./list";
+import { requireAdmin } from "@/lib/admin-auth";
+import { getAdminEvents, getAnnouncementQueue } from "@/lib/queries";
+import { hasSupabase } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Events" };
+export const dynamic = "force-dynamic";
 
-export default async function AdminEvents() {
-  const events = await getUpcomingEvents();
-  const full = events.filter(
-    (e) => e.capacity !== null && e.seats_taken >= e.capacity,
-  );
-  const registered = events.reduce((n, e) => n + e.seats_taken, 0);
+/**
+ * The events manager (2026-10-08), replacing the template's demo table whose
+ * Edit / Attendees / Check-in buttons never did anything. Everything on
+ * What's Happening and the calendar, with the poster up front: add or change
+ * it by dropping a file on it, edit the details, hide, show or delete.
+ * Reps' submissions still in review stay on Announcements.
+ */
+
+export default async function AdminEvents({ searchParams }: PageProps<"/admin/events">) {
+  const { readOnly: noCode } = await requireAdmin();
+  const readOnly = noCode || !hasSupabase();
+  const sp = await searchParams;
+  const q = (typeof sp.q === "string" ? sp.q : "").trim();
+  const [all, queue] = await Promise.all([getAdminEvents(), getAnnouncementQueue()]);
+  const waiting = queue.filter((e) => e.status === "pending").length;
 
   return (
-    <div className="space-y-8">
-      <AdminHeader
-        title="Events"
-        lead="Everything published, with registration numbers and capacity."
-      />
-
-      <div className="grid gap-4 sm:grid-cols-4">
-        <Stat label="Upcoming" value={events.length} />
-        <Stat label="Total registrations" value={registered} tone="moss" />
-        <Stat label="At capacity" value={full.length} tone="clay" note="Waitlists running" />
-        <Stat
-          label="Categories"
-          value={new Set(events.map((e) => e.category)).size}
-        />
-      </div>
-
-      <AdminPanel title="Upcoming events">
-        <Table
-          columns={["Event", "When", "Organiser", "Registered", "Price", "Status", "Actions"]}
-        >
-          {events.map((e) => {
-            const isFull = e.capacity !== null && e.seats_taken >= e.capacity;
-            return (
-              <tr key={e.id}>
-                <Td>
-                  <span className="font-semibold">{e.title}</span>
-                  <span className="mt-0.5 block text-[0.82rem] text-ink-mute">
-                    {e.category} · {e.location_note}
-                  </span>
-                </Td>
-                <Td>
-                  {fmtDayShort(e.starts_at)}
-                  <span className="mt-0.5 block text-[0.82rem] text-ink-mute">
-                    {fmtTime(e.starts_at)}
-                  </span>
-                </Td>
-                <Td>{e.organizer}</Td>
-                <Td className="tabular-nums">
-                  {e.capacity === null
-                    ? "Open"
-                    : `${e.seats_taken} / ${e.capacity}`}
-                </Td>
-                <Td className="tabular-nums">{fmtPeso(e.price_cents)}</Td>
-                <Td>
-                  <Status value={isFull ? "full" : "published"} />
-                </Td>
-                <Td>
-                  <RowActions actions={["Edit", "Attendees", "Check-in"]} />
-                </Td>
-              </tr>
-            );
-          })}
-        </Table>
-      </AdminPanel>
-
-      <AdminNote>
-        When an event reaches capacity, registration switches to a waitlist
-        automatically. Waitlisted people are emailed in order when a place
-        opens, and nothing is confirmed until they accept it.
-      </AdminNote>
-    </div>
+    <EventsManager
+      all={all}
+      waiting={waiting}
+      view={typeof sp.view === "string" ? sp.view : undefined}
+      q={q}
+      readOnly={readOnly}
+      notice={!hasSupabase() ? "Not connected to a database." : noCode ? "Read-only: no admin code is configured." : undefined}
+    />
   );
 }

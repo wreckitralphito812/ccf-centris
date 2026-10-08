@@ -119,7 +119,7 @@ const text = (v: FormDataEntryValue | null | undefined) => String(v ?? "").repla
 export function parseAnnouncement(
   fd: FormData,
   today: string,
-  opts: { artworkRequired?: boolean } = {},
+  opts: { artworkRequired?: boolean; allowPast?: boolean } = {},
 ): { ok: true; value: AnnouncementInput } | { ok: false; errors: AnnouncementErrors } {
   const errors: AnnouncementErrors = {};
 
@@ -157,7 +157,8 @@ export function parseAnnouncement(
   days.forEach((d, i) => {
     if (errors.dates) return;
     if (!DATE.test(d)) return (errors.dates = "Each date needs a day.");
-    if (d < today) return (errors.dates = "One of the dates has already passed.");
+    // Admins edit series that are already under way (2026-10-08).
+    if (d < today && !opts.allowPast) return (errors.dates = "One of the dates has already passed.");
     if (allDay[i] === "1") {
       const until = untils[i] || d;
       if (!DATE.test(until) || until < d) return (errors.dates = "The last day can't be before the first.");

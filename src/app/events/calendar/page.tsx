@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
-import { ButtonLink, Container, Pill, Section } from "@/components/ui";
+import { ButtonLink, Container, Section } from "@/components/ui";
 import { getUpcomingEvents, getUpcomingServices } from "@/lib/queries";
 import { daysCovered } from "@/lib/announcements";
 import { fmtMonthYear, fmtTime, manilaDateKey } from "@/lib/format";

@@ -1,15 +1,15 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { upload } from "@vercel/blob/client";
 import { submitAnnouncement, type AnnounceResult } from "@/app/actions/announcements";
 import { adminSaveEvent } from "@/app/actions/admin-announcements";
 import { cx } from "@/components/ui";
+import { PosterImage } from "@/components/poster-image";
+import { readImage, uploadImage } from "@/lib/upload-image";
 import {
   ANNOUNCEMENT_CATEGORIES,
   DESCRIPTION_MAX,
   MAX_DATES,
-  MAX_UPLOAD_MB,
   PLACEMENTS,
   shapeCheck,
   SUMMARY_MAX,
@@ -47,6 +47,10 @@ export interface AnnounceInitial {
   registrationUrl?: string | null;
   feeNote?: string | null;
   artwork?: Artwork;
+  /** The website poster, when the admin added one separately (any shape). */
+  posterUrl?: string | null;
+  /** The event's status, so the admin form knows if it's hidden. */
+  status?: string;
 }
 
 const INPUT = "calm-input min-h-12 w-full px-4 text-[1rem] text-ink placeholder:text-ink-mute";
@@ -91,31 +95,18 @@ function ArtworkSlot({
 }) {
   async function choose(file: File | undefined) {
     if (!file) return;
-    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return onChange({ state: "error", message: "Use a JPG or PNG picture." });
-    if (file.size > MAX_UPLOAD_MB * 1024 * 1024) return onChange({ state: "error", message: `That file is over ${MAX_UPLOAD_MB} MB. Export a smaller JPG.` });
     onChange({ state: "checking" });
-    let w = 0;
-    let h = 0;
     try {
-      const bmp = await createImageBitmap(file);
-      w = bmp.width;
-      h = bmp.height;
-      bmp.close();
-    } catch {
-      return onChange({ state: "error", message: "That file couldn't be opened as a picture." });
-    }
-    const check = shapeCheck(p.key, w, h);
-    if (check.level === "error") return onChange({ state: "error", message: check.message });
-    onChange({ state: "uploading", message: "Uploading…" });
-    try {
-      const safe = file.name.replace(/[^a-zA-Z0-9.]+/g, "-").slice(-60);
-      const blob = await upload(`announcements/${p.key}-${safe}`, file, {
-        access: "public",
-        handleUploadUrl: "/api/announce/upload",
-      });
-      onChange({ state: "done", url: blob.url, message: check.message, level: check.level === "warn" ? "warn" : "ok" });
+      const { w, h } = await readImage(file);
+      const check = shapeCheck(p.key, w, h);
+      if (check.level === "error") {
+        return onChange({ state: "error", message: optional ? `${check.message} For a poster of any size, use the Poster box above.` : check.message });
+      }
+      onChange({ state: "uploading", message: "Uploading…" });
+      const url = await uploadImage(file, p.key);
+      onChange({ state: "done", url, message: check.message, level: check.level === "warn" ? "warn" : "ok" });
     } catch (e) {
-      onChange({ state: "error", message: (e as Error).message || "The upload didn't go through. Try again." });
+      onChange({ state: "error", message: (e as Error).message });
     }
   }
 
@@ -170,6 +161,81 @@ function ArtworkSlot({
   );
 }
 
+/**
+ * The website poster, any shape (2026-10-08). Ministries send posters as
+ * portrait, square or 16:9; the site shows it whole. Drop a file on it or
+ * tap to choose.
+ */
+function PosterSlot({ slot, onChange }: { slot: Slot; onChange: (s: Slot) => void }) {
+  const [over, setOver] = useState(false);
+  async function choose(file: File | undefined) {
+    if (!file) return;
+    onChange({ state: "checking", message: "Checking…" });
+    try {
+      const { w, h } = await readImage(file);
+      onChange({ state: "uploading", message: "Uploading…" });
+      const url = await uploadImage(file, "poster");
+      onChange({ state: "done", url, message: `${w} × ${h}`, level: w < 800 && h < 800 ? "warn" : "ok" });
+    } catch (e) {
+      onChange({ state: "error", message: (e as Error).message });
+    }
+  }
+  const working = slot.state === "checking" || slot.state === "uploading";
+  return (
+    <div>
+      <label
+        onDragOver={(ev) => {
+          ev.preventDefault();
+          setOver(true);
+        }}
+        onDragLeave={() => setOver(false)}
+        onDrop={(ev) => {
+          ev.preventDefault();
+          setOver(false);
+          choose(ev.dataTransfer.files?.[0]);
+        }}
+        className={cx(
+          "relative block aspect-video cursor-pointer overflow-hidden rounded-xl border-2 border-dashed transition-colors",
+          over ? "border-clay bg-clay-wash" : slot.state === "error" ? "border-sky/60 bg-mist" : "border-edge bg-mist hover:border-clay",
+        )}
+      >
+        <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(ev) => choose(ev.target.files?.[0])} />
+        {slot.url ? (
+          <PosterImage src={slot.url} alt="Poster" className={working ? "opacity-40" : undefined} />
+        ) : null}
+        {!slot.url || working ? (
+          <span className="absolute inset-0 grid place-items-center p-4 text-center">
+            <span>
+              <span className="block text-[1.05rem] font-bold text-clay">{working ? slot.message : "Choose a poster"}</span>
+              {working ? null : <span className="mt-1 block text-[0.88rem] text-ink-mute">or drop it here · JPG, PNG or WebP, any shape</span>}
+            </span>
+          </span>
+        ) : null}
+      </label>
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[0.88rem]">
+        {slot.state === "error" ? (
+          <p role="alert" className="font-semibold text-sky">
+            {slot.message}
+          </p>
+        ) : slot.url && !working ? (
+          <>
+            <p className={slot.level === "warn" ? "font-semibold text-sky" : "text-moss"}>
+              {slot.level === "warn" ? `Small (${slot.message}): it may look blurry.` : slot.message ? `Uploaded · ${slot.message}` : "Poster added"}
+            </p>
+            <label className="cursor-pointer font-semibold text-clay underline underline-offset-2">
+              Replace
+              <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(ev) => choose(ev.target.files?.[0])} />
+            </label>
+            <button type="button" onClick={() => onChange({ state: "empty" })} className="font-semibold text-ink-mute hover:text-sky">
+              Remove
+            </button>
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export function AnnounceForm({
   initial,
   defaultMinistry,
@@ -188,6 +254,7 @@ export function AnnounceForm({
         PLACEMENTS.map((p) => [p.key, initial?.artwork?.[p.key] ? { state: "done", url: initial.artwork[p.key] } : { state: "empty" }]),
       ) as Record<PlacementKey, Slot>,
   );
+  const [poster, setPoster] = useState<Slot>(() => (initial?.posterUrl ? { state: "done", url: initial.posterUrl } : { state: "empty" }));
   const [title, setTitle] = useState(initial?.title ?? "");
   const [summary, setSummary] = useState(initial?.summary ?? "");
   const [category, setCategory] = useState(initial?.category ?? ANNOUNCEMENT_CATEGORIES[0]);
@@ -198,22 +265,48 @@ export function AnnounceForm({
   const [signup, setSignup] = useState(initial?.registrationUrl ? "link" : initial?.id ? "none" : "link");
   const [fee, setFee] = useState(initial?.feeNote ? "paid" : "free");
   const e = state?.errors ?? {};
-  const busy = Object.values(slots).some((s) => s.state === "uploading" || s.state === "checking");
+  const busy = [...Object.values(slots), poster].some((s) => s.state === "uploading" || s.state === "checking");
+  const shown = poster.url ?? slots.main_tv.url;
 
   if (state?.ok) {
+    const ev = state.event;
+    const live = ev && ev.status === "published" && !ev.calendarOnly;
     return (
       <div className="calm-card p-8 text-center sm:p-10">
         <p className="text-[1.4rem] font-bold text-ink">{admin ? "Saved" : initial?.id ? "Changes sent" : "Sent for review"}</p>
         <p className="mx-auto mt-2 max-w-md leading-relaxed text-ink-soft">{state.message}</p>
-        <a
-          href={admin ? "/admin/announcements?tab=live" : "/announce"}
-          className="btn-press mt-6 inline-flex min-h-12 items-center rounded-lg bg-clay px-6 font-semibold text-paper-bright hover:bg-clay-deep"
-        >
-          {admin ? "Back to announcements" : "Back to your announcements"}
-        </a>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <a
+            href={admin ? "/admin/events" : "/announce"}
+            className="btn-press inline-flex min-h-12 items-center rounded-lg bg-clay px-6 font-semibold text-paper-bright hover:bg-clay-deep"
+          >
+            {admin ? "Back to events" : "Back to your announcements"}
+          </a>
+          {admin && live ? (
+            <a
+              href={`/events/${ev.slug}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-12 items-center rounded-lg border border-edge bg-paper-bright px-6 font-semibold text-ink hover:border-clay"
+            >
+              View on site ↗
+            </a>
+          ) : null}
+          {admin && !initial?.id ? (
+            // A full page load, so the form starts fresh (a Link to the same route keeps this "Saved" state).
+            // eslint-disable-next-line @next/next/no-html-link-for-pages
+            <a href="/admin/events/new" className="inline-flex min-h-12 items-center rounded-lg px-4 font-semibold text-clay hover:text-clay-deep">
+              + Add another
+            </a>
+          ) : null}
+        </div>
       </div>
     );
   }
+
+  // Steps are numbered in the order they show; calendar-only skips some.
+  let step = 0;
+  const nextStep = () => ++step;
 
   const chip = (on: boolean) =>
     cx(
@@ -244,19 +337,46 @@ export function AnnounceForm({
       {PLACEMENTS.map((p) => (
         <input key={p.key} type="hidden" name={`artwork_${p.key}`} value={slots[p.key].url ?? ""} />
       ))}
+      {admin ? <input type="hidden" name="poster_url" value={poster.url ?? ""} /> : null}
 
       <div>
+      {admin && calendarOnly ? null : admin ? (
+        <Section n={nextStep()} title="Poster" hint="The picture on What's Happening and the event page. Any shape works; you can add it later.">
+          <div className="max-w-xl">
+            <PosterSlot slot={poster} onChange={setPoster} />
+          </div>
+          <details className="group mt-6 rounded-xl border border-edge bg-paper-bright" open={PLACEMENTS.some((p) => initial?.artwork?.[p.key])}>
+            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 text-[0.98rem] font-semibold text-ink">
+              <span>
+                Files for the screens <span className="font-normal text-ink-mute">(optional · exact sizes for the TVs, LED wall and standee)</span>
+              </span>
+              <span aria-hidden className="text-ink-mute transition-transform group-open:rotate-180">
+                ▾
+              </span>
+            </summary>
+            <div className="border-t border-rule p-4">
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+                <ArtworkSlot p={PLACEMENTS[0]} optional slot={slots.main_tv} onChange={(s) => setSlots((x) => ({ ...x, main_tv: s }))} />
+                <ArtworkSlot p={PLACEMENTS[1]} optional slot={slots.social} onChange={(s) => setSlots((x) => ({ ...x, social: s }))} />
+              </div>
+              <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                {PLACEMENTS.slice(2).map((p) => (
+                  <ArtworkSlot key={p.key} p={p} optional slot={slots[p.key]} onChange={(s) => setSlots((x) => ({ ...x, [p.key]: s }))} />
+                ))}
+              </div>
+              <p className="mt-3 text-[0.85rem] text-ink-mute">The media team downloads these from Announcements → Screens.</p>
+            </div>
+          </details>
+          <Err text={e.artwork} />
+        </Section>
+      ) : (
       <Section
-        n={1}
-        title={admin ? "Artwork (optional)" : "Your artwork"}
-        hint={
-          admin
-            ? "The ministry's files for the screens. Main Hall TV becomes the picture on the website; you can add them later."
-            : "The same files you make for the screens. Main Hall TV is required; add the others if you have them."
-        }
+        n={nextStep()}
+        title="Your artwork"
+        hint="The same files you make for the screens. Main Hall TV is required; add the others if you have them."
       >
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-          <ArtworkSlot p={PLACEMENTS[0]} optional={admin} slot={slots.main_tv} onChange={(s) => setSlots((x) => ({ ...x, main_tv: s }))} />
+          <ArtworkSlot p={PLACEMENTS[0]} slot={slots.main_tv} onChange={(s) => setSlots((x) => ({ ...x, main_tv: s }))} />
           <ArtworkSlot p={PLACEMENTS[1]} slot={slots.social} onChange={(s) => setSlots((x) => ({ ...x, social: s }))} />
         </div>
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
@@ -266,8 +386,9 @@ export function AnnounceForm({
         </div>
         <Err text={e.artwork} />
       </Section>
+      )}
 
-      <Section n={2} title="What it is">
+      <Section n={nextStep()} title="What it is">
         <div className="grid gap-5 sm:grid-cols-2">
           <label className="block sm:col-span-2">
             <span className={LABEL}>Title</span>
@@ -324,7 +445,7 @@ export function AnnounceForm({
         </div>
       </Section>
 
-      <Section n={3} title="When and where" hint="For a series, add every date.">
+      <Section n={nextStep()} title="When and where" hint="For a series, add every date.">
         <div className="space-y-4">
           {dates.map((d, i) => (
             <div key={i} className="rounded-xl border border-edge bg-paper-bright p-3 sm:p-4">
@@ -407,7 +528,7 @@ export function AnnounceForm({
       </Section>
 
       {calendarOnly ? null : (
-      <Section n={4} title="Sign-up and fee" hint="Type these even if they're on the picture: phones can't scan a QR code on their own screen.">
+      <Section n={nextStep()} title="Sign-up and fee" hint="Type these even if they're on the picture: phones can't scan a QR code on their own screen.">
         <input type="hidden" name="signup" value={signup} />
         <div className="flex flex-wrap gap-2">
           <button type="button" aria-pressed={signup === "link"} onClick={() => setSignup("link")} className={chip(signup === "link")}>
@@ -445,14 +566,14 @@ export function AnnounceForm({
       </Section>
       )}
 
-      <Section n={5} title="How it will look" hint="The card on What's Happening. Tap it there to see the full details.">
+      {calendarOnly ? null : (
+      <Section n={nextStep()} title="How it will look" hint="The card on What's Happening. Tap it there to see the full details.">
         <div className="max-w-sm">
           <div className="aspect-video overflow-hidden rounded-xl bg-mist">
-            {slots.main_tv.url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={slots.main_tv.url} alt="" className="h-full w-full object-cover" />
+            {shown ? (
+              <PosterImage src={shown} alt="" />
             ) : (
-              <span className="grid h-full place-items-center text-[0.9rem] text-ink-mute">Your Main Hall TV picture</span>
+              <span className="grid h-full place-items-center text-[0.9rem] text-ink-mute">{admin ? "The poster" : "Your Main Hall TV picture"}</span>
             )}
           </div>
           <p className="mt-3 text-[0.85rem] font-semibold text-clay">
@@ -463,6 +584,7 @@ export function AnnounceForm({
           <p className="mt-0.5 text-[0.9rem] text-ink-mute">{venue === "Other" ? "Your venue" : venue}</p>
         </div>
       </Section>
+      )}
       </div>
 
       {state?.formError ? (
@@ -472,15 +594,36 @@ export function AnnounceForm({
       ) : null}
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-rule pt-6">
         <p className="text-[0.92rem] text-ink-mute">
-          {admin ? "It goes live as soon as you save." : "The team reviews it within 2 working days and emails you."}
+          {admin
+            ? initial?.id
+              ? initial.status === "published"
+                ? "It's live: changes show on the site as soon as you save."
+                : "It's hidden: saving keeps it hidden. Show it from the events list."
+              : "Publish puts it on the site now. Save hidden keeps it off the site until you're ready."
+            : "The team reviews it within 2 working days and emails you."}
         </p>
-        <button
-          type="submit"
-          disabled={pending || busy}
-          className="btn-press min-h-12 rounded-lg bg-clay px-7 text-[1rem] font-semibold text-paper-bright transition-colors hover:bg-clay-deep disabled:opacity-50"
-        >
-          {pending ? "Saving…" : busy ? "Waiting for uploads…" : admin ? (initial?.id ? "Save changes" : "Publish") : initial?.id ? "Send changes" : "Send for review"}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          {admin && !initial?.id ? (
+            <button
+              type="submit"
+              name="publish"
+              value="0"
+              disabled={pending || busy}
+              className="min-h-12 rounded-lg border border-edge bg-paper-bright px-5 text-[1rem] font-semibold text-ink transition-colors hover:border-clay disabled:opacity-50"
+            >
+              Save hidden
+            </button>
+          ) : null}
+          <button
+            type="submit"
+            name={admin && !initial?.id ? "publish" : undefined}
+            value={admin && !initial?.id ? "1" : undefined}
+            disabled={pending || busy}
+            className="btn-press min-h-12 rounded-lg bg-clay px-7 text-[1rem] font-semibold text-paper-bright transition-colors hover:bg-clay-deep disabled:opacity-50"
+          >
+            {pending ? "Saving…" : busy ? "Waiting for uploads…" : admin ? (initial?.id ? "Save changes" : "Publish") : initial?.id ? "Send changes" : "Send for review"}
+          </button>
+        </div>
       </div>
     </form>
   );
