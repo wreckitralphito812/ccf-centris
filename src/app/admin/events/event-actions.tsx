@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { deleteEvent, setEventPoster, setEventVisibility } from "@/app/actions/admin-events";
 import { PosterImage } from "@/components/poster-image";
 import { cx } from "@/components/ui";
@@ -26,7 +26,7 @@ export function PosterDrop({ id, title, src, readOnly }: { id: string; title: st
   const [over, setOver] = useState(false);
   const [, start] = useTransition();
   const root = useRef<HTMLDivElement>(null);
-  const input = useRef<HTMLInputElement>(null);
+  const inputId = useId();
 
   async function choose(pick: () => File) {
     setState({ busy: "Checking…" });
@@ -99,15 +99,20 @@ export function PosterDrop({ id, title, src, readOnly }: { id: string; title: st
   }
 
   const busy = Boolean(state.busy);
+  // Both the picture and "Change poster" are <label>s for the one file input:
+  // the browser opens the picker itself, the way "+ Add poster" always did.
+  // Opening it from script (input.click()) did nothing in Ralph's browser
+  // (2026-10-08).
+  const pickerLabel = cx(busy ? "pointer-events-none" : "cursor-pointer");
   return (
     <div ref={root}>
       <input
-        ref={input}
+        id={inputId}
         type="file"
         accept={PICTURE_ACCEPT}
-        className="sr-only"
-        tabIndex={-1}
-        aria-hidden
+        className="peer sr-only"
+        disabled={busy}
+        aria-label={src ? `Change the poster for ${title}` : `Add a poster for ${title}`}
         onChange={(ev) => {
           const file = ev.target.files?.[0];
           // Clear it, so choosing the same file again still counts.
@@ -115,14 +120,13 @@ export function PosterDrop({ id, title, src, readOnly }: { id: string; title: st
           if (file) choose(() => file);
         }}
       />
-      <button
-        type="button"
-        disabled={busy}
-        onClick={() => input.current?.click()}
-        aria-label={src ? `Change the poster for ${title}` : `Add a poster for ${title}`}
+      <label
+        htmlFor={inputId}
+        title={src ? "Change the poster" : "Add a poster"}
         className={cx(
           frame,
-          "group cursor-pointer text-left disabled:cursor-wait",
+          pickerLabel,
+          "group peer-focus-visible:ring-4 peer-focus-visible:ring-clay/40",
           src ? "bg-mist" : "border-2 border-dashed bg-mist",
           over ? "border-clay ring-4 ring-clay/40" : src ? "" : "border-edge hover:border-clay",
         )}
@@ -140,17 +144,19 @@ export function PosterDrop({ id, title, src, readOnly }: { id: string; title: st
             </span>
           </span>
         )}
-      </button>
+      </label>
       {src ? (
         <div className="mt-1 flex gap-1 text-[0.88rem] font-semibold">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => input.current?.click()}
-            className="-ml-2 inline-flex min-h-10 items-center rounded-lg px-2 text-clay hover:bg-clay-wash hover:text-clay-deep disabled:opacity-50"
+          <label
+            htmlFor={inputId}
+            className={cx(
+              pickerLabel,
+              "-ml-2 inline-flex min-h-10 select-none items-center rounded-lg px-2 text-clay hover:bg-clay-wash hover:text-clay-deep",
+              busy && "opacity-50",
+            )}
           >
             Change poster
-          </button>
+          </label>
           <button
             type="button"
             disabled={busy}

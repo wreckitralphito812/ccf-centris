@@ -44,6 +44,11 @@ const FIREBASE_HOST = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
 const CANONICAL_HOST = "ccfcentris.org.ph";
 
 const nextConfig: NextConfig = {
+  // Version skew protection (2026-10-08): a tab left open across a deploy
+  // reloads onto the new build on its next navigation, instead of running
+  // the old page code (a fixed bug "still broken" in an old admin tab).
+  // Vercel sets VERCEL_DEPLOYMENT_ID; locally it's unset and nothing changes.
+  deploymentId: process.env.VERCEL_DEPLOYMENT_ID,
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "i.ytimg.com" },
