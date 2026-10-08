@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { dateText, daysCovered, downloadName, isOurUpload, lastEnd, parseAnnouncement, shapeCheck, slugFor } from "./announcements";
+import { dateText, daysCovered, downloadName, isOurUpload, lastEnd, parseAnnouncement, shapeCheck, signupUrlFrom, slugFor } from "./announcements";
 
 const BLOB = "https://abc123.public.blob.vercel-storage.com/announcements/main-tv-x1y2.jpg";
 
@@ -119,4 +119,14 @@ test("admins can keep dates that have passed, for a series already under way", (
   const series = form({ date: ["2026-10-10", "2026-11-07"], start: ["15:30", "15:30"], end: ["", ""] });
   assert.equal(parseAnnouncement(series, "2026-10-20").ok, false);
   assert.ok(parseAnnouncement(series, "2026-10-20", { allowPast: true }).ok);
+});
+
+test("a poster's QR code becomes a clean sign-up link, or nothing", () => {
+  assert.equal(signupUrlFrom("https://bit.ly/2be1LoveTriangleCouplesRetreat?r=qr"), "https://bit.ly/2be1LoveTriangleCouplesRetreat");
+  assert.equal(signupUrlFrom("forms.gle/abc123"), "https://forms.gle/abc123");
+  assert.equal(signupUrlFrom(" https://docs.google.com/forms/d/e/x/viewform?usp=sf_link "), "https://docs.google.com/forms/d/e/x/viewform?usp=sf_link");
+  assert.equal(signupUrlFrom("https://example.com/?r=qr"), "https://example.com/?r=qr");
+  for (const no of ["", "tel:+639171234567", "WIFI:S:CCF;T:WPA;P:secret;;", "Join us on Sunday", "mailto:a@b.co", "javascript:alert(1)"]) {
+    assert.equal(signupUrlFrom(no), null, no);
+  }
 });

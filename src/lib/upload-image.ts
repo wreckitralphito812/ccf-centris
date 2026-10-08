@@ -1,7 +1,7 @@
 "use client";
 
 import { upload } from "@vercel/blob/client";
-import { MAX_UPLOAD_MB } from "@/lib/announcements";
+import { MAX_UPLOAD_MB, signupUrlFrom } from "@/lib/announcements";
 
 /**
  * Upload one picture from the browser straight to the Blob store
@@ -37,4 +37,37 @@ export async function uploadImage(file: File, prefix: string): Promise<string> {
     if (/client token/i.test(msg)) throw new Error("Couldn't start the upload. Your sign-in may have expired: refresh the page and try again.");
     throw new Error("The upload didn't go through. Check your connection and try again.");
   }
+}
+
+/**
+ * Read a QR code on a poster and return it as a sign-up link (2026-10-08),
+ * so the admin doesn't have to type the link the QR already holds. Tries a
+ * quick, smaller copy first, then full size for small codes. Never throws:
+ * a poster without a readable QR code just returns null.
+ */
+export async function findQrLink(file: File): Promise<string | null> {
+  try {
+    const [{ default: jsQR }, bmp] = await Promise.all([import("jsqr"), createImageBitmap(file)]);
+    try {
+      for (const max of [1600, 4000]) {
+        const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
+        const w = Math.round(bmp.width * scale);
+        const h = Math.round(bmp.height * scale);
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (!ctx) return null;
+        ctx.drawImage(bmp, 0, 0, w, h);
+        const code = jsQR(ctx.getImageData(0, 0, w, h).data, w, h);
+        if (code?.data) return signupUrlFrom(code.data);
+        if (scale === 1) break;
+      }
+    } finally {
+      bmp.close();
+    }
+  } catch (e) {
+    console.warn("QR check skipped", e);
+  }
+  return null;
 }
