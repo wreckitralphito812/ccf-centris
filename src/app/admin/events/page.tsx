@@ -31,6 +31,8 @@ export default async function AdminEvents({ searchParams }: PageProps<"/admin/ev
       q={q}
       readOnly={readOnly}
       notice={!hasSupabase() ? "Not connected to a database." : noCode ? "Read-only: no admin code is configured." : undefined}
+      savedId={typeof sp.saved === "string" ? sp.saved : undefined}
+      added={sp.added === "1"}
     />
   );
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AdminHeader, AdminNote } from "../admin-ui";
-import { EventButtons, PosterDrop } from "./event-actions";
+import { EventButtons, PosterDrop, ScrollToSaved } from "./event-actions";
 import { cx } from "@/components/ui";
 import { dateText } from "@/lib/announcements";
 import { manilaDay } from "@/lib/admin-day";
@@ -36,13 +36,20 @@ function Chip({ tone, children }: { tone: "clay" | "moss" | "ink" | "sky"; child
   return <span className={cx("inline-flex items-center rounded-full px-2.5 py-0.5 text-[0.78rem] font-semibold", c)}>{children}</span>;
 }
 
-function EventRow({ e, past, readOnly }: { e: CcfEvent; past: boolean; readOnly: boolean }) {
+function EventRow({ e, past, readOnly, saved }: { e: CcfEvent; past: boolean; readOnly: boolean; saved: boolean }) {
   const hidden = isHidden(e);
   const missing = past || hidden ? [] : gaps(e);
   const dates = e.dates?.length ? e.dates : [{ starts_at: e.starts_at, ends_at: e.ends_at }];
   const shownOnSite = !hidden && !past && !e.calendar_only;
   return (
-    <li className={cx("grid gap-4 p-4 sm:grid-cols-[12rem_minmax(0,1fr)] sm:p-5 lg:grid-cols-[14rem_minmax(0,1fr)] xl:grid-cols-[14rem_minmax(0,1fr)_auto]", hidden && "bg-mist/60")}>
+    <li
+      id={`event-${e.id}`}
+      className={cx(
+        "grid scroll-mt-24 gap-4 p-4 sm:grid-cols-[12rem_minmax(0,1fr)] sm:p-5 lg:grid-cols-[14rem_minmax(0,1fr)] xl:grid-cols-[14rem_minmax(0,1fr)_auto]",
+        hidden && "bg-mist/60",
+        saved && "bg-moss/5 shadow-[inset_4px_0_0_var(--color-moss)]",
+      )}
+    >
       <div className={cx(hidden || past ? "opacity-70" : undefined)}>
         {e.calendar_only ? (
           // Calendar-only bookings never show a poster, so they get a date block.
@@ -63,6 +70,7 @@ function EventRow({ e, past, readOnly }: { e: CcfEvent; past: boolean; readOnly:
 
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-1.5">
+          {saved ? <Chip tone="moss">✓ Saved</Chip> : null}
           {hidden ? <Chip tone="ink">Hidden</Chip> : past ? <Chip tone="ink">Ended</Chip> : e.calendar_only ? <Chip tone="ink">Calendar only</Chip> : <Chip tone="moss">On the site</Chip>}
           {e.category && !e.calendar_only ? <Chip tone="clay">{e.category}</Chip> : null}
           {missing.map((m) => (
@@ -115,7 +123,7 @@ function EventRow({ e, past, readOnly }: { e: CcfEvent; past: boolean; readOnly:
 }
 
 /** Rows grouped under month headings. */
-function MonthGroups({ list, past, readOnly }: { list: CcfEvent[]; past: boolean; readOnly: boolean }) {
+function MonthGroups({ list, past, readOnly, savedId }: { list: CcfEvent[]; past: boolean; readOnly: boolean; savedId?: string }) {
   const groups = new Map<string, CcfEvent[]>();
   for (const e of list) {
     const k = fmtMonthYear(new Date(e.starts_at));
@@ -128,7 +136,7 @@ function MonthGroups({ list, past, readOnly }: { list: CcfEvent[]; past: boolean
           <h2 className="mb-2 text-[0.95rem] font-bold text-ink-soft">{month}</h2>
           <ul className="divide-y divide-hairline overflow-hidden rounded-xl border border-hairline bg-paper-bright">
             {rows.map((e) => (
-              <EventRow key={e.id} e={e} past={past} readOnly={readOnly} />
+              <EventRow key={e.id} e={e} past={past} readOnly={readOnly} saved={e.id === savedId} />
             ))}
           </ul>
         </section>
@@ -144,6 +152,8 @@ export function EventsManager({
   q,
   readOnly,
   notice,
+  savedId,
+  added = false,
 }: {
   all: CcfEvent[];
   waiting: number;
@@ -151,6 +161,9 @@ export function EventsManager({
   q: string;
   readOnly: boolean;
   notice?: React.ReactNode;
+  /** The event just saved from the form, to confirm and scroll to. */
+  savedId?: string;
+  added?: boolean;
 }) {
   const now = new Date().toISOString();
   const match = (e: CcfEvent) =>
@@ -172,6 +185,7 @@ export function EventsManager({
     { id: "past", label: "Past" },
   ];
   const view: View = tabs.find((t) => t.id === viewParam)?.id ?? "upcoming";
+  const saved = savedId ? (all.find((e) => e.id === savedId) ?? null) : null;
   const list = lists[view];
   const href = (v: View) => `/admin/events?view=${v}${q ? `&q=${encodeURIComponent(q)}` : ""}`;
 
@@ -201,6 +215,41 @@ export function EventsManager({
       />
 
       {notice ? <AdminNote>{notice}</AdminNote> : null}
+
+      {saved ? (
+        <div role="status" className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-moss/30 bg-moss/10 px-4 py-3 text-[0.95rem] text-ink">
+          <span>
+            <span className="font-bold text-moss">✓ {added ? "Added" : "Saved"}</span> <span className="font-semibold">{saved.title}</span>
+            <span className="text-ink-soft">
+              {" "}
+              ·{" "}
+              {isHidden(saved)
+                ? "hidden: it's not on the site until you show it."
+                : endOf(saved) < now
+                  ? "it has ended, so it's under Past."
+                  : saved.calendar_only
+                    ? "on the month calendar."
+                    : "live on What's Happening."}
+            </span>
+          </span>
+          <span className="flex gap-4 font-semibold">
+            {!isHidden(saved) && !saved.calendar_only && endOf(saved) >= now ? (
+              <a href={`/events/${saved.slug}`} target="_blank" rel="noreferrer" className="text-clay hover:text-clay-deep">
+                View on site ↗
+              </a>
+            ) : null}
+            <Link href={`/admin/events/${saved.id}`} className="text-clay hover:text-clay-deep">
+              Edit again
+            </Link>
+            {added ? (
+              <Link href="/admin/events/new" className="text-clay hover:text-clay-deep">
+                + Add another
+              </Link>
+            ) : null}
+          </span>
+          <ScrollToSaved id={saved.id} />
+        </div>
+      ) : null}
 
       {waiting ? (
         <Link
@@ -252,7 +301,7 @@ export function EventsManager({
       </div>
 
       {list.length ? (
-        <MonthGroups list={list} past={view === "past"} readOnly={readOnly} />
+        <MonthGroups list={list} past={view === "past"} readOnly={readOnly} savedId={savedId} />
       ) : (
         <div className="rounded-xl border border-dashed border-edge bg-paper-bright px-5 py-12 text-center">
           <p className="text-[0.98rem] text-ink-soft">{empty[view]}</p>

@@ -1,6 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
+import { redirect } from "next/navigation";
 import { isOurUpload, lastEnd, parseAnnouncement, slugFor, type AnnouncementErrors } from "@/lib/announcements";
 import { manilaDateKey } from "@/lib/format";
 
@@ -208,14 +209,8 @@ export async function adminSaveEvent(_prev: ReviewResult | null, fd: FormData): 
   if (datesError) console.error("adminSaveEvent: dates failed", datesError);
 
   refresh(saved.slug as string);
-  const hidden = saved.status !== "published";
-  return {
-    ok: true,
-    message: hidden
-      ? "Saved, and hidden. It won't show on the site until you show it from the events list."
-      : calendarOnly
-        ? "Saved. It's on the month calendar."
-        : "Saved. It's live on What's Happening and the calendar.",
-    event: { id, slug: saved.slug as string, status: saved.status as string, calendarOnly },
-  };
+  // Back to the events list, scrolled to this event, so the next edit is one
+  // tap away (Ralph, 2026-10-08). Past events live on the Past tab.
+  const ended = lastEnd(a.dates) < new Date().toISOString();
+  redirect(`/admin/events?${ended ? "view=past&" : ""}saved=${id}${editId ? "" : "&added=1"}`);
 }
