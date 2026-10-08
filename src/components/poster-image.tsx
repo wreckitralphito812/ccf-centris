@@ -7,15 +7,19 @@ import { cx } from "@/components/ui";
  * 16:9 poster fills the frame exactly, as before.
  *
  * The frame (aspect ratio, rounding) comes from the parent; this fills it.
+ * The pictures can't be dragged and let clicks through to what's around them
+ * (a link, or the admin's "change poster" control): in some browsers a click
+ * on a draggable picture started a drag instead, so nothing happened
+ * (2026-10-08).
  */
 export function PosterImage({ src, alt, className, imgClassName }: { src: string; alt: string; className?: string; imgClassName?: string }) {
   return (
     <span className={cx("relative block h-full w-full overflow-hidden bg-ink/10", className)}>
       {/* Uploaded artwork; its store's host isn't in next/image's list. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt="" aria-hidden loading="lazy" className="no-frame absolute inset-0 h-full w-full scale-110 object-cover opacity-60 blur-xl" />
+      <img src={src} alt="" aria-hidden loading="lazy" draggable={false} className="no-frame pointer-events-none absolute inset-0 h-full w-full scale-110 select-none object-cover opacity-60 blur-xl" />
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt={alt} loading="lazy" className={cx("no-frame relative h-full w-full object-contain", imgClassName)} />
+      <img src={src} alt={alt} loading="lazy" draggable={false} className={cx("no-frame pointer-events-none relative h-full w-full select-none object-contain", imgClassName)} />
     </span>
   );
 }

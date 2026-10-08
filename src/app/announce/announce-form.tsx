@@ -149,7 +149,7 @@ function ArtworkSlot({
         {slot.url ? (
           // The upload's own address; next/image can't know the store's host ahead of time.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={slot.url} alt={`${p.label} artwork`} className="h-full w-full object-contain" />
+          <img src={slot.url} alt={`${p.label} artwork`} draggable={false} className="pointer-events-none h-full w-full select-none object-contain" />
         ) : (
           <span className="px-3 text-[0.88rem] font-semibold text-clay">
             {slot.state === "checking" || slot.state === "uploading" ? slot.message ?? "…" : "Choose file"}
