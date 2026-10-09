@@ -39,6 +39,12 @@ export const metadata: Metadata = {
       "A satellite of Christ's Commission Fellowship at Eton Centris, Quezon City. Sundays at 10:00 AM and 3:00 PM.",
   },
   robots: { index: true, follow: true },
+  /* Every page names its ccfcentris.org.ph address as the real one
+     (2026-10-10). Search results still listed ccf-centris.vercel.app a week
+     after the move; that address 308s here, and the canonical tag tells
+     Google and Bing which one to keep. "./" resolves to each page's own path,
+     without its query string. */
+  alternates: { canonical: "./" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
