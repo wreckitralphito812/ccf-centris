@@ -101,7 +101,7 @@ export default async function ArchivePage() {
                     <h3 className="font-display text-lg leading-tight">
                       <Link
                         href={`/watch/archive/${s.videoId}`}
-                        className="group-hover:text-clay"
+                        className="-my-1.5 block py-1.5 group-hover:text-clay"
                       >
                         {s.title}
                       </Link>

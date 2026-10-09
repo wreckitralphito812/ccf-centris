@@ -89,6 +89,13 @@ export function SignUpForm({ next, accounts }: { next: string; accounts: boolean
 
   return (
     <div>
+      {/* Google first, as on sign-in (2026-10-10). */}
+      {accounts ? (
+        <>
+          <ProviderButton next={next} />
+          <OrDivider>or with email</OrDivider>
+        </>
+      ) : null}
       <form noValidate onSubmit={submit} className="space-y-5">
         <div className="grid gap-5 sm:grid-cols-2">
           <IconField
@@ -154,13 +161,6 @@ export function SignUpForm({ next, accounts }: { next: string; accounts: boolean
           Sign in
         </Link>
       </p>
-
-      {accounts ? (
-        <>
-          <OrDivider />
-          <ProviderButton next={next} />
-        </>
-      ) : null}
     </div>
   );
 }

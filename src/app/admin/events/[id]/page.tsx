@@ -20,7 +20,7 @@ export default async function AdminEditEvent({ params }: PageProps<"/admin/event
   const live = e.status === "published" && !e.calendar_only && (e.ends_at ?? e.starts_at) >= new Date().toISOString();
   return (
     <div className="max-w-5xl space-y-6">
-      <Link href="/admin/events" className="text-[0.92rem] font-semibold text-clay hover:text-clay-deep">
+      <Link href="/admin/events" className="inline-flex min-h-10 items-center text-[0.92rem] font-semibold text-clay hover:text-clay-deep">
         ← Events
       </Link>
       <AdminHeader

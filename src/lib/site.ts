@@ -198,6 +198,14 @@ export const PARKING = {
   geo: { lat: 14.6418428, lng: 121.0410548 },
 } as const;
 
+/** Drive straight to the parking, not the building (Ralph, 2026-10-10). */
+export const PARKING_WAZE = `https://www.waze.com/ul?ll=${encodeURIComponent(
+  `${PARKING.geo.lat},${PARKING.geo.lng}`,
+)}&navigate=yes`;
+export const PARKING_DIRECTIONS = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+  `${PARKING.geo.lat},${PARKING.geo.lng}`,
+)}`;
+
 /** Interactive map preview dropped on the parking pin. */
 export const PARKING_EMBED = `https://www.google.com/maps?q=${encodeURIComponent(
   `${PARKING.geo.lat},${PARKING.geo.lng}`,

@@ -151,20 +151,25 @@ export function EventCard({ e }: { e: CcfEvent }) {
           ) : (
             <MessageArt seed={e.slug} label={e.category ?? "Event"} className="h-full w-full" />
           )}
-          <div className="absolute left-0 top-0 bg-paper-bright px-3 py-2 text-center">
-            <p className="font-display text-2xl leading-none">
-              {new Date(e.starts_at).toLocaleDateString("en-PH", {
-                timeZone: "Asia/Manila",
-                day: "numeric",
-              })}
-            </p>
-            <p className="label mt-0.5 text-ink-mute">
-              {new Date(e.starts_at).toLocaleDateString("en-PH", {
-                timeZone: "Asia/Manila",
-                month: "short",
-              })}
-            </p>
-          </div>
+          {/* The date tag sits on placeholder art only: on a real poster it
+              covered the ministry's own artwork (2026-10-10). The date is
+              also written under the card. */}
+          {e.cover_image_url ? null : (
+            <div className="absolute left-0 top-0 bg-paper-bright px-3 py-2 text-center">
+              <p className="font-display text-2xl leading-none">
+                {new Date(e.starts_at).toLocaleDateString("en-PH", {
+                  timeZone: "Asia/Manila",
+                  day: "numeric",
+                })}
+              </p>
+              <p className="label mt-0.5 text-ink-mute">
+                {new Date(e.starts_at).toLocaleDateString("en-PH", {
+                  timeZone: "Asia/Manila",
+                  month: "short",
+                })}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-1 flex-col p-5">

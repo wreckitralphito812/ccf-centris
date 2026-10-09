@@ -136,6 +136,14 @@ export function SignInForm({ next, accounts }: { next: string; accounts: boolean
 
   return (
     <div>
+      {/* Google first (2026-10-10): below the form it sat under the fold on
+          phones, and people missed it. */}
+      {accounts ? (
+        <>
+          <ProviderButton next={next} remember={remember} />
+          <OrDivider>or with email</OrDivider>
+        </>
+      ) : null}
       <form noValidate onSubmit={submit} className="space-y-5">
         <IconField
           id="email"
@@ -183,13 +191,6 @@ export function SignInForm({ next, accounts }: { next: string; accounts: boolean
           Sign up
         </Link>
       </p>
-
-      {accounts ? (
-        <>
-          <OrDivider />
-          <ProviderButton next={next} remember={remember} />
-        </>
-      ) : null}
     </div>
   );
 }

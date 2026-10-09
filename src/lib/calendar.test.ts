@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { dgroupEvent, googleCalendarLink, icsFile, icsHref, manilaParts, roomEvent, utcStamp } from "./calendar";
+import { dgroupEvent, eventFromIcsParam, googleCalendarLink, icsFile, icsHref, manilaParts, roomEvent, utcStamp } from "./calendar";
 
 const table = dgroupEvent({ date: "2026-10-06", slotId: "1600", roomSlug: "welcome-center", labels: ["4", "5"] });
 
@@ -47,4 +47,26 @@ test("a room request says it's waiting until it's confirmed", () => {
 
 test("the page link is the same on every render", () => {
   assert.equal(icsHref(table), icsHref(table));
+});
+
+test("an all-day event over several days covers every day, in both formats", () => {
+  const retreat = { uid: "event-x", title: "Love Triangle", date: "2026-10-16", endDate: "2026-10-18", start: "00:00", end: "23:59", details: "d", allDay: true };
+  const url = new URL(googleCalendarLink(retreat));
+  assert.equal(url.searchParams.get("dates"), "20261016/20261019");
+  const ics = icsFile(retreat, new Date("2026-09-30T00:00:00Z"));
+  assert.match(ics, /DTSTART;VALUE=DATE:20261016\r\n/);
+  assert.match(ics, /DTEND;VALUE=DATE:20261019\r\n/);
+  // A one-day all-day date ends the next morning.
+  assert.equal(new URL(googleCalendarLink({ ...retreat, endDate: undefined })).searchParams.get("dates"), "20261016/20261017");
+});
+
+test("the .ics link round-trips through /api/calendar and refuses anything else", () => {
+  const href = icsHref({ ...table, location: "Dgroup Lounge, CCF Centris — “2/F”" });
+  assert.match(href, /^\/api\/calendar\?e=[A-Za-z0-9_-]+$/);
+  const back = eventFromIcsParam(new URL(href, "https://x").searchParams.get("e"));
+  assert.equal(back?.title, table.title);
+  assert.equal(back?.location, "Dgroup Lounge, CCF Centris — “2/F”");
+  for (const bad of [null, "", "not-base64!!", Buffer.from('{"title":"x"}').toString("base64"), "A".repeat(5000)]) {
+    assert.equal(eventFromIcsParam(bad), null);
+  }
 });

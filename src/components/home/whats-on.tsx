@@ -123,7 +123,7 @@ export function ThisWeek({ days }: { days: AgendaDay[] }) {
                       <li key={`${it.title}-${i}`} className="grid grid-cols-[4.4rem_minmax(0,1fr)] gap-2 text-[0.93rem] leading-snug lg:block">
                         <span className="block tabular-nums text-[0.85rem] text-ink-mute">{it.time ?? "All day"}</span>
                         {it.href ? (
-                          <Link href={it.href} className={cx("block font-semibold hover:text-clay", it.kind === "service" ? "text-ink-soft" : "text-ink")}>
+                          <Link href={it.href} className={cx("-my-1.5 block py-1.5 font-semibold hover:text-clay", it.kind === "service" ? "text-ink-soft" : "text-ink")}>
                             {it.title}
                           </Link>
                         ) : (

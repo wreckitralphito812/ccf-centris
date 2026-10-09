@@ -20,7 +20,7 @@ export default async function NewDgroupPage() {
       />
       <Section tone="mist">
         <Container className="max-w-3xl">
-          <Link href="/my/dgroups" className="mb-5 inline-block text-[0.95rem] font-semibold text-clay hover:text-clay-deep">
+          <Link href="/my/dgroups" className="mb-3 inline-flex min-h-10 items-center text-[0.95rem] font-semibold text-clay hover:text-clay-deep">
             ← Your Dgroups
           </Link>
           <DgroupForm initial={{ leaderName: contact?.name ?? "", leaderMobile: contact?.mobile ?? "" }} />

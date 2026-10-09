@@ -154,12 +154,20 @@ export function EventDetail({ e, others }: { e: CcfEvent; others: CcfEvent[] }) 
                     uid: `event-${e.id}-${next.starts_at}`,
                     title: e.title,
                     date: manilaDay(next.starts_at),
+                    allDay: Boolean(next.all_day),
+                    ...(next.all_day && next.ends_at ? { endDate: manilaDay(next.ends_at) } : {}),
                     start: next.all_day ? "00:00" : hhmm(next.starts_at),
                     // "7:00 PM onwards" has no end; give calendars two hours, not zero minutes.
                     end: next.all_day ? "23:59" : next.ends_at ? hhmm(next.ends_at) : laterBy(hhmm(next.starts_at), 120),
                     details: [e.summary, `${SITE.url}/events/${e.slug}`].filter(Boolean).join("\n\n"),
+                    // A room at Centris reads "Main Hall, CCF Centris"; "CCF Centris" itself, or
+                    // no venue, gets the full street address (the default).
                     location:
-                      where === "elsewhere" ? (e.location_note ?? undefined) : e.location_note ? `${e.location_note}, ${SITE.name}` : undefined,
+                      where === "elsewhere"
+                        ? (e.location_note ?? undefined)
+                        : e.location_note && e.location_note !== SITE.name && where === "centris"
+                          ? `${e.location_note}, ${SITE.name}`
+                          : undefined,
                   }}
                 />
                 {dates.length > 1 ? <p className="mt-2 text-[0.85rem] text-ink-mute">Adds the next date. Each date is listed above.</p> : null}
