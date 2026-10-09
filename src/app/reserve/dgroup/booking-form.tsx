@@ -39,16 +39,27 @@ export type { NightOption };
 export const shortNight = (label: string) => `${label.slice(0, 3)}${label.slice(label.indexOf(","))}`;
 
 /** The form, remounted fresh for each new booking after a confirmation. */
+/** A leader's approved Dgroup, for one-tap booking (2026-10-08). */
+export interface MyDgroupOption {
+  id: string;
+  name: string;
+  size: number;
+  leaderName: string;
+  leaderMobile: string;
+}
+
 export function BookingForm({
   nights,
   email,
   name = "",
   mobile = "",
+  dgroups = [],
 }: {
   nights: NightOption[];
   email: string;
   name?: string;
   mobile?: string;
+  dgroups?: MyDgroupOption[];
 }) {
   const [attempt, setAttempt] = useState(0);
   return (
@@ -58,6 +69,7 @@ export function BookingForm({
       email={email}
       name={name}
       mobile={mobile}
+      dgroups={dgroups}
       onAnother={() => setAttempt((a) => a + 1)}
     />
   );
@@ -96,12 +108,14 @@ function BookingAttempt({
   email,
   name,
   mobile,
+  dgroups,
   onAnother,
 }: {
   nights: NightOption[];
   email: string;
   name: string;
   mobile: string;
+  dgroups: MyDgroupOption[];
   onAnother: () => void;
 }) {
   const [state, action, pending] = useActionState<DgroupBookingResult | null, FormData>(
@@ -110,7 +124,11 @@ function BookingAttempt({
   );
   const [date, setDate] = useState(() => nights.find((n) => !dayFull(n))?.date ?? "");
   const [slot, setSlot] = useState("");
-  const [count, setCount] = useState("");
+  // A leader with one approved Dgroup has it picked already; its leader,
+  // mobile and size fill the form (2026-10-08).
+  const [dgroupId, setDgroupId] = useState(dgroups.length === 1 ? dgroups[0].id : "");
+  const group = dgroups.find((g) => g.id === dgroupId);
+  const [count, setCount] = useState(group ? String(Math.min(group.size, MAX_GROUP_SIZE)) : "");
   const [agreed, setAgreed] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const doneRef = useRef<HTMLDivElement>(null);
@@ -233,6 +251,32 @@ function BookingAttempt({
           the right (2026-10-01). Phones keep one column. */}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
       <div className="calm-card px-6 py-8 sm:px-9 sm:py-10">
+        <input type="hidden" name="dgroup_id" value={dgroupId} />
+        {dgroups.length ? (
+          <Question id="q-group" title="Which Dgroup?" note="Pick yours and we fill in the rest.">
+            <div role="radiogroup" aria-labelledby="q-group" className="flex flex-wrap gap-2">
+              {[...dgroups, { id: "", name: "Another group", size: 0, leaderName: "", leaderMobile: "" }].map((g) => {
+                const on = dgroupId === g.id;
+                return (
+                  <label key={g.id || "other"} className={cx("inline-flex min-h-12 items-center px-4 py-2 text-[1rem]", choiceClass(on, false))}>
+                    <input
+                      type="radio"
+                      name="dgroup_pick"
+                      value={g.id}
+                      checked={on}
+                      onChange={() => {
+                        setDgroupId(g.id);
+                        if (g.size) setCount(String(Math.min(g.size, MAX_GROUP_SIZE)));
+                      }}
+                      className="sr-only"
+                    />
+                    <span className={cx(on && "font-semibold")}>{g.name}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </Question>
+        ) : null}
         <Question
           id="q-day"
           title="Which day?"
@@ -340,11 +384,12 @@ function BookingAttempt({
       <div className="calm-card px-6 py-8 sm:px-9 sm:py-10 lg:sticky lg:top-24">
         <Question id="q-details" title="Your details">
           <ContactFields
+            key={dgroupId || "none"}
             fields={[
               {
                 name: "leader_name",
                 label: "Dleader name",
-                value: name,
+                value: group?.leaderName || name,
                 autoComplete: "name",
                 required: true,
                 error: e.leaderName,
@@ -362,7 +407,7 @@ function BookingAttempt({
               {
                 name: "contact_mobile",
                 label: "Dleader contact number",
-                value: mobile,
+                value: group?.leaderMobile || mobile,
                 type: "tel",
                 autoComplete: "tel",
                 required: true,

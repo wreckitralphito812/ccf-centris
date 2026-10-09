@@ -416,3 +416,19 @@ test("the Watch library is server-only and holds one pinned video at most", asyn
   );
   await assert.rejects(db.exec(`insert into watch_replays (video_id, title) values ('bad id', 'X')`), /check/);
 });
+
+// --- Dgroup registry (0018) -------------------------------------------------------
+
+test("registered Dgroups, with their leaders' contact details, aren't readable with the anon key", async () => {
+  await db.exec(`
+    insert into dgroups (satellite_id, leader_id, name, status, is_open, leader_name, leader_mobile, leader_email)
+    values ('${SAT}', '${ANA}', 'Ana''s Dgroup', 'approved', true, 'Ana Cruz', '09171234567', 'ana@example.com');
+  `);
+  for (const who of [null, BEN]) {
+    const rows = await as(who, "select * from dgroups").catch(() => []);
+    assert.equal(rows.length, 0, "dgroups table");
+    await assert.rejects(as(who, "select * from dgroups_public"), /permission denied/);
+  }
+  // The server, as the database owner (like the service role), still reads them.
+  assert.equal((await db.query("select 1 from dgroups where name = 'Ana''s Dgroup'")).rows.length, 1);
+});

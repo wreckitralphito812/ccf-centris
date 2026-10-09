@@ -43,6 +43,7 @@ export default async function AdminDgroupTables() {
     <tr key={b.id}>
       <Td>
         <span className="font-semibold">{b.leader_name}</span>
+        {b.dgroup_name ? <span className="block text-[0.85rem] text-clay-deep">{b.dgroup_name}</span> : null}
         <span className="mt-0.5 block text-[0.82rem] text-ink-mute">{b.contact_mobile}</span>
         {b.leader_email ? (
           <span className="block text-[0.82rem] text-ink-mute">{b.leader_email}</span>

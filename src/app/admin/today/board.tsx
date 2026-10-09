@@ -180,6 +180,7 @@ export function TodayBoard({
                               <li key={b.id} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 px-4 py-2.5 text-[0.92rem]">
                                 <span className="w-24 shrink-0 font-semibold text-clay">{tablesLabel(b.table_labels)}</span>
                                 <span className="font-semibold text-ink">{b.leader_name}</span>
+                                {b.dgroup_name ? <span className="text-clay-deep">{b.dgroup_name}</span> : null}
                                 <span className="text-ink-mute">
                                   {b.group_size} {b.group_size === 1 ? "person" : "people"} · {b.contact_mobile}
                                 </span>

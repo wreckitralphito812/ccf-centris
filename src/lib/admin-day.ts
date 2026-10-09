@@ -10,6 +10,7 @@ import { MINISTRY_ROOMS } from "@/lib/ministry-rooms";
 export interface DayTable {
   id: string;
   leader_name: string;
+  dgroup_name?: string | null;
   contact_mobile: string;
   group_size: number;
   room_slug: string;

@@ -21,12 +21,19 @@ const projectId = process.env.FIREBASE_PROJECT_ID ?? process.env.NEXT_PUBLIC_FIR
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
 
+/**
+ * Local end-to-end testing only (2026-10-09): with FIREBASE_AUTH_EMULATOR_HOST
+ * set, firebase-admin talks to the Firebase Auth emulator, which needs no
+ * service account. Ignored in production builds.
+ */
+const emulator = process.env.NODE_ENV !== "production" && Boolean(process.env.FIREBASE_AUTH_EMULATOR_HOST);
+
 export function hasFirebase(): boolean {
-  return Boolean(projectId && clientEmail && privateKey);
+  return Boolean(projectId && (emulator || (clientEmail && privateKey)));
 }
 
 export async function firebaseAdminAuth(): Promise<Auth> {
-  if (!projectId || !clientEmail || !privateKey) {
+  if (!projectId || (!emulator && (!clientEmail || !privateKey))) {
     throw new Error("firebaseAdminAuth() called without the Firebase service account settings");
   }
   const [{ cert, getApp, getApps, initializeApp }, { getAuth }] = await Promise.all([
@@ -35,6 +42,6 @@ export async function firebaseAdminAuth(): Promise<Auth> {
   ]);
   const app = getApps().length
     ? getApp()
-    : initializeApp({ credential: cert({ projectId, clientEmail, privateKey }), projectId });
+    : initializeApp(emulator ? { projectId } : { credential: cert({ projectId, clientEmail: clientEmail!, privateKey: privateKey! }), projectId });
   return getAuth(app);
 }

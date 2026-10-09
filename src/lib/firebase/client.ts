@@ -1,7 +1,7 @@
 "use client";
 
 import { getApp, getApps, initializeApp } from "firebase/app";
-import { getAuth, inMemoryPersistence, setPersistence, type Auth } from "firebase/auth";
+import { connectAuthEmulator, getAuth, inMemoryPersistence, setPersistence, type Auth } from "firebase/auth";
 
 /**
  * Firebase Auth in the browser. It only proves who someone is: once Firebase
@@ -64,6 +64,10 @@ export function firebaseAuth(): Promise<Auth> {
   auth ??= (async () => {
     const app = getApps().length ? getApp() : initializeApp(config);
     const a = getAuth(app);
+    // Local end-to-end testing only (2026-10-09): sign in against the
+    // Firebase Auth emulator (scripts/local-db/README). Never set in production.
+    const emulator = process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST;
+    if (emulator && process.env.NODE_ENV !== "production") connectAuthEmulator(a, `http://${emulator}`, { disableWarnings: true });
     await setPersistence(a, inMemoryPersistence);
     return a;
   })();
