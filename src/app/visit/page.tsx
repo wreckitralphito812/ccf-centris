@@ -6,7 +6,9 @@ import {
   MAPS_EMBED,
   MAPS_LINK,
   PARKING,
+  PARKING_DIRECTIONS,
   PARKING_EMBED,
+  PARKING_WAZE,
   SITE,
   WAZE_LINK,
 } from "@/lib/site";
@@ -105,6 +107,13 @@ export default function VisitPage() {
                   Open in Waze
                 </ButtonLink>
               </div>
+              <p className="mt-4 text-[0.95rem] text-ink-soft">
+                Driving?{" "}
+                <a href={PARKING_WAZE} target="_blank" rel="noreferrer" className="font-semibold text-clay underline underline-offset-4 hover:text-clay-deep">
+                  Waze to the parking
+                </a>{" "}
+                at {PARKING.name}.
+              </p>
 
             </div>
 
@@ -172,6 +181,16 @@ export default function VisitPage() {
                       />
                     )}
                   </div>
+                  {r.id === "car" ? (
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      <ButtonLink href={PARKING_WAZE} target="_blank" rel="noreferrer" full>
+                        Waze to the parking
+                      </ButtonLink>
+                      <ButtonLink href={PARKING_DIRECTIONS} target="_blank" rel="noreferrer" tone="outline" full>
+                        Google Maps
+                      </ButtonLink>
+                    </div>
+                  ) : null}
                 </figure>
                 <dl className="divide-y divide-hairline border-y border-hairline">
                   {r.facts.map(([k, v]) => (

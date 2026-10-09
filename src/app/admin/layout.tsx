@@ -32,7 +32,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
     <div className="min-h-screen bg-paper-deep print:bg-white">
       <div className="border-b border-hairline bg-night text-paper-bright print:hidden">
         <div className="mx-auto flex max-w-[110rem] flex-wrap items-center gap-4 px-5 py-3 sm:px-8">
-          <Link href="/admin" className="flex items-center gap-2.5">
+          <Link href="/admin" className="flex min-h-10 items-center gap-2.5">
             <CcfMark className="h-7 w-7 text-clay" />
             <span className="flex flex-col leading-none">
               <span className="stencil text-[0.85rem]">CCF Centris</span>

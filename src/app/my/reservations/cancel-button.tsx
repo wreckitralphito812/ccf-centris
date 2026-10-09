@@ -13,28 +13,36 @@ export function CancelButton({ id }: { id: string }) {
   const [confirming, setConfirming] = useState(false);
 
   if (confirming) {
+    // The question, then both answers side by side on one row (2026-10-10).
     return (
-      <span className="flex flex-wrap items-center gap-2">
-        <span className="text-[0.95rem] text-ink-soft">Cancel this booking?</span>
-        <button
-          type="button"
-          disabled={pending}
-          onClick={() =>
-            start(async () => {
-              const r = await cancelMyBooking(id);
-              if (!r.ok) {
-                setError(r.formError ?? "Could not cancel.");
-                setConfirming(false);
-              }
-            })
-          }
-          className={`${pill} bg-sky-wash text-sky`}
-        >
-          {pending ? "Cancelling…" : "Yes, cancel"}
-        </button>
-        <button type="button" disabled={pending} onClick={() => setConfirming(false)} className={`${pill} text-ink-mute`}>
-          Keep it
-        </button>
+      <span className="block w-full rounded-2xl bg-mist p-4 sm:p-5">
+        <span className="block text-[1rem] font-semibold text-ink">Cancel this booking?</span>
+        <span className="mt-3 grid grid-cols-2 gap-2 sm:max-w-sm">
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() =>
+              start(async () => {
+                const r = await cancelMyBooking(id);
+                if (!r.ok) {
+                  setError(r.formError ?? "Could not cancel.");
+                  setConfirming(false);
+                }
+              })
+            }
+            className={`${pill} justify-center bg-sky-wash text-sky hover:bg-sky/15`}
+          >
+            {pending ? "Cancelling…" : "Yes, cancel"}
+          </button>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => setConfirming(false)}
+            className={`${pill} justify-center border border-edge bg-paper-bright text-ink hover:border-clay`}
+          >
+            Keep it
+          </button>
+        </span>
       </span>
     );
   }

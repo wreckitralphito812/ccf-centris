@@ -13,7 +13,7 @@ export default async function AdminAddEvent() {
   const { readOnly } = await requireAdmin();
   return (
     <div className="max-w-5xl space-y-6">
-      <Link href="/admin/events" className="text-[0.92rem] font-semibold text-clay hover:text-clay-deep">
+      <Link href="/admin/events" className="inline-flex min-h-10 items-center text-[0.92rem] font-semibold text-clay hover:text-clay-deep">
         ← Events
       </Link>
       <AdminHeader title="Add event" lead="Put an event on What's Happening, or a booking on the calendar only." />

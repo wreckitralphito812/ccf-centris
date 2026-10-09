@@ -441,7 +441,8 @@ export function AddToCalendar({ event, bare = false }: { event: CalendarEvent; b
           <UiIcon name="calendar" className="h-4 w-4" />
           Google Calendar
         </a>
-        <a href={icsHref(event)} download="ccf-centris.ics" className={cx(base, "text-clay hover:bg-clay-wash")}>
+        {/* A real .ics from /api/calendar: phones open it in Calendar, laptops download it. */}
+        <a href={icsHref(event)} className={cx(base, "text-clay hover:bg-clay-wash")}>
           <UiIcon name="calendar" className="h-4 w-4" />
           Apple or Outlook
         </a>

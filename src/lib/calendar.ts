@@ -19,7 +19,19 @@ export interface CalendarEvent {
   end: string;
   details: string;
   location?: string;
+  /**
+   * An all-day date (2026-10-10): `start`/`end` are ignored and calendars get
+   * whole days, through `endDate` (inclusive) for one running several days.
+   */
+  allDay?: boolean;
+  /** Manila "YYYY-MM-DD", the last day of an all-day event over several days. */
+  endDate?: string;
 }
+
+/** "2026-10-18" → "20261019": all-day ends are exclusive in both formats. */
+const dayAfter = (date: string) =>
+  new Date(Date.parse(`${date}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10).replace(/-/g, "");
+const compact = (date: string) => date.replace(/-/g, "");
 
 const LOCATION = `${SITE.name}, ${SITE.addressLines.join(", ")}`;
 
@@ -38,7 +50,9 @@ export function googleCalendarLink(ev: CalendarEvent): string {
   const q = new URLSearchParams({
     action: "TEMPLATE",
     text: ev.title,
-    dates: `${utcStamp(ev.date, ev.start)}/${utcStamp(ev.date, ev.end)}`,
+    dates: ev.allDay
+      ? `${compact(ev.date)}/${dayAfter(ev.endDate ?? ev.date)}`
+      : `${utcStamp(ev.date, ev.start)}/${utcStamp(ev.endDate ?? ev.date, ev.end)}`,
     details: ev.details,
     location: ev.location ?? LOCATION,
     ctz: "Asia/Manila",
@@ -74,8 +88,9 @@ export function icsFile(ev: CalendarEvent, now = new Date()): string {
     "BEGIN:VEVENT",
     `UID:${ev.uid}@ccf-centris`,
     `DTSTAMP:${stamp}`,
-    `DTSTART:${utcStamp(ev.date, ev.start)}`,
-    `DTEND:${utcStamp(ev.date, ev.end)}`,
+    ...(ev.allDay
+      ? [`DTSTART;VALUE=DATE:${compact(ev.date)}`, `DTEND;VALUE=DATE:${dayAfter(ev.endDate ?? ev.date)}`]
+      : [`DTSTART:${utcStamp(ev.date, ev.start)}`, `DTEND:${utcStamp(ev.endDate ?? ev.date, ev.end)}`]),
     `SUMMARY:${icsText(ev.title)}`,
     `DESCRIPTION:${icsText(ev.details)}`,
     `LOCATION:${icsText(ev.location ?? LOCATION)}`,
@@ -88,13 +103,44 @@ export function icsFile(ev: CalendarEvent, now = new Date()): string {
 }
 
 /**
- * A link that downloads the .ics straight from the page, no server trip. The
- * DTSTAMP is fixed to the event's day rather than "now", so the server and the
- * browser render the same link (a "now" stamp broke hydration, 2026-09-30).
+ * The .ics as a link to /api/calendar, which serves it as a real file
+ * (2026-10-10). It used to be a data: link built in the page, which iPhone
+ * Safari won't open, so "Apple or Outlook" did nothing there. The event
+ * travels in the link (no personal details: title, times, place, page link)
+ * and the result is the same on the server and in the browser.
  */
 export function icsHref(ev: CalendarEvent): string {
-  const stamp = new Date(`${ev.date}T00:00:00+08:00`);
-  return `data:text/calendar;charset=utf-8,${encodeURIComponent(icsFile(ev, stamp))}`;
+  const json = JSON.stringify(ev);
+  const b64 = typeof Buffer !== "undefined" ? Buffer.from(json, "utf8").toString("base64") : btoa(unescape(encodeURIComponent(json)));
+  return `/api/calendar?e=${b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")}`;
+}
+
+/** The event back out of an icsHref link, or null if it isn't one we'd make. */
+export function eventFromIcsParam(param: string | null): CalendarEvent | null {
+  if (!param || param.length > 4000) return null;
+  try {
+    const json = Buffer.from(param.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8");
+    const v = JSON.parse(json) as Partial<CalendarEvent>;
+    const str = (x: unknown, max: number) => typeof x === "string" && x.length <= max;
+    const day = (x: unknown) => typeof x === "string" && /^\d{4}-\d{2}-\d{2}$/.test(x);
+    const hhmm = (x: unknown) => typeof x === "string" && /^\d{2}:\d{2}$/.test(x);
+    if (!str(v.uid, 200) || !str(v.title, 200) || !day(v.date) || !hhmm(v.start) || !hhmm(v.end) || !str(v.details, 1500)) return null;
+    if (v.location !== undefined && !str(v.location, 300)) return null;
+    if (v.endDate !== undefined && !day(v.endDate)) return null;
+    return {
+      uid: v.uid!,
+      title: v.title!,
+      date: v.date!,
+      start: v.start!,
+      end: v.end!,
+      details: v.details!,
+      ...(v.location !== undefined ? { location: v.location } : {}),
+      ...(v.allDay ? { allDay: true } : {}),
+      ...(v.endDate ? { endDate: v.endDate } : {}),
+    };
+  } catch {
+    return null;
+  }
 }
 
 /** A Dgroup table booking as a calendar event. */

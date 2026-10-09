@@ -215,12 +215,24 @@ export function FloorPlanDrawing({
       <div style={{ position: "absolute", left: wall, top: wall, width: inner, height: innerH, display: "flex", background: FLOOR }}>
         {pieces}
       </div>
-      {/* Door openings: gaps in the wall, each with a small label inside. */}
+      {/* Door openings: gaps in the wall, each with a small tag inside the room
+          pointing at it. The tag is kept clear of the walls (2026-10-10: it
+          used to run into the corner of the Dgroup Lounge). */}
       {plan.doors.map((d, i) => {
         const bottom = d.wall === "bottom";
         const gap = bottom
           ? { left: wall + px(d.from, inner), top: innerH + wall, width: px(d.to - d.from, inner), height: wall }
           : { left: 0, top: wall + px(d.from, innerH), width: wall, height: px(d.to - d.from, innerH) };
+        const text = bottom ? "↓ ENTRANCE" : "← ENTRANCE";
+        const tagW = Math.round(text.length * doorLabel * 0.66) + 10;
+        const tagH = doorLabel + 8;
+        const pad = 4;
+        const tagLeft = bottom
+          ? Math.min(Math.max(gap.left + gap.width / 2 - tagW / 2, wall + pad), wall + inner - tagW - pad)
+          : wall + pad;
+        const tagTop = bottom
+          ? gap.top - tagH - pad
+          : Math.min(Math.max(gap.top + gap.height / 2 - tagH / 2, wall + pad), wall + innerH - tagH - pad);
         return [
           <div key={`door${i}`} style={{ position: "absolute", display: "flex", background: FLOOR, ...gap }} />,
           <div
@@ -228,16 +240,22 @@ export function FloorPlanDrawing({
             style={{
               position: "absolute",
               display: "flex",
-              color: "#4d5c5e",
+              alignItems: "center",
+              justifyContent: "center",
+              left: Math.round(tagLeft),
+              top: Math.round(tagTop),
+              width: tagW,
+              height: tagH,
+              borderRadius: tagH / 2,
+              background: "#ffffff",
+              border: "1px solid #c9d3d4",
+              color: "#3c4a4c",
               fontSize: doorLabel,
-              fontWeight: 600,
+              fontWeight: 700,
               letterSpacing: 0.5,
-              ...(bottom
-                ? { left: gap.left, top: gap.top - doorLabel - 6, width: gap.width, justifyContent: "center" }
-                : { left: wall + 4, top: gap.top + Math.round(gap.height / 2) - doorLabel / 2 - 1 }),
             }}
           >
-            ENTRANCE
+            {text}
           </div>,
         ];
       })}

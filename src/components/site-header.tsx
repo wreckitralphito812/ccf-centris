@@ -15,9 +15,13 @@ export function SiteHeader() {
   const bar = useRef<HTMLDivElement>(null);
   const [barH, setBarH] = useState(0);
 
-  useEffect(() => {
+  // Close the phone menu when the page changes, while rendering rather than
+  // in an effect (no extra render pass; React's recommended pattern).
+  const [menuPath, setMenuPath] = useState(pathname);
+  if (menuPath !== pathname) {
+    setMenuPath(pathname);
     setMobile(false);
-  }, [pathname]);
+  }
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -80,6 +84,15 @@ export function SiteHeader() {
           href="/"
           aria-label="CCF Centris home"
           aria-current={pathname === "/" ? "page" : undefined}
+          onClick={(ev) => {
+            // Already home: a link to the same page does nothing, so take
+            // people back to the top instead (Ralph, 2026-10-10).
+            if (pathname === "/") {
+              ev.preventDefault();
+              setMobile(false);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+          }}
           className="btn-press shrink-0 transition-opacity duration-200 hover:opacity-70"
         >
           <Wordmark />
@@ -149,6 +162,12 @@ export function SiteHeader() {
       {mobile ? (
         <div
           style={{ top: barH || undefined }}
+          // Any link closes the sheet, including one to the page you're on,
+          // which doesn't change the path, so the sheet used to stay open and
+          // the tap seemed to do nothing (2026-10-10).
+          onClick={(ev) => {
+            if ((ev.target as HTMLElement).closest("a")) setMobile(false);
+          }}
           className="fixed inset-x-0 bottom-0 top-[3.75rem] z-50 overflow-y-auto overscroll-contain border-t border-rule bg-paper-bright lg:hidden"
         >
           {/* The phone menu (2026-10-02): search, the pages, then your

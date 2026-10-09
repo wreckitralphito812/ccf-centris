@@ -22,7 +22,7 @@ export default async function EditDgroupPage({ params }: PageProps<"/my/dgroups/
       <PageHeader eyebrow="Your Dgroups" title={d.name} lead="Keep your Dgroup's details current, so the team knows when and where you meet." />
       <Section tone="mist">
         <Container className="max-w-3xl">
-          <Link href="/my/dgroups" className="mb-5 inline-block text-[0.95rem] font-semibold text-clay hover:text-clay-deep">
+          <Link href="/my/dgroups" className="mb-3 inline-flex min-h-10 items-center text-[0.95rem] font-semibold text-clay hover:text-clay-deep">
             ← Your Dgroups
           </Link>
           {d.review_note && (d.status === "changes_requested" || d.status === "declined") ? (

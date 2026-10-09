@@ -81,6 +81,10 @@ function SignedInMenu({ email }: { email: string }) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // When the hover opened the menu a moment ago, the click that follows is
+  // the same intent, not "close it" (2026-10-10: a click on the initial
+  // seemed to do nothing, because hover opened it and the click toggled it shut).
+  const hoverOpenedAt = useRef(0);
 
   useEffect(() => {
     if (!open) return;
@@ -116,6 +120,7 @@ function SignedInMenu({ email }: { email: string }) {
       onPointerEnter={(ev) => {
         if (ev.pointerType === "mouse") {
           hold();
+          hoverOpenedAt.current = Date.now();
           setOpen(true);
         }
       }}
@@ -125,7 +130,13 @@ function SignedInMenu({ email }: { email: string }) {
     >
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          // Decided from the latest state: the hover's setOpen(true) may not
+          // have rendered yet when this click arrives.
+          const justHovered = Date.now() - hoverOpenedAt.current < 1500;
+          hoverOpenedAt.current = 0;
+          setOpen((v) => (justHovered ? true : !v));
+        }}
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label="Account"

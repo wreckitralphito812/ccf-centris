@@ -31,8 +31,9 @@ export function BookingActions({
   rebookTarget: string | null;
   reference: string;
 }) {
-  const [changing, setChanging] = useState(false);
-  const [confirmCancel, setConfirmCancel] = useState(false);
+  // One thing at a time (Ralph, 2026-10-10): changing hides Cancel, and
+  // cancelling hides Change, so it's always clear which you're doing.
+  const [mode, setMode] = useState<"idle" | "changing" | "cancelling">("idle");
   const t = item.table;
   const r = item.room;
 
@@ -57,47 +58,51 @@ export function BookingActions({
     <div className="space-y-5">
       {event ? <AddToCalendar bare event={event} /> : null}
 
-      <div className="flex flex-wrap items-center gap-2">
-        {t ? (
-          <button
-            type="button"
-            onClick={() => setChanging((c) => !c)}
-            aria-expanded={changing}
-            className={cx(ghost, "text-clay hover:bg-clay-wash")}
-          >
-            {changing ? "Close" : "Change"}
-          </button>
-        ) : null}
-
-        {t ? (
-          confirmCancel ? (
-            <form action={cancelDgroupBooking} className="flex flex-wrap items-center gap-2">
-              <input type="hidden" name="id" value={t.id} />
-              <span className="text-[0.95rem] text-ink-soft">Cancel this table?</span>
-              <button type="submit" className={cx(ghost, "bg-sky-wash text-sky")}>
-                Yes, cancel
-              </button>
-              <button type="button" onClick={() => setConfirmCancel(false)} className={cx(ghost, "text-ink-mute")}>
-                Keep it
-              </button>
-            </form>
-          ) : (
+      {t && mode === "cancelling" ? (
+        <form action={cancelDgroupBooking} className="rounded-2xl bg-mist p-4 sm:p-5">
+          <input type="hidden" name="id" value={t.id} />
+          <p className="text-[1rem] font-semibold text-ink">Cancel this table?</p>
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:max-w-sm">
+            <button type="submit" className={cx(ghost, "justify-center bg-sky-wash text-sky hover:bg-sky/15")}>
+              Yes, cancel
+            </button>
+            <button type="button" onClick={() => setMode("idle")} className={cx(ghost, "justify-center border border-edge bg-paper-bright text-ink hover:border-clay")}>
+              Keep it
+            </button>
+          </div>
+        </form>
+      ) : (
+        <div className="flex flex-wrap items-center gap-2">
+          {t ? (
             <button
               type="button"
-              onClick={() => setConfirmCancel(true)}
-              className={cx(ghost, "text-ink-mute hover:bg-rule hover:text-ink")}
+              onClick={() => setMode((m) => (m === "changing" ? "idle" : "changing"))}
+              aria-expanded={mode === "changing"}
+              className={cx(ghost, "text-clay hover:bg-clay-wash")}
             >
-              Cancel
+              {mode === "changing" ? "Close" : "Change"}
             </button>
-          )
-        ) : r && (r.status === "pending" || r.status === "approved") ? (
-          <CancelButton id={r.id} />
-        ) : null}
+          ) : null}
 
-        {t ? <BookAgain id={t.id} target={rebookTarget} /> : null}
-      </div>
+          {t ? (
+            mode === "changing" ? null : (
+              <button
+                type="button"
+                onClick={() => setMode("cancelling")}
+                className={cx(ghost, "text-ink-mute hover:bg-rule hover:text-ink")}
+              >
+                Cancel
+              </button>
+            )
+          ) : r && (r.status === "pending" || r.status === "approved") ? (
+            <CancelButton id={r.id} />
+          ) : null}
 
-      {t && changing ? (
+          {t && mode === "idle" ? <BookAgain id={t.id} target={rebookTarget} /> : null}
+        </div>
+      )}
+
+      {t && mode === "changing" ? (
         <ChangeForm id={t.id} date={t.booked_on} slotId={t.slot_id} groupSize={t.group_size} nights={nights} />
       ) : null}
     </div>
