@@ -110,11 +110,11 @@ export default async function ReservePage() {
             ))}
             <li className="flex flex-col rounded-2xl border border-hairline bg-paper-deep p-6 lg:p-8">
               <span>
-                <StatusBadge tone="grey">Soon</StatusBadge>
+                <StatusBadge tone="grey">Coming soon</StatusBadge>
               </span>
               <h2 className="mt-4 text-[1.4rem] font-semibold tracking-[-0.01em] text-ink-mute">The court</h2>
               <p className="mt-4 text-[1rem] leading-relaxed text-ink-mute">
-                Basketball and pickleball bookings open after launch.
+                Basketball and pickleball court bookings are coming soon.
               </p>
             </li>
           </ul>
