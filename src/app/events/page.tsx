@@ -104,12 +104,13 @@ export default async function EventsPage({
           <Container>
             <RowHead title="Coming up" href="/events?view=all" count={events.length} />
             <PosterRail label="Coming up" className="mt-7">
-              {events.map((e) => (
+              {events.map((e, i) => (
                 <li
                   key={e.id}
                   className="w-[82%] shrink-0 snap-start sm:w-[calc((100%-1.25rem)/2)] lg:w-[calc((100%-2.5rem)/3)]"
                 >
-                  <PosterCard e={e} />
+                  {/* The first posters are on screen at load; don't wait to fetch them. */}
+                  <PosterCard e={e} priority={i < 2} />
                 </li>
               ))}
             </PosterRail>
@@ -140,7 +141,7 @@ export default async function EventsPage({
               <div>
                 <h2 className="brand-face text-[2rem] sm:text-[2.5rem]">{r.name}</h2>
                 {blurb ? (
-                  <p className={cx("mt-4 leading-relaxed", band.dark ? "text-paper-bright/85" : "text-ink-soft")}>
+                  <p className={cx("mt-4 leading-relaxed", band.dark ? "text-paper-bright" : "text-ink-soft")}>
                     {blurb}
                   </p>
                 ) : null}

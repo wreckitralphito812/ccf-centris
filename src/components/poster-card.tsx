@@ -10,8 +10,12 @@ import type { CcfEvent } from "@/lib/types";
  * poster when the event has one. Otherwise CCF-coloured placeholder art
  * carries the event's title, as a real poster would; a category name there
  * repeated down a whole row ("Sports, Sports").
+ *
+ * On the teal band the date and place are solid white: at 75-80% they fell
+ * under 4.5:1 contrast (Lighthouse, 2026-10-10). `priority` loads the poster
+ * at once, for the first one on a page.
  */
-export function PosterCard({ e, dark }: { e: CcfEvent; dark?: boolean }) {
+export function PosterCard({ e, dark, priority }: { e: CcfEvent; dark?: boolean; priority?: boolean }) {
   return (
     <Link href={`/events/${e.slug}`} className="group block">
       <div className="relative aspect-video overflow-hidden bg-ink/10">
@@ -19,6 +23,7 @@ export function PosterCard({ e, dark }: { e: CcfEvent; dark?: boolean }) {
           <PosterImage
             src={e.cover_image_url}
             alt={`${e.title} poster`}
+            priority={priority}
             imgClassName="transition-transform duration-500 group-hover:scale-[1.03]"
           />
         ) : (
@@ -29,7 +34,7 @@ export function PosterCard({ e, dark }: { e: CcfEvent; dark?: boolean }) {
           />
         )}
       </div>
-      <p className={cx("label mt-3", dark ? "text-paper-bright/80" : "text-clay")}>
+      <p className={cx("label mt-3", dark ? "text-paper-bright" : "text-clay")}>
         {shortWhen(e)}
       </p>
       <h3
@@ -41,7 +46,7 @@ export function PosterCard({ e, dark }: { e: CcfEvent; dark?: boolean }) {
         {e.title}
       </h3>
       {e.location_note ? (
-        <p className={cx("mt-1 text-[0.88rem]", dark ? "text-paper-bright/75" : "text-ink-mute")}>
+        <p className={cx("mt-1 text-[0.88rem]", dark ? "text-paper-bright" : "text-ink-mute")}>
           {e.location_note}
         </p>
       ) : null}
