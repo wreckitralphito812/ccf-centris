@@ -145,22 +145,24 @@ export default async function ArchivePage() {
             />
 
             <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-              {withMain.map((g) => (
+              {withMain.map((g, i) => (
                 <article
                   key={g.series}
                   className="group flex flex-col surface"
                 >
+                  {/* The cover is a link too, so it needs a name (Lighthouse, 2026-10-10). */}
                   <a
                     href={g.main!.href}
                     target="_blank"
                     rel="noreferrer"
+                    aria-label={`${g.series} on YouTube`}
                     className="relative block aspect-video overflow-hidden"
                   >
                     {g.cover ? (
                       <img
                         src={g.cover}
                         alt=""
-                        loading="lazy"
+                        loading={i < 3 ? "eager" : "lazy"}
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                       />
                     ) : (

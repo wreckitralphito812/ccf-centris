@@ -12,14 +12,28 @@ import { cx } from "@/components/ui";
  * on a draggable picture started a drag instead, so nothing happened
  * (2026-10-08).
  */
-export function PosterImage({ src, alt, className, imgClassName }: { src: string; alt: string; className?: string; imgClassName?: string }) {
+export function PosterImage({
+  src,
+  alt,
+  className,
+  imgClassName,
+  priority,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  imgClassName?: string;
+  /** The first poster on a page: load it now, not when it scrolls in (2026-10-10). */
+  priority?: boolean;
+}) {
+  const loading = priority ? "eager" : "lazy";
   return (
     <span className={cx("relative block h-full w-full overflow-hidden bg-ink/10", className)}>
       {/* Uploaded artwork; its store's host isn't in next/image's list. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt="" aria-hidden loading="lazy" draggable={false} className="no-frame pointer-events-none absolute inset-0 h-full w-full scale-110 select-none object-cover opacity-60 blur-xl" />
+      <img src={src} alt="" aria-hidden loading={loading} draggable={false} className="no-frame pointer-events-none absolute inset-0 h-full w-full scale-110 select-none object-cover opacity-60 blur-xl" />
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt={alt} loading="lazy" draggable={false} className={cx("no-frame pointer-events-none relative h-full w-full select-none object-contain", imgClassName)} />
+      <img src={src} alt={alt} loading={loading} fetchPriority={priority ? "high" : undefined} draggable={false} className={cx("no-frame pointer-events-none relative h-full w-full select-none object-contain", imgClassName)} />
     </span>
   );
 }
