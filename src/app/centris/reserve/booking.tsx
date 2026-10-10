@@ -39,6 +39,7 @@ import {
   type Minutes,
   type Setup,
 } from "@/lib/ministry-rooms";
+import { ROOM_LIMITS } from "@/lib/validation";
 import { ROOM_POLICIES } from "./policies";
 
 /**
@@ -100,6 +101,7 @@ const ERROR_TARGETS: [string, StepId, string][] = [
   ["activity", 2, "#f-activity"],
   ["ministry", 2, "#f-ministry"],
   ["food", 2, "#q-extras"],
+  ["notes", 2, "#f-notes"],
   ["name", 2, "#f-name"],
   ["mobile", 2, "#f-mobile"],
   ["accept", 2, "#f-accept"],
@@ -278,7 +280,15 @@ function Request({
   const ministryName = ministry === "Other" ? ministryOther.trim() : ministry;
 
   const missingByStep: Record<StepId, string | null> = {
-    1: !timed ? "Choose a time" : !people ? "How many people?" : !picked.length ? "Pick a room" : null,
+    1: !timed
+      ? "Choose a time"
+      : !people
+        ? "How many people?"
+        : !picked.length
+          ? "Pick a room"
+          : seats < people
+            ? "Tick another room"
+            : null,
     2: !activity.trim()
       ? "Name your event"
       : !ministryName
@@ -620,7 +630,7 @@ function Request({
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="sm:col-span-2">
                 <TextField label="Event name" error={e.activity}>
-                  <input id="f-activity" value={activity} onChange={(ev) => setActivity(ev.target.value)} placeholder="e.g. Elevate core huddle" className={INPUT} />
+                  <input id="f-activity" maxLength={ROOM_LIMITS.activity} value={activity} onChange={(ev) => setActivity(ev.target.value)} placeholder="e.g. Elevate core huddle" className={INPUT} />
                 </TextField>
               </div>
               <TextField label="Ministry" hint="The lead ministry, if several are involved." error={e.ministry}>
@@ -636,7 +646,7 @@ function Request({
               </TextField>
               {ministry === "Other" ? (
                 <TextField label="Ministry name">
-                  <input value={ministryOther} onChange={(ev) => setMinistryOther(ev.target.value)} className={INPUT} />
+                  <input maxLength={ROOM_LIMITS.ministry} value={ministryOther} onChange={(ev) => setMinistryOther(ev.target.value)} className={INPUT} />
                 </TextField>
               ) : null}
             </div>
@@ -669,8 +679,8 @@ function Request({
               <p className="mt-2.5 text-[0.95rem] text-ink-mute">{FOOD.find((f) => f.id === food)!.hint}</p>
             ) : null}
             <div className="mt-7">
-              <TextField label="Anything else?" hint="Optional. A special set-up, a repeating schedule, or anything the team should know.">
-                <textarea value={notes} onChange={(ev) => setNotes(ev.target.value)} rows={3} className={INPUT} />
+              <TextField label="Anything else?" hint="Optional. A special set-up, a repeating schedule, or anything the team should know." error={e.notes}>
+                <textarea id="f-notes" maxLength={ROOM_LIMITS.notes} value={notes} onChange={(ev) => setNotes(ev.target.value)} rows={3} className={INPUT} />
               </TextField>
             </div>
           </Question>
@@ -678,11 +688,12 @@ function Request({
           <Question id="q-you" title="Your details" note={`The confirmation goes to ${email}.`}>
             <div className="grid gap-5 sm:grid-cols-2">
               <TextField label="Name" error={e.name}>
-                <input id="f-name" value={name} onChange={(ev) => setName(ev.target.value)} autoComplete="name" className={INPUT} />
+                <input id="f-name" maxLength={ROOM_LIMITS.name} value={name} onChange={(ev) => setName(ev.target.value)} autoComplete="name" className={INPUT} />
               </TextField>
               <TextField label="Mobile number" hint="For same-day changes." error={e.mobile}>
                 <input
                   id="f-mobile"
+                  maxLength={ROOM_LIMITS.mobile}
                   value={mobile}
                   onChange={(ev) => setMobile(ev.target.value)}
                   type="tel"

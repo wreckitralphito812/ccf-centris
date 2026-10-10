@@ -7,6 +7,9 @@ import { useEffect, useRef, useState } from "react";
 import { signOut } from "@/app/actions/auth";
 import { FIREBASE_CONFIGURED } from "@/lib/firebase/client";
 
+/** Remembers whether this browser was signed in, for the header's first paint. */
+export const ACCOUNT_HINT_KEY = "ccf-account";
+
 /**
  * Who's signed in, from `/auth/me`, asked again on each navigation so a
  * session started or ended in this tab shows up without a reload. `ready` is
@@ -15,6 +18,7 @@ import { FIREBASE_CONFIGURED } from "@/lib/firebase/client";
 export function useAccount() {
   const pathname = usePathname();
   const [email, setEmail] = useState<string | null>(null);
+  const [name, setName] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -22,10 +26,15 @@ export function useAccount() {
     let live = true;
     fetch("/auth/me", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : { email: null }))
-      .then((body: { email: string | null }) => {
+      .then((body: { email: string | null; name?: string | null }) => {
         if (!live) return;
         setEmail(body.email || null);
+        setName(body.name || null);
         setReady(true);
+        try {
+          localStorage.setItem(ACCOUNT_HINT_KEY, body.email ? "in" : "out");
+          document.documentElement.dataset.account = body.email ? "in" : "out";
+        } catch {}
       })
       .catch(() => live && setReady(true));
     return () => {
@@ -33,19 +42,51 @@ export function useAccount() {
     };
   }, [pathname]);
 
-  return { email, ready: FIREBASE_CONFIGURED && ready };
+  return { email, name, ready: FIREBASE_CONFIGURED && ready };
+}
+
+/**
+ * "RR" for Ralph Relucio, from the profile name, so the header matches the
+ * name on the forms (it used to show the email's first letter, 2026-10-10).
+ */
+export function initialsOf(name: string | null, email: string): string {
+  const words = (name ?? "").trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return email[0]?.toUpperCase() ?? "?";
+  return (words[0][0] + (words.length > 1 ? words[words.length - 1][0] : "")).toUpperCase();
+}
+
+/**
+ * Holds the account control's place until `/auth/me` answers, so the header
+ * doesn't shift a second after load (Chrome audit, 2026-10-10). It's an
+ * invisible copy of what will show: the signed-out buttons, or the avatar's
+ * circle when this browser was signed in last time (`html[data-account]`,
+ * set before paint by the script in the root layout; see globals.css).
+ */
+function AccountPlaceholder() {
+  return (
+    <div aria-hidden className="account-slot invisible">
+      <div className="account-slot-out flex shrink-0 items-center gap-1">
+        <span className="hidden whitespace-nowrap px-3 py-2 text-[0.95rem] font-medium sm:inline-flex">Sign in</span>
+        <span className="inline-flex min-h-10 items-center px-3.5 text-[0.9rem] font-semibold whitespace-nowrap sm:px-4 sm:text-[0.92rem]">
+          Sign up
+        </span>
+      </div>
+      <span className="account-slot-in h-10 w-10" />
+    </div>
+  );
 }
 
 /**
  * Header account control. Signed out: "Sign in" and a Sign up button (Ralph
  * asked for sign-up to be easy to find, 2026-09-30). Signed in: the member's
- * initial and a small menu (My reservations / Sign out). Renders nothing when
+ * initials and a small menu (My reservations / Sign out). Renders nothing when
  * Firebase isn't configured, so the static build is unaffected.
  */
 export function AccountMenu() {
-  const { email, ready } = useAccount();
+  const { email, name, ready } = useAccount();
 
-  if (!ready) return null;
+  if (!FIREBASE_CONFIGURED) return null;
+  if (!ready) return <AccountPlaceholder />;
 
   if (!email) {
     return (
@@ -68,7 +109,7 @@ export function AccountMenu() {
     );
   }
 
-  return <SignedInMenu email={email} />;
+  return <SignedInMenu email={email} name={name} />;
 }
 
 /**
@@ -77,7 +118,7 @@ export function AccountMenu() {
  * It used to vanish in the gap between the button and the menu (Ralph,
  * 2026-10-01).
  */
-function SignedInMenu({ email }: { email: string }) {
+function SignedInMenu({ email, name }: { email: string; name: string | null }) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -142,7 +183,7 @@ function SignedInMenu({ email }: { email: string }) {
         aria-label="Account"
         className="btn-press grid h-10 w-10 place-items-center rounded-full bg-ink text-[0.85rem] font-semibold uppercase text-paper-bright transition-colors hover:bg-clay"
       >
-        {email[0]}
+        {initialsOf(name, email)}
       </button>
 
       {open ? (
@@ -150,7 +191,10 @@ function SignedInMenu({ email }: { email: string }) {
         // the button and the menu.
         <div className="absolute right-0 top-full z-50 w-64 pt-2">
           <div role="menu" className="rounded-2xl border border-rule bg-paper-bright p-2 shadow-[0_18px_40px_-12px_rgba(0,95,104,0.25)]">
-            <p className="truncate px-3 pb-2 pt-1.5 text-[0.85rem] text-ink-mute">{email}</p>
+            <div className="px-3 pb-2 pt-1.5">
+              {name ? <p className="truncate text-[0.95rem] font-semibold text-ink">{name}</p> : null}
+              <p className="truncate text-[0.85rem] text-ink-mute">{email}</p>
+            </div>
             <Link href="/my/reservations" role="menuitem" className={item} onClick={() => setOpen(false)}>
               My reservations
             </Link>
@@ -182,7 +226,7 @@ function SignedInMenu({ email }: { email: string }) {
  * no way to reach before (2026-10-02).
  */
 export function MobileAccount() {
-  const { email, ready } = useAccount();
+  const { email, name, ready } = useAccount();
   if (!ready) return null;
   if (!email) {
     return (
@@ -206,9 +250,12 @@ export function MobileAccount() {
     <div>
       <p className="flex items-center gap-3 text-[0.95rem] text-ink-mute">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink text-[0.85rem] font-semibold uppercase text-paper-bright">
-          {email[0]}
+          {initialsOf(name, email)}
         </span>
-        <span className="truncate">{email}</span>
+        <span className="min-w-0">
+          {name ? <span className="block truncate font-semibold text-ink">{name}</span> : null}
+          <span className="block truncate">{email}</span>
+        </span>
       </p>
       <div className="mt-4 grid grid-cols-2 gap-2">
         <Link

@@ -6,6 +6,7 @@ import {
   TIME_BLOCKS,
   closedReason,
   firstOpenDay,
+  ministryRoom,
   ministryWindow,
   timeLabel,
   toMinutes,
@@ -126,6 +127,22 @@ test("parseRoomRequest needs the policies, a mobile number and a known ministry"
   const other = parseRoomRequest(request({ ministry: "Other", ministry_other: "Prayer Ministry" }));
   assert.ok(other.ok);
   assert.equal(other.value.ministry, "Prayer Ministry");
+});
+
+test("parseRoomRequest holds the line on edited fields (Chrome audit, 2026-10-10)", () => {
+  const seats = ministryRoom("multipurpose-hall-1")!.capacity.classroom!;
+  const crowd = parseRoomRequest(request({ participants: String(seats + 1) }));
+  assert.ok(!crowd.ok && /fewer than your/.test(crowd.fieldErrors.rooms), "more people than the rooms seat");
+  const two = parseRoomRequest(request({ participants: String(seats + 1), room: ["multipurpose-hall-1", "multipurpose-hall-2"] }));
+  assert.ok(two.ok, "a second room makes room");
+
+  const nobody = parseRoomRequest(request({ participants: "0" }));
+  assert.ok(!nobody.ok && nobody.fieldErrors.participants);
+  const past = parseRoomRequest(request({ date: "2020-06-01" }));
+  assert.ok(!past.ok && past.fieldErrors.time);
+
+  const long = parseRoomRequest(request({ activity: "x".repeat(121), notes: "y".repeat(1001), name: "z".repeat(121) }));
+  assert.ok(!long.ok && long.fieldErrors.activity && long.fieldErrors.notes && long.fieldErrors.name);
 });
 
 test("the first open day skips Sundays and a day that's nearly over", () => {

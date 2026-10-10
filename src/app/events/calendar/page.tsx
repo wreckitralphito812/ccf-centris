@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Section } from "@/components/ui";
-import { getUpcomingEvents, getUpcomingServices } from "@/lib/queries";
+import { getEvents, getServices } from "@/lib/queries";
 import { daysCovered } from "@/lib/announcements";
 import { fmtMonthYear, fmtTime, manilaDateKey } from "@/lib/format";
 
@@ -27,9 +27,12 @@ export default async function CalendarPage({
   const offsetRaw = Array.isArray(sp.m) ? sp.m[0] : sp.m;
   const offset = Math.max(0, Math.min(5, Number(offsetRaw ?? 0) || 0));
 
+  // The whole month, past days included: the days before today used to sit
+  // empty, Sunday services and all, and read as broken (Chrome audit,
+  // 2026-10-10). They're dimmed instead.
   const [events, services] = await Promise.all([
-    getUpcomingEvents(undefined, { includeCalendarOnly: true }),
-    getUpcomingServices(40),
+    getEvents({ includeCalendarOnly: true }),
+    getServices(),
   ]);
 
   // Build the month grid in Manila time.
@@ -144,10 +147,11 @@ export default async function CalendarPage({
                 const k = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
                 const items = byDay.get(k) ?? [];
                 const isToday = k === todayKey;
+                const isPast = k < todayKey;
                 return (
                   <div
                     key={k}
-                    className={`min-h-28 bg-paper-bright p-2 ${isToday ? "ring-1 ring-inset ring-clay" : ""}`}
+                    className={`min-h-28 bg-paper-bright p-2 ${isToday ? "ring-1 ring-inset ring-clay" : ""} ${isPast ? "opacity-55" : ""}`}
                   >
                     <p
                       className={`font-display text-lg leading-none ${isToday ? "text-clay" : "text-ink-mute"}`}
@@ -196,7 +200,7 @@ export default async function CalendarPage({
                 const items = byDay.get(k) ?? [];
                 if (!items.length) return null;
                 return (
-                  <div key={k} className="flex gap-4 py-4">
+                  <div key={k} className={`flex gap-4 py-4 ${k < todayKey ? "opacity-55" : ""}`}>
                     <p className="font-display w-10 shrink-0 text-2xl leading-none text-clay">
                       {day}
                     </p>

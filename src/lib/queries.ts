@@ -10,7 +10,11 @@ import type { DgroupHold } from "@/lib/dgroup-tables";
 import { mergeUpcoming, type Upcoming } from "@/lib/my-bookings";
 import { buildSiteStats, type SiteStats, type StatsInput } from "@/lib/site-stats";
 import { blocksAsHolds, type TableBlock } from "@/lib/dgroup-blocks";
-import { manilaDateKey } from "@/lib/format";
+import { fmtDayLong, manilaDateKey } from "@/lib/format";
+import { KIND_ORDER, matchScore, PAGES, queryTerms, type SearchHit } from "@/lib/search";
+import { getSundayServices } from "@/lib/services";
+import { getSeriesArchive } from "@/lib/channel";
+import { getFourWsGuides as getFourWsGuidesForSearch, getFourWsWeeks as getFourWsWeeksForSearch } from "@/lib/content/public-queries";
 import { addons, communities, facilities } from "@/data/center";
 import {
   announcements,
@@ -1192,32 +1196,98 @@ export type {
 
 // --- Global search ----------------------------------------------------------
 
-export interface SearchHit {
-  kind: "Message" | "Event" | "Dgroup" | "Facility";
-  title: string;
-  excerpt: string;
-  href: string;
-}
+export type { SearchHit } from "@/lib/search";
 
+/** Most results of one kind to show, so a common word doesn't bury the rest. */
+const PER_KIND = 12;
+
+/**
+ * Site search across pages, events, 4Ws guides, the Sunday archive and
+ * facilities (2026-10-10; it used to cover events and facilities only). Every
+ * word of the query must match; title matches rank first. The YouTube-backed
+ * sources fail soft to nothing.
+ */
 export async function globalSearch(q: string): Promise<SearchHit[]> {
-  const needle = q.trim().toLowerCase();
-  if (!needle) return [];
+  const terms = queryTerms(q.slice(0, 100));
+  if (!terms.length) return [];
 
-  const hits: SearchHit[] = [];
-  const match = (...parts: (string | null | undefined)[]) =>
-    parts.filter(Boolean).join(" ").toLowerCase().includes(needle);
+  const [allEvents, guides, weeks, sunday, series] = await Promise.all([
+    getEvents(),
+    getFourWsGuidesForSearch(),
+    getFourWsWeeksForSearch(),
+    getSundayServices().catch(() => null),
+    getSeriesArchive().catch(() => []),
+  ]);
+  const weekBySlug = new Map(weeks.map((w) => [w.slug, w]));
 
-  for (const e of await getEvents()) {
-    if (match(e.title, e.summary, e.description, e.category)) {
-      hits.push({ kind: "Event", title: e.title, excerpt: e.summary ?? "", href: `/events/${e.slug}` });
-    }
+  const scored: (SearchHit & { score: number })[] = [];
+  const add = (score: number, hit: SearchHit) => {
+    if (score > 0) scored.push({ ...hit, score });
+  };
+
+  for (const p of PAGES) {
+    add(matchScore(terms, p.title, p.excerpt, p.keywords), { kind: "Page", title: p.title, excerpt: p.excerpt, href: p.href });
+  }
+  const now = Date.now();
+  for (const e of allEvents) {
+    const score = matchScore(terms, e.title, e.summary, e.description, e.category, e.ministry);
+    // Upcoming events before past ones with the same match.
+    const upcoming = new Date(e.ends_at ?? e.starts_at).getTime() > now;
+    add(score && score + (upcoming ? 1 : 0), {
+      kind: "Event",
+      title: e.title,
+      excerpt: e.summary ?? "",
+      href: `/events/${e.slug}`,
+    });
+  }
+  for (const g of guides) {
+    const week = weekBySlug.get(g.slug);
+    const passage = g.word?.passageRef ?? null;
+    add(
+      matchScore(terms, g.title, passage, g.memoryVerseReference, week?.seriesTitle, g.welcome, g.word?.talkAbout.join(" ")),
+      {
+        kind: "4Ws guide",
+        title: g.title,
+        excerpt: [week?.dateSpan ?? g.dateLabel, passage, week?.seriesTitle].filter(Boolean).join(" · "),
+        href: `/watch/4ws/${g.slug}`,
+      },
+    );
+  }
+  for (const s of sunday?.archive ?? []) {
+    add(matchScore(terms, s.title, s.description.slice(0, 600)), {
+      kind: "Sunday service",
+      title: s.title,
+      excerpt: s.servedOn ? fmtDayLong(s.servedOn) : "",
+      href: `/watch/archive/${s.videoId}`,
+    });
+  }
+  for (const g of series) {
+    if (!g.main) continue;
+    add(matchScore(terms, g.series, g.main.description.slice(0, 600)), {
+      kind: "Series",
+      title: g.series,
+      excerpt: `${g.year ? `${g.year} · ` : ""}Sunday series on CCF's YouTube channel`,
+      href: g.main.href,
+      external: true,
+    });
   }
   for (const f of facilities) {
-    if (match(f.name, f.description)) {
-      hits.push({ kind: "Facility", title: f.name, excerpt: f.description ?? "", href: `/centris/facilities/${f.slug}` });
-    }
+    add(matchScore(terms, f.name, f.description), {
+      kind: "Facility",
+      title: f.name,
+      excerpt: f.description ?? "",
+      href: `/centris/facilities/${f.slug}`,
+    });
   }
 
+  const hits: SearchHit[] = [];
+  for (const kind of KIND_ORDER) {
+    scored
+      .filter((h) => h.kind === kind)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, PER_KIND)
+      .forEach(({ score: _score, ...h }) => hits.push(h)); // eslint-disable-line @typescript-eslint/no-unused-vars
+  }
   return hits;
 }
 

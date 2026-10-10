@@ -47,12 +47,24 @@ export const metadata: Metadata = {
   alternates: { canonical: "./" },
 };
 
+/**
+ * Before first paint, mark whether this browser was signed in last time, so
+ * the header holds the right space for its account control instead of
+ * shifting when `/auth/me` answers (2026-10-10). Key: ACCOUNT_HINT_KEY in
+ * account-menu.tsx. `suppressHydrationWarning` on <html> covers the attribute.
+ */
+const ACCOUNT_HINT = `try{if(localStorage.getItem("ccf-account")==="in")document.documentElement.dataset.account="in"}catch(e){}`;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
       className={`${manrope.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: ACCOUNT_HINT }} />
+      </head>
       <body className="min-h-svh flex flex-col bg-paper text-ink">
         <a
           href="#main"

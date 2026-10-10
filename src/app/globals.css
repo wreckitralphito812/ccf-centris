@@ -573,3 +573,18 @@ a.surface:hover,
 @media (prefers-reduced-motion: reduce) {
   .pray-pop { animation: none; }
 }
+
+/* The header's account slot before /auth/me answers (AccountPlaceholder in
+   account-menu.tsx): the signed-out buttons' width, or the avatar's when this
+   browser was signed in last time. Signed in, phones show nothing there. */
+.account-slot-in {
+  display: none;
+}
+html[data-account="in"] .account-slot-out {
+  display: none;
+}
+@media (min-width: 40rem) {
+  html[data-account="in"] .account-slot-in {
+    display: block;
+  }
+}

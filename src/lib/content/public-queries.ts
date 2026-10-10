@@ -238,9 +238,37 @@ export async function getCurrentFourWs(): Promise<FourWsWeekView | null> {
   return weeks[0] ?? null;
 }
 
+/**
+ * A guide's title, from the 4Ws index when it lists the week (2026-10-10).
+ * The guide parser takes the first bold heading on the page, and on about a
+ * third of the guides that's the passage ("ROMANS 1:1-17") or a sub-heading
+ * ("INTRO"), which then showed as the page title and in search results.
+ * Guides missing from the index keep the parsed title, tidied.
+ */
+export function fourWsTitle(guide: FourWsGuideRecord, week: FourWsWeekRecord | undefined): string {
+  if (week?.title) return week.title;
+  const t = guide.title
+    .replace(/\s*\(GoViral Edition\)\s*$/i, "")
+    .replace(/^4ws\s*[–—-]\s*/i, "")
+    .replace(/\s*:\s*$/, "")
+    .trim();
+  // ALL CAPS reads as shouting; CCF's index uses title case.
+  return /[a-z]/.test(t) ? t : t.toLowerCase().replace(/(^|[\s(“"'‘-])(\p{L})/gu, (_m, pre, c) => pre + c.toUpperCase());
+}
+
 export function getFourWsGuide(slug: string): Promise<FourWsGuideRecord | null> {
-  const guide = readSnapshot().fourWsGuides.find((g) => g.slug === slug);
-  return Promise.resolve(guide ?? null);
+  const snap = readSnapshot();
+  const guide = snap.fourWsGuides.find((g) => g.slug === slug);
+  if (!guide) return Promise.resolve(null);
+  const week = snap.fourWsWeeks.find((w) => w.slug === slug);
+  return Promise.resolve({ ...guide, title: fourWsTitle(guide, week) });
+}
+
+/** Every guide with its corrected title, for site search. */
+export function getFourWsGuides(): Promise<FourWsGuideRecord[]> {
+  const snap = readSnapshot();
+  const weeks = new Map(snap.fourWsWeeks.map((w) => [w.slug, w]));
+  return Promise.resolve(snap.fourWsGuides.map((g) => ({ ...g, title: fourWsTitle(g, weeks.get(g.slug)) })));
 }
 
 export interface FourWsCurrent {
