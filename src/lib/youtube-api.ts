@@ -804,3 +804,61 @@ export async function getVideoDurations(
   }
   return out;
 }
+
+/* -------------------------------------------------------------------------
+   Health check, for /admin/settings (2026-10-10)
+
+   Every call above fails soft and quietly, which kept the site up but hid a
+   real fault: the live archive showed "0 videos" on every series and no past
+   services, i.e. it was on seed data, with nothing in the logs to say why.
+   This asks YouTube once (channels.list, 1 unit, not cached) and reports what
+   it says. Never includes the key.
+   ------------------------------------------------------------------------- */
+
+export interface YouTubeHealth {
+  configured: boolean;
+  /** YOUTUBE_CHANNEL_ID looks like a channel id ("UC" + 22 characters), not a handle. */
+  channelIdLooksRight: boolean;
+  ok: boolean;
+  /** Plain words for the admin page. */
+  detail: string;
+}
+
+export async function youtubeHealth(): Promise<YouTubeHealth> {
+  const channelIdLooksRight = /^UC[\w-]{22}$/.test(CHANNEL_ID);
+  if (!KEY) {
+    return { configured: false, channelIdLooksRight, ok: false, detail: "YOUTUBE_API_KEY isn't set for this deployment, so the site uses its saved playlist list." };
+  }
+  try {
+    const qs = new URLSearchParams({ part: "snippet,statistics", id: CHANNEL_ID, key: KEY });
+    const res = await fetch(`${API}/channels?${qs}`, { cache: "no-store", signal: AbortSignal.timeout(8000) });
+    const body = (await res.json().catch(() => null)) as {
+      items?: { snippet?: { title?: string }; statistics?: { videoCount?: string } }[];
+      error?: { message?: string; errors?: { reason?: string }[] };
+    } | null;
+    if (!res.ok) {
+      const reason = body?.error?.errors?.[0]?.reason ?? res.statusText;
+      const message = (body?.error?.message ?? "").replace(/<[^>]+>/g, "").slice(0, 200);
+      return { configured: true, channelIdLooksRight, ok: false, detail: `YouTube said ${res.status} ${reason}${message ? `: ${message}` : ""}` };
+    }
+    const channel = body?.items?.[0];
+    if (!channel) {
+      return {
+        configured: true,
+        channelIdLooksRight,
+        ok: false,
+        detail: channelIdLooksRight
+          ? "The key works, but YouTube found no channel with YOUTUBE_CHANNEL_ID."
+          : "The key works, but YOUTUBE_CHANNEL_ID isn't a channel id (it should start with UC).",
+      };
+    }
+    return {
+      configured: true,
+      channelIdLooksRight,
+      ok: true,
+      detail: `Connected to ${channel.snippet?.title ?? "the channel"} (${Number(channel.statistics?.videoCount ?? 0).toLocaleString()} videos).`,
+    };
+  } catch (err) {
+    return { configured: true, channelIdLooksRight, ok: false, detail: `Couldn't reach YouTube: ${(err as Error).message}` };
+  }
+}

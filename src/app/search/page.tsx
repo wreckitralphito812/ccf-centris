@@ -9,22 +9,33 @@ import {
   Section,
 } from "@/components/ui";
 import { globalSearch } from "@/lib/queries";
+import type { SearchKind } from "@/lib/search";
+
+const GROUP_LABEL: Record<SearchKind, string> = {
+  Page: "Pages",
+  Event: "Events",
+  "4Ws guide": "4Ws guides",
+  "Sunday service": "Sunday services",
+  Series: "Series",
+  Facility: "Spaces at the center",
+};
 
 export const metadata: Metadata = {
   title: "Search",
   description:
-    "Search everything at CCF Centris: messages, events, Dgroups, and facilities.",
+    "Search CCF Centris: pages, events, 4Ws guides, past Sunday services and the center.",
 };
 
+/** Each finds something that doesn't come and go with the events list (2026-10-10). */
 const SUGGESTIONS = [
-  "anxiety",
-  "pickleball",
-  "dgroup",
-  "marriage",
   "parking",
-  "NXTGEN",
-  "court",
+  "Dgroup",
   "prayer",
+  "Romans",
+  "family",
+  "volunteer",
+  "pickleball",
+  "NXTGEN",
 ];
 
 export default async function SearchPage({
@@ -35,7 +46,7 @@ export default async function SearchPage({
   const hits = q ? await globalSearch(q) : [];
 
   // Group by kind so a mixed result set stays readable.
-  const byKind = new Map<string, typeof hits>();
+  const byKind = new Map<SearchKind, typeof hits>();
   for (const h of hits) {
     byKind.set(h.kind, [...(byKind.get(h.kind) ?? []), h]);
   }
@@ -45,7 +56,7 @@ export default async function SearchPage({
       <PageHeader
         eyebrow="Search"
         title="Find anything."
-        lead="Search messages, events, Dgroups, facilities and more."
+        lead="Search pages, events, 4Ws guides, past Sunday services and the center."
       />
 
       <Section>
@@ -87,8 +98,9 @@ export default async function SearchPage({
               </div>
 
               <p className="mt-12 max-w-2xl leading-relaxed text-ink-mute">
-                Search covers titles, descriptions, topics, and passages.
-                Sermon transcripts will be added later.
+                Search covers the site&rsquo;s pages, events, 4Ws guides (titles
+                and passages), past Sunday services and the center. It
+                doesn&rsquo;t search inside sermons.
               </p>
             </div>
           ) : hits.length ? (
@@ -102,7 +114,7 @@ export default async function SearchPage({
                 {[...byKind.entries()].map(([kind, list]) => (
                   <div key={kind}>
                     <h2 className="font-display text-2xl">
-                      {kind}
+                      {GROUP_LABEL[kind] ?? kind}
                       <span className="ml-3 text-lg text-ink-mute">
                         {list.length}
                       </span>
@@ -112,6 +124,7 @@ export default async function SearchPage({
                         <li key={`${h.href}-${i}`}>
                           <Link
                             href={h.href}
+                            {...(h.external ? { target: "_blank", rel: "noreferrer" } : {})}
                             className="group flex flex-col gap-1 py-5"
                           >
                             <span className="flex flex-wrap items-center gap-3">
@@ -141,7 +154,7 @@ export default async function SearchPage({
                 action={
                   <div className="flex flex-wrap justify-center gap-3">
                     <ButtonLink href="/visit" tone="outline">
-                      Read New here
+                      Plan your visit
                     </ButtonLink>
                     <ButtonLink href="/contact">Ask us directly</ButtonLink>
                   </div>

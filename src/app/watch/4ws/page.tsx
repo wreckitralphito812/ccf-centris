@@ -45,11 +45,11 @@ export default async function FourWsPage() {
                 {current.weekNumber ? (
                   <Pill tone="clay">Week {current.weekNumber}</Pill>
                 ) : null}
-                {current.dateSpan ? (
-                  <span className="label text-ink-mute">{current.dateSpan}</span>
-                ) : null}
-                {current.seriesTitle ? (
-                  <span className="label text-ink-mute">· {current.seriesTitle}</span>
+                {/* Joined, so the dot only sits between two things. */}
+                {[current.dateSpan, current.seriesTitle].some(Boolean) ? (
+                  <span className="label text-ink-mute">
+                    {[current.dateSpan, current.seriesTitle].filter(Boolean).join(" · ")}
+                  </span>
                 ) : null}
               </div>
               <h2 className="font-display mt-4 text-2xl leading-tight">
@@ -88,8 +88,10 @@ export default async function FourWsPage() {
                 className="flex flex-wrap items-center gap-x-6 gap-y-2 py-5"
               >
                 <p className="label w-44 shrink-0 text-ink-mute">
-                  {w.weekNumber ? `Week ${w.weekNumber} · ` : ""}
-                  {w.dateSpan ?? ""}
+                  {/* A few old weeks have no date on CCF's index; their year still shows. */}
+                  {w.serviceDate
+                    ? [w.weekNumber ? `Week ${w.weekNumber}` : null, w.dateSpan].filter(Boolean).join(" · ")
+                    : (w.year ?? "")}
                 </p>
                 <div className="min-w-0 flex-1">
                   <p className="font-display text-lg leading-tight">{w.title}</p>

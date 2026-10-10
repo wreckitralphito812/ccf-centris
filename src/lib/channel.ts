@@ -118,6 +118,8 @@ function seriesName(title: string): string {
     .replace(/^\d{4}\s+/, "")
     .replace(/\s*[-–|]\s*(Run Through|Snippets|Sunday Fast Track)\s*$/i, "")
     .replace(/\s*[-–]\s*Worship in the Psalms$/i, "")
+    // "IDC 2026 Weekend Special" is the IDC 2026 Weekend series.
+    .replace(/\s+Special$/i, "")
     .trim();
 }
 
@@ -139,7 +141,9 @@ function seedCatalog(): CatalogPlaylist[] {
   return seedPlaylists.map((p) => ({
     id: p.id,
     title: p.title,
-    series: p.series,
+    // Through seriesName like live playlists, so the two can't disagree
+    // ("Heart Songs" vs "Heart Songs - Worship in the Psalms", 2026-10-10).
+    series: seriesName(p.title),
     kind: classify(p.title),
     description: "",
     thumbnail: p.thumbVideo
@@ -154,7 +158,11 @@ function seedCatalog(): CatalogPlaylist[] {
 export async function getCatalog(): Promise<CatalogPlaylist[]> {
   if (!hasYouTubeApi) return seedCatalog();
   const raw = await getChannelPlaylists();
-  return raw.length ? raw.map(toCatalog) : seedCatalog();
+  if (raw.length) return raw.map(toCatalog);
+  // Say so: a quiet fallback left the live archive on seed data, "0 videos"
+  // everywhere, with nothing in the logs (2026-10-10). /admin/settings checks why.
+  console.warn("[youtube] no playlists came back; showing the saved list");
+  return seedCatalog();
 }
 
 export interface SeriesGroup {

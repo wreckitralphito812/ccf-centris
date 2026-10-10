@@ -153,6 +153,9 @@ export interface RoomRequestInput {
  * ministry rooms, each open for the whole time asked for, on the half hour, and
  * not in the past.
  */
+/** Longest answers a room request takes; the form's fields carry the same maxLength. */
+export const ROOM_LIMITS = { activity: 120, ministry: 80, name: 120, mobile: 30, notes: 1000 } as const;
+
 export function parseRoomRequest(fd: FormData, now = Date.now()): Parsed<RoomRequestInput> {
   const fieldErrors: FieldErrors = {};
 
@@ -170,8 +173,10 @@ export function parseRoomRequest(fd: FormData, now = Date.now()): Parsed<RoomReq
   const contact_mobile = str(fd, "mobile");
 
   if (!activity_name) fieldErrors.activity = "Give your event a name.";
+  else if (activity_name.length > ROOM_LIMITS.activity) fieldErrors.activity = `Keep the name under ${ROOM_LIMITS.activity} characters.`;
   if (!ministry || (ministryPick !== "Other" && !(MINISTRIES as readonly string[]).includes(ministry)))
     fieldErrors.ministry = ministryPick === "Other" ? "Type your ministry's name." : "Choose your ministry.";
+  else if (ministry.length > ROOM_LIMITS.ministry) fieldErrors.ministry = `Keep the ministry name under ${ROOM_LIMITS.ministry} characters.`;
   if (!Number.isInteger(participants) || participants < 1)
     fieldErrors.participants = "Enter how many people, including your team.";
   if (!SETUPS.some((s) => s.id === setup)) fieldErrors.setup = "Choose a set-up.";
@@ -208,6 +213,13 @@ export function parseRoomRequest(fd: FormData, now = Date.now()): Parsed<RoomReq
   }
   if (!fieldErrors.rooms && !fieldErrors.setup && rooms.some((r) => !ministryRoom(r)!.capacity[setup]))
     fieldErrors.rooms = "One of those rooms doesn't offer that set-up.";
+  // The form says when the rooms are too small; the server holds the line
+  // too, since the form's fields can be edited (Chrome audit, 2026-10-10).
+  if (!fieldErrors.rooms && !fieldErrors.setup && !fieldErrors.participants) {
+    const seats = rooms.reduce((n, r) => n + (ministryRoom(r)!.capacity[setup] ?? 0), 0);
+    if (participants > seats)
+      fieldErrors.rooms = `${rooms.length > 1 ? "These rooms seat" : "This room seats"} ${seats}, fewer than your ${participants}. Add another room.`;
+  }
 
   const equipment: Record<string, number> = {};
   for (const item of EQUIPMENT) {
@@ -217,7 +229,10 @@ export function parseRoomRequest(fd: FormData, now = Date.now()): Parsed<RoomReq
 
   if (!FOOD.some((f) => f.id === food)) fieldErrors.food = "Tell us about food.";
   if (!contact_name) fieldErrors.name = "Tell us your name.";
+  else if (contact_name.length > ROOM_LIMITS.name) fieldErrors.name = `Keep your name under ${ROOM_LIMITS.name} characters.`;
   if (contact_mobile.replace(/\D/g, "").length < 7) fieldErrors.mobile = "We need a mobile number for same-day changes.";
+  else if (contact_mobile.length > ROOM_LIMITS.mobile) fieldErrors.mobile = "That mobile number is too long.";
+  if (str(fd, "notes").length > ROOM_LIMITS.notes) fieldErrors.notes = `Keep notes under ${ROOM_LIMITS.notes} characters.`;
   if (fd.get("accept") !== "on") fieldErrors.accept = "Please read and accept the room policies first.";
 
   if (Object.keys(fieldErrors).length) return { ok: false, fieldErrors };

@@ -472,7 +472,10 @@ export function PolicyAgreement({
   error?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [read, setRead] = useState(false);
+  // Already agreed counts as read: when the server sends the form back, this
+  // remounts, and the box showed ticked but locked under "Read the policies
+  // first" (2026-10-10).
+  const [read, setRead] = useState(checked);
   const listId = `${id}-list`;
   return (
     <div>

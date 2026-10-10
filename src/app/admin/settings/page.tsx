@@ -3,20 +3,54 @@ import {
   AdminHeader,
   AdminNote,
   AdminPanel,
-  RowActions,
-  Stat,
   Status,
   Table,
   Td,
 } from "../admin-ui";
-import { SITE, YOUTUBE } from "@/lib/site";
+import { SITE } from "@/lib/site";
+import { requireAdmin } from "@/lib/admin-auth";
+import { hasSupabase } from "@/lib/supabase/server";
+import { hasFirebase } from "@/lib/firebase/admin";
+import { youtubeHealth } from "@/lib/youtube-api";
+
+/** Checks the services live on every visit. */
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Settings",
   description: "Center details, integrations, and satellites.",
 };
 
-export default function Page() {
+export default async function Page() {
+  await requireAdmin();
+  const yt = await youtubeHealth();
+  const from = process.env.EMAIL_FROM;
+
+  // Real checks (2026-10-10). This table used to be fixed text: it called
+  // YouTube "approved" while the live archive was on its saved list, and
+  // email "not connected" while Resend was sending.
+  const integrations: [string, string, string][] = [
+    ["YouTube Data API", yt.ok ? "approved" : "pending", yt.detail],
+    [
+      "Email delivery",
+      process.env.RESEND_API_KEY ? "approved" : "pending",
+      process.env.RESEND_API_KEY
+        ? `Resend, sending as ${from ?? "the Resend test address (set EMAIL_FROM)"}.`
+        : "RESEND_API_KEY isn't set. Confirmations show on screen only.",
+    ],
+    [
+      "Member sign-in",
+      hasFirebase() ? "approved" : "pending",
+      hasFirebase() ? "Firebase Auth is connected." : "Firebase isn't configured for this deployment, so sign-in is off.",
+    ],
+    [
+      "Database",
+      hasSupabase() ? "approved" : "pending",
+      hasSupabase() ? "Supabase is connected." : "Supabase isn't configured; pages show sample data.",
+    ],
+    ["Payments", "pending", "Awaiting CCF's approved merchant account. Nothing is charged online."],
+  ];
+
   return (
     <div className="space-y-8">
       <AdminHeader
@@ -43,12 +77,7 @@ export default function Page() {
 
       <AdminPanel title="Integrations">
         <Table columns={["Service", "Status", "Detail"]}>
-          {[
-            ["YouTube Data API", "approved", `Channel ${YOUTUBE.handle}, live status cached 60s`],
-            ["Email delivery", "pending", "Not connected. Confirmations show on screen only."],
-            ["Payments", "pending", "Awaiting CCF's approved merchant account. Nothing is charged online."],
-            ["SMS notifications", "pending", "Architected for, not enabled."],
-          ].map(([s, st, d]) => (
+          {integrations.map(([s, st, d]) => (
             <tr key={s}>
               <Td className="font-semibold">{s}</Td>
               <Td>
