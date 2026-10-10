@@ -3,6 +3,8 @@ import { PRIORITY_MEETINGS } from "@/lib/ministry-rooms";
 /** Shown on the request page and accepted with one tick in the form. */
 export const ROOM_POLICIES: [string, string][] = [
   ["Approval", "The facilities team checks every request and emails you to confirm. Please wait for that email before announcing your event."],
+  ["Notice", "Request a room at least 2 days ahead, so the team can prepare it."],
+  ["Layouts", "The Welcome Center and the Dgroup Lounge are used as furnished; their layout can't be changed."],
   [
     "Free for official CCF Centris ministries",
     "Rooms are free for ministries officially organized and serving our church community.",

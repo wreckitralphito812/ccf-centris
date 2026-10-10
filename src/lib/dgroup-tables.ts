@@ -7,9 +7,9 @@
  *   Adrian Camacho's floor plans (DGROUP PLAN and WELCOME PLAN). Labels are the
  *   numbers printed on those plans, so "Table 7" matches the drawing on the wall.
  * - Monday to Friday, three slots: 1:00–3:30, 4:00–6:30, 7:00–9:30 PM.
- * - A leader can book the rest of the current week; the following week opens
- *   each Sunday. (The October 4 launch date was dropped on 2026-09-30 so the
- *   team could try bookings out early.)
+ * - A leader can book any weeknight up to BOOKING_DAYS_AHEAD days ahead, a
+ *   rolling window (Ralph, 2026-10-10; it used to open a week at a time each
+ *   Sunday).
  * - One night and one slot per booking. A leader can hold several bookings in a
  *   week, but each goes through the form, and the policies, on its own.
  * - The site picks the room and the tables. It uses one table when one fits and
@@ -142,17 +142,16 @@ const addDays = (key: string, n: number) => {
   return toKey(d);
 };
 
+/** How far ahead a Dgroup table can be booked, in days. */
+export const BOOKING_DAYS_AHEAD = 8;
+
 /**
- * The dates a leader can book from `today`, today included:
- * - Monday to Saturday: the weekdays left in the current week.
- * - Sunday: Monday to Friday of the week ahead, which opens that day.
+ * The dates a leader can book from `today`: today and the next
+ * BOOKING_DAYS_AHEAD days, on Dgroup nights only (Monday to Friday).
  */
 export function bookableNights(today: string, nights: number[] = DGROUP_NIGHTS): string[] {
-  const dow = toDate(today).getUTCDay();
-  const from = dow === 0 ? 1 : 0;
-  const to = dow === 0 ? 5 : 6 - dow;
   const out: string[] = [];
-  for (let i = from; i <= to; i++) {
+  for (let i = 0; i <= BOOKING_DAYS_AHEAD; i++) {
     const key = addDays(today, i);
     if (nights.includes(toDate(key).getUTCDay())) out.push(key);
   }
@@ -244,7 +243,7 @@ export function nightOptions(today: string, nowMinutes: number): NightOption[] {
 /**
  * Where "Book again" lands (2026-09-30): the first bookable date after
  * `bookedOn` on the same weekday whose `slotId` hasn't started. Null when that
- * week isn't open yet (the next week opens on Sunday).
+ * date is still more than BOOKING_DAYS_AHEAD days away.
  */
 export function rebookDate(bookedOn: string, slotId: string, today: string, nowMinutes: number): string | null {
   const weekday = toDate(bookedOn).getUTCDay();

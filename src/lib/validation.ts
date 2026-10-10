@@ -13,11 +13,15 @@ import {
   MINISTRIES,
   SETUPS,
   STEP_MINUTES,
+  TABLE_KINDS,
   closedReason,
+  firstOpenDay,
   ministryRoom,
+  tableSeats,
   toMinutes,
   weekdayOf,
   type Setup,
+  type TableCounts,
 } from "@/lib/ministry-rooms";
 
 export type FieldErrors = Record<string, string>;
@@ -140,6 +144,8 @@ export interface RoomRequestInput {
   ministry: string;
   participants: number;
   setup: Setup;
+  /** Tables asked for, with the "tables" set-up only. */
+  tables: TableCounts;
   equipment: Record<string, number>;
   food: string;
   notes: string | null;
@@ -182,8 +188,12 @@ export function parseRoomRequest(fd: FormData, now = Date.now()): Parsed<RoomReq
   if (!SETUPS.some((s) => s.id === setup)) fieldErrors.setup = "Choose a set-up.";
 
   const times = /^\d{2}:\d{2}$/;
+  // Manila's date today, for the notice rule.
+  const today = new Date(now + 8 * 3600_000).toISOString().slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) fieldErrors.date = "Choose a date.";
   else if (weekdayOf(date) === 0) fieldErrors.date = "Rooms can't be requested on Sundays.";
+  else if (date >= today && date < firstOpenDay(today))
+    fieldErrors.date = "Requests need at least 2 days' notice. Pick a later date.";
   if (!times.test(start) || !times.test(end)) fieldErrors.time = "Choose a start and end time.";
 
   let starts_at = "";
@@ -213,6 +223,25 @@ export function parseRoomRequest(fd: FormData, now = Date.now()): Parsed<RoomReq
   }
   if (!fieldErrors.rooms && !fieldErrors.setup && rooms.some((r) => !ministryRoom(r)!.capacity[setup]))
     fieldErrors.rooms = "One of those rooms doesn't offer that set-up.";
+  // Tables: how many of each kind, which must seat everyone and can't be
+  // more than the center owns (Ralph, 2026-10-10). Whether they're free at
+  // that time is checked against other requests in the server action.
+  const tables: TableCounts = {};
+  if (setup === "tables") {
+    for (const k of TABLE_KINDS) {
+      const n = Number(str(fd, `tables_${k.id}`) || 0);
+      if (!Number.isInteger(n) || n < 0) fieldErrors.tables = "Enter how many tables of each kind.";
+      else if (n > k.stock) fieldErrors.tables = `The center has ${k.stock} ${k.label.toLowerCase()} tables.`;
+      else if (n) tables[k.id] = n;
+    }
+    if (!fieldErrors.tables && !fieldErrors.participants) {
+      const seated = tableSeats(tables);
+      if (!seated) fieldErrors.tables = "Say how many tables you need.";
+      else if (seated < participants)
+        fieldErrors.tables = `These tables seat ${seated}, fewer than your ${participants}. Add more tables.`;
+    }
+  }
+
   // The form says when the rooms are too small; the server holds the line
   // too, since the form's fields can be edited (Chrome audit, 2026-10-10).
   if (!fieldErrors.rooms && !fieldErrors.setup && !fieldErrors.participants) {
@@ -250,6 +279,7 @@ export function parseRoomRequest(fd: FormData, now = Date.now()): Parsed<RoomReq
       ministry,
       participants,
       setup,
+      tables,
       equipment,
       food,
       notes: optional(fd, "notes"),

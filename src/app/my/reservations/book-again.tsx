@@ -15,7 +15,7 @@ export function BookAgain({ id, target, label }: { id: string; target: string | 
   const [result, setResult] = useState<DgroupBookingResult | null>(null);
 
   if (!target) {
-    return <span className="text-[0.92rem] text-ink-mute">Book again opens on Sunday</span>;
+    return <span className="text-[0.92rem] text-ink-mute">Book again opens 8 days ahead</span>;
   }
   if (result?.ok && result.booking) {
     return (

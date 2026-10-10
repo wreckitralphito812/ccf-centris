@@ -150,7 +150,7 @@ function ChangeForm({
   if (!nights.length) {
     return (
       <p className="rounded-2xl bg-mist px-5 py-4 text-[0.98rem] text-ink-mute">
-        There are no open days to move to right now. Next week opens on Sunday.
+        There are no open days to move to right now. Days open 8 days ahead.
       </p>
     );
   }

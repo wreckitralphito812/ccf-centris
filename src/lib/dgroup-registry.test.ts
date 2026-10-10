@@ -17,6 +17,8 @@ function form(over: Record<string, string> = {}) {
     leader_name: "Ralph Relucio",
     leader_mobile: "0917 123 4567",
     co_leader_name: "",
+    upline_name: "Joby Soriano",
+    upline_mobile: "0918 765 4321",
     description: "",
     ...over,
   };
@@ -61,4 +63,12 @@ test("the schedule reads the way people say it", () => {
   assert.equal(scheduleText({ day_of_week: 3, start_time: "19:00:00", frequency: "weekly" }), "Wednesdays, 7:00 PM");
   assert.equal(scheduleText({ day_of_week: 0, start_time: "09:30", frequency: "every_other_week" }), "Sundays, 9:30 AM, every other week");
   assert.equal(scheduleText({ day_of_week: 5, start_time: "12:15", frequency: "monthly" }), "Fridays, 12:15 PM, once a month");
+});
+
+test("every leader names their own Dgroup leader, with a number to call", () => {
+  // Ralph, 2026-10-10: part of the team's check before approving.
+  const r = parseDgroup(form({ upline_name: "", upline_mobile: "nope" }));
+  assert.ok(!r.ok && r.errors.upline && r.errors.uplineMobile);
+  const ok = parseDgroup(form());
+  assert.ok(ok.ok && ok.value.uplineName === "Joby Soriano" && ok.value.uplineMobile === "0918 765 4321");
 });

@@ -66,7 +66,7 @@ function AccountPlaceholder() {
   return (
     <div aria-hidden className="account-slot invisible">
       <div className="account-slot-out flex shrink-0 items-center gap-1">
-        <span className="hidden whitespace-nowrap px-3 py-2 text-[0.95rem] font-medium sm:inline-flex">Sign in</span>
+        <span className="hidden whitespace-nowrap px-3 py-2 text-[0.95rem] font-medium sm:inline-flex lg:hidden xl:inline-flex">Sign in</span>
         <span className="inline-flex min-h-10 items-center px-3.5 text-[0.9rem] font-semibold whitespace-nowrap sm:px-4 sm:text-[0.92rem]">
           Sign up
         </span>
@@ -91,11 +91,13 @@ export function AccountMenu() {
   if (!email) {
     return (
       // On phones only Sign up shows here (Sign in is in the menu), so the
-      // way in is one tap from every page (2026-10-02).
+      // way in is one tap from every page (2026-10-02). From 1024 to 1279px
+      // the eight tabs leave no room for both, so Sign in steps aside there
+      // too; the sign-up page links to it (2026-10-10).
       <div className="flex shrink-0 items-center gap-1">
         <Link
           href="/sign-in"
-          className="hidden whitespace-nowrap rounded-lg px-3 py-2 text-[0.95rem] font-medium text-ink transition-colors hover:bg-mist hover:text-clay sm:inline-flex"
+          className="hidden whitespace-nowrap rounded-lg px-3 py-2 text-[0.95rem] font-medium text-ink transition-colors hover:bg-mist hover:text-clay sm:inline-flex lg:hidden xl:inline-flex"
         >
           Sign in
         </Link>

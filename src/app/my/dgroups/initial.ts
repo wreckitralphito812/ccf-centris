@@ -17,6 +17,8 @@ export function initialFrom(d: RegisteredDgroup): DgroupInitial {
     leaderName: d.leader_name,
     leaderMobile: d.leader_mobile,
     coLeaderName: d.co_leader_name,
+    uplineName: d.upline_name,
+    uplineMobile: d.upline_mobile,
     description: d.description,
     status: d.status,
   };

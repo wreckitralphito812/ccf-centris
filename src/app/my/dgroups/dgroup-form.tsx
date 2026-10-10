@@ -26,6 +26,8 @@ export interface DgroupInitial {
   leaderName?: string | null;
   leaderMobile?: string | null;
   coLeaderName?: string | null;
+  uplineName?: string | null;
+  uplineMobile?: string | null;
   description?: string | null;
   status?: string;
 }
@@ -166,6 +168,24 @@ export function DgroupForm({ initial }: { initial: DgroupInitial }) {
             Co-leader <span className="font-normal text-ink-mute">(optional)</span>
           </span>
           <input name="co_leader_name" defaultValue={initial.coLeaderName ?? ""} maxLength={120} className={cx(INPUT, "mt-1.5 max-w-md")} />
+        </label>
+        {/* Every leader is in a Dgroup too; the team checks with their
+            leader before approving (Ralph, 2026-10-10). */}
+        <div className="sm:col-span-2">
+          <p className={LABEL}>Your own Dgroup leader</p>
+          <p className="mt-0.5 text-[0.92rem] text-ink-mute">
+            The person who leads you. The Centris team may contact them before approving your group.
+          </p>
+        </div>
+        <label className="block">
+          <span className={LABEL}>Their name</span>
+          <input name="upline_name" defaultValue={initial.uplineName ?? ""} maxLength={120} className={cx(INPUT, "mt-1.5")} />
+          <Err text={e.upline} />
+        </label>
+        <label className="block">
+          <span className={LABEL}>Their mobile</span>
+          <input name="upline_mobile" defaultValue={initial.uplineMobile ?? ""} maxLength={30} inputMode="tel" placeholder="0917 123 4567" className={cx(INPUT, "mt-1.5")} />
+          <Err text={e.uplineMobile} />
         </label>
         <label className="block sm:col-span-2">
           <span className={LABEL}>

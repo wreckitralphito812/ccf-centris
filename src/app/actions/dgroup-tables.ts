@@ -151,7 +151,7 @@ export async function rebookDgroupTable(id: string): Promise<DgroupBookingResult
   if (error || !row) return { ok: false, formError: "That booking can’t be found." };
 
   const date = rebookDate(row.booked_on as string, row.slot_id as string, today, manilaMinutes());
-  if (!date) return { ok: false, formError: "That week isn’t open yet. Next week opens on Sunday." };
+  if (!date) return { ok: false, formError: "That day isn’t open yet. Days open 8 days ahead." };
 
   const result = await bookTables(user.id, {
     date,

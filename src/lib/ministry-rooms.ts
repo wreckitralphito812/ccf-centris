@@ -15,13 +15,63 @@
  * request, and the admin emails, so the rules can't drift apart.
  */
 
-export type Setup = "classroom" | "tables" | "furniture";
+export type Setup = "classroom" | "tables" | "open" | "furniture";
 
+/**
+ * Set-ups (Ralph, 2026-10-10): the four halls take classroom, tables or no
+ * tables at all; the Welcome Center and the Dgroup Lounge are used as
+ * furnished only, since their layout can't be changed.
+ */
 export const SETUPS: { id: Setup; label: string; hint: string }[] = [
   { id: "classroom", label: "Classroom", hint: "Rows of chairs facing a speaker at the front" },
-  { id: "tables", label: "Tables", hint: "6-ft folding tables with chairs" },
-  { id: "furniture", label: "As furnished", hint: "Sofas, round and dining tables, as the room is laid out" },
+  { id: "tables", label: "Tables", hint: "Tables with chairs. Say how many of each kind you need" },
+  { id: "open", label: "No tables", hint: "An open floor, for dance rehearsals or choir practice" },
+  { id: "furniture", label: "As furnished", hint: "The Welcome Center or Dgroup Lounge as laid out. It can't be rearranged" },
 ];
+
+export type TableKind = "square" | "medium" | "large";
+export type TableCounts = Partial<Record<TableKind, number>>;
+
+/**
+ * The center's tables (Ralph, 2026-10-10). `stock` is how many it owns,
+ * shared by every request at the same time, not a limit per request.
+ */
+export const TABLE_KINDS: { id: TableKind; label: string; seats: number; stock: number }[] = [
+  { id: "square", label: "Square", seats: 4, stock: 20 },
+  { id: "medium", label: "Medium rectangle", seats: 6, stock: 20 },
+  { id: "large", label: "Large rectangle", seats: 8, stock: 40 },
+];
+
+/** People the tables seat. */
+export const tableSeats = (t: TableCounts | null | undefined) =>
+  TABLE_KINDS.reduce((n, k) => n + (t?.[k.id] ?? 0) * k.seats, 0);
+
+/** "3 square, 2 large rectangle tables", or "None". */
+export function tablesSummary(t: TableCounts | null | undefined): string {
+  const parts = TABLE_KINDS.flatMap((k) => (t?.[k.id] ? [`${t[k.id]} ${k.label.toLowerCase()}`] : []));
+  return parts.length ? `${parts.join(", ")} table${TABLE_KINDS.reduce((n, k) => n + (t?.[k.id] ?? 0), 0) === 1 ? "" : "s"}` : "None";
+}
+
+/** Tables another request holds, and when. */
+export type TableHold = [Minutes, Minutes, TableCounts];
+
+/**
+ * Most tables of each kind in use at any one moment between `start` and
+ * `end`, from the requests that hold them. A request that ends before
+ * another starts doesn't add to it.
+ */
+export function tablesInUse(holds: TableHold[], start: Minutes, end: Minutes): Record<TableKind, number> {
+  const inside = holds.filter(([a, b]) => a < end && b > start);
+  const moments = [start, ...inside.map(([a]) => a).filter((a) => a > start)];
+  const out = { square: 0, medium: 0, large: 0 } as Record<TableKind, number>;
+  for (const at of moments) {
+    for (const k of TABLE_KINDS) {
+      const n = inside.filter(([a, b]) => a <= at && b > at).reduce((sum, [, , t]) => sum + (t[k.id] ?? 0), 0);
+      out[k.id] = Math.max(out[k.id], n);
+    }
+  }
+  return out;
+}
 
 export interface MinistryRoom {
   /** The facility slug in the database. Kept from before the rename. */
@@ -33,13 +83,14 @@ export interface MinistryRoom {
   dgroupRoom: boolean;
 }
 
+// "No tables" seats as many as classroom: the floor is the same size.
 export const MINISTRY_ROOMS: MinistryRoom[] = [
-  { slug: "multipurpose-hall-1", name: "John (MPH 1)", capacity: { classroom: 90, tables: 54 }, dgroupRoom: false },
-  { slug: "multipurpose-hall-2", name: "Luke (MPH 2)", capacity: { classroom: 80, tables: 54 }, dgroupRoom: false },
-  { slug: "multipurpose-hall-3", name: "Matthew (MPH 3)", capacity: { classroom: 90, tables: 60 }, dgroupRoom: false },
-  { slug: "multipurpose-hall-4", name: "Mark (MPH 4)", capacity: { classroom: 56, tables: 36 }, dgroupRoom: false },
-  { slug: "welcome-center", name: "Welcome Center", capacity: { classroom: 80, tables: 68, furniture: 66 }, dgroupRoom: true },
-  { slug: "dgroup-lounge", name: "Dgroup Lounge", capacity: { classroom: 54, tables: 36, furniture: 42 }, dgroupRoom: true },
+  { slug: "multipurpose-hall-1", name: "John (MPH 1)", capacity: { classroom: 90, tables: 54, open: 90 }, dgroupRoom: false },
+  { slug: "multipurpose-hall-2", name: "Luke (MPH 2)", capacity: { classroom: 80, tables: 54, open: 80 }, dgroupRoom: false },
+  { slug: "multipurpose-hall-3", name: "Matthew (MPH 3)", capacity: { classroom: 90, tables: 60, open: 90 }, dgroupRoom: false },
+  { slug: "multipurpose-hall-4", name: "Mark (MPH 4)", capacity: { classroom: 56, tables: 36, open: 56 }, dgroupRoom: false },
+  { slug: "welcome-center", name: "Welcome Center", capacity: { furniture: 66 }, dgroupRoom: true },
+  { slug: "dgroup-lounge", name: "Dgroup Lounge", capacity: { furniture: 42 }, dgroupRoom: true },
 ];
 
 export const ministryRoom = (slug: string) => MINISTRY_ROOMS.find((r) => r.slug === slug) ?? null;
@@ -112,15 +163,19 @@ export const TIME_BLOCKS: { id: string; label: string; from: Minutes; to: Minute
   { id: "evening", label: "Evening", from: toMinutes("18:00"), to: CLOSE },
 ];
 
-/** Today, unless it's Sunday or the rooms are about to close; else the next open day. */
-export function firstOpenDay(today: string, nowMinutes: Minutes): string {
-  if (weekdayOf(today) !== 0 && nowMinutes < CLOSE - 60) return today;
-  const [y, m, d] = today.split("-").map(Number);
-  for (let i = 1; i <= 7; i++) {
-    const next = new Date(Date.UTC(y, m - 1, d + i)).toISOString().slice(0, 10);
-    if (weekdayOf(next) !== 0) return next;
-  }
-  return today;
+/** Requests need this many days' notice: on Monday, Wednesday is the earliest (Ralph, 2026-10-10). */
+export const LEAD_DAYS = 2;
+
+const plusDays = (date: string, n: number) => {
+  const [y, m, d] = date.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+};
+
+/** The earliest date a room can be requested for: LEAD_DAYS on, skipping Sundays. */
+export function firstOpenDay(today: string): string {
+  let day = plusDays(today, LEAD_DAYS);
+  while (weekdayOf(day) === 0) day = plusDays(day, 1);
+  return day;
 }
 
 /** Plain-language hours, for the page and the policies. */
@@ -186,6 +241,9 @@ export function equipmentSummary(counts: Record<string, number> | null | undefin
 
 export const foodLabel = (id: string | null | undefined) => FOOD.find((f) => f.id === id)?.label ?? "Not said";
 export const setupLabel = (id: string | null | undefined) => SETUPS.find((s) => s.id === id)?.label ?? id ?? "Not said";
+
+/** The set-ups a room offers, in SETUPS order. */
+export const setupsFor = (r: MinistryRoom) => SETUPS.filter((s) => r.capacity[s.id]);
 
 /** Meetings that get the rooms first when two requests clash. From the form. */
 export const PRIORITY_MEETINGS = [

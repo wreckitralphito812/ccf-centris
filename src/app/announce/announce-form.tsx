@@ -14,7 +14,8 @@ import {
   PLACEMENTS,
   shapeCheck,
   SUMMARY_MAX,
-  VENUES,
+  CENTRIS_ROOMS,
+  venueRooms,
   type Artwork,
   type PlacementKey,
 } from "@/lib/announcements";
@@ -289,8 +290,17 @@ export function AnnounceForm({
   const [title, setTitle] = useState(initial?.title ?? "");
   const [summary, setSummary] = useState(initial?.summary ?? "");
   const [category, setCategory] = useState(initial?.category ?? ANNOUNCEMENT_CATEGORIES[0]);
-  const knownVenue = !initial?.venue || (VENUES as readonly string[]).includes(initial.venue);
-  const [venue, setVenue] = useState(initial?.venue ? (knownVenue ? initial.venue : "Other") : "Main Hall");
+  // Where: rooms at Centris (any number of them, 2026-10-10), online, or elsewhere.
+  const initialRooms = venueRooms(initial?.venue);
+  const knownVenue = !initial?.venue || initial.venue === "CCF Centris" || initial.venue === "Online" || initialRooms.length > 0;
+  const [venue, setVenue] = useState<"rooms" | "Online" | "Other">(
+    !initial?.venue || initial.venue === "CCF Centris" || initialRooms.length ? "rooms" : initial.venue === "Online" ? "Online" : "Other",
+  );
+  const [venueRoomsPicked, setVenueRoomsPicked] = useState<string[]>(initial?.venue ? initialRooms : ["Main Hall"]);
+  const toggleVenueRoom = (r: string) =>
+    setVenueRoomsPicked((x) => (x.includes(r) ? x.filter((y) => y !== r) : [...x, r]));
+  const venueText =
+    venue === "Other" ? "Your venue" : venue === "Online" ? "Online" : CENTRIS_ROOMS.filter((r) => venueRoomsPicked.includes(r)).join(", ") || "CCF Centris";
   const [dates, setDates] = useState<DateRow[]>(initial?.dates?.length ? initial.dates : [{ date: "", start: "", end: "" }]);
   const setRow = (i: number, patch: Partial<DateRow>) => setDates((x) => x.map((y, j) => (j === i ? { ...y, ...patch } : y)));
   const [signup, setSignup] = useState(initial?.registrationUrl || initial?.signupWanted ? "link" : initial?.id ? "none" : "link");
@@ -588,18 +598,41 @@ export function AnnounceForm({
         ) : null}
         <Err text={e.dates} />
 
-        <div className="mt-6 grid gap-5 sm:grid-cols-2">
-          <label className="block">
-            <span className={LABEL}>Where</span>
-            <select name="venue" value={venue} onChange={(ev) => setVenue(ev.target.value)} className={cx(INPUT, "mt-1.5")}>
-              {VENUES.map((v) => (
-                <option key={v}>{v}</option>
-              ))}
-              <option value="Other">Somewhere else</option>
-            </select>
-          </label>
+        <div className="mt-6">
+          <input type="hidden" name="venue" value={venue} />
+          <p id="venue-label" className={LABEL}>Where</p>
+          <div role="radiogroup" aria-labelledby="venue-label" className="mt-1.5 flex flex-wrap gap-2">
+            {(
+              [
+                ["rooms", "At CCF Centris"],
+                ["Online", "Online"],
+                ["Other", "Somewhere else"],
+              ] as const
+            ).map(([v, label]) => (
+              <button key={v} type="button" role="radio" aria-checked={venue === v} onClick={() => setVenue(v)} className={chip(venue === v)}>
+                {label}
+              </button>
+            ))}
+          </div>
+          {venue === "rooms" ? (
+            <div className="mt-4">
+              <p className="text-[0.92rem] text-ink-mute">Tick every room it uses. Leave them all unticked for just &ldquo;CCF Centris&rdquo;.</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {CENTRIS_ROOMS.map((r) => {
+                  const on = venueRoomsPicked.includes(r);
+                  return (
+                    <label key={r} className={cx(chip(on), "cursor-pointer")}>
+                      <input type="checkbox" name="venue_room" value={r} checked={on} onChange={() => toggleVenueRoom(r)} className="sr-only" />
+                      {on ? "✓ " : ""}
+                      {r}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
           {venue === "Other" ? (
-            <label className="block">
+            <label className="mt-4 block max-w-md">
               <span className={LABEL}>Place</span>
               <input name="venue_other" defaultValue={knownVenue ? "" : initial?.venue} maxLength={80} placeholder="e.g. Eton Centris Piazza" className={cx(INPUT, "mt-1.5")} />
             </label>
@@ -675,7 +708,7 @@ export function AnnounceForm({
             {dates.length > 1 ? ` + ${dates.length - 1} more` : ""}
           </p>
           <p className="mt-1 text-[1.15rem] font-bold leading-snug text-ink">{title || "Your title"}</p>
-          <p className="mt-0.5 text-[0.9rem] text-ink-mute">{venue === "Other" ? "Your venue" : venue}</p>
+          <p className="mt-0.5 text-[0.9rem] text-ink-mute">{venueText}</p>
         </div>
       </Section>
       )}

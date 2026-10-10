@@ -39,6 +39,8 @@ export const NAV: NavGroup[] = [
     ],
   },
   { label: "Reserve", href: "/reserve", items: [] },
+  // Its own tab (Ralph, 2026-10-10): CCF's giving form, on /give.
+  { label: "Give", href: "/give", items: [] },
   { label: "Contact", href: "/contact", items: [] },
 ];
 
@@ -74,6 +76,7 @@ export const ADMIN_NAV: { section: string; items: NavItem[] }[] = [
     items: [
       { label: "Today", href: "/admin/today" },
       { label: "Week", href: "/admin/week" },
+      { label: "Rooms", href: "/admin/rooms" },
       { label: "Bookings", href: "/admin/bookings" },
       { label: "Blocks", href: "/admin/blocks" },
       { label: "Events", href: "/admin/events" },

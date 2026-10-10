@@ -5,7 +5,6 @@ import { currentUser, hasAccounts } from "@/lib/auth/session";
 import { getMyContact } from "@/lib/queries";
 import { hasSupabase } from "@/lib/supabase/server";
 import { manilaDateKey } from "@/lib/format";
-import { manilaMinutes } from "@/lib/dgroup-tables";
 import { roomBusyTimes } from "@/app/actions/reservations";
 import { HOURS_SUMMARY, MINISTRY_ROOMS, SETUPS, firstOpenDay } from "@/lib/ministry-rooms";
 import { BookingFlow } from "./booking";
@@ -26,7 +25,7 @@ export default async function ReservePage() {
   // The first day's busy times come with the page, read alongside the
   // member's details, so the room cards show what's free on first paint.
   const today = manilaDateKey();
-  const firstDay = firstOpenDay(today, manilaMinutes());
+  const firstDay = firstOpenDay(today);
   const [contact, initialBusy] = user
     ? await Promise.all([getMyContact(), roomBusyTimes(firstDay).catch(() => null)])
     : [null, null];

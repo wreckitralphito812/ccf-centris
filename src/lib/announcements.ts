@@ -33,13 +33,26 @@ export const VENUES = [
   "Online",
 ] as const;
 
+/** The rooms an event can use at Centris, ticked together (Ralph, 2026-10-10). */
+export const CENTRIS_ROOMS = VENUES.filter((v) => v !== "CCF Centris" && v !== "Online");
+
 /**
- * Where an event's venue is (2026-10-08): one of the rooms at Centris (or no
+ * The Centris rooms a venue names: "John (MPH 1), Luke (MPH 2)" gives both.
+ * Empty when the venue isn't only rooms at Centris.
+ */
+export function venueRooms(venue: string | null | undefined): string[] {
+  if (!venue) return [];
+  const parts = venue.split(", ");
+  return parts.every((p) => (CENTRIS_ROOMS as readonly string[]).includes(p)) ? parts : [];
+}
+
+/**
+ * Where an event's venue is (2026-10-08): one or more rooms at Centris (or no
  * venue given), online, or somewhere else, which gets its own map link and
  * calendar location instead of the Centris address.
  */
 export function venueKind(venue: string | null | undefined): "centris" | "online" | "elsewhere" {
-  if (!venue || (VENUES as readonly string[]).includes(venue)) return venue === "Online" ? "online" : "centris";
+  if (!venue || venue === "CCF Centris" || venueRooms(venue).length) return "centris";
   return /^online\b/i.test(venue) ? "online" : "elsewhere";
 }
 
@@ -168,10 +181,18 @@ export function parseAnnouncement(
   const category = text(fd.get("category"));
   if (!ANNOUNCEMENT_CATEGORIES.includes(category as never)) errors.category = "Pick a category.";
 
+  // "rooms": one or more rooms at Centris, saved as "John (MPH 1), Luke (MPH 2)";
+  // none ticked is just CCF Centris. A single VENUES value still works.
   const venuePick = text(fd.get("venue"));
-  const venue = venuePick === "Other" ? text(fd.get("venue_other")) : venuePick;
-  if (venuePick !== "Other" && !VENUES.includes(venuePick as never)) errors.venue = "Pick where it is.";
-  else if (venue.length < 2 || venue.length > 80) errors.venue = "Type where it is.";
+  const ticked = [...new Set(fd.getAll("venue_room").map(String))].filter((r) => (CENTRIS_ROOMS as readonly string[]).includes(r));
+  const venue =
+    venuePick === "Other"
+      ? text(fd.get("venue_other"))
+      : venuePick === "rooms"
+        ? CENTRIS_ROOMS.filter((r) => ticked.includes(r)).join(", ") || "CCF Centris"
+        : venuePick;
+  if (venuePick !== "Other" && venuePick !== "rooms" && !VENUES.includes(venuePick as never)) errors.venue = "Pick where it is.";
+  else if (venue.length < 2 || venue.length > 200) errors.venue = "Type where it is.";
 
   const summary = text(fd.get("summary"));
   if (summary.length < 10 || summary.length > SUMMARY_MAX)
