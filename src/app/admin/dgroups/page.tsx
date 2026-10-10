@@ -120,6 +120,24 @@ export default async function AdminDgroups({ searchParams }: PageProps<"/admin/d
                       </>
                     ) : null}
                   </p>
+                  <p className="mt-1 text-[0.92rem] text-ink-mute">
+                    Their Dgroup leader:{" "}
+                    {d.upline_name ? (
+                      <>
+                        <span className="font-semibold text-ink">{d.upline_name}</span>
+                        {d.upline_mobile ? (
+                          <>
+                            {" · "}
+                            <a href={`tel:${d.upline_mobile.replace(/\s/g, "")}`} className="text-clay underline underline-offset-2">
+                              {d.upline_mobile}
+                            </a>
+                          </>
+                        ) : null}
+                      </>
+                    ) : (
+                      "not given (registered before this was asked)"
+                    )}
+                  </p>
                   {d.description ? <p className="mt-2 max-w-2xl text-[0.92rem] leading-relaxed text-ink-soft">{d.description}</p> : null}
                   <p className="mt-2 text-[0.82rem] text-ink-mute">
                     Registered {fmtDayShort(d.created_at)}

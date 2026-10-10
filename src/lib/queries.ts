@@ -11,6 +11,7 @@ import { mergeUpcoming, type Upcoming } from "@/lib/my-bookings";
 import { buildSiteStats, type SiteStats, type StatsInput } from "@/lib/site-stats";
 import { blocksAsHolds, type TableBlock } from "@/lib/dgroup-blocks";
 import { fmtDayLong, manilaDateKey } from "@/lib/format";
+import type { TableCounts } from "@/lib/ministry-rooms";
 import { allText, KIND_ORDER, matchScore, PAGES, queryTerms, type SearchHit } from "@/lib/search";
 import { getWatchReplay } from "@/lib/watch";
 import { getSundayServices } from "@/lib/services";
@@ -937,8 +938,12 @@ export interface AdminReservation {
   /** Shared by every room in one ministry request; null for older rows. */
   request_group: string | null;
   layout: string | null;
+  /** With the "tables" set-up: how many of each kind (2026-10-10). */
+  tables: TableCounts | null;
   equipment: Record<string, number> | null;
   food: string | null;
+  /** The room's slug, for the per-room calendar. */
+  facility_slug: string | null;
 }
 
 /** The `name` of a row PostgREST embedded (as an object, or a one-item list). */
@@ -1022,7 +1027,7 @@ export async function getReservations(): Promise<AdminReservation[]> {
   const { data, error } = await supabaseAdmin()
     .from("reservations")
     .select(
-      "id, contact_name, contact_email, contact_mobile, organization, activity_name, purpose, participants, during, status, created_at, request_group, layout, equipment, food, facilities(name), courts(name)",
+      "id, contact_name, contact_email, contact_mobile, organization, activity_name, purpose, participants, during, status, created_at, request_group, layout, tables, equipment, food, facilities(name, slug), courts(name)",
     )
     .eq("satellite_id", SATELLITE_ID)
     .order("created_at", { ascending: false });
@@ -1034,7 +1039,7 @@ export async function getReservations(): Promise<AdminReservation[]> {
 
   return (data ?? []).map((r) => {
     const [starts_at, ends_at] = parseRange(r.during as string);
-    const facility = one(r.facilities as { name: string } | { name: string }[] | null);
+    const facility = one(r.facilities as { name: string; slug: string } | { name: string; slug: string }[] | null);
     const court = one(r.courts as { name: string } | { name: string }[] | null);
     return {
       id: r.id as string,
@@ -1053,8 +1058,10 @@ export async function getReservations(): Promise<AdminReservation[]> {
       created_at: r.created_at as string,
       request_group: (r.request_group as string | null) ?? null,
       layout: (r.layout as string | null) ?? null,
+      tables: (r.tables as TableCounts | null) ?? null,
       equipment: (r.equipment as Record<string, number> | null) ?? null,
       food: (r.food as string | null) ?? null,
+      facility_slug: facility?.slug ?? null,
     };
   });
 }
@@ -1396,6 +1403,8 @@ export interface RegisteredDgroup {
   leader_mobile: string | null;
   leader_email: string | null;
   co_leader_name: string | null;
+  upline_name: string | null;
+  upline_mobile: string | null;
   description: string | null;
   status: string;
   review_note: string | null;
@@ -1405,7 +1414,7 @@ export interface RegisteredDgroup {
 }
 
 const DGROUP_COLUMNS =
-  "id, name, audience, day_of_week, start_time, frequency, meets_where, general_area, current_size, is_open, leader_id, leader_name, leader_mobile, leader_email, co_leader_name, description, status, review_note, created_at, reviewed_at, updated_at";
+  "id, name, audience, day_of_week, start_time, frequency, meets_where, general_area, current_size, is_open, leader_id, leader_name, leader_mobile, leader_email, co_leader_name, upline_name, upline_mobile, description, status, review_note, created_at, reviewed_at, updated_at";
 
 /** This member's Dgroups, newest first. Scoped to the member, never an id from the request. */
 export async function getMyDgroups(memberId: string): Promise<RegisteredDgroup[]> {

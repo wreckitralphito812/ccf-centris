@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { dateText, daysCovered, downloadName, isOurUpload, lastEnd, parseAnnouncement, shapeCheck, signupUrlFrom, slugFor, venueKind } from "./announcements";
+import { dateText, daysCovered, downloadName, isOurUpload, lastEnd, parseAnnouncement, shapeCheck, signupUrlFrom, slugFor, venueKind, venueRooms } from "./announcements";
 
 const BLOB = "https://abc123.public.blob.vercel-storage.com/announcements/main-tv-x1y2.jpg";
 
@@ -148,4 +148,15 @@ test("admins can save a sign-up with the link still to come", () => {
   if (r.ok) assert.deepEqual([r.value.signup, r.value.registrationUrl], [true, null]);
   const none = parseAnnouncement(form({ signup: "none", registration_url: "" }), "2026-10-05");
   assert.ok(none.ok && none.value.signup === false);
+});
+
+test("an event can use several rooms at Centris (Ralph, 2026-10-10)", () => {
+  const r = parseAnnouncement(form({ venue: "rooms", venue_room: ["Luke (MPH 2)", "John (MPH 1)", "Nowhere"] }), "2026-10-05");
+  assert.ok(r.ok && r.value.venue === "John (MPH 1), Luke (MPH 2)", JSON.stringify(r.ok && r.value.venue));
+  const none = parseAnnouncement(form({ venue: "rooms" }), "2026-10-05");
+  assert.ok(none.ok && none.value.venue === "CCF Centris");
+  assert.deepEqual(venueRooms("John (MPH 1), Luke (MPH 2)"), ["John (MPH 1)", "Luke (MPH 2)"]);
+  assert.deepEqual(venueRooms("Canyon Woods, Batangas"), []);
+  assert.equal(venueKind("John (MPH 1), Luke (MPH 2)"), "centris");
+  assert.equal(venueKind("Canyon Woods, Batangas"), "elsewhere");
 });

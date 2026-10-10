@@ -64,6 +64,7 @@ export function SiteHeader() {
     pathname === href || pathname.startsWith(`${href}/`);
 
   return (
+    <>
     <header
       className={cx(
         "sticky top-0 z-50 border-b transition-colors duration-300",
@@ -116,7 +117,7 @@ export function SiteHeader() {
               aria-current={isActive(group.href) ? "page" : undefined}
               className={cx(
                 // Sentence case, not tracked capitals: the calm look (2026-09-30).
-                "relative whitespace-nowrap rounded-lg px-2.5 py-2 text-[0.95rem] transition-colors xl:px-3.5",
+                "relative whitespace-nowrap rounded-lg px-2 py-2 text-[0.95rem] transition-colors xl:px-3.5",
                 isActive(group.href) ? "bg-clay-wash font-semibold text-clay" : "font-medium text-ink hover:bg-mist hover:text-clay",
               )}
             >
@@ -158,7 +159,12 @@ export function SiteHeader() {
         </div>
       </div>
 
-      {/* Mobile sheet */}
+    </header>
+
+      {/* Mobile sheet. Outside the header on purpose: once scrolled, the
+          header's backdrop-blur makes it the containing block for anything
+          `fixed` inside it, so the sheet shrank to the header's height and
+          only opened at the top of the page (Ralph, 2026-10-10). */}
       {mobile ? (
         <div
           style={{ top: barH || undefined }}
@@ -238,7 +244,7 @@ export function SiteHeader() {
           </div>
         </div>
       ) : null}
-    </header>
+    </>
   );
 }
 

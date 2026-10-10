@@ -230,7 +230,7 @@ function BookingAttempt({
   if (!nights.length) {
     return (
       <p className="calm-card px-8 py-10 text-center text-[1.05rem] text-ink-mute">
-        No times are open right now. Next week&rsquo;s days open on Sunday.
+        No times are open right now. Each weeknight opens 8 days ahead.
       </p>
     );
   }
@@ -280,7 +280,7 @@ function BookingAttempt({
         <Question
           id="q-day"
           title="Which day?"
-          note="This week, Monday to Friday. Next week opens on Sunday."
+          note="Monday to Friday, up to 8 days ahead."
           error={e.date}
         >
           <div

@@ -8,7 +8,17 @@ import { hasSupabase, supabaseAdmin, SATELLITE_ID } from "@/lib/supabase/server"
 import { currentUser } from "@/lib/auth/session";
 import { parseReservation, parseRoomRequest, type FieldErrors } from "@/lib/validation";
 import { referenceFor } from "@/lib/reference";
-import { MINISTRY_ROOMS, ministryRoom, timeLabel, toMinutes, type Minutes } from "@/lib/ministry-rooms";
+import {
+  MINISTRY_ROOMS,
+  TABLE_KINDS,
+  ministryRoom,
+  tablesInUse,
+  timeLabel,
+  toMinutes,
+  type Minutes,
+  type TableCounts,
+  type TableHold,
+} from "@/lib/ministry-rooms";
 import { roomRequestEmail } from "@/lib/emails/room-request";
 import { sendEmail, siteOrigin } from "@/lib/email";
 import { fmtDayLong } from "@/lib/format";
@@ -190,6 +200,20 @@ export async function createRoomRequest(
     };
   }
 
+  // The tables have to be free then too: the center's stock is shared by
+  // every request at the same time (Ralph, 2026-10-10).
+  if (r.setup === "tables") {
+    const used = tablesInUse(await roomTablesHeld(r.date), toMinutes(r.start), toMinutes(r.end));
+    const short = TABLE_KINDS.find((k) => (r.tables[k.id] ?? 0) > k.stock - used[k.id]);
+    if (short) {
+      const left = Math.max(0, short.stock - used[short.id]);
+      return {
+        ok: false,
+        fieldErrors: { tables: `Only ${left} ${short.label.toLowerCase()} table${left === 1 ? " is" : "s are"} free at that time. Use fewer, or another kind.` },
+      };
+    }
+  }
+
   const group = randomUUID();
   const { error } = await db.from("reservations").insert(
     facilities.map((f) => ({
@@ -204,6 +228,7 @@ export async function createRoomRequest(
       activity_name: r.activity_name,
       participants: r.participants,
       layout: r.setup,
+      tables: r.tables,
       equipment: r.equipment,
       food: r.food,
       purpose: r.notes,
@@ -236,6 +261,7 @@ export async function createRoomRequest(
     when: whenLabel(r.starts_at, r.start, r.end),
     participants: r.participants,
     setup: r.setup,
+    tables: r.tables,
     equipment: r.equipment,
     food: r.food,
     notes: r.notes,
@@ -298,6 +324,41 @@ export async function roomBusyTimes(date: string): Promise<Record<string, [Minut
     const m = /[[(]"?([^",]+)"?,\s*"?([^")]+)"?[)\]]/.exec(row.during as string);
     if (!slug || !m) continue;
     (out[slug] ??= []).push([minutes(m[1]), minutes(m[2])]);
+  }
+  return out;
+}
+
+/**
+ * Tables other requests hold on a date (pending ones too), as minutes after
+ * midnight in Manila. A request for several rooms counts once. Only times
+ * and counts: never who asked or what for.
+ */
+export async function roomTablesHeld(date: string): Promise<TableHold[]> {
+  if (!hasSupabase() || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return [];
+  const dayStart = new Date(`${date}T00:00:00+08:00`).getTime();
+  const range = `[${new Date(dayStart).toISOString()},${new Date(dayStart + 86_400_000).toISOString()})`;
+  const { data, error } = await supabaseAdmin()
+    .from("reservations")
+    .select("id, request_group, during, tables")
+    .eq("satellite_id", SATELLITE_ID)
+    .eq("layout", "tables")
+    .in("status", ["pending", "approved"])
+    .overlaps("during", range);
+  if (error) {
+    console.error("roomTablesHeld failed", error);
+    return [];
+  }
+  const minutes = (iso: string) =>
+    Math.min(1440, Math.max(0, Math.round((new Date(iso).getTime() - dayStart) / 60_000)));
+  const seen = new Set<string>();
+  const out: TableHold[] = [];
+  for (const row of data ?? []) {
+    const key = (row.request_group as string | null) ?? (row.id as string);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const m = /[[(]"?([^",]+)"?,\s*"?([^")]+)"?[)\]]/.exec(row.during as string);
+    if (!m) continue;
+    out.push([minutes(m[1]), minutes(m[2]), (row.tables ?? {}) as TableCounts]);
   }
   return out;
 }

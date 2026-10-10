@@ -8,6 +8,11 @@ import {
   firstOpenDay,
   ministryRoom,
   ministryWindow,
+  setupsFor,
+  tableSeats,
+  tablesInUse,
+  tablesSummary,
+  type TableHold,
   timeLabel,
   toMinutes,
   weekdayOf,
@@ -145,11 +150,53 @@ test("parseRoomRequest holds the line on edited fields (Chrome audit, 2026-10-10
   assert.ok(!long.ok && long.fieldErrors.activity && long.fieldErrors.notes && long.fieldErrors.name);
 });
 
-test("the first open day skips Sundays and a day that's nearly over", () => {
-  assert.equal(firstOpenDay("2026-10-05", toMinutes("10:00")), "2026-10-05"); // Monday morning
-  assert.equal(firstOpenDay("2026-10-05", toMinutes("21:00")), "2026-10-06"); // Monday, closing soon
-  assert.equal(firstOpenDay("2026-10-04", toMinutes("08:00")), "2026-10-05"); // Sunday
-  assert.equal(firstOpenDay("2026-10-10", toMinutes("21:00")), "2026-10-12"); // Saturday night skips Sunday
+test("requests need 2 days' notice, and never land on a Sunday", () => {
+  // Ralph, 2026-10-10: on Monday, Wednesday is the earliest.
+  assert.equal(firstOpenDay("2026-10-05"), "2026-10-07"); // Monday -> Wednesday
+  assert.equal(firstOpenDay("2026-10-09"), "2026-10-12"); // Friday -> Sunday is skipped -> Monday
+  assert.equal(firstOpenDay("2026-10-04"), "2026-10-06"); // Sunday -> Tuesday
+
+  const now = Date.parse("2026-10-05T02:00:00Z"); // Monday 10 AM in Manila
+  const tooSoon = parseRoomRequest(request({ date: "2026-10-06" }), now);
+  assert.ok(!tooSoon.ok && /2 days/.test(tooSoon.fieldErrors.date));
+  const fine = parseRoomRequest(request({ date: "2026-10-07" }), now);
+  assert.ok(fine.ok, JSON.stringify(!fine.ok && fine.fieldErrors));
+});
+
+test("the welcome center and lounge are used as furnished; the halls take tables or none", () => {
+  const lounge = ministryRoom("dgroup-lounge")!;
+  assert.deepEqual(setupsFor(lounge).map((s) => s.id), ["furniture"]);
+  assert.deepEqual(setupsFor(ministryRoom("multipurpose-hall-1")!).map((s) => s.id), ["classroom", "tables", "open"]);
+  const sat = parseRoomRequest(request({ date: SAT, room: ["dgroup-lounge"], setup: "classroom", participants: "20" }));
+  assert.ok(!sat.ok && /set-up/.test(sat.fieldErrors.rooms));
+  const furnished = parseRoomRequest(request({ date: SAT, room: ["dgroup-lounge"], setup: "furniture", participants: "20" }));
+  assert.ok(furnished.ok, JSON.stringify(!furnished.ok && furnished.fieldErrors));
+  const rehearsal = parseRoomRequest(request({ setup: "open" }));
+  assert.ok(rehearsal.ok);
+});
+
+test("the tables set-up says how many tables, which must seat everyone and exist", () => {
+  const none = parseRoomRequest(request({ setup: "tables", participants: "30" }));
+  assert.ok(!none.ok && /how many tables/.test(none.fieldErrors.tables));
+  const short = parseRoomRequest(request({ setup: "tables", participants: "30", tables_square: "5" }));
+  assert.ok(!short.ok && /seat 20, fewer than your 30/.test(short.fieldErrors.tables));
+  const ok = parseRoomRequest(request({ setup: "tables", participants: "30", tables_square: "3", tables_large: "3" }));
+  assert.ok(ok.ok && ok.value.tables.square === 3 && ok.value.tables.large === 3 && !ok.value.tables.medium);
+  const more = parseRoomRequest(request({ setup: "tables", participants: "30", tables_large: "41" }));
+  assert.ok(!more.ok && /has 40 large/.test(more.fieldErrors.tables));
+  assert.equal(tableSeats({ square: 1, medium: 1, large: 1 }), 18);
+  assert.equal(tablesSummary({ square: 3, large: 2 }), "3 square, 2 large rectangle tables");
+});
+
+test("tables in use count only requests that overlap at the same moment", () => {
+  const holds: TableHold[] = [
+    [toMinutes("09:00"), toMinutes("12:00"), { square: 10 }],
+    [toMinutes("13:00"), toMinutes("17:00"), { square: 8, large: 5 }],
+    [toMinutes("15:00"), toMinutes("18:00"), { square: 4 }],
+  ];
+  // 11:00-16:00 sees the morning's 10, then 8 + 4 = 12 from 15:00: the most at once is 12.
+  assert.deepEqual(tablesInUse(holds, toMinutes("11:00"), toMinutes("16:00")), { square: 12, medium: 0, large: 5 });
+  assert.deepEqual(tablesInUse(holds, toMinutes("18:00"), toMinutes("21:00")), { square: 0, medium: 0, large: 0 });
 });
 
 test("every time block fits the big halls' hours, on the half hour", () => {

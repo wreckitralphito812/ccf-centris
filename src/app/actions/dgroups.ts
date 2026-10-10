@@ -52,6 +52,8 @@ export async function saveMyDgroup(_prev: DgroupResult | null, fd: FormData): Pr
     leader_mobile: g.leaderMobile,
     leader_email: user.email,
     co_leader_name: g.coLeaderName,
+    upline_name: g.uplineName,
+    upline_mobile: g.uplineMobile,
     description: g.description,
     updated_at: new Date().toISOString(),
   };

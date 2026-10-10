@@ -60,10 +60,13 @@ export interface DgroupInput {
   leaderName: string;
   leaderMobile: string;
   coLeaderName: string | null;
+  /** The leader's own Dgroup leader (upline), for the team to check with (2026-10-10). */
+  uplineName: string;
+  uplineMobile: string;
   description: string | null;
 }
 
-export type DgroupErrors = Partial<Record<"name" | "audience" | "day" | "time" | "frequency" | "where" | "area" | "size" | "leader" | "mobile" | "description", string>>;
+export type DgroupErrors = Partial<Record<"name" | "audience" | "day" | "time" | "frequency" | "where" | "area" | "size" | "leader" | "mobile" | "upline" | "uplineMobile" | "description", string>>;
 
 const text = (v: FormDataEntryValue | null) => (typeof v === "string" ? v.trim() : "");
 
@@ -112,6 +115,13 @@ export function parseDgroup(fd: FormData): { ok: true; value: DgroupInput } | { 
   if (!/^[+\d][\d\s-]{6,29}$/.test(leaderMobile)) errors.mobile = "A mobile number the team can reach you on.";
 
   const coLeader = text(fd.get("co_leader_name")).replace(/\s+/g, " ");
+
+  // Every leader is led too: the team checks with their upline before
+  // approving (Ralph, 2026-10-10).
+  const uplineName = text(fd.get("upline_name")).replace(/\s+/g, " ");
+  if (uplineName.length < 2 || uplineName.length > 120) errors.upline = "Your own Dgroup leader's name.";
+  const uplineMobile = text(fd.get("upline_mobile"));
+  if (!/^[+\d][\d\s-]{6,29}$/.test(uplineMobile)) errors.uplineMobile = "A mobile number for your Dgroup leader.";
   const description = text(fd.get("description"));
   if (description.length > 500) errors.description = "Keep it under 500 characters.";
 
@@ -131,6 +141,8 @@ export function parseDgroup(fd: FormData): { ok: true; value: DgroupInput } | { 
       leaderName,
       leaderMobile,
       coLeaderName: coLeader ? coLeader.slice(0, 120) : null,
+      uplineName,
+      uplineMobile,
       description: description || null,
     },
   };

@@ -99,7 +99,7 @@ export async function setReservationStatus(
   const query = db.from("reservations").update({ status });
   const { data: rows, error } = await (row.request_group ? query.eq("request_group", row.request_group) : query.eq("id", id))
     .select(
-      "contact_name, contact_email, contact_mobile, organization, activity_name, participants, during, layout, equipment, food, purpose, facilities(name)",
+      "contact_name, contact_email, contact_mobile, organization, activity_name, participants, during, layout, tables, equipment, food, purpose, facilities(name)",
     );
 
   if (error) {
@@ -130,6 +130,7 @@ export async function setReservationStatus(
         when: m ? `${fmtDayLong(startsAt)}, ${fmtTime(startsAt)} to ${fmtTime(endsAt)}` : "",
         participants: first.participants as number,
         setup: (first.layout as string | null) ?? null,
+        tables: (first.tables as Record<string, number> | null) ?? null,
         equipment: (first.equipment as Record<string, number> | null) ?? null,
         food: (first.food as string | null) ?? null,
         notes: (first.purpose as string | null) ?? null,

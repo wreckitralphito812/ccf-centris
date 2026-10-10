@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { createRoomRequest, roomBusyTimes, type RoomRequestResult } from "@/app/actions/reservations";
+import { createRoomRequest, roomBusyTimes, roomTablesHeld, type RoomRequestResult } from "@/app/actions/reservations";
 import {
   AddToCalendar,
   BookingBar,
@@ -27,10 +27,15 @@ import {
   MINISTRY_ROOMS,
   SETUPS,
   STEP_MINUTES,
+  TABLE_KINDS,
   TIME_BLOCKS,
   closedReason,
   equipmentSummary,
+  firstOpenDay,
   ministryWindow,
+  tableSeats,
+  tablesInUse,
+  tablesSummary,
   timeLabel,
   toHHMM,
   toMinutes,
@@ -38,6 +43,9 @@ import {
   type MinistryRoom,
   type Minutes,
   type Setup,
+  type TableCounts,
+  type TableHold,
+  type TableKind,
 } from "@/lib/ministry-rooms";
 import { ROOM_LIMITS } from "@/lib/validation";
 import { ROOM_POLICIES } from "./policies";
@@ -97,6 +105,7 @@ const ERROR_TARGETS: [string, StepId, string][] = [
   ["time", 1, "#q-time"],
   ["participants", 1, "#q-people"],
   ["setup", 1, "#q-people"],
+  ["tables", 1, "#q-tables"],
   ["rooms", 1, "#q-room"],
   ["activity", 2, "#f-activity"],
   ["ministry", 2, "#f-ministry"],
@@ -176,6 +185,8 @@ function Request({
   const [customEnd, setCustomEnd] = useState<Minutes | null>(null);
   const [count, setCount] = useState("");
   const [setup, setSetup] = useState<Setup>("classroom");
+  const [tables, setTables] = useState<TableCounts>({});
+  const [tableHolds, setTableHolds] = useState<{ date: string; holds: TableHold[] } | null>(null);
   const [rooms, setRooms] = useState<string[]>([]);
   const [busy, setBusy] = useState<{ date: string; times: Busy } | null>(
     initialBusy ? { date: firstDay, times: initialBusy } : null,
@@ -203,6 +214,15 @@ function Request({
       live = false;
     };
   }, [date, state, firstDay, initialBusy]);
+
+  // Tables other requests hold that day: the center's stock is shared.
+  useEffect(() => {
+    let live = true;
+    roomTablesHeld(date).then((holds) => live && setTableHolds({ date, holds }));
+    return () => {
+      live = false;
+    };
+  }, [date, state]);
 
   // A failed send goes back to the step that needs fixing.
   const [seenState, setSeenState] = useState(state);
@@ -248,7 +268,8 @@ function Request({
 
   /** Closed, taken, or without the set-up: why a room is out, whatever the headcount. */
   const unavailable = (r: MinistryRoom): string | null => {
-    if (!r.capacity[setup]) return `No ${setupInfo.label.toLowerCase()} set-up`;
+    if (!r.capacity[setup])
+      return r.capacity.furniture ? "Used as furnished only" : setup === "furniture" ? "Not furnished" : `No ${setupInfo.label.toLowerCase()} set-up`;
     if (!timed) return null;
     const w = ministryWindow(r.slug, date);
     if (r.dgroupRoom && w && w.to === toMinutes("12:00") && end! > w.to) return "Dgroups use it after 12 NN";
@@ -279,16 +300,30 @@ function Request({
   const seats = picked.reduce((n, slug) => n + (MINISTRY_ROOMS.find((r) => r.slug === slug)!.capacity[setup] ?? 0), 0);
   const ministryName = ministry === "Other" ? ministryOther.trim() : ministry;
 
+  // Tables: what's free at that time, and what the counts seat.
+  const tablesUsed =
+    timed && tableHolds?.date === date ? tablesInUse(tableHolds.holds, start!, end!) : { square: 0, medium: 0, large: 0 };
+  const tablesLeft = (k: TableKind) => Math.max(0, TABLE_KINDS.find((t) => t.id === k)!.stock - tablesUsed[k]);
+  const tableCount = (k: TableKind) => tables[k] ?? 0;
+  const seated = tableSeats(tables);
+  const tooManyTables = TABLE_KINDS.some((k) => tableCount(k.id) > tablesLeft(k.id));
+
   const missingByStep: Record<StepId, string | null> = {
     1: !timed
       ? "Choose a time"
       : !people
         ? "How many people?"
-        : !picked.length
-          ? "Pick a room"
-          : seats < people
-            ? "Tick another room"
-            : null,
+        : setup === "tables" && !seated
+          ? "How many tables?"
+          : setup === "tables" && tooManyTables
+            ? "Fewer tables"
+            : setup === "tables" && seated < people
+              ? "Add tables"
+              : !picked.length
+                ? "Pick a room"
+                : seats < people
+                  ? "Tick another room"
+                  : null,
     2: !activity.trim()
       ? "Name your event"
       : !ministryName
@@ -354,6 +389,9 @@ function Request({
       {/* Everything the server needs, whichever step is showing. */}
       <input type="hidden" name="participants" value={count} />
       <input type="hidden" name="setup" value={setup} />
+      {setup === "tables"
+        ? TABLE_KINDS.map((k) => <input key={k.id} type="hidden" name={`tables_${k.id}`} value={tableCount(k.id)} />)
+        : null}
       <input type="hidden" name="date" value={date} />
       <input type="hidden" name="start" value={timed ? toHHMM(start!) : ""} />
       <input type="hidden" name="end" value={timed ? toHHMM(end!) : ""} />
@@ -388,7 +426,7 @@ function Request({
       {step === 1 ? (
         <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
         <div className="calm-card px-6 py-8 sm:px-9 sm:py-10">
-          <Question id="q-day" title="Which day?" note="Monday to Saturday." error={e.date}>
+          <Question id="q-day" title="Which day?" note="Monday to Saturday, at least 2 days from today." error={e.date}>
             <div className="flex items-center justify-between gap-4">
               <p className="text-[1rem] font-semibold text-ink">
                 {dayNum(days[0])} {monthOf(days[0])} – {dayNum(days[5])} {monthOf(days[5])}
@@ -405,6 +443,8 @@ function Request({
             <div role="radiogroup" aria-labelledby="q-day" className="mt-5 grid grid-cols-6 gap-1">
               {days.map((d) => {
                 const past = d < today;
+                // Requests need 2 days' notice (Ralph, 2026-10-10).
+                const soon = !past && d < firstOpenDay(today);
                 return (
                   <DayCircle
                     key={d}
@@ -413,8 +453,8 @@ function Request({
                     weekday={WEEKDAY[weekdayOf(d)]}
                     day={dayNum(d)}
                     on={d === date}
-                    disabled={past}
-                    note={past ? "Past" : undefined}
+                    disabled={past || soon}
+                    note={past ? "Past" : soon ? "Too soon" : undefined}
                     onChange={() => {
                       setDate(d);
                       revealNext("q-time");
@@ -535,6 +575,59 @@ function Request({
               ))}
             </div>
             <p className="mt-2.5 text-[0.95rem] text-ink-mute">{setupInfo.hint}.</p>
+            {setup === "tables" ? (
+              <div id="q-tables" tabIndex={-1} className="mt-6 outline-none">
+                <p className="text-[1rem] font-semibold text-ink">How many tables?</p>
+                <ul className="mt-3 space-y-2.5">
+                  {TABLE_KINDS.map((k) => {
+                    const n = tableCount(k.id);
+                    const left = tablesLeft(k.id);
+                    const set = (v: number) => setTables((t) => ({ ...t, [k.id]: Math.max(0, Math.min(left, v)) }));
+                    return (
+                      <li key={k.id} className="flex items-center justify-between gap-3 rounded-lg bg-mist px-4 py-3">
+                        <span className="min-w-0">
+                          <span className="block text-[1rem] font-semibold text-ink">{k.label}</span>
+                          <span className="block text-[0.9rem] text-ink-mute">
+                            Seats {k.seats} · {timed ? `${left} free then` : `${k.stock} in all`}
+                          </span>
+                        </span>
+                        <span className="flex shrink-0 items-center gap-2">
+                          <StepButton label={`One fewer ${k.label.toLowerCase()} table`} disabled={n <= 0} onClick={() => set(n - 1)}>
+                            −
+                          </StepButton>
+                          <input
+                            aria-label={`${k.label} tables`}
+                            inputMode="numeric"
+                            autoComplete="off"
+                            maxLength={2}
+                            value={n ? String(n) : ""}
+                            placeholder="0"
+                            onChange={(ev) => set(Number(ev.target.value.replace(/\D/g, "") || 0))}
+                            className="h-11 w-14 rounded-lg bg-paper-bright text-center text-[1.15rem] tabular-nums"
+                          />
+                          <StepButton label={`One more ${k.label.toLowerCase()} table`} disabled={n >= left} onClick={() => set(n + 1)}>
+                            +
+                          </StepButton>
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <p
+                  className={cx(
+                    "mt-3 text-[1rem]",
+                    people && seated && seated < people ? "font-semibold text-clay-deep" : "text-ink-soft",
+                  )}
+                >
+                  {!seated
+                    ? "Square tables seat 4, medium 6, large 8."
+                    : people && seated < people
+                      ? `These tables seat ${seated}, fewer than your ${people}. Add more.`
+                      : `These tables seat ${seated}${people ? `, enough for your ${people}` : ""}.`}
+                </p>
+                {e.tables ? <p className="mt-2 text-[0.95rem] font-semibold text-clay-deep">{e.tables}</p> : null}
+              </div>
+            ) : null}
           </Question>
 
         </div>
@@ -728,6 +821,7 @@ function Request({
                   [picked.length > 1 ? "Rooms" : "Room", `${picked.map(roomName).join(", ")} · seats ${seats}`],
                   ["When", `${dateLong(date)}, ${whenText ?? "—"}`],
                   ["People", `${people}, ${setupInfo.label.toLowerCase()} set-up`],
+                  ...(setup === "tables" ? [["Tables", tablesSummary(tables)] as [string, string]] : []),
                   ["Equipment", equipmentSummary(equipment)],
                 ] as [string, string][]
               ).map(([k, v]) => (

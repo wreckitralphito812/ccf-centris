@@ -1,4 +1,4 @@
-import { equipmentSummary, foodLabel, setupLabel } from "@/lib/ministry-rooms";
+import { equipmentSummary, foodLabel, setupLabel, tablesSummary, type TableCounts } from "@/lib/ministry-rooms";
 import { googleCalendarLink, icsFile, manilaParts, roomEvent } from "@/lib/calendar";
 import { CONTACT, SITE } from "@/lib/site";
 
@@ -27,6 +27,8 @@ export interface RoomEmailData {
   when: string;
   participants: number;
   setup: string | null;
+  /** With the "tables" set-up: how many of each kind. */
+  tables?: TableCounts | null;
   equipment: Record<string, number> | null;
   food: string | null;
   notes: string | null;
@@ -125,6 +127,7 @@ export function roomRequestEmail(d: RoomEmailData): {
     ["People", String(d.participants)],
     ["Set-up", setupLabel(d.setup)],
   ];
+  if (d.setup === "tables") rows.push(["Tables", tablesSummary(d.tables)]);
   if (d.kind === "admin" || d.kind === "received") {
     rows.push(["Equipment", equipmentSummary(d.equipment)], ["Food", foodLabel(d.food)]);
     if (d.notes) rows.push(["Notes", d.notes]);

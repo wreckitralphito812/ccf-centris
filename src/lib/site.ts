@@ -181,6 +181,9 @@ export const CCF_NET = {
  * `officeHours` is a placeholder until the center confirms its hours; set it
  * to null and the Contact page hides the row.
  */
+/** CCF's online giving form (tithes and offerings), shown on /give. */
+export const GIVE_URL = "https://give-form.ccf.org.ph/";
+
 export const CONTACT = {
   messageEmail: "ccfcentris.admin@gmail.com",
   messageSubject: "[CCF Centris website] New message",

@@ -129,6 +129,12 @@ export const PAGES: SearchablePage[] = [
     keywords: "facilities rooms floor plan nxtgen kids children sports hall court worship hall",
   },
   {
+    title: "Give",
+    href: "/give",
+    excerpt: "Give your tithes and offerings through CCF's secure giving form.",
+    keywords: "give giving tithe tithes offering offerings donate donation donations pledge bank card gcash",
+  },
+  {
     title: "Contact",
     href: "/contact",
     excerpt: "Send us a message, or find our address and office hours.",

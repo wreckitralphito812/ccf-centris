@@ -14,7 +14,7 @@ import { setReservationStatus } from "@/app/actions/admin";
 import { hasSupabase } from "@/lib/supabase/server";
 import { isAdminConfigured } from "@/lib/admin-auth";
 import { fmtDayShort, fmtTime } from "@/lib/format";
-import { equipmentSummary, foodLabel, setupLabel } from "@/lib/ministry-rooms";
+import { equipmentSummary, foodLabel, setupLabel, tablesSummary } from "@/lib/ministry-rooms";
 
 export const metadata: Metadata = { title: "Reservations" };
 
@@ -59,6 +59,7 @@ export default async function AdminReservations() {
         <span className="mt-1 block text-[0.78rem] leading-relaxed text-ink-mute">
           {[
             r.layout ? setupLabel(r.layout) : null,
+            r.layout === "tables" ? tablesSummary(r.tables) : null,
             r.equipment && Object.keys(r.equipment).length ? equipmentSummary(r.equipment) : null,
             r.food ? foodLabel(r.food) : null,
           ]
