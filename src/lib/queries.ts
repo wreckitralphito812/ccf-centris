@@ -11,7 +11,8 @@ import { mergeUpcoming, type Upcoming } from "@/lib/my-bookings";
 import { buildSiteStats, type SiteStats, type StatsInput } from "@/lib/site-stats";
 import { blocksAsHolds, type TableBlock } from "@/lib/dgroup-blocks";
 import { fmtDayLong, manilaDateKey } from "@/lib/format";
-import { KIND_ORDER, matchScore, PAGES, queryTerms, type SearchHit } from "@/lib/search";
+import { allText, KIND_ORDER, matchScore, PAGES, queryTerms, type SearchHit } from "@/lib/search";
+import { getWatchReplay } from "@/lib/watch";
 import { getSundayServices } from "@/lib/services";
 import { getSeriesArchive } from "@/lib/channel";
 import { getFourWsGuides as getFourWsGuidesForSearch, getFourWsWeeks as getFourWsWeeksForSearch } from "@/lib/content/public-queries";
@@ -1211,12 +1212,13 @@ export async function globalSearch(q: string): Promise<SearchHit[]> {
   const terms = queryTerms(q.slice(0, 100));
   if (!terms.length) return [];
 
-  const [allEvents, guides, weeks, sunday, series] = await Promise.all([
+  const [allEvents, guides, weeks, sunday, series, watch] = await Promise.all([
     getEvents(),
     getFourWsGuidesForSearch(),
     getFourWsWeeksForSearch(),
     getSundayServices().catch(() => null),
     getSeriesArchive().catch(() => []),
+    getWatchReplay().catch(() => ({ replay: null })),
   ]);
   const weekBySlug = new Map(weeks.map((w) => [w.slug, w]));
 
@@ -1240,11 +1242,26 @@ export async function globalSearch(q: string): Promise<SearchHit[]> {
       href: `/events/${e.slug}`,
     });
   }
+  // Last Sunday's message, from CCF Net (its past ones aren't listed publicly).
+  const replay = watch.replay;
+  if (replay) {
+    add(matchScore(terms, replay.title, replay.speaker, replay.dateLabel, "sunday message sermon last sunday"), {
+      kind: "Sunday service",
+      title: replay.title,
+      excerpt: ["Last Sunday", replay.speaker, replay.dateLabel].filter(Boolean).join(" · "),
+      href: "/watch",
+    });
+  }
+
   for (const g of guides) {
     const week = weekBySlug.get(g.slug);
     const passage = g.word?.passageRef ?? null;
+    // The whole guide counts, so "grace" or "anxiety" find the weeks that
+    // talk about them; the week's preacher too when it's last Sunday's.
+    const body = allText([g.welcome, g.word, g.works, g.prayCareShare, g.prayerPoints, g.memoryVerseText]).join(" ");
+    const speaker = replay?.date && week?.serviceDate === replay.date ? replay.speaker : null;
     add(
-      matchScore(terms, g.title, passage, g.memoryVerseReference, week?.seriesTitle, g.welcome, g.word?.talkAbout.join(" ")),
+      matchScore(terms, g.title, passage, g.memoryVerseReference, week?.seriesTitle, speaker, body),
       {
         kind: "4Ws guide",
         title: g.title,

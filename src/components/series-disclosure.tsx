@@ -78,9 +78,11 @@ export function SeriesDisclosure({ row }: { row: SeriesRow }) {
           ) : (
             <span className="halftone block h-full w-full bg-paper-deep" />
           )}
-          <span className="label absolute bottom-1.5 right-1.5 bg-night/85 px-2 py-1 text-paper-bright">
-            {row.itemCount} videos
-          </span>
+          {row.itemCount ? (
+            <span className="label absolute bottom-1.5 right-1.5 bg-night/85 px-2 py-1 text-paper-bright">
+              {row.itemCount} videos
+            </span>
+          ) : null}
         </a>
 
         <div className="min-w-0 flex-1">

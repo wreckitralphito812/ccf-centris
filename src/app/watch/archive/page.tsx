@@ -166,9 +166,12 @@ export default async function ArchivePage() {
                     ) : (
                       <div className="halftone h-full w-full bg-paper-deep" />
                     )}
-                    <span className="label absolute bottom-2 right-2 bg-night/85 px-2 py-1 text-paper-bright">
-                      {g.main!.itemCount} videos
-                    </span>
+                    {/* Counts come from the YouTube API; the saved fallback list has none. */}
+                    {g.main!.itemCount ? (
+                      <span className="label absolute bottom-2 right-2 bg-night/85 px-2 py-1 text-paper-bright">
+                        {g.main!.itemCount} videos
+                      </span>
+                    ) : null}
                   </a>
 
                   <div className="flex flex-1 flex-col p-5">
@@ -295,9 +298,11 @@ export default async function ArchivePage() {
                       <span className="font-display text-lg leading-tight transition-colors group-hover:text-clay">
                         {c.title}
                       </span>
-                      <span className="label mt-auto pt-4 text-ink-mute">
-                        {c.itemCount.toLocaleString()} videos
-                      </span>
+                      {c.itemCount ? (
+                        <span className="label mt-auto pt-4 text-ink-mute">
+                          {c.itemCount.toLocaleString()} videos
+                        </span>
+                      ) : null}
                     </span>
                   </a>
                 </li>

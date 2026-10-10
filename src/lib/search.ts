@@ -151,13 +151,17 @@ export const PAGES: SearchablePage[] = [
 /** Little words that would make every page match ("where to park"). */
 const STOP = new Set(["a", "an", "and", "are", "at", "can", "do", "for", "how", "i", "in", "is", "it", "my", "of", "on", "the", "to", "what", "when", "where", "who", "with"]);
 
-/** Lowercase, straight quotes, no accents: "What’s" and "whats" match. */
+/**
+ * Lowercase, straight quotes, no accents, no hyphen inside a word: "What’s"
+ * and "whats" match, and so do "Tan-Chi" and "Tanchi", "D-group" and "Dgroup".
+ */
 const fold = (s: string) =>
   s
     .toLowerCase()
     .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[’‘']/g, "");
+    .replace(/\p{M}/gu, "")
+    .replace(/[’‘']/g, "")
+    .replace(/(\p{L})-(?=\p{L})/gu, "$1");
 
 /** The words of a query worth matching, stop words dropped (unless that's all there is). */
 export function queryTerms(q: string): string[] {
@@ -190,4 +194,12 @@ export function matchScore(terms: string[], title: string, ...rest: (string | nu
     if (forms.some((f) => t.includes(f))) score += 2;
   }
   return score;
+}
+
+/** Every bit of text in a nested record (a 4Ws guide's sections), for searching. */
+export function allText(v: unknown, out: string[] = []): string[] {
+  if (typeof v === "string") out.push(v);
+  else if (Array.isArray(v)) for (const x of v) allText(x, out);
+  else if (v && typeof v === "object") for (const x of Object.values(v)) allText(x, out);
+  return out;
 }

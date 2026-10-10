@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { matchScore, PAGES, queryTerms } from "./search";
+import { allText, matchScore, PAGES, queryTerms } from "./search";
 
 const pagesFor = (q: string) =>
   PAGES.filter((p) => matchScore(queryTerms(q), p.title, p.excerpt, p.keywords) > 0).map((p) => p.title);
@@ -36,4 +36,14 @@ test("the searches the Chrome audit found empty now land on a page", () => {
 
 test("every searchable page is a real site path", () => {
   for (const p of PAGES) assert.match(p.href, /^\/[a-z0-9/#-]*$/, p.href);
+});
+
+test("hyphens inside names don't stop a match", () => {
+  // "Peter Tanchi" found nothing against "Peter Tan-Chi" (Chrome re-check, 2026-10-10).
+  assert.ok(matchScore(queryTerms("Peter Tanchi"), "When Disillusioned, Focus on God", "Peter Tan-Chi") > 0);
+  assert.ok(matchScore(queryTerms("d-group"), "Join a Dgroup") > 0);
+});
+
+test("allText reaches every string in a nested record", () => {
+  assert.deepEqual(allText({ a: "x", b: [{ c: "y" }, null, 3], d: { e: "z" } }), ["x", "y", "z"]);
 });

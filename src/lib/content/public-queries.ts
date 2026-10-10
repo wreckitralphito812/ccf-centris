@@ -226,16 +226,59 @@ function decorateWeek(
   };
 }
 
+/**
+ * Every week, newest first by service date, undated ones last (CCF's index
+ * isn't strictly in order: Jan 28 2024 sat above Feb 4), titles tidied.
+ */
 export function getFourWsWeeks(): Promise<FourWsWeekView[]> {
   const snap = readSnapshot();
   const guideSlugs = new Set(snap.fourWsGuides.map((g) => g.slug));
-  return Promise.resolve(snap.fourWsWeeks.map((w) => decorateWeek(w, guideSlugs)));
+  const weeks = snap.fourWsWeeks
+    .map((w) => ({
+      ...w,
+      title: tidyTitle(w.title),
+      seriesTitle: w.seriesTitle ? tidyTitle(w.seriesTitle) : w.seriesTitle,
+    }))
+    .sort((a, b) => (b.serviceDate ?? "").localeCompare(a.serviceDate ?? ""));
+  return Promise.resolve(weeks.map((w) => decorateWeek(w, guideSlugs)));
 }
 
 /** The most recent 4Ws week — the "this week" slot. */
 export async function getCurrentFourWs(): Promise<FourWsWeekView | null> {
   const weeks = await getFourWsWeeks();
   return weeks[0] ?? null;
+}
+
+/** Little words that stay lowercase inside a title. */
+const SMALL_WORDS = new Set(["a", "an", "and", "as", "at", "but", "by", "for", "from", "in", "into", "nor", "of", "on", "or", "the", "to", "vs", "with"]);
+/** All-caps words CCF means as names, not shouting. */
+const KEEP_CAPS = new Set(["CCF", "IDC", "MOVE", "GLC", "NXTGEN", "B1G", "DCP", "II", "III", "IV"]);
+
+/**
+ * One casing for every 4Ws title (2026-10-10). CCF's index mixes "Understanding
+ * the loaves and fish", "What Should You bring?" and "EYE WITNESS 2", which
+ * read as mistakes side by side. Title case, small words lowercase except
+ * first or after a colon; acronyms (S.E.E., L.O.V.E, MOVE, IDC) kept.
+ */
+export function tidyTitle(raw: string): string {
+  const t = raw.replace(/\s+/g, " ").trim();
+  let startOfPhrase = true;
+  return t
+    .split(" ")
+    .map((word) => {
+      const letters = word.replace(/[^\p{L}]/gu, "");
+      const first = startOfPhrase;
+      startOfPhrase = /[:?!.–—]$/.test(word) || word === "–" || word === "—";
+      if (!letters) return word;
+      if (word.includes(".") && letters.length > 1 && letters === letters.toUpperCase()) return word; // S.E.E., L.O.V.E
+      if (KEEP_CAPS.has(letters)) return word;
+      const lower = word.toLowerCase();
+      if (!first && SMALL_WORDS.has(letters.toLowerCase())) return lower;
+      // Capitalise a leading letter, past any opening bracket or quote
+      // ("(part" -> "(Part"), but not "41st".
+      return lower.replace(/^([^\p{L}\p{N}]*)(\p{L})/u, (_m, pre: string, c: string) => pre + c.toUpperCase());
+    })
+    .join(" ");
 }
 
 /**
@@ -246,14 +289,13 @@ export async function getCurrentFourWs(): Promise<FourWsWeekView | null> {
  * Guides missing from the index keep the parsed title, tidied.
  */
 export function fourWsTitle(guide: FourWsGuideRecord, week: FourWsWeekRecord | undefined): string {
-  if (week?.title) return week.title;
-  const t = guide.title
-    .replace(/\s*\(GoViral Edition\)\s*$/i, "")
-    .replace(/^4ws\s*[–—-]\s*/i, "")
-    .replace(/\s*:\s*$/, "")
-    .trim();
-  // ALL CAPS reads as shouting; CCF's index uses title case.
-  return /[a-z]/.test(t) ? t : t.toLowerCase().replace(/(^|[\s(“"'‘-])(\p{L})/gu, (_m, pre, c) => pre + c.toUpperCase());
+  if (week?.title) return tidyTitle(week.title);
+  return tidyTitle(
+    guide.title
+      .replace(/\s*\(GoViral Edition\)\s*$/i, "")
+      .replace(/^4ws\s*[–—-]\s*/i, "")
+      .replace(/\s*:\s*$/, ""),
+  );
 }
 
 export function getFourWsGuide(slug: string): Promise<FourWsGuideRecord | null> {

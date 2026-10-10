@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Section, SectionHead } from "@/components/ui";
-import { currentUser } from "@/lib/auth/session";
+import { currentUser, hasAccounts } from "@/lib/auth/session";
 import { getMyContact } from "@/lib/queries";
 import { hasSupabase } from "@/lib/supabase/server";
 import { manilaDateKey } from "@/lib/format";
@@ -52,6 +52,15 @@ export default async function ReservePage() {
               email={user.email}
               mobile={mobile}
             />
+          ) : !hasAccounts() ? (
+            // Like the Dgroup page: don't offer sign-in where accounts are off
+            // (a preview deployment, for one), 2026-10-10.
+            <div className="calm-card mx-auto max-w-3xl p-8 sm:p-10">
+              <p className="text-[0.95rem] font-semibold text-clay">Opening soon</p>
+              <p className="mt-2 text-[1.5rem] font-semibold leading-tight tracking-[-0.01em] text-ink sm:text-[1.75rem]">
+                Room requests open when member accounts go live.
+              </p>
+            </div>
           ) : (
             <div className="calm-card mx-auto grid max-w-3xl gap-8 p-8 sm:p-10 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div>
