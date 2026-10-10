@@ -149,8 +149,14 @@ export const PAGES: SearchablePage[] = [
   {
     title: "Privacy",
     href: "/privacy",
-    excerpt: "What we collect, why, and how to ask us to remove it.",
+    excerpt: "CCF's privacy policy, which covers CCF Centris.",
     keywords: "privacy data personal information policy",
+  },
+  {
+    title: "Terms and conditions",
+    href: "/terms",
+    excerpt: "CCF's terms and conditions, which cover CCF Centris and this site.",
+    keywords: "terms conditions rules agreement legal",
   },
 ];
 

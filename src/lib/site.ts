@@ -178,21 +178,28 @@ export const CCF_NET = {
  * "+tag" address, which Microsoft 365 bounces if the tenant has plus
  * addressing switched off.
  *
- * `officeHours` is a placeholder until the center confirms its hours; set it
- * to null and the Contact page hides the row.
+ * `officeHours`: every day, confirmed by Ralph 2026-10-10. Set it to null
+ * and the Contact page hides the row.
  */
+/** CCF Main's policies, shown on /privacy and /terms (Ralph, 2026-10-10). */
+export const CCF_POLICIES = {
+  privacy: "https://www.ccf.org.ph/privacy-policy/",
+  terms: "https://www.ccf.org.ph/terms-and-conditions/",
+} as const;
+
 /** CCF's online giving form (tithes and offerings), shown on /give. */
 export const GIVE_URL = "https://give-form.ccf.org.ph/";
 
 export const CONTACT = {
   messageEmail: "ccfcentris.admin@gmail.com",
   messageSubject: "[CCF Centris website] New message",
-  officeHours: "10:00 AM – 9:00 PM" as string | null,
+  officeHours: "Every day, 10:00 AM – 9:00 PM" as string | null,
 } as const;
 
 /**
- * Where to park: the Eton Centris pin CCF Centris shared. Full parking
- * instructions come later; until then the directions page links this pin.
+ * Where to park: the Eton Centris pin CCF Centris shared. The pin, with
+ * Waze and Google Maps directions to it, is all the Visit page needs (Ralph,
+ * 2026-10-10).
  */
 export const PARKING = {
   name: "Eton Centris Elevated Parking 2",
