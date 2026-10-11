@@ -106,7 +106,7 @@ export const WAZE_LINK = `https://www.waze.com/ul?ll=${encodeURIComponent(
  * Structured data for every page (rendered once, in the footer), so Google
  * knows who CCF Centris is (2026-10-11): the organization, with its logo (the
  * search-result icon and knowledge panel use it); the church itself as a
- * place, with the full address, map, hours and Sunday services; and the
+ * place, with the full address, map and hours; and the
  * website, whose name Google shows above results. Only contact details that
  * are set are included. A schema.org Church is a place, not an organization,
  * so the logo sits on the Organization node and the two are linked.
@@ -161,22 +161,10 @@ export function organizationJsonLd() {
           opens: "10:00",
           closes: "21:00",
         },
-        // Sunday services, as a weekly schedule.
-        event: SERVICE_TIMES.map((t) => ({
-          "@type": "Event",
-          name: `Sunday Worship Service, ${t.time}`,
-          eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
-          eventSchedule: {
-            "@type": "Schedule",
-            byDay: "https://schema.org/Sunday",
-            repeatFrequency: "P1W",
-            startTime: `${String(t.hour).padStart(2, "0")}:${String(t.minute).padStart(2, "0")}`,
-            scheduleTimezone: SITE.timezone,
-          },
-          location: { "@id": church },
-          organizer: { "@id": org },
-          isAccessibleForFree: true,
-        })),
+        // Sunday services are in the description, not as Event items: Google
+        // requires a dated startDate on events and flagged weekly-schedule
+        // ones as errors (Search Console, 2026-10-11). Dated events have their
+        // own markup on their pages.
         parentOrganization: { "@id": org },
         sameAs,
       },
