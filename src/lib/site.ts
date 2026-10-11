@@ -187,8 +187,14 @@ export const CCF_POLICIES = {
   terms: "https://www.ccf.org.ph/terms-and-conditions/",
 } as const;
 
-/** CCF's online giving form (tithes and offerings), shown on /give. */
+/** CCF's online giving form (tithes and offerings), where /give sends people. */
 export const GIVE_URL = "https://give-form.ccf.org.ph/";
+
+/** CCF's own help for giving, linked from /give. */
+export const GIVE_HELP = {
+  billsPayment: "https://www.ccf.org.ph/give/bills-payment-tutorial/",
+  faqs: "https://www.ccf.org.ph/give/faqs/",
+} as const;
 
 export const CONTACT = {
   messageEmail: "ccfcentris.admin@gmail.com",

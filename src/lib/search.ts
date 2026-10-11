@@ -131,8 +131,8 @@ export const PAGES: SearchablePage[] = [
   {
     title: "Give",
     href: "/give",
-    excerpt: "Give your tithes and offerings through CCF's secure giving form.",
-    keywords: "give giving tithe tithes offering offerings donate donation donations pledge bank card gcash",
+    excerpt: "Give your tithes and offerings by card, bank transfer, bills payment or PH QR Pay.",
+    keywords: "give giving tithe tithes offering offerings donate donation donations pledge bank transfer card credit debit gcash maya qr bills payment certificate",
   },
   {
     title: "Contact",
