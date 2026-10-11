@@ -19,7 +19,7 @@ import { PrayerWall, type WallPost } from "./wall";
 export const metadata: Metadata = {
   title: "Prayer Wall",
   description:
-    "Post a prayer request and pray for others in the CCF Centris community. For signed-in members.",
+    "Post a prayer request and pray for others in the CCF Centris church community in Quezon City. For signed-in members.",
 };
 
 interface Reply {

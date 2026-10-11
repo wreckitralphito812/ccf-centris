@@ -7,9 +7,9 @@ import { CONTACT, MAPS_EMBED, SITE } from "@/lib/site";
 import { currentUser, hasAccounts } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
-  title: "Contact",
+  title: { absolute: "Contact CCF Centris | Eton Centris, Quezon City" },
   description:
-    "Get in touch with CCF Centris at Eton Centris, EDSA corner Quezon Avenue, Quezon City.",
+    "Reach CCF Centris at 2/F Centris Station, Eton Centris, EDSA corner Quezon Avenue, Quezon City. Email ccfcentris.admin@gmail.com. Open daily 10 AM to 9 PM.",
 };
 
 /**

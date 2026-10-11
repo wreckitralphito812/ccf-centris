@@ -6,7 +6,7 @@ import { CCF_POLICIES } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Privacy policy",
   description:
-    "CCF's Privacy Policy, which CCF Centris follows: what personal information is collected, why, how it's used and protected, and your rights under the Data Privacy Act of 2012.",
+    "CCF's Privacy Policy, which CCF Centris follows: what personal information is collected, why, and how it's used and protected.",
 };
 
 /**

@@ -13,10 +13,11 @@ import {
   WAZE_LINK,
 } from "@/lib/site";
 
+/* Written for search (2026-10-11): what people type (church, Quezon City, service times, Eton Centris) and why to come. */
 export const metadata: Metadata = {
-  title: "Visit",
+  title: { absolute: "Visit CCF Centris | Service Times, Directions & Parking" },
   description:
-    "Find CCF Centris on the second floor of Centris Station, Eton Centris, EDSA corner Quezon Avenue. How to get here by car or by train, and where to park.",
+    "Sundays at 10:00 AM and 3:00 PM, 2/F Centris Station, Eton Centris, Quezon City. Directions by car with parking, or by MRT-3 to Quezon Avenue station.",
 };
 
 /**

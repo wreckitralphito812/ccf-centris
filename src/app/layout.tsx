@@ -20,12 +20,15 @@ const manrope = Manrope({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
+  // The homepage's title and description (2026-10-11): what people search
+  // for (a church in Quezon City, service times) and why to come.
   title: {
-    default: "CCF Centris",
+    default: "CCF Centris | Christian Church at Eton Centris, Quezon City",
     template: "%s | CCF Centris",
   },
   description:
-    "CCF Centris is a satellite of Christ's Commission Fellowship at 2/F Centris Station, Eton Centris, EDSA corner Quezon Avenue. Sunday services are at 10:00 AM and 3:00 PM.",
+    "Join us this Sunday at 10:00 AM or 3:00 PM. CCF Centris is a Christ's Commission Fellowship church at Eton Centris, EDSA corner Quezon Avenue. All welcome.",
+  applicationName: "CCF Centris",
   openGraph: {
     type: "website",
     siteName: "CCF Centris",
