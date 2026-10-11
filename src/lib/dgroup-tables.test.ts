@@ -25,12 +25,17 @@ const seatsOf = (slug: string) => room(slug).tables.reduce((n, t) => n + t.seats
 const key = (c: { roomSlug: string; labels: string[] }) => `${c.roomSlug}:${c.labels.join("+")}`;
 
 test("the tables match the CCF Centris floor plans", () => {
+  // The lounge as re-arranged on 2026-10-11: new table 12, no 10 or 11.
   const lounge = room("dgroup-lounge");
-  assert.equal(lounge.tables.length, 11);
-  assert.equal(seatsOf("dgroup-lounge"), 38);
-  assert.equal(lounge.tables.find((t) => t.label === "1")?.seats, 8);
-  assert.equal(lounge.tables.find((t) => t.label === "7")?.seats, 3);
-  assert.equal(lounge.tables.find((t) => t.label === "11")?.seats, 2);
+  const seats = (l: string) => lounge.tables.find((t) => t.label === l)?.seats;
+  assert.equal(lounge.tables.length, 10);
+  assert.equal(seatsOf("dgroup-lounge"), 42);
+  assert.deepEqual([seats("1"), seats("12")], [8, 8]);
+  assert.deepEqual([seats("4"), seats("5"), seats("8"), seats("9")], [4, 4, 4, 4]);
+  assert.deepEqual([seats("2"), seats("3")], [2, 2]);
+  assert.deepEqual([seats("6"), seats("7")], [3, 3]);
+  assert.equal(seats("10"), undefined);
+  assert.equal(seats("11"), undefined);
 
   const welcome = room("welcome-center");
   assert.equal(welcome.tables.length, 15);
@@ -44,9 +49,9 @@ test("every join names two real tables in its room", () => {
   }
 });
 
-test("the lounge 8-seater and the Welcome Center wall sets never join the rest", () => {
+test("the lounge 8-seaters and the Welcome Center wall sets never join the rest", () => {
   const groups = (slug: string) => tableGroups(room(slug)).filter((g) => g.length > 1);
-  assert.ok(groups("dgroup-lounge").every((g) => !g.includes("1")));
+  assert.deepEqual(groups("dgroup-lounge").map((g) => g.join("+")), ["4+5", "6+7"]);
   const wall = new Set(["1", "2", "3"]);
   for (const g of groups("welcome-center")) {
     const onWall = g.filter((l) => wall.has(l)).length;
@@ -65,15 +70,17 @@ test("joined tables are always neighbours", () => {
 });
 
 test("one table when one fits, the smallest one", () => {
-  assert.deepEqual(key(candidateTables(2, none)[0]), "dgroup-lounge:8");
+  assert.deepEqual(key(candidateTables(2, none)[0]), "dgroup-lounge:2");
   assert.deepEqual(key(candidateTables(3, none)[0]), "dgroup-lounge:6");
-  assert.deepEqual(key(candidateTables(4, none)[0]), "dgroup-lounge:2");
+  assert.deepEqual(key(candidateTables(4, none)[0]), "dgroup-lounge:4");
   assert.deepEqual(key(candidateTables(6, none)[0]), "dgroup-lounge:1");
 });
 
 test("joins neighbouring tables only when no single table fits", () => {
-  const taken = new Set([tableKey("dgroup-lounge", "1")]);
+  // Both 8-seaters taken: 6 people get the benches 6 and 7 pushed together.
+  const taken = new Set([tableKey("dgroup-lounge", "1"), tableKey("dgroup-lounge", "12")]);
   const best = candidateTables(6, taken)[0];
+  assert.equal(key(best), "dgroup-lounge:6+7");
   assert.equal(best.labels.length, 2);
   assert.ok(best.seats >= 6);
 
@@ -83,8 +90,8 @@ test("joins neighbouring tables only when no single table fits", () => {
 });
 
 test("skips tables already booked, room by room", () => {
-  const taken = new Set([tableKey("dgroup-lounge", "8")]);
-  assert.equal(key(candidateTables(2, taken)[0]), "dgroup-lounge:9");
+  const taken = new Set([tableKey("dgroup-lounge", "2"), tableKey("dgroup-lounge", "8")]);
+  assert.equal(key(candidateTables(2, taken)[0]), "dgroup-lounge:3");
   // Table 8 in the lounge doesn't block Table 8 in the Welcome Center.
   const all = candidateTables(4, taken).map(key);
   assert.ok(all.includes("welcome-center:8"));
@@ -194,7 +201,7 @@ test("a change needs only the day, time, and headcount", () => {
 });
 
 test("an empty slot has every table free and seats the largest group", () => {
-  assert.deepEqual(slotAvailability(none), { free: 26, fits: MAX_GROUP_SIZE });
+  assert.deepEqual(slotAvailability(none), { free: 25, fits: MAX_GROUP_SIZE });
 });
 
 test("a slot with every table held is full", () => {
@@ -221,8 +228,8 @@ test("availability is counted per day and slot", () => {
     { booked_on: "2026-10-05", slot_id: "1300", room_slug: "dgroup-lounge", table_labels: ["2", "3"] },
     { booked_on: "2026-10-06", slot_id: "1300", room_slug: "dgroup-lounge", table_labels: ["4"] },
   ]);
-  assert.equal(n.slots[0].free, 24);
-  assert.equal(n.slots[1].free, 26);
+  assert.equal(n.slots[0].free, 23);
+  assert.equal(n.slots[1].free, 25);
 });
 
 test("book again lands on the next open date with the same weekday and slot", () => {
