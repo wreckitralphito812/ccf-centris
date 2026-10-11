@@ -20,9 +20,9 @@ import {
 import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Who we are",
+  title: { absolute: "About CCF Centris | Christ's Commission Fellowship" },
   description:
-    "CCF Centris is a satellite of Christ's Commission Fellowship. Our mission, vision, core values, and statement of faith.",
+    "CCF Centris is a satellite of Christ's Commission Fellowship at Eton Centris, Quezon City. Our mission, vision, core values and what we believe.",
 };
 
 export default function AboutPage() {

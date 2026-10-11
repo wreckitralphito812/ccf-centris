@@ -19,9 +19,9 @@ import { EVENT_CATEGORIES } from "@/lib/events";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "What’s Happening",
+  title: { absolute: "Events at CCF Centris | What’s Happening" },
   description:
-    "Retreats, conferences and other events at CCF Centris, with a month view.",
+    "Retreats, conferences, classes and gatherings at CCF Centris, Eton Centris, Quezon City. See what's coming up and how to sign up.",
 };
 
 /**

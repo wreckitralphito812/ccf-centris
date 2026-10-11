@@ -11,9 +11,9 @@ import {
 import { CONNECT_LINKS } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Join a Dgroup",
+  title: { absolute: "Join a Dgroup | Small Groups at CCF Centris, Quezon City" },
   description:
-    "What a Dgroup is, what happens at one, and how to join one at CCF Centris.",
+    "A Dgroup is a small group that meets every week to study the Bible, pray and grow together. See what happens at one and how to join through CCF Centris.",
 };
 
 export default function JoinDgroupPage() {

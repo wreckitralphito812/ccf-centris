@@ -103,36 +103,93 @@ export const WAZE_LINK = `https://www.waze.com/ul?ll=${encodeURIComponent(
 )}&navigate=yes`;
 
 /**
- * Organization structured data for the site root. Rendered once in the footer
- * as a <script type="application/ld+json">. Only includes contact points that
- * are actually set, and lists the center's social profiles under `sameAs` so
- * search engines can tie them together.
+ * Structured data for every page (rendered once, in the footer), so Google
+ * knows who CCF Centris is (2026-10-11): the organization, with its logo (the
+ * search-result icon and knowledge panel use it); the church itself as a
+ * place, with the full address, map, hours and Sunday services; and the
+ * website, whose name Google shows above results. Only contact details that
+ * are set are included. A schema.org Church is a place, not an organization,
+ * so the logo sits on the Organization node and the two are linked.
  */
 export function organizationJsonLd() {
-  const [street, ...rest] = SITE.addressLines;
+  const base = SITE.url.replace(/\/$/, "");
+  const org = `${base}/#organization`;
+  const church = `${base}/#church`;
+  const sameAs = [SOCIALS.instagram, SOCIALS.facebook, YOUTUBE.channelUrl].filter(
+    (url): url is string => Boolean(url),
+  );
+  const services = SERVICE_TIMES.map((t) => t.time).join(" and ");
   return {
     "@context": "https://schema.org",
-    "@type": "Church",
-    name: SITE.name,
-    parentOrganization: { "@type": "Church", name: SITE.parent },
-    url: SITE.url,
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: [street, rest[0]].filter(Boolean).join(", "),
-      addressLocality: "Quezon City",
-      addressRegion: "Metro Manila",
-      addressCountry: "PH",
-    },
-    geo: {
-      "@type": "GeoCoordinates",
-      latitude: SITE.geo.lat,
-      longitude: SITE.geo.lng,
-    },
-    ...(SITE.email ? { email: SITE.email } : {}),
-    ...(SITE.phone ? { telephone: SITE.phone } : {}),
-    sameAs: [SOCIALS.instagram, SOCIALS.facebook, YOUTUBE.channelUrl].filter(
-      (url): url is string => Boolean(url),
-    ),
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": org,
+        name: SITE.name,
+        alternateName: ["CCF Centris Quezon City", "Christ's Commission Fellowship Centris"],
+        url: base,
+        logo: { "@type": "ImageObject", url: `${base}/icon1.png`, width: 192, height: 192 },
+        image: `${base}/opengraph-image`,
+        email: CONTACT.messageEmail,
+        ...(SITE.phone ? { telephone: SITE.phone } : {}),
+        parentOrganization: { "@type": "Organization", name: SITE.parent, url: "https://www.ccf.org.ph" },
+        sameAs,
+      },
+      {
+        "@type": "Church",
+        "@id": church,
+        name: SITE.name,
+        description: `A satellite of ${SITE.parent} at Eton Centris, Quezon City. Sunday worship services at ${services}. Everyone is welcome.`,
+        url: base,
+        image: `${base}/opengraph-image`,
+        logo: `${base}/icon1.png`,
+        address: {
+          "@type": "PostalAddress",
+          streetAddress: SITE.addressLines.slice(0, 3).join(", "),
+          addressLocality: "Quezon City",
+          addressRegion: "Metro Manila",
+          addressCountry: "PH",
+        },
+        geo: { "@type": "GeoCoordinates", latitude: SITE.geo.lat, longitude: SITE.geo.lng },
+        hasMap: MAPS_PLACE,
+        isAccessibleForFree: true,
+        publicAccess: true,
+        // The center's office hours, every day (Ralph, 2026-10-10).
+        openingHoursSpecification: {
+          "@type": "OpeningHoursSpecification",
+          dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+          opens: "10:00",
+          closes: "21:00",
+        },
+        // Sunday services, as a weekly schedule.
+        event: SERVICE_TIMES.map((t) => ({
+          "@type": "Event",
+          name: `Sunday Worship Service, ${t.time}`,
+          eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+          eventSchedule: {
+            "@type": "Schedule",
+            byDay: "https://schema.org/Sunday",
+            repeatFrequency: "P1W",
+            startTime: `${String(t.hour).padStart(2, "0")}:${String(t.minute).padStart(2, "0")}`,
+            scheduleTimezone: SITE.timezone,
+          },
+          location: { "@id": church },
+          organizer: { "@id": org },
+          isAccessibleForFree: true,
+        })),
+        parentOrganization: { "@id": org },
+        sameAs,
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${base}/#website`,
+        name: SITE.name,
+        alternateName: "CCF Centris Quezon City",
+        url: base,
+        inLanguage: "en-PH",
+        publisher: { "@id": org },
+      },
+    ],
   };
 }
 

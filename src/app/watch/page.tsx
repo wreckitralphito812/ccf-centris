@@ -12,9 +12,9 @@ import { CCF_NET, youtubeEmbed } from "@/lib/site";
 import { CopyLink } from "./copy-link";
 
 export const metadata: Metadata = {
-  title: "Watch",
+  title: { absolute: "Watch Last Sunday's Message | CCF Centris" },
   description:
-    "Last Sunday's message from CCF Net, with this week's 4Ws guide to study it in your Dgroup.",
+    "Watch last Sunday's CCF message online, with this week's 4Ws guide for your Dgroup. Join us in person on Sundays at 10:00 AM and 3:00 PM at Eton Centris.",
 };
 
 /** Re-read CCF Net every half hour; admin changes refresh it at once. */

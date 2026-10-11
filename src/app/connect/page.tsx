@@ -5,8 +5,9 @@ import { CONNECT_LINKS, SOCIALS, YOUTUBE } from "@/lib/site";
 import { FacebookGlyph, InstagramGlyph, YouTubeGlyph } from "@/components/icons";
 
 export const metadata: Metadata = {
-  title: "Connect",
-  description: "Join a Dgroup, sign up to serve, and follow CCF Centris.",
+  title: { absolute: "Connect | Join a Dgroup or Serve at CCF Centris" },
+  description:
+    "Find a Dgroup (a small group that meets weekly), sign up to serve on a ministry team, and follow CCF Centris on Facebook, Instagram and YouTube.",
 };
 
 /** Center-owned accounts. A null URL renders as "coming soon". */

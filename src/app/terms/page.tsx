@@ -6,7 +6,8 @@ import { CCF_POLICIES } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Terms and conditions",
-  description: "CCF's Terms and Conditions, which CCF Centris and this site follow.",
+  description:
+    "CCF's Terms and Conditions, which CCF Centris and this website follow: license, user content, acceptable use and more.",
 };
 
 /**
