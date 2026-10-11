@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { getServiceWindow, getUpcomingEvents, getUpcomingServices } from "@/lib/queries";
@@ -34,6 +35,13 @@ import { InviteFriend } from "@/components/invite-friend";
 
 /** Last Sunday's replay is read from CCF Net, which changes weekly. */
 export const revalidate = 1800;
+
+/**
+ * The homepage's canonical is the bare domain. The layout's "./" resolves to
+ * "/index" here, which Search Console showed as the homepage's canonical
+ * (2026-10-11), and that address doesn't exist.
+ */
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 /**
  * Homepage. Short on purpose: it answers "when, where, and what do I do next",
