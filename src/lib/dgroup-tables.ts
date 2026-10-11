@@ -56,16 +56,26 @@ const line = (...labels: number[]): [string, string][] =>
 
 export const DGROUP_ROOMS: DgroupRoom[] = [
   {
-    // DGROUP PLAN: 11 tables, 38 seats. One long 8-seater (never joined), four
-    // 4-seat clusters in a square, two 3-seat benches, four 2-seat rounds.
+    // Re-arranged 2026-10-11 (Ralph's sketch): a new big table, 12, and tables
+    // 10 and 11 moved outside. 10 tables, 42 seats: two 8-seaters (1, 12),
+    // two 4-seat squares (4, 5), two 3-seat benches pushed end to end (6, 7),
+    // and along the east wall two sofa sets of 4 (8, 9) and two 2-seat tables
+    // (2, 3). Only 4+5 and 6+7 stand together.
     slug: "dgroup-lounge",
     name: "Dgroup Lounge",
-    tables: [...run(1, 8, 1), ...run(4, 4, 2), ...run(2, 3, 6), ...run(4, 2, 8)],
-    joins: [
-      ["2", "3"], ["4", "5"], ["2", "4"], ["3", "5"],
-      ["6", "7"],
-      ["8", "9"], ["10", "11"],
+    tables: [
+      { label: "1", seats: 8 },
+      { label: "2", seats: 2 },
+      { label: "3", seats: 2 },
+      { label: "4", seats: 4 },
+      { label: "5", seats: 4 },
+      { label: "6", seats: 3 },
+      { label: "7", seats: 3 },
+      { label: "8", seats: 4 },
+      { label: "9", seats: 4 },
+      { label: "12", seats: 8 },
     ],
+    joins: [["4", "5"], ["6", "7"]],
   },
   {
     // WELCOME PLAN: 15 tables of 4, 60 seats. Tables 1–3 are the lounge sets

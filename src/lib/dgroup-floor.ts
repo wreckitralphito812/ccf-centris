@@ -34,25 +34,25 @@ const WELCOME_ROWS = [5.0, 20.4, 35.7, 51.1, 66.5, 81.8];
 
 export const FLOOR_PLANS: Record<string, FloorPlan> = {
   "dgroup-lounge": {
+    // Re-drawn 2026-10-11 from Ralph's sketch of the new arrangement: the big
+    // tables 1 and 12 and squares 5 and 4 down the west side, benches 6 and 7
+    // end to end along the south wall; down the east wall, 9 and 8 each with a
+    // sofa, and the 2-seat tables 3 and 2.
     aspect: 685 / 775,
     items: [
-      { label: "1", x: 14.0, y: 2.3, w: 44.8, h: 25.8, shape: "rect" },
-      { label: "2", x: 14.9, y: 34.2, w: 23.3, h: 20.6, shape: "cluster" },
-      { label: "3", x: 44.8, y: 34.2, w: 23.4, h: 20.6, shape: "cluster" },
-      { label: "4", x: 14.9, y: 59.2, w: 23.3, h: 20.7, shape: "cluster" },
-      { label: "5", x: 44.8, y: 59.2, w: 23.4, h: 20.7, shape: "cluster" },
-      { label: "6", x: 10.7, y: 87.7, w: 28.3, h: 11.6, shape: "rect" },
-      { label: "7", x: 39.0, y: 87.7, w: 28.2, h: 11.6, shape: "rect" },
-      { label: "8", x: 76.9, y: 15.5, w: 9.5, h: 8.4, shape: "round" },
-      { label: "9", x: 88.5, y: 15.5, w: 9.5, h: 8.4, shape: "round" },
-      { label: "10", x: 76.9, y: 53.1, w: 9.5, h: 8.4, shape: "round" },
-      { label: "11", x: 88.5, y: 53.1, w: 9.5, h: 8.4, shape: "round" },
-      // Lounge seating.
-      { x: 78.0, y: 0.6, w: 9.4, h: 10.5, shape: "rect" },
-      { x: 90.5, y: 0.6, w: 9.0, h: 10.5, shape: "rect" },
-      { x: 78.0, y: 28.0, w: 21.5, h: 20.8, shape: "rect" },
-      { x: 78.0, y: 65.7, w: 9.4, h: 10.4, shape: "rect" },
-      { x: 90.5, y: 65.7, w: 9.0, h: 10.4, shape: "rect" },
+      { label: "1", x: 8.0, y: 3.0, w: 52.0, h: 19.0, shape: "rect" },
+      { label: "12", x: 8.0, y: 26.5, w: 52.0, h: 19.0, shape: "rect" },
+      { label: "5", x: 9.0, y: 51.0, w: 22.0, h: 19.0, shape: "cluster" },
+      { label: "4", x: 37.0, y: 51.0, w: 22.0, h: 19.0, shape: "cluster" },
+      { label: "6", x: 6.0, y: 82.0, w: 29.0, h: 13.0, shape: "rect" },
+      { label: "7", x: 35.0, y: 82.0, w: 29.0, h: 13.0, shape: "rect" },
+      { label: "9", x: 71.0, y: 4.0, w: 14.0, h: 14.0, shape: "cluster" },
+      { label: "3", x: 71.0, y: 25.0, w: 15.0, h: 11.0, shape: "round" },
+      { label: "8", x: 71.0, y: 42.0, w: 14.0, h: 14.0, shape: "cluster" },
+      { label: "2", x: 71.0, y: 63.0, w: 15.0, h: 11.0, shape: "round" },
+      // The sofas beside 9 and 8.
+      { x: 88.0, y: 2.0, w: 11.0, h: 18.0, shape: "rect" },
+      { x: 88.0, y: 40.0, w: 11.0, h: 18.0, shape: "rect" },
     ],
     doors: [{ wall: "bottom", from: 84.4, to: 99.3 }],
   },
