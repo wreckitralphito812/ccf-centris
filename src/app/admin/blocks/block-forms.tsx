@@ -78,7 +78,7 @@ export function TableBlockForm({ today }: { today: string }) {
         <input name="reason" maxLength={200} placeholder="e.g. Repairs, Leaders' summit" className={cx(INPUT, "mt-1.5")} />
       </label>
       <button type="submit" disabled={pending} className={SUBMIT}>
-        {pending ? "Blocking…" : "Block tables"}
+        {pending ? "Saving…" : "Close these tables"}
       </button>
       <Result state={state} />
     </form>
@@ -121,7 +121,7 @@ export function RoomBlockForm({ today }: { today: string }) {
         <input name="reason" maxLength={200} placeholder="e.g. Deep cleaning, Church-wide event" className={cx(INPUT, "mt-1.5")} />
       </label>
       <button type="submit" disabled={pending} className={SUBMIT}>
-        {pending ? "Blocking…" : "Block room"}
+        {pending ? "Saving…" : "Close this room"}
       </button>
       <Result state={state} />
     </form>

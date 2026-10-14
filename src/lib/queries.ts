@@ -1,3 +1,4 @@
+import { roomLabel } from "@/lib/admin-day";
 import "server-only";
 
 import { EVENT_CATEGORIES } from "@/lib/events";
@@ -1334,7 +1335,7 @@ export async function getSiteStats(): Promise<SiteStats | null> {
       .eq("satellite_id", SATELLITE_ID),
     db
       .from("reservations")
-      .select("id, status, created_at, during, request_group, facilities(name)")
+      .select("id, status, created_at, during, request_group, facilities(name, slug)")
       .eq("satellite_id", SATELLITE_ID),
     db
       .from("prayer_wall_posts")
@@ -1356,7 +1357,11 @@ export async function getSiteStats(): Promise<SiteStats | null> {
       created_at: r.created_at as string,
       starts_at: parseRange(r.during as string)[0],
       request_group: (r.request_group as string | null) ?? null,
-      facility_name: one(r.facilities as { name: string } | { name: string }[] | null)?.name ?? null,
+      // The site's room names, not the database's "Multipurpose Hall 2" (2026-10-14).
+      facility_name: (() => {
+        const f = one(r.facilities as { name: string; slug: string } | { name: string; slug: string }[] | null);
+        return f ? roomLabel({ facility_slug: f.slug, facility_name: f.name }) : null;
+      })(),
     })),
     posts: (posts.data ?? []) as StatsInput["posts"],
     prayers: prayers.count ?? 0,
@@ -1467,4 +1472,94 @@ export async function getRegisteredDgroups(): Promise<(RegisteredDgroup & { book
     stats.set(b.dgroup_id, s);
   }
   return ((data ?? []) as RegisteredDgroup[]).map((d) => ({ ...d, ...(stats.get(d.id) ?? { bookings: 0, last_booked: null }) }));
+}
+
+/**
+ * What's waiting for staff, for the admin menu's badges (2026-10-14): room
+ * requests (several rooms asked for together count once), Dgroups to
+ * approve, announcements and reps to review, and Prayer Wall reports not
+ * dealt with yet.
+ */
+export async function getAdminCounts(): Promise<Record<"rooms" | "dgroups" | "announcements" | "prayer", number>> {
+  const none = { rooms: 0, dgroups: 0, announcements: 0, prayer: 0 };
+  if (!hasSupabase()) return none;
+  const db = supabaseAdmin();
+  const [rooms, dgroups, events, reps, reports] = await Promise.all([
+    db.from("reservations").select("id, request_group").eq("satellite_id", SATELLITE_ID).eq("status", "pending"),
+    db.from("dgroups").select("id", { count: "exact", head: true }).eq("satellite_id", SATELLITE_ID).eq("status", "pending"),
+    db.from("events").select("id", { count: "exact", head: true }).eq("satellite_id", SATELLITE_ID).eq("status", "pending"),
+    db.from("announcement_reps").select("id", { count: "exact", head: true }).eq("satellite_id", SATELLITE_ID).is("approved_at", null),
+    db.from("prayer_wall_reports").select("id", { count: "exact", head: true }).eq("satellite_id", SATELLITE_ID).is("resolved_at", null),
+  ]);
+  return {
+    rooms: new Set((rooms.data ?? []).map((r) => (r.request_group as string | null) ?? (r.id as string))).size,
+    dgroups: dgroups.count ?? 0,
+    announcements: (events.count ?? 0) + (reps.count ?? 0),
+    prayer: reports.count ?? 0,
+  };
+}
+
+export interface AdminPrayerReply {
+  id: string;
+  author_name: string;
+  kind: string;
+  body: string;
+  created_at: string;
+  hidden_at: string | null;
+  reports: number;
+}
+
+export interface AdminPrayerPost {
+  id: string;
+  author_name: string;
+  body: string;
+  topic: string | null;
+  created_at: string;
+  expires_at: string | null;
+  hidden_at: string | null;
+  answered_at: string | null;
+  prayed: number;
+  reports: number;
+  replies: AdminPrayerReply[];
+}
+
+/**
+ * The Prayer Wall for staff (2026-10-14): every post still up, hidden ones
+ * included, with replies and how many times each was reported. Replaces the
+ * template's "Prayer requests" page, which showed invented requests.
+ */
+export async function getAdminPrayerWall(): Promise<AdminPrayerPost[]> {
+  if (!hasSupabase()) return [];
+  const db = supabaseAdmin();
+  const now = new Date().toISOString();
+  const [{ data: posts, error }, { data: reports }] = await Promise.all([
+    db
+      .from("prayer_wall_posts")
+      .select("id, author_name, body, topic, created_at, expires_at, hidden_at, answered_at, prayer_wall_prayers(count), prayer_wall_replies(id, author_name, kind, body, created_at, hidden_at)")
+      .eq("satellite_id", SATELLITE_ID)
+      .or(`expires_at.is.null,expires_at.gt.${now}`)
+      .order("created_at", { ascending: false })
+      .limit(200),
+    db.from("prayer_wall_reports").select("post_id, reply_id").eq("satellite_id", SATELLITE_ID).is("resolved_at", null),
+  ]);
+  if (error) {
+    console.error("getAdminPrayerWall failed", error);
+    return [];
+  }
+  const count = (k: "post_id" | "reply_id", id: string) => (reports ?? []).filter((r) => r[k] === id).length;
+  return (posts ?? []).map((p) => ({
+    id: p.id as string,
+    author_name: p.author_name as string,
+    body: p.body as string,
+    topic: (p.topic as string | null) ?? null,
+    created_at: p.created_at as string,
+    expires_at: (p.expires_at as string | null) ?? null,
+    hidden_at: (p.hidden_at as string | null) ?? null,
+    answered_at: (p.answered_at as string | null) ?? null,
+    prayed: ((p.prayer_wall_prayers as { count: number }[] | null) ?? [])[0]?.count ?? 0,
+    reports: count("post_id", p.id as string),
+    replies: ((p.prayer_wall_replies as Omit<AdminPrayerReply, "reports">[] | null) ?? [])
+      .map((r) => ({ ...r, reports: count("reply_id", r.id) }))
+      .sort((a, b) => a.created_at.localeCompare(b.created_at)),
+  }));
 }

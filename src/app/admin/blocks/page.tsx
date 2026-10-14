@@ -11,7 +11,7 @@ import { timeLabel } from "@/lib/ministry-rooms";
 import { hasSupabase } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-auth";
 
-export const metadata: Metadata = { title: "Blocks" };
+export const metadata: Metadata = { title: "Close a room or table" };
 export const dynamic = "force-dynamic";
 
 /**
@@ -34,8 +34,8 @@ export default async function AdminBlocks() {
   return (
     <div className="space-y-8">
       <AdminHeader
-        title="Blocks"
-        lead="Take Dgroup tables or rooms out of booking. Members see them as taken. Bookings already made are kept; you'll be told if a block overlaps one."
+        title="Close a room or table"
+        lead="Close a Dgroup table or a room for a repair, cleaning or a staff meeting, so nobody can book it then. Bookings already made stay; you'll be told if one is affected."
       />
 
       {!hasSupabase() || readOnly ? (
@@ -44,11 +44,11 @@ export default async function AdminBlocks() {
         </AdminNote>
       ) : null}
 
-      <AdminPanel title="Block Dgroup tables">
+      <AdminPanel title="Close Dgroup tables">
         <TableBlockForm today={today} />
       </AdminPanel>
 
-      <AdminPanel title="Block a room">
+      <AdminPanel title="Close a room">
         <RoomBlockForm today={today} />
       </AdminPanel>
 

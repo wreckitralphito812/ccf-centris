@@ -410,6 +410,20 @@ export function seriesText(
         : runs.every((r) => r.length > 1)
           ? `${WD[firstWd[0]]}–${WD[lastWd[0]]}`
           : null;
+  // Weekly with no gaps: "Every Sunday, Oct 11 – Nov 29" (Ralph, 2026-10-14).
+  const weekly =
+    runs.length >= 3 &&
+    runs.every((r) => r.length === 1) &&
+    runs.every((r, i) => i === 0 || at(r[0]).getTime() - at(runs[i - 1][0]).getTime() === 7 * 86_400_000);
+  if (weekly) {
+    const a = at(keys[0]);
+    const b = at(keys[keys.length - 1]);
+    const span =
+      a.getUTCMonth() === b.getUTCMonth()
+        ? `${MO[a.getUTCMonth()]} ${a.getUTCDate()}–${b.getUTCDate()}`
+        : `${MO[a.getUTCMonth()]} ${a.getUTCDate()} – ${MO[b.getUTCMonth()]} ${b.getUTCDate()}`;
+    return { days: `Every ${WD_LONG[a.getUTCDay()]}, ${span}`, hours };
+  }
   const list = listJoin(ranges, " & ");
   return { days: prefix ? `${prefix}, ${list}` : list, hours };
 }

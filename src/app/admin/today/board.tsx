@@ -346,8 +346,8 @@ export function TodayBoard({
                       id={b.id}
                       current={b.status}
                       transitions={[
-                        { label: "Approve", status: "approved", tone: "go" },
-                        { label: "Decline", status: "rejected", tone: "stop" },
+                        { label: "Approve", status: "approved", tone: "go", confirm: "Approve this request? The person who asked will get an email." },
+                        { label: "Decline", status: "rejected", tone: "stop", confirm: "Decline this request? The person who asked will get an email, and the rooms are freed." },
                       ]}
                       onSet={setReservationStatus}
                     />

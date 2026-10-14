@@ -17,7 +17,8 @@ export function QueueActions({
 }: {
   id: string;
   current: string;
-  transitions: { label: string; status: string; tone?: "go" | "stop" | "mute" }[];
+  /** `confirm` asks first, in plain words, before anything that emails someone or can't be undone. */
+  transitions: { label: string; status: string; tone?: "go" | "stop" | "mute"; confirm?: string }[];
   // A server action. Typed loosely so each queue can pass its own status union.
   onSet: (id: string, status: never) => Promise<AdminActionResult>;
 }) {
@@ -35,6 +36,7 @@ export function QueueActions({
               type="button"
               disabled={pending}
               onClick={() => {
+                if (t.confirm && !window.confirm(t.confirm)) return;
                 setError(null);
                 start(async () => {
                   const res = await onSet(id, t.status as never);
@@ -42,9 +44,9 @@ export function QueueActions({
                 });
               }}
               className={cx(
-                "label border px-2 py-1 transition-colors",
+                "btn-press inline-flex min-h-10 items-center rounded-lg border px-3.5 text-[0.9rem] font-semibold transition-colors",
                 t.tone === "go" &&
-                  "border-moss/50 text-moss hover:bg-moss hover:text-paper-bright",
+                  "border-moss bg-moss text-paper-bright hover:bg-moss/90",
                 t.tone === "stop" &&
                   "border-clay/50 text-clay-deep hover:bg-clay hover:text-paper-bright",
                 (!t.tone || t.tone === "mute") &&
@@ -55,8 +57,9 @@ export function QueueActions({
             </button>
           ))}
       </span>
+      {pending ? <span className="mt-1 block text-[0.8rem] text-ink-mute">Saving…</span> : null}
       {error ? (
-        <span className="mt-1 block text-[0.75rem] font-semibold text-clay-deep">
+        <span className="mt-1 block text-[0.85rem] font-semibold text-clay-deep">
           {error}
         </span>
       ) : null}

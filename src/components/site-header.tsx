@@ -8,7 +8,17 @@ import { cx } from "./ui";
 import { Wordmark } from "./wordmark";
 import { AccountMenu, MobileAccount } from "./account-menu";
 
+/**
+ * The site header, left off the admin console (2026-10-14): staff saw the
+ * public "Sign in / Sign up" bar above their own and weren't sure which
+ * one they were in. The console has its own bar with "View site".
+ */
 export function SiteHeader() {
+  const pathname = usePathname();
+  return pathname.startsWith("/admin") ? null : <PublicHeader />;
+}
+
+function PublicHeader() {
   const pathname = usePathname();
   const [mobile, setMobile] = useState(false);
   const [scrolled, setScrolled] = useState(false);

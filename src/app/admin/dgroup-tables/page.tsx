@@ -70,7 +70,7 @@ export default async function AdminDgroupTables() {
           <QueueActions
             id={b.id}
             current={b.status}
-            transitions={[{ label: "Cancel", status: "cancelled", tone: "stop" }]}
+            transitions={[{ label: "Cancel", status: "cancelled", tone: "stop", confirm: "Cancel this Dgroup table booking? The leader will get an email, and the table is freed." }]}
             onSet={setDgroupTableStatus}
           />
         )}

@@ -15,7 +15,7 @@ import {
 } from "@/app/actions/watch-admin";
 import { PinForm } from "./pin-form";
 
-export const metadata: Metadata = { title: "Watch" };
+export const metadata: Metadata = { title: "Sunday video" };
 
 const SOURCE_NOTE = {
   pinned: "Pinned by an admin. It stays until you unpin it.",
@@ -42,7 +42,7 @@ export default async function AdminWatch() {
   return (
     <div className="space-y-8">
       <AdminHeader
-        title="Watch"
+        title="Sunday video"
         lead="“Last Sunday” on the Watch page and the home page follows CCF Net by itself, and every replay it finds is saved below. Pin a video to show something else, like a special service."
       />
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ADMIN_NAV } from "@/lib/nav";
+import { getAdminCounts } from "@/lib/queries";
+import { AdminNav } from "./admin-nav";
 import { CcfMark } from "@/components/wordmark";
 import { isAdmin, isAdminConfigured } from "@/lib/admin-auth";
 import { adminLogout } from "@/app/actions/admin";
@@ -12,21 +13,15 @@ export const metadata: Metadata = {
 };
 
 /**
- * Admin shell.
- *
- * A preview of the console CCF Centris staff would use. It is deliberately
- * quiet: no charts competing for attention, no vanity metrics, just the
- * queues someone actually works through on a Monday morning.
- *
- * Nothing here is authenticated yet. In the live system every route is gated
- * by the role policies in supabase/migrations/0002_rls.sql, so a facilities
- * administrator never sees a prayer request.
+ * Admin shell: one shared staff access code, a menu of what works (with
+ * counts on anything waiting, 2026-10-14), and the page.
  */
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   // Shared-code gate. When no code is configured the console stays open but
   // read-only (mutations refuse in the actions themselves).
   const gated = isAdminConfigured();
   const signedIn = gated ? await isAdmin() : true;
+  const counts = signedIn ? await getAdminCounts() : {};
 
   return (
     <div className="min-h-screen bg-paper-deep print:bg-white">
@@ -80,30 +75,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
         </div>
       ) : (
         <div className="mx-auto flex max-w-[110rem] flex-col gap-8 px-5 py-8 sm:px-8 lg:flex-row">
-          <nav
-          aria-label="Admin"
-          className="shrink-0 lg:w-56 lg:sticky lg:top-8 lg:self-start print:hidden"
-        >
-          <div className="no-bar flex gap-6 overflow-x-auto pb-2 lg:block lg:space-y-7 lg:overflow-visible lg:pb-0">
-            {ADMIN_NAV.map((section) => (
-              <div key={section.section} className="shrink-0">
-                <p className="label text-ink-mute">{section.section}</p>
-                <ul className="mt-2 flex gap-2 lg:mt-3 lg:block lg:space-y-0.5">
-                  {section.items.map((item) => (
-                    <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        className="block whitespace-nowrap py-1.5 text-[0.9rem] text-ink-soft transition-colors hover:text-clay lg:whitespace-normal"
-                      >
-                        {item.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </nav>
+          <AdminNav counts={counts} />
 
           <main className="min-w-0 flex-1">{children}</main>
         </div>

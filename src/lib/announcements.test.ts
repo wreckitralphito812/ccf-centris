@@ -179,7 +179,11 @@ test("a series on the same hours reads as two lines", () => {
   const dd = (d: number) => String(d).padStart(2, "0");
   const day = (d: number) => ({ starts_at: `2026-10-${dd(d)}T05:00:00Z`, ends_at: `2026-10-${dd(d)}T13:30:00Z` });
   assert.deepEqual(seriesText([20, 21, 22, 23, 27, 28, 29, 30].map(day)), { days: "Tue–Fri, Oct 20–23 & 27–30", hours: "1:00 – 9:30 PM" });
-  assert.deepEqual(seriesText([6, 13, 20].map(day)), { days: "Tuesdays, Oct 6, 13 & 20", hours: "1:00 – 9:30 PM" });
+  assert.deepEqual(seriesText([6, 13, 20].map(day)), { days: "Every Tuesday, Oct 6–20", hours: "1:00 – 9:30 PM" });
+  // A week missed: listed instead.
+  assert.deepEqual(seriesText([6, 13, 27].map(day)), { days: "Tuesdays, Oct 6, 13 & 27", hours: "1:00 – 9:30 PM" });
+  const sun = (d: string) => ({ starts_at: `${d}T05:00:00Z`, ends_at: `${d}T07:00:00Z` });
+  assert.equal(seriesText(["2026-10-11", "2026-10-18", "2026-10-25", "2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"].map(sun))!.days, "Every Sunday, Oct 11 – Nov 29");
   assert.equal(seriesText([day(20)]), null);
   assert.equal(seriesText([day(20), { starts_at: "2026-10-21T01:00:00Z", ends_at: "2026-10-21T04:00:00Z" }]), null);
   assert.equal(dateText({ starts_at: "2026-10-24T11:00:00Z", ends_at: "2026-10-24T14:00:00Z" }), "Sat, Oct 24 · 7:00 – 10:00 PM");

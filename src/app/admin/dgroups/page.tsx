@@ -10,7 +10,7 @@ import { nightLabel } from "@/lib/dgroup-tables";
 import { getRegisteredDgroups } from "@/lib/queries";
 import { hasSupabase } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "Dgroups" };
+export const metadata: Metadata = { title: "New Dgroups" };
 export const dynamic = "force-dynamic";
 
 const TABS = [

@@ -44,60 +44,53 @@ export const NAV: NavGroup[] = [
   { label: "Contact", href: "/contact", items: [] },
 ];
 
-export const ADMIN_NAV: { section: string; items: NavItem[] }[] = [
+/** What an admin nav item counts, shown as a badge when something is waiting. */
+export type AdminCount = "rooms" | "dgroups" | "announcements" | "prayer";
+
+/**
+ * The admin menu (Ralph, 2026-10-14): only the pages that work on real data,
+ * named for what staff do, with a count on anything waiting for them. The
+ * template's sample pages (services, messages, communities, volunteers, users,
+ * sports, facilities, pastoral care) were taken out; next.config.ts sends
+ * their old addresses to the dashboard.
+ */
+export const ADMIN_NAV: { section: string; items: (NavItem & { count?: AdminCount })[] }[] = [
   {
-    section: "Overview",
+    section: "Start here",
+    items: [{ label: "Home", href: "/admin" }],
+  },
+  {
+    section: "Waiting for you",
     items: [
-      { label: "Dashboard", href: "/admin" },
-      { label: "Analytics", href: "/admin/analytics" },
+      { label: "Room requests", href: "/admin/reservations", count: "rooms" },
+      { label: "New Dgroups", href: "/admin/dgroups", count: "dgroups" },
+      { label: "Announcements", href: "/admin/announcements", count: "announcements" },
+      { label: "Prayer Wall", href: "/admin/prayer", count: "prayer" },
     ],
   },
   {
-    section: "Sunday",
-    items: [
-      { label: "Services", href: "/admin/services" },
-      { label: "Watch", href: "/admin/watch" },
-      { label: "Messages", href: "/admin/messages" },
-      { label: "4Ws", href: "/admin/4ws" },
-    ],
-  },
-  {
-    section: "People",
-    items: [
-      { label: "Dgroups", href: "/admin/dgroups" },
-      { label: "Communities", href: "/admin/communities" },
-      { label: "GLC", href: "/admin/glc" },
-      { label: "Volunteers", href: "/admin/volunteers" },
-      { label: "Users", href: "/admin/users" },
-    ],
-  },
-  {
-    section: "Operations",
+    section: "Schedule",
     items: [
       { label: "Today", href: "/admin/today" },
-      { label: "Week", href: "/admin/week" },
-      { label: "Rooms", href: "/admin/rooms" },
-      { label: "Bookings", href: "/admin/bookings" },
-      { label: "Blocks", href: "/admin/blocks" },
-      { label: "Events", href: "/admin/events" },
-      { label: "Facilities", href: "/admin/facilities" },
-      { label: "Reservations", href: "/admin/reservations" },
+      { label: "This week", href: "/admin/week" },
+      { label: "Room calendar", href: "/admin/rooms" },
+    ],
+  },
+  {
+    section: "Bookings",
+    items: [
       { label: "Dgroup tables", href: "/admin/dgroup-tables" },
-      { label: "Sports", href: "/admin/sports" },
+      { label: "Find a booking", href: "/admin/bookings" },
+      { label: "Close a room or table", href: "/admin/blocks" },
     ],
   },
   {
-    section: "Care",
+    section: "On the site",
     items: [
-      { label: "Prayer requests", href: "/admin/prayer" },
-      { label: "Pastoral requests", href: "/admin/pastoral" },
-    ],
-  },
-  {
-    section: "Site",
-    items: [
-      { label: "Announcements", href: "/admin/announcements" },
-      { label: "Settings", href: "/admin/settings" },
+      { label: "Events", href: "/admin/events" },
+      { label: "Sunday video", href: "/admin/watch" },
+      { label: "Site numbers", href: "/admin/analytics" },
     ],
   },
 ];
+
