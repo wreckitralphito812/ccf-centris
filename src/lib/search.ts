@@ -83,7 +83,7 @@ export const PAGES: SearchablePage[] = [
   {
     title: "Reserve a Dgroup table",
     href: "/reserve/dgroup",
-    excerpt: "Book a table for your Dgroup in the Dgroup Lounge or the Welcome Center, Monday to Friday.",
+    excerpt: "Book a table for your Dgroup in the Dgroup Lounge or the Welcome Center, Tuesday to Friday.",
     keywords: "book booking reserve reservation table lounge dgroup meet weekday",
   },
   {
@@ -137,8 +137,8 @@ export const PAGES: SearchablePage[] = [
   {
     title: "Contact",
     href: "/contact",
-    excerpt: "Send us a message, or find our address and office hours.",
-    keywords: "contact email phone call message ask question office hours help",
+    excerpt: "Message us on Facebook Messenger, or find our address and office hours.",
+    keywords: "contact messenger facebook fb chat email phone call message ask question office hours help",
   },
   {
     title: "Who we are",

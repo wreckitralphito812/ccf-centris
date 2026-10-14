@@ -45,7 +45,7 @@ const OPTIONS: {
   },
   {
     title: "Ministry room",
-    badge: "Mon–Sat",
+    badge: "Tue–Fri",
     href: "/centris/reserve",
     cta: "Request a room",
     facts: [

@@ -1,27 +1,21 @@
 import type { Metadata } from "next";
-import { connection } from "next/server";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Section } from "@/components/ui";
 import { CONTACT, MAPS_EMBED, SITE } from "@/lib/site";
-import { currentUser, hasAccounts } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
   title: { absolute: "Contact CCF Centris | Eton Centris, Quezon City" },
   description:
-    "Reach CCF Centris at 2/F Centris Station, Eton Centris, EDSA corner Quezon Avenue, Quezon City. Email ccfcentris.admin@gmail.com. Open daily 10 AM to 9 PM.",
+    "Reach CCF Centris at 2/F Centris Station, Eton Centris, EDSA corner Quezon Avenue, Quezon City. Message us on Facebook Messenger. Open daily 10 AM to 9 PM.",
 };
 
 /**
- * "Leave a message" opens the visitor's own email app instead of posting a
- * form. No mail service is wired up yet, and a form that says "sent" without
- * delivering anything is worse than no form: people wait on a reply that was
- * never coming. A mailto link always arrives.
+ * People reach the team through the CCF Centris Facebook page on Messenger
+ * (Ralph, 2026-10-14). It replaced the email address and the signed-in
+ * "Leave a message" mailto: the team answers Messenger faster, and every
+ * message still comes from a real account.
  */
-const MESSAGE_HREF = `mailto:${CONTACT.messageEmail}?subject=${encodeURIComponent(
-  CONTACT.messageSubject,
-)}`;
-
 export default function ContactPage() {
   return (
     <>
@@ -39,18 +33,27 @@ export default function ContactPage() {
                 {CONTACT.officeHours ? (
                   <ContactRow label="Office hours">{CONTACT.officeHours}</ContactRow>
                 ) : null}
-                <ContactRow label="Email">
+                <ContactRow label="Message us">
                   <a
-                    href={`mailto:${CONTACT.messageEmail}`}
-                    className="tap break-all text-clay underline underline-offset-4"
+                    href={CONTACT.messenger}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="tap text-clay underline underline-offset-4"
                   >
-                    {CONTACT.messageEmail}
+                    CCF Centris on Messenger
                   </a>
                 </ContactRow>
               </dl>
 
               <div className="mt-10">
-                <LeaveAMessage />
+                <h2 className="display-md">Message us.</h2>
+                <p className="mt-4 max-w-xl text-[1.02rem] leading-relaxed text-ink-soft">
+                  Chat with the CCF Centris team on Facebook Messenger. We&rsquo;ll
+                  reply there.
+                </p>
+                <ButtonLink href={CONTACT.messenger} target="_blank" rel="noreferrer" size="lg" className="mt-6">
+                  Message us on Messenger
+                </ButtonLink>
               </div>
             </div>
 
@@ -115,81 +118,6 @@ export default function ContactPage() {
         </Container>
       </Section>
     </>
-  );
-}
-
-/**
- * "Leave us a message", for signed-in members only.
- *
- * CCF Centris asked for the gate: a message that arrives attached to a real
- * account is one the team can be sure of and can reply to, and it keeps the
- * site from turning into somewhere to post anonymous reviews of the church.
- *
- * Signing in is the whole of the gate — the message itself still leaves from
- * the member's own mail app, so nothing is lost in transit and no inbox has to
- * be built to receive it.
- */
-async function LeaveAMessage() {
-  // Checked before `connection()` on purpose. With no accounts configured
-  // there is no session to read and every visitor sees the same panel, so the
-  // page can still be prerendered; only the signed-in branch below is
-  // genuinely per-visitor.
-  if (!hasAccounts()) {
-    return (
-      <Gate title="Opening soon.">
-        <p>
-          You&rsquo;ll need a CCF Centris account to leave a message here, and
-          accounts aren&rsquo;t open yet. Until then, email us at the address
-          above.
-        </p>
-      </Gate>
-    );
-  }
-
-  // From here the answer depends on who is asking.
-  await connection();
-  const user = await currentUser();
-
-  if (!user) {
-    return (
-      <Gate title="Sign in to send us a message.">
-        <p>
-          Anyone can write to us. We ask you to sign in first so every message
-          comes with a real name and email address, and we can reply to you
-          directly. It takes a minute to make an account.
-        </p>
-        <ButtonLink href="/sign-in?next=/contact" size="lg" className="mt-6">
-          Sign in to continue
-        </ButtonLink>
-      </Gate>
-    );
-  }
-
-  return (
-    <>
-      <h2 className="display-md">Leave us a message.</h2>
-      <p className="mt-4 max-w-xl text-[1.02rem] leading-relaxed text-ink-soft">
-        This opens your email app with a message to the CCF Centris team. Send
-        it from <span className="text-ink">{user.email}</span> so our reply
-        lands in the same thread.
-      </p>
-      <ButtonLink href={MESSAGE_HREF} size="lg" className="mt-6">
-        Leave a message
-      </ButtonLink>
-    </>
-  );
-}
-
-/** The sign-in panel shown in place of the message button. */
-function Gate({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className="border-l-2 border-clay bg-paper-bright p-6 sm:p-7">
-      <p className="label text-clay">Before you write</p>
-      <h2 className="font-display mt-3 text-2xl leading-tight sm:text-2xl">{title}</h2>
-      <div className="mt-4 max-w-xl text-[1.02rem] leading-relaxed text-ink-soft">
-        {children}
-      </div>
-    </div>
   );
 }
 

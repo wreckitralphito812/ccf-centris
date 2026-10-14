@@ -90,13 +90,16 @@ function Welcome({ live }: { live: boolean }) {
           set without the .bg-night class on purpose: globals.css lifts --clay
           for everything under .bg-night. */}
       <div className="relative isolate mx-auto max-w-[110rem] overflow-hidden rounded-[2rem] bg-[var(--night)]">
+        {/* The worship hall (2026-10-14, a stand-in until Ralph's own photo;
+            the earlier one is still at /photos/hero-welcome.jpg). Framed on
+            the stage and the cross. */}
         <Image
-          src="/photos/hero-welcome.jpg"
+          src="/photos/worship-hall.jpg"
           alt=""
           fill
           priority
           sizes="100vw"
-          className="no-frame -z-10 object-cover object-[58%_30%] lg:object-[center_30%]"
+          className="no-frame -z-10 object-cover object-[38%_55%] lg:object-[center_55%]"
         />
         {/* A stronger phone overlay keeps the welcome readable over the
             tighter crop; desktop darkens from the copy's left edge. */}

@@ -4,9 +4,9 @@ import { AdminHeader, AdminNote } from "../admin-ui";
 import { cx } from "@/components/ui";
 import { requireAdmin } from "@/lib/admin-auth";
 import { hasSupabase } from "@/lib/supabase/server";
-import { getDgroupTableBookings, getEvents, getReservations, getRoomBlocks } from "@/lib/queries";
+import { getAdminEvents, getDgroupTableBookings, getReservations, getRoomBlocks } from "@/lib/queries";
 import { manilaDateKey } from "@/lib/format";
-import { manilaDay, manilaMinutesOf } from "@/lib/admin-day";
+import { manilaDay, manilaMinutesOf, roomFor } from "@/lib/admin-day";
 import { daysCovered, venueRooms } from "@/lib/announcements";
 import { MINISTRY_ROOMS, setupLabel, tablesSummary, timeLabel } from "@/lib/ministry-rooms";
 
@@ -51,7 +51,8 @@ export default async function AdminRooms({ searchParams }: PageProps<"/admin/roo
     getReservations(),
     getRoomBlocks(from.toISOString(), to.toISOString()),
     room.dgroupRoom ? getDgroupTableBookings() : Promise.resolve([]),
-    getEvents({ includeCalendarOnly: true }),
+    // Every event, published, hidden or calendar-only (Ralph, 2026-10-14).
+    getAdminEvents(),
   ]);
 
   const byDay = new Map<string, Item[]>();
@@ -61,7 +62,7 @@ export default async function AdminRooms({ searchParams }: PageProps<"/admin/roo
   };
 
   for (const r of rooms) {
-    if (r.facility_name !== room.name || !["pending", "approved"].includes(r.status)) continue;
+    if (roomFor(r)?.slug !== room.slug || !["pending", "approved"].includes(r.status)) continue;
     add(manilaDay(r.starts_at), {
       key: r.id,
       from: manilaMinutesOf(r.starts_at),
@@ -79,7 +80,7 @@ export default async function AdminRooms({ searchParams }: PageProps<"/admin/roo
     });
   }
   for (const b of blocks) {
-    if (b.facility_name !== room.name) continue;
+    if (roomFor(b)?.slug !== room.slug) continue;
     add(manilaDay(b.starts_at), {
       key: b.id,
       from: manilaMinutesOf(b.starts_at),
@@ -97,7 +98,7 @@ export default async function AdminRooms({ searchParams }: PageProps<"/admin/roo
           from: d.all_day ? null : manilaMinutesOf(d.starts_at),
           to: d.all_day || !d.ends_at ? null : manilaMinutesOf(d.ends_at),
           title: e.title,
-          detail: "Event",
+          detail: ["Event", e.status === "draft" ? "Hidden" : null, e.calendar_only ? "Calendar only" : null].filter(Boolean).join(" · "),
           tone: "event",
         });
       }

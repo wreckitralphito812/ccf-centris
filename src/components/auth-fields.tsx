@@ -174,7 +174,7 @@ function FieldIcon({ name }: { name: "email" | "person" | "lock" | "phone" }) {
   );
 }
 
-function EyeIcon({ off }: { off: boolean }) {
+export function EyeIcon({ off }: { off: boolean }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden className="h-5 w-5">
       <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />

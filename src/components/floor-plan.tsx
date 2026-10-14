@@ -57,11 +57,43 @@ interface Rect {
  * of three or fewer against a wall gets them all on its open (top) side, and a
  * two-seat round gets one either side.
  */
-function layoutTable(box: Rect, seats: number, shape: FloorItem["shape"]): { top: Rect; chairs: Rect[] } {
+function layoutTable(
+  box: Rect,
+  seats: number,
+  shape: FloorItem["shape"],
+  seating?: FloorItem["seating"],
+): { top: Rect; chairs: Rect[] } {
   const chair = Math.max(5, Math.round(Math.min(box.width, box.height) * (shape === "round" ? 0.26 : 0.2)));
   const gap = Math.max(2, Math.round(chair * 0.35));
   const edge = chair + gap;
   const chairs: Rect[] = [];
+  const mid = (a: number, len: number, size: number) => Math.round(a + len / 2 - size / 2);
+
+  // A chair left and right of a small table (2026-10-14).
+  if (seating === "sides") {
+    const top = { left: box.left + edge, top: box.top, width: box.width - edge * 2, height: box.height };
+    chairs.push({ left: box.left, top: mid(box.top, box.height, chair), width: chair, height: chair });
+    chairs.push({ left: box.left + box.width - chair, top: mid(box.top, box.height, chair), width: chair, height: chair });
+    return { top, chairs };
+  }
+  // One chair on each side of a square table.
+  if (seating === "around") {
+    const top = { left: box.left + edge, top: box.top + edge, width: box.width - edge * 2, height: box.height - edge * 2 };
+    chairs.push({ left: mid(box.left, box.width, chair), top: box.top, width: chair, height: chair });
+    chairs.push({ left: mid(box.left, box.width, chair), top: box.top + box.height - chair, width: chair, height: chair });
+    chairs.push({ left: box.left, top: mid(box.top, box.height, chair), width: chair, height: chair });
+    chairs.push({ left: box.left + box.width - chair, top: mid(box.top, box.height, chair), width: chair, height: chair });
+    return { top, chairs };
+  }
+  // Two chairs on the left, a couch along the right (it seats the other two).
+  if (seating === "couch") {
+    const couchW = Math.round(chair * 1.5);
+    const top = { left: box.left + edge, top: box.top, width: box.width - edge - couchW - gap, height: box.height };
+    const step = box.height / 2;
+    for (let i = 0; i < 2; i++) chairs.push({ left: box.left, top: mid(box.top + step * i, step, chair), width: chair, height: chair });
+    chairs.push({ left: box.left + box.width - couchW, top: box.top - gap, width: couchW, height: box.height + gap * 2 });
+    return { top, chairs };
+  }
 
   // Evenly spaced chairs along one side of the table top.
   const along = (count: number, side: "top" | "bottom" | "left" | "right", top: Rect) => {
@@ -169,12 +201,19 @@ export function FloorPlanDrawing({
     }
 
     const on = picked.has(item.label);
-    const { top, chairs } = layoutTable(box, seatsFor.get(item.label) ?? 4, item.shape);
+    const { top, chairs } = layoutTable(box, seatsFor.get(item.label) ?? 4, item.shape, item.seating);
     chairs.forEach((c, j) =>
       pieces.push(
         <div
           key={`c${item.label}-${j}`}
-          style={{ position: "absolute", display: "flex", ...c, borderRadius: Math.round(Math.min(c.width, c.height) / 2), background: on ? PICKED_CHAIR : CHAIR }}
+          style={{
+            position: "absolute",
+            display: "flex",
+            ...c,
+            // A couch is a long rounded block; a chair a pill.
+            borderRadius: item.seating === "couch" && c.height > c.width * 2 ? Math.round(c.width * 0.35) : Math.round(Math.min(c.width, c.height) / 2),
+            background: on ? PICKED_CHAIR : CHAIR,
+          }}
         />,
       ),
     );

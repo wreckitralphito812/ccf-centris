@@ -7,6 +7,7 @@ import { isDateKey } from "@/lib/admin-day";
 import {
   candidateTables,
   DGROUP_ROOMS,
+  DGROUP_NIGHTS,
   DGROUP_SLOTS,
   nightLabel,
   roomName,
@@ -193,7 +194,7 @@ export async function adminMoveDgroupBooking(_prev: ToolResult | null, fd: FormD
   if (!isDateKey(date)) return { ok: false, formError: "Choose a date." };
   if (date < manilaDateKey()) return { ok: false, formError: "That day has passed." };
   const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
-  if (weekday === 0 || weekday === 6) return { ok: false, formError: "Dgroup tables are Monday to Friday." };
+  if (!DGROUP_NIGHTS.includes(weekday)) return { ok: false, formError: "Dgroup tables are Tuesday to Friday." };
   if (!DGROUP_SLOTS.some((s) => s.id === slot)) return { ok: false, formError: "Choose a time." };
 
   const db = supabaseAdmin();

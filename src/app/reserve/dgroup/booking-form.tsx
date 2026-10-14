@@ -280,7 +280,7 @@ function BookingAttempt({
         <Question
           id="q-day"
           title="Which day?"
-          note="Monday to Friday, up to 8 days ahead."
+          note="Tuesday to Friday, up to 8 days ahead."
           error={e.date}
         >
           <div

@@ -5,16 +5,20 @@ import { PrintButton } from "./print-button";
 import { FloorPlanDrawing } from "@/components/floor-plan";
 import { cx } from "@/components/ui";
 import { setReservationStatus } from "@/app/actions/admin";
-import { roomName, slotLabel, tablesLabel, WEEKDAY_NAMES } from "@/lib/dgroup-tables";
+import { DGROUP_NIGHTS, roomName, slotLabel, tablesLabel, WEEKDAY_NAMES } from "@/lib/dgroup-tables";
 import { timeLabel } from "@/lib/ministry-rooms";
 import {
   blockPosition,
   buildDayBoard,
   DAY_END,
   DAY_START,
+  eventsOn,
   manilaDay,
+  roomLabel,
   shiftDay,
   weekOf,
+  type BoardEvent,
+  type DayEvent,
   type DayRoomBooking,
   type DayTable,
   manilaMinutesOf,
@@ -39,6 +43,7 @@ export function TodayBoard({
   connected,
   tableBlocks = [],
   roomBlocks = [],
+  events = [],
 }: {
   date: string;
   today: string;
@@ -49,8 +54,11 @@ export function TodayBoard({
   /** This day's admin blocks (2026-10-03). */
   tableBlocks?: TableBlock[];
   roomBlocks?: RoomBlock[];
+  /** Every event, published, hidden or calendar-only (2026-10-14). */
+  events?: BoardEvent[];
 }) {
   const board = buildDayBoard(date, tables, rooms);
+  const dayEvents = eventsOn(events, date);
   const blocksIn = (slot: string) =>
     tableBlocks.filter((b) => b.booked_on === date && (!b.slot_id || b.slot_id === slot));
   const blockNote = (slot: string) =>
@@ -61,10 +69,11 @@ export function TodayBoard({
   const week = weekOf(date);
   const countOn = (d: string) =>
     tables.filter((t) => t.booked_on === d && ["pending", "confirmed"].includes(t.status)).length +
-    rooms.filter((r) => ["pending", "approved"].includes(r.status) && manilaDay(r.starts_at) === d).length;
+    rooms.filter((r) => ["pending", "approved"].includes(r.status) && manilaDay(r.starts_at) === d).length +
+    eventsOn(events, d).length;
 
   const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
-  const dgroupDay = weekday >= 1 && weekday <= 5;
+  const dgroupDay = DGROUP_NIGHTS.includes(weekday);
   const pending = board.rooms.flatMap((r) => r.blocks.filter((b) => b.status === "pending"));
 
   const navLink = "btn-press inline-flex min-h-10 items-center rounded-lg border border-edge bg-paper-bright px-3.5 text-[0.92rem] font-semibold text-ink transition-colors hover:border-clay hover:text-clay";
@@ -73,7 +82,7 @@ export function TodayBoard({
     <div className="space-y-8">
       <AdminHeader
         title="Today"
-        lead="Every booking for one day: Dgroup tables on the floor plans, room requests on each room's timeline."
+        lead="Everything on one day: events, Dgroup tables on the floor plans, and room requests on each room's timeline."
         action={<PrintButton />}
       />
 
@@ -100,7 +109,7 @@ export function TodayBoard({
             </Link>
           ) : null}
         </div>
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+        <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
           {week.map((d) => {
             const n = countOn(d);
             const dd = new Date(`${d}T00:00:00Z`);
@@ -119,7 +128,7 @@ export function TodayBoard({
                   {d === today ? " · today" : ""}
                 </span>
                 <span className="block text-[1.15rem] font-bold">{dd.getUTCDate()}</span>
-                <span className="block text-[0.78rem] opacity-80">{n ? `${n} booked` : "—"}</span>
+                <span className="block text-[0.78rem] opacity-80">{n ? `${n} on` : "—"}</span>
               </Link>
             );
           })}
@@ -129,18 +138,42 @@ export function TodayBoard({
       {/* Printed heading */}
       <p className="hidden text-[1.4rem] font-bold print:block">CCF Centris · {longDate(date)}</p>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+        <Stat label="Events" value={dayEvents.length} tone="moss" />
         <Stat label="Dgroups" value={board.stats.groups} tone="clay" />
         <Stat label="People at tables" value={board.stats.people} />
         <Stat label="Rooms booked" value={board.stats.roomsBooked} tone="moss" />
         <Stat label="Awaiting approval" value={board.stats.awaiting} />
       </div>
 
+      {/* Events: published, hidden and calendar-only (Ralph, 2026-10-14). */}
+      <section className="space-y-4">
+        <h2 className="font-display text-xl font-bold">Events</h2>
+        {dayEvents.length ? (
+          <AdminPanel>
+            <ul className="divide-y divide-rule">
+              {dayEvents.map((e) => (
+                <li key={e.key} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-5 py-3.5 text-[0.92rem]">
+                  <span className="w-40 shrink-0 font-semibold text-moss">{eventTime(e)}</span>
+                  <Link href={`/admin/events/${e.id}`} className="font-semibold text-ink hover:text-clay">
+                    {e.title}
+                  </Link>
+                  {e.venue ? <span className="text-ink-mute">{e.venue}</span> : null}
+                  <EventTags e={e} />
+                </li>
+              ))}
+            </ul>
+          </AdminPanel>
+        ) : (
+          <p className="text-[0.95rem] text-ink-mute">No events on this day.</p>
+        )}
+      </section>
+
       {/* Dgroup tables */}
       <section className="space-y-4">
         <h2 className="font-display text-xl font-bold">Dgroup tables</h2>
         {!dgroupDay ? (
-          <p className="text-[0.95rem] text-ink-mute">Dgroup tables are booked Monday to Friday.</p>
+          <p className="text-[0.95rem] text-ink-mute">Dgroup tables are booked Tuesday to Friday.</p>
         ) : (
           board.slots.map(({ slot, rooms: slotRooms, groups }) =>
             groups === 0 ? (
@@ -224,8 +257,24 @@ export function TodayBoard({
                       {[12, 15, 18].map((h) => (
                         <span key={h} aria-hidden className="absolute inset-y-0 w-px bg-edge" style={{ left: `${blockPosition(h * 60, h * 60).left}%` }} />
                       ))}
+                      {dayEvents
+                        .filter((e) => room.slug && e.rooms.includes(room.slug))
+                        .map((e) => {
+                          const pos = blockPosition(e.from ?? DAY_START, e.to ?? (e.from === null ? DAY_END : e.from + 60));
+                          return (
+                            <div
+                              key={e.key}
+                              title={`${e.title} · ${eventTime(e)}`}
+                              className="absolute inset-y-1 overflow-hidden rounded-md bg-moss/15 px-2.5 py-1.5 text-[0.8rem] leading-tight text-moss"
+                              style={{ left: `${pos.left}%`, width: `${pos.width}%` }}
+                            >
+                              <span className="block truncate font-semibold">{e.title}</span>
+                              <span className="block truncate">Event · {eventTime(e)}</span>
+                            </div>
+                          );
+                        })}
                       {roomBlocks
-                        .filter((b) => b.facility_name === room.name)
+                        .filter((b) => roomLabel(b) === room.name)
                         .map((b) => {
                           const pos = blockPosition(manilaMinutesOf(b.starts_at), manilaMinutesOf(b.ends_at));
                           return (
@@ -269,6 +318,7 @@ export function TodayBoard({
                 <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-clay" /> Confirmed</span>
                 <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm border-2 border-dashed border-sky/60 bg-sky-wash" /> Awaiting approval</span>
                 <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-ink/10" /> Blocked</span>
+                <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-moss/15" /> Event</span>
                 <span>{timeLabel(DAY_START)} – {timeLabel(DAY_END)}</span>
               </p>
             </div>
@@ -284,7 +334,7 @@ export function TodayBoard({
                     <span className="font-semibold text-ink">{b.activity_name ?? "Booking"}</span>
                     <span className="text-ink-mute">
                       {" "}
-                      · {b.facility_name} · {timeLabel(b.from)} – {timeLabel(b.to)} · {b.participants} people ·{" "}
+                      · {roomLabel(b)} · {timeLabel(b.from)} – {timeLabel(b.to)} · {b.participants} people ·{" "}
                       {b.contact_name}
                       {b.organization ? ` (${b.organization})` : ""}
                     </span>
@@ -309,5 +359,21 @@ export function TodayBoard({
         ) : null}
       </section>
     </div>
+  );
+}
+
+/** "All day", "7:00 PM – 9:00 PM" or "7:00 PM onwards". */
+export function eventTime(e: DayEvent): string {
+  if (e.from === null) return "All day";
+  return e.to === null ? `${timeLabel(e.from)} onwards` : `${timeLabel(e.from)} – ${timeLabel(e.to)}`;
+}
+
+/** "Hidden" and "Calendar only", so the team knows what the public sees. */
+export function EventTags({ e }: { e: DayEvent }) {
+  return (
+    <>
+      {e.hidden ? <span className="rounded-full bg-ink/10 px-2 py-0.5 text-[0.75rem] font-semibold text-ink-soft">Hidden</span> : null}
+      {e.calendarOnly ? <span className="rounded-full bg-mist px-2 py-0.5 text-[0.75rem] font-semibold text-ink-soft">Calendar only</span> : null}
+    </>
   );
 }

@@ -880,6 +880,7 @@ export async function getTableBlocks(when: { dates?: string[]; from?: string; to
 export interface RoomBlock {
   id: string;
   facility_name: string;
+  facility_slug?: string | null;
   starts_at: string;
   ends_at: string;
   reason: string | null;
@@ -890,7 +891,7 @@ export async function getRoomBlocks(fromIso: string, toIso: string): Promise<Roo
   if (!hasSupabase()) return [];
   const { data, error } = await supabaseAdmin()
     .from("facility_blackouts")
-    .select("id, during, reason, facilities!inner(name, satellite_id)")
+    .select("id, during, reason, facilities!inner(name, slug, satellite_id)")
     .eq("facilities.satellite_id", SATELLITE_ID)
     .is("court_id", null)
     .overlaps("during", `[${fromIso},${toIso})`);
@@ -904,6 +905,7 @@ export async function getRoomBlocks(fromIso: string, toIso: string): Promise<Roo
       return {
         id: r.id as string,
         facility_name: one(r.facilities as { name: string } | { name: string }[] | null)?.name ?? "Room",
+        facility_slug: one(r.facilities as { slug: string } | { slug: string }[] | null)?.slug ?? null,
         starts_at,
         ends_at,
         reason: (r.reason as string | null) ?? null,
@@ -943,7 +945,7 @@ export interface AdminReservation {
   equipment: Record<string, number> | null;
   food: string | null;
   /** The room's slug, for the per-room calendar. */
-  facility_slug: string | null;
+  facility_slug?: string | null;
 }
 
 /** The `name` of a row PostgREST embedded (as an object, or a one-item list). */

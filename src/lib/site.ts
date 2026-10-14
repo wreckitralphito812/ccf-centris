@@ -243,6 +243,8 @@ export const GIVE_HELP = {
 
 export const CONTACT = {
   messageEmail: "ccfcentris.admin@gmail.com",
+  /** Opens a chat with the CCF Centris Facebook page in Messenger (Ralph, 2026-10-14). */
+  messenger: "https://m.me/61591537230410",
   messageSubject: "[CCF Centris website] New message",
   officeHours: "Every day, 10:00 AM – 9:00 PM" as string | null,
 } as const;

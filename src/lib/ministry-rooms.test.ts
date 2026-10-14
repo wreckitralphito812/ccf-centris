@@ -19,36 +19,41 @@ import {
 } from "./ministry-rooms";
 import { parseRoomRequest } from "./validation";
 
-// 2099-06-01 is a Monday; the 6th a Saturday; the 7th a Sunday.
+// 2099-06-01 is a Monday, the 2nd a Tuesday, the 5th a Friday, the 6th a
+// Saturday and the 7th a Sunday.
 const MON = "2099-06-01";
+const TUE = "2099-06-02";
+const FRI = "2099-06-05";
 const SAT = "2099-06-06";
 const SUN = "2099-06-07";
 
 test("the test dates fall on the days they claim", () => {
   assert.equal(weekdayOf(MON), 1);
+  assert.equal(weekdayOf(TUE), 2);
+  assert.equal(weekdayOf(FRI), 5);
   assert.equal(weekdayOf(SAT), 6);
   assert.equal(weekdayOf(SUN), 0);
 });
 
-test("the four halls are open Monday to Saturday, 9:00 AM to 9:30 PM", () => {
-  for (const date of [MON, SAT]) {
+test("the four halls are open Tuesday to Friday, 9:00 AM to 9:30 PM", () => {
+  for (const date of [TUE, FRI]) {
     assert.deepEqual(ministryWindow("multipurpose-hall-1", date), { from: toMinutes("09:00"), to: toMinutes("21:30") });
   }
-  assert.equal(ministryWindow("multipurpose-hall-4", SUN), null);
+  for (const date of [SAT, SUN, MON]) assert.equal(ministryWindow("multipurpose-hall-4", date), null, date);
 });
 
-test("the Dgroup rooms are mornings-only for ministries on weekdays, all day on Saturdays", () => {
+test("the Dgroup rooms are mornings-only for ministries, Tuesday to Friday", () => {
   for (const slug of ["dgroup-lounge", "welcome-center"]) {
-    assert.deepEqual(ministryWindow(slug, MON), { from: toMinutes("09:00"), to: toMinutes("12:00") });
-    assert.deepEqual(ministryWindow(slug, SAT), { from: toMinutes("09:00"), to: toMinutes("21:30") });
-    assert.equal(ministryWindow(slug, SUN), null);
+    assert.deepEqual(ministryWindow(slug, TUE), { from: toMinutes("09:00"), to: toMinutes("12:00") });
+    assert.deepEqual(ministryWindow(slug, FRI), { from: toMinutes("09:00"), to: toMinutes("12:00") });
+    for (const date of [SAT, SUN, MON]) assert.equal(ministryWindow(slug, date), null, date);
   }
 });
 
-test("a weekday afternoon in the lounge is refused, because Dgroups have it", () => {
-  assert.equal(closedReason("dgroup-lounge", MON, toMinutes("09:00"), toMinutes("12:00")), null);
-  assert.match(closedReason("dgroup-lounge", MON, toMinutes("11:00"), toMinutes("13:00")) ?? "", /Dgroups/);
-  assert.equal(closedReason("dgroup-lounge", SAT, toMinutes("13:00"), toMinutes("21:30")), null);
+test("an afternoon in the lounge is refused, because Dgroups have it", () => {
+  assert.equal(closedReason("dgroup-lounge", TUE, toMinutes("09:00"), toMinutes("12:00")), null);
+  assert.match(closedReason("dgroup-lounge", TUE, toMinutes("11:00"), toMinutes("13:00")) ?? "", /Dgroups/);
+  assert.match(closedReason("dgroup-lounge", SAT, toMinutes("09:00"), toMinutes("12:00")) ?? "", /Tuesday to Friday/);
 });
 
 test("times read the way the center writes them", () => {
@@ -63,7 +68,7 @@ function request(overrides: Record<string, string | string[]> = {}): FormData {
     ministry: "Elevate",
     participants: "40",
     setup: "classroom",
-    date: MON,
+    date: TUE,
     start: "18:00",
     end: "20:30",
     room: ["multipurpose-hall-1"],
@@ -84,7 +89,7 @@ test("parseRoomRequest accepts a complete request", () => {
   assert.ok(r.ok, JSON.stringify(!r.ok && r.fieldErrors));
   assert.deepEqual(r.value.rooms, ["multipurpose-hall-1"]);
   assert.deepEqual(r.value.equipment, { mic_wireless: 2 });
-  assert.equal(r.value.starts_at, "2099-06-01T10:00:00.000Z");
+  assert.equal(r.value.starts_at, "2099-06-02T10:00:00.000Z");
 });
 
 test("parseRoomRequest takes several rooms in one request", () => {
@@ -93,9 +98,11 @@ test("parseRoomRequest takes several rooms in one request", () => {
   assert.equal(r.value.rooms.length, 2);
 });
 
-test("parseRoomRequest refuses Sundays, closed rooms and odd times", () => {
-  const sunday = parseRoomRequest(request({ date: SUN }));
-  assert.ok(!sunday.ok && sunday.fieldErrors.date);
+test("parseRoomRequest refuses Saturday to Monday, closed rooms and odd times", () => {
+  for (const date of [SAT, SUN, MON]) {
+    const closed = parseRoomRequest(request({ date }));
+    assert.ok(!closed.ok && /Tuesday to Friday/.test(closed.fieldErrors.date), date);
+  }
 
   const lounge = parseRoomRequest(request({ room: ["dgroup-lounge"] }));
   assert.ok(!lounge.ok && /isn't open then/.test(lounge.fieldErrors.rooms));
@@ -143,17 +150,17 @@ test("parseRoomRequest holds the line on edited fields (Chrome audit, 2026-10-10
 
   const nobody = parseRoomRequest(request({ participants: "0" }));
   assert.ok(!nobody.ok && nobody.fieldErrors.participants);
-  const past = parseRoomRequest(request({ date: "2020-06-01" }));
+  const past = parseRoomRequest(request({ date: "2020-06-02" }));
   assert.ok(!past.ok && past.fieldErrors.time);
 
   const long = parseRoomRequest(request({ activity: "x".repeat(121), notes: "y".repeat(1001), name: "z".repeat(121) }));
   assert.ok(!long.ok && long.fieldErrors.activity && long.fieldErrors.notes && long.fieldErrors.name);
 });
 
-test("requests need 2 days' notice, and never land on a Sunday", () => {
+test("requests need 2 days' notice, and land Tuesday to Friday", () => {
   // Ralph, 2026-10-10: on Monday, Wednesday is the earliest.
   assert.equal(firstOpenDay("2026-10-05"), "2026-10-07"); // Monday -> Wednesday
-  assert.equal(firstOpenDay("2026-10-09"), "2026-10-12"); // Friday -> Sunday is skipped -> Monday
+  assert.equal(firstOpenDay("2026-10-09"), "2026-10-13"); // Friday -> Sunday, Monday skipped -> Tuesday
   assert.equal(firstOpenDay("2026-10-04"), "2026-10-06"); // Sunday -> Tuesday
 
   const now = Date.parse("2026-10-05T02:00:00Z"); // Monday 10 AM in Manila
@@ -167,9 +174,10 @@ test("the welcome center and lounge are used as furnished; the halls take tables
   const lounge = ministryRoom("dgroup-lounge")!;
   assert.deepEqual(setupsFor(lounge).map((s) => s.id), ["furniture"]);
   assert.deepEqual(setupsFor(ministryRoom("multipurpose-hall-1")!).map((s) => s.id), ["classroom", "tables", "open"]);
-  const sat = parseRoomRequest(request({ date: SAT, room: ["dgroup-lounge"], setup: "classroom", participants: "20" }));
-  assert.ok(!sat.ok && /set-up/.test(sat.fieldErrors.rooms));
-  const furnished = parseRoomRequest(request({ date: SAT, room: ["dgroup-lounge"], setup: "furniture", participants: "20" }));
+  const morning = { date: TUE, start: "09:00", end: "11:00", room: ["dgroup-lounge"], participants: "20" };
+  const classroom = parseRoomRequest(request({ ...morning, setup: "classroom" }));
+  assert.ok(!classroom.ok && /set-up/.test(classroom.fieldErrors.rooms));
+  const furnished = parseRoomRequest(request({ ...morning, setup: "furniture" }));
   assert.ok(furnished.ok, JSON.stringify(!furnished.ok && furnished.fieldErrors));
   const rehearsal = parseRoomRequest(request({ setup: "open" }));
   assert.ok(rehearsal.ok);
@@ -208,9 +216,9 @@ test("every time block fits the big halls' hours, on the half hour", () => {
   }
 });
 
-test("on weekdays only the morning block suits the Dgroup rooms", () => {
+test("only the morning block suits the Dgroup rooms", () => {
   const [morning, afternoon] = TIME_BLOCKS;
   assert.equal(closedReason("welcome-center", "2026-10-06", morning.from, morning.to), null);
   assert.notEqual(closedReason("welcome-center", "2026-10-06", afternoon.from, afternoon.to), null);
-  assert.equal(closedReason("welcome-center", "2026-10-10", afternoon.from, afternoon.to), null); // Saturday
+  assert.notEqual(closedReason("welcome-center", "2026-10-10", morning.from, morning.to), null); // Saturday
 });

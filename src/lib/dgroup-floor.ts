@@ -17,6 +17,12 @@ export interface FloorItem {
   w: number;
   h: number;
   shape: "rect" | "round" | "cluster";
+  /**
+   * How the seats sit, when not the default (along the long sides):
+   * "sides" one chair left and one right; "around" one chair on each side;
+   * "couch" two chairs on the left and a couch on the right (2026-10-14).
+   */
+  seating?: "sides" | "around" | "couch";
 }
 
 export interface FloorPlan {
@@ -42,17 +48,16 @@ export const FLOOR_PLANS: Record<string, FloorPlan> = {
     items: [
       { label: "1", x: 8.0, y: 3.0, w: 52.0, h: 19.0, shape: "rect" },
       { label: "12", x: 8.0, y: 26.5, w: 52.0, h: 19.0, shape: "rect" },
-      { label: "5", x: 9.0, y: 51.0, w: 22.0, h: 19.0, shape: "cluster" },
-      { label: "4", x: 37.0, y: 51.0, w: 22.0, h: 19.0, shape: "cluster" },
+      { label: "5", x: 9.0, y: 51.0, w: 22.0, h: 19.0, shape: "cluster", seating: "around" },
+      { label: "4", x: 37.0, y: 51.0, w: 22.0, h: 19.0, shape: "cluster", seating: "around" },
       { label: "6", x: 6.0, y: 82.0, w: 29.0, h: 13.0, shape: "rect" },
       { label: "7", x: 35.0, y: 82.0, w: 29.0, h: 13.0, shape: "rect" },
-      { label: "9", x: 71.0, y: 4.0, w: 14.0, h: 14.0, shape: "cluster" },
-      { label: "3", x: 71.0, y: 25.0, w: 15.0, h: 11.0, shape: "round" },
-      { label: "8", x: 71.0, y: 42.0, w: 14.0, h: 14.0, shape: "cluster" },
-      { label: "2", x: 71.0, y: 63.0, w: 15.0, h: 11.0, shape: "round" },
-      // The sofas beside 9 and 8.
-      { x: 88.0, y: 2.0, w: 11.0, h: 18.0, shape: "rect" },
-      { x: 88.0, y: 40.0, w: 11.0, h: 18.0, shape: "rect" },
+      // East wall (Ralph, 2026-10-14): 9 and 8 are two chairs and a couch
+      // each; 3 and 2 a chair either side.
+      { label: "9", x: 70.0, y: 4.0, w: 28.0, h: 15.0, shape: "cluster", seating: "couch" },
+      { label: "3", x: 72.0, y: 25.0, w: 22.0, h: 10.0, shape: "cluster", seating: "sides" },
+      { label: "8", x: 70.0, y: 41.0, w: 28.0, h: 15.0, shape: "cluster", seating: "couch" },
+      { label: "2", x: 72.0, y: 62.0, w: 22.0, h: 10.0, shape: "cluster", seating: "sides" },
     ],
     doors: [{ wall: "bottom", from: 84.4, to: 99.3 }],
   },
