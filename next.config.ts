@@ -68,6 +68,8 @@ const nextConfig: NextConfig = {
         permanent: true,
       })),
       ...PARKED.map((r) => ({ ...r, permanent: false })),
+      // Admin pages that only ever showed sample data (Ralph, 2026-10-14).
+      ...["services", "messages", "4ws", "communities", "glc", "volunteers", "users", "sports", "facilities", "pastoral"].map((p) => ({ source: `/admin/${p}/:path*`, destination: "/admin", permanent: false })),
     ];
   },
   async rewrites() {

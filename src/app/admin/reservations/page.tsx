@@ -5,8 +5,6 @@ import {
   AdminPanel,
   Stat,
   Status,
-  Table,
-  Td,
 } from "../admin-ui";
 import { QueueActions } from "../queue-actions";
 import { getReservations, type AdminReservation } from "@/lib/queries";
@@ -14,9 +12,11 @@ import { setReservationStatus } from "@/app/actions/admin";
 import { hasSupabase } from "@/lib/supabase/server";
 import { isAdminConfigured } from "@/lib/admin-auth";
 import { fmtDayShort, fmtTime } from "@/lib/format";
+import { roomLabel } from "@/lib/admin-day";
 import { equipmentSummary, foodLabel, setupLabel, tablesSummary } from "@/lib/ministry-rooms";
 
-export const metadata: Metadata = { title: "Reservations" };
+export const metadata: Metadata = { title: "Room requests" };
+export const dynamic = "force-dynamic";
 
 /** One request: every room it asked for, decided together. */
 interface RequestGroup {
@@ -29,8 +29,8 @@ function groupRequests(rows: AdminReservation[]): RequestGroup[] {
   for (const r of rows) {
     const key = r.request_group ?? r.id;
     const g = groups.get(key);
-    if (g) g.rooms.push(r.facility_name ?? "—");
-    else groups.set(key, { first: r, rooms: [r.court_name ?? r.facility_name ?? "—"] });
+    if (g) g.rooms.push(roomLabel(r));
+    else groups.set(key, { first: r, rooms: [r.court_name ?? roomLabel(r)] });
   }
   return [...groups.values()];
 }
@@ -38,11 +38,14 @@ function groupRequests(rows: AdminReservation[]): RequestGroup[] {
 export default async function AdminReservations() {
   const reservations = groupRequests(await getReservations());
 
+  // Approved requests move to "Past" once they've ended (2026-10-14); they
+  // used to stay under "Confirmed" for good.
+  const now = new Date().toISOString();
   const pending = reservations.filter((g) => g.first.status === "pending");
-  const approved = reservations.filter((g) => g.first.status === "approved");
-  const past = reservations.filter(
-    (g) => !["pending", "approved"].includes(g.first.status),
-  );
+  const approved = reservations.filter((g) => g.first.status === "approved" && g.first.ends_at >= now);
+  const past = reservations
+    .filter((g) => !pending.includes(g) && !approved.includes(g))
+    .sort((a, b) => b.first.starts_at.localeCompare(a.first.starts_at));
 
   const readOnly = !isAdminConfigured() || !hasSupabase();
 
@@ -50,62 +53,45 @@ export default async function AdminReservations() {
     { first: r, rooms }: RequestGroup,
     transitions: Parameters<typeof QueueActions>[0]["transitions"],
   ) => (
-    <tr key={r.id}>
-      <Td>
-        <span className="font-semibold">{r.activity_name ?? "—"}</span>
-        <span className="mt-0.5 block text-[0.82rem] text-ink-mute">
-          {rooms.join(", ")}
-        </span>
-        <span className="mt-1 block text-[0.78rem] leading-relaxed text-ink-mute">
-          {[
-            r.layout ? setupLabel(r.layout) : null,
-            r.layout === "tables" ? tablesSummary(r.tables) : null,
-            r.equipment && Object.keys(r.equipment).length ? equipmentSummary(r.equipment) : null,
-            r.food ? foodLabel(r.food) : null,
-          ]
-            .filter(Boolean)
-            .join(" · ")}
-        </span>
-        {r.purpose ? (
-          <span className="mt-1 block max-w-xs text-[0.78rem] italic leading-relaxed text-ink-mute">
-            {r.purpose}
-          </span>
+    <li key={r.id} className="flex flex-wrap items-start justify-between gap-4 px-5 py-4">
+      <div className="min-w-0 flex-1 space-y-1">
+        <p className="flex flex-wrap items-center gap-2">
+          <span className="text-[1.05rem] font-semibold text-ink">{r.activity_name ?? "Room request"}</span>
+          <Status value={r.status === "approved" && r.ends_at < now ? "completed" : r.status} />
+        </p>
+        <p className="text-[0.98rem] text-ink">
+          <span className="font-semibold">{fmtDayShort(r.starts_at)}</span>, {fmtTime(r.starts_at)} – {fmtTime(r.ends_at)} ·{" "}
+          {rooms.join(", ")} · {r.participants} people
+        </p>
+        <p className="text-[0.9rem] text-ink-soft">
+          Asked by <span className="font-semibold text-ink">{r.contact_name}</span>
+          {r.organization ? ` (${r.organization})` : ""}
+          {r.contact_mobile ? ` · ${r.contact_mobile}` : ""} · {r.contact_email}
+        </p>
+        {[
+          r.layout ? setupLabel(r.layout) : null,
+          r.layout === "tables" ? tablesSummary(r.tables) : null,
+          r.equipment && Object.keys(r.equipment).length ? equipmentSummary(r.equipment) : null,
+          r.food ? foodLabel(r.food) : null,
+        ].some(Boolean) ? (
+          <p className="text-[0.88rem] text-ink-mute">
+            {[
+              r.layout ? setupLabel(r.layout) : null,
+              r.layout === "tables" ? tablesSummary(r.tables) : null,
+              r.equipment && Object.keys(r.equipment).length ? equipmentSummary(r.equipment) : null,
+              r.food ? foodLabel(r.food) : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
         ) : null}
-      </Td>
-      <Td>
-        <span className="font-semibold">{r.contact_name}</span>
-        <span className="mt-0.5 block text-[0.82rem] text-ink-mute">
-          {r.organization ? `${r.organization} · ` : ""}
-          {r.contact_email}
-          {r.contact_mobile ? ` · ${r.contact_mobile}` : ""}
-        </span>
-      </Td>
-      <Td>
-        {fmtDayShort(r.starts_at)}
-        <span className="mt-0.5 block text-[0.82rem] text-ink-mute">
-          {fmtTime(r.starts_at)} – {fmtTime(r.ends_at)}
-        </span>
-      </Td>
-      <Td className="tabular-nums">{r.participants}</Td>
-      <Td>
-        <Status value={r.status} />
-      </Td>
-      <Td>
-        {readOnly ? (
-          <span className="label text-ink-mute">Read-only</span>
-        ) : (
-          <QueueActions
-            id={r.id}
-            current={r.status}
-            transitions={transitions}
-            onSet={setReservationStatus}
-          />
-        )}
-      </Td>
-    </tr>
+        {r.purpose ? <p className="max-w-2xl text-[0.88rem] italic text-ink-mute">&ldquo;{r.purpose}&rdquo;</p> : null}
+      </div>
+      {readOnly ? null : transitions.length ? (
+        <QueueActions id={r.id} current={r.status} transitions={transitions} onSet={setReservationStatus} />
+      ) : null}
+    </li>
   );
-
-  const cols = ["Event and rooms", "Requested by", "When", "People", "Status", "Actions"];
 
   const empty = (msg: string) => (
     <p className="px-5 py-8 text-center text-[0.9rem] text-ink-mute">{msg}</p>
@@ -114,8 +100,8 @@ export default async function AdminReservations() {
   return (
     <div className="space-y-8">
       <AdminHeader
-        title="Reservations"
-        lead="Room requests arrive here as pending, and each one is already holding its rooms. Approving or declining emails the requester; a request for several rooms is decided as one."
+        title="Room requests"
+        lead="Ministries ask for rooms here. Each request holds its rooms until you decide. Approve or decline it, and the person who asked gets an email either way."
       />
 
       {!hasSupabase() ? (
@@ -126,59 +112,52 @@ export default async function AdminReservations() {
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Stat label="Awaiting approval" value={pending.length} tone="clay" />
-        <Stat label="Confirmed upcoming" value={approved.length} tone="moss" />
-        <Stat label="Closed" value={past.length} />
+        <Stat label="Waiting for you" value={pending.length} tone="clay" />
+        <Stat label="Approved, coming up" value={approved.length} tone="moss" />
+        <Stat label="Past, declined or cancelled" value={past.length} />
       </div>
 
-      <AdminPanel title="Awaiting approval">
+      <AdminPanel title="Waiting for you">
         {pending.length
           ? (
-            <Table columns={cols}>
+            <ul className="divide-y divide-rule">
               {pending.map((r) =>
                 row(r, [
-                  { label: "Approve", status: "approved", tone: "go" },
-                  { label: "Decline", status: "rejected", tone: "stop" },
+                  { label: "Approve", status: "approved", tone: "go", confirm: "Approve this request? The person who asked will get an email." },
+                  { label: "Decline", status: "rejected", tone: "stop", confirm: "Decline this request? The person who asked will get an email, and the rooms are freed." },
                 ]),
               )}
-            </Table>
+            </ul>
           )
-          : empty("Nothing waiting on a decision.")}
+          : empty("All done. No requests are waiting.")}
       </AdminPanel>
 
-      <AdminPanel title="Confirmed">
+      <AdminPanel title="Approved, coming up">
         {approved.length
           ? (
-            <Table columns={cols}>
+            <ul className="divide-y divide-rule">
               {approved.map((r) =>
                 row(r, [
-                  { label: "Mark completed", status: "completed" },
-                  { label: "Cancel", status: "cancelled", tone: "stop" },
+                  { label: "Cancel", status: "cancelled", tone: "stop", confirm: "Cancel this approved booking? The person who asked will get an email, and the rooms are freed." },
                 ]),
               )}
-            </Table>
+            </ul>
           )
-          : empty("No confirmed bookings ahead.")}
+          : empty("No approved bookings coming up.")}
       </AdminPanel>
 
-      <AdminPanel title="Closed">
+      <AdminPanel title="Past, declined or cancelled">
         {past.length
           ? (
-            <Table columns={cols}>
+            <ul className="divide-y divide-rule">
               {past.map((r) =>
-                row(r, [{ label: "Reopen as pending", status: "pending" }]),
+                row(r, r.first.ends_at < now ? [] : [{ label: "Reopen", status: "pending", confirm: "Put this request back in \"Waiting for you\"? It will hold its rooms again." }]),
               )}
-            </Table>
+            </ul>
           )
           : empty("Nothing yet.")}
       </AdminPanel>
 
-      <AdminNote>
-        Double-booking is prevented by the database itself, not by this screen.
-        A Postgres exclusion constraint rejects any overlapping reservation on
-        the same court or hall, so two people clicking at the same moment cannot
-        both succeed.
-      </AdminNote>
     </div>
   );
 }

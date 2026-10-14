@@ -52,7 +52,7 @@ export function WeekGrid({
   return (
     <div className="space-y-6">
       <AdminHeader
-        title="Week"
+        title="This week"
         lead="Events, rooms and Dgroup tables, Monday to Sunday. Open a day to approve requests and see the floor plans."
       />
       {!connected ? <AdminNote>Not connected to a database.</AdminNote> : null}

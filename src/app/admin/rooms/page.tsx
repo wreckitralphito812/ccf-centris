@@ -10,7 +10,7 @@ import { manilaDay, manilaMinutesOf, roomFor } from "@/lib/admin-day";
 import { daysCovered, venueRooms } from "@/lib/announcements";
 import { MINISTRY_ROOMS, setupLabel, tablesSummary, timeLabel } from "@/lib/ministry-rooms";
 
-export const metadata: Metadata = { title: "Rooms" };
+export const metadata: Metadata = { title: "Room calendar" };
 export const dynamic = "force-dynamic";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -135,7 +135,7 @@ export default async function AdminRooms({ searchParams }: PageProps<"/admin/roo
 
   return (
     <div className="space-y-6">
-      <AdminHeader title="Rooms" lead="One room's month: requests, blocks, events and Dgroup tables. Open a day to approve requests." />
+      <AdminHeader title="Room calendar" lead="One room's month: requests, blocks, events and Dgroup tables. Open a day to approve requests." />
       {!hasSupabase() ? <AdminNote>Not connected to a database.</AdminNote> : null}
 
       <nav aria-label="Room" className="flex flex-wrap gap-2">

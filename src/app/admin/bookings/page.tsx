@@ -8,11 +8,11 @@ import { searchBookings, type AdminReservation } from "@/lib/queries";
 import { requireAdmin } from "@/lib/admin-auth";
 import { hasSupabase } from "@/lib/supabase/server";
 import { manilaDateKey } from "@/lib/format";
-import { manilaDay, manilaMinutesOf } from "@/lib/admin-day";
+import { manilaDay, manilaMinutesOf, roomLabel } from "@/lib/admin-day";
 import { nightLabel, roomName, slotLabel, tablesLabel } from "@/lib/dgroup-tables";
 import { timeLabel } from "@/lib/ministry-rooms";
 
-export const metadata: Metadata = { title: "Bookings" };
+export const metadata: Metadata = { title: "Find a booking" };
 export const dynamic = "force-dynamic";
 
 /** Rooms asked for together are one request (request_group). */
@@ -21,8 +21,8 @@ function groupRooms(rows: AdminReservation[]) {
   for (const r of rows) {
     const k = r.request_group ?? r.id;
     const g = groups.get(k);
-    if (g) g.rooms.push(r.facility_name ?? "—");
-    else groups.set(k, { first: r, rooms: [r.facility_name ?? "—"] });
+    if (g) g.rooms.push(roomLabel(r));
+    else groups.set(k, { first: r, rooms: [roomLabel(r)] });
   }
   return [...groups.values()];
 }
@@ -44,7 +44,7 @@ export default async function AdminBookings({ searchParams }: PageProps<"/admin/
 
   return (
     <div className="space-y-8">
-      <AdminHeader title="Bookings" lead="Find a Dgroup table booking or a room request by name, email, mobile, event or ministry." />
+      <AdminHeader title="Find a booking" lead="Find a Dgroup table booking or a room request by name, email, mobile, event or ministry." />
       {!hasSupabase() ? <AdminNote>Not connected to a database.</AdminNote> : null}
 
       <form className="flex flex-wrap gap-2" role="search">
@@ -105,7 +105,7 @@ export default async function AdminBookings({ searchParams }: PageProps<"/admin/
                             <QueueActions
                               id={b.id}
                               current={b.status}
-                              transitions={[{ label: "Cancel", status: "cancelled", tone: "stop" }]}
+                              transitions={[{ label: "Cancel", status: "cancelled", tone: "stop", confirm: "Cancel this Dgroup table booking? The leader will get an email, and the table is freed." }]}
                               onSet={setDgroupTableStatus}
                             />
                           </span>
@@ -128,11 +128,11 @@ export default async function AdminBookings({ searchParams }: PageProps<"/admin/
                   const transitions =
                     r.status === "pending"
                       ? [
-                          { label: "Approve", status: "approved", tone: "go" as const },
-                          { label: "Decline", status: "rejected", tone: "stop" as const },
+                          { label: "Approve", status: "approved", tone: "go" as const, confirm: "Approve this request? The person who asked will get an email." },
+                          { label: "Decline", status: "rejected", tone: "stop" as const, confirm: "Decline this request? The person who asked will get an email, and the rooms are freed." },
                         ]
                       : r.status === "approved"
-                        ? [{ label: "Cancel", status: "cancelled", tone: "stop" as const }]
+                        ? [{ label: "Cancel", status: "cancelled", tone: "stop" as const, confirm: "Cancel this booking? The person who asked will get an email, and the rooms are freed." }]
                         : [];
                   return (
                     <tr key={r.id}>

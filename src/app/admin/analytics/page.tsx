@@ -3,7 +3,7 @@ import { AdminHeader, AdminNote, AdminPanel, Stat } from "../admin-ui";
 import { getSiteStats } from "@/lib/queries";
 import { requireAdmin } from "@/lib/admin-auth";
 
-export const metadata: Metadata = { title: "Analytics" };
+export const metadata: Metadata = { title: "Site numbers" };
 export const dynamic = "force-dynamic";
 
 /** Vercel Web Analytics for this project: visits, pages, devices, countries. */
@@ -22,7 +22,7 @@ export default async function AdminAnalytics() {
   return (
     <div className="space-y-8">
       <AdminHeader
-        title="Analytics"
+        title="Site numbers"
         lead="How the site, the tables and the rooms get used. Operational measures only: nothing here ranks people or tracks anyone's spiritual activity."
       />
 

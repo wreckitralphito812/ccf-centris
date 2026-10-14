@@ -265,3 +265,47 @@ export async function adminMoveDgroupBooking(_prev: ToolResult | null, fd: FormD
   }
   return { ok: false, formError: `No tables are free for ${b.group_size} then. The booking is unchanged.` };
 }
+
+/**
+ * Hide or show a Prayer Wall post or reply from the admin console
+ * (2026-10-14). Until now only members with the prayer-team role could, from
+ * the wall itself, and no staff account had it. Hiding also clears its
+ * reports; members never see who hid it.
+ */
+export async function adminSetPrayerHidden(fd: FormData): Promise<void> {
+  if (await guard()) return;
+  const kind = field(fd, "kind");
+  const id = field(fd, "id");
+  if (!id || (kind !== "post" && kind !== "reply")) return;
+  const hide = field(fd, "hide") === "1";
+  const db = supabaseAdmin();
+  const { error } = await db
+    .from(kind === "post" ? "prayer_wall_posts" : "prayer_wall_replies")
+    .update({ hidden_at: hide ? new Date().toISOString() : null, hidden_by: null })
+    .eq("id", id)
+    .eq("satellite_id", SATELLITE_ID);
+  if (error) console.error("adminSetPrayerHidden failed", error);
+  await resolvePrayerReports(kind, id);
+  revalidatePath("/admin/prayer");
+  revalidatePath("/prayer-wall");
+}
+
+/** "Looks fine": clear the reports on a post or reply without hiding it. */
+export async function adminDismissPrayerReports(fd: FormData): Promise<void> {
+  if (await guard()) return;
+  const kind = field(fd, "kind");
+  const id = field(fd, "id");
+  if (!id || (kind !== "post" && kind !== "reply")) return;
+  await resolvePrayerReports(kind, id);
+  revalidatePath("/admin/prayer");
+}
+
+async function resolvePrayerReports(kind: string, id: string) {
+  const { error } = await supabaseAdmin()
+    .from("prayer_wall_reports")
+    .update({ resolved_at: new Date().toISOString() })
+    .eq(kind === "post" ? "post_id" : "reply_id", id)
+    .eq("satellite_id", SATELLITE_ID)
+    .is("resolved_at", null);
+  if (error) console.error("resolvePrayerReports failed", error);
+}

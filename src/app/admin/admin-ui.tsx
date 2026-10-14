@@ -131,15 +131,38 @@ const STATUS_TONE: Record<string, string> = {
   completed: "border-ink/20 bg-ink/5 text-ink-mute",
   cancelled: "border-ink/20 bg-ink/5 text-ink-mute",
   rejected: "border-ink/20 bg-ink/5 text-ink-mute",
+  declined: "border-ink/20 bg-ink/5 text-ink-mute",
+  changes_requested: "border-sky/40 bg-sky-wash text-sky",
   full: "border-ink/20 bg-ink/5 text-ink-mute",
   urgent: "border-transparent bg-clay text-paper-bright",
 };
 
+/** Database statuses in the words staff use (2026-10-14). */
+const STATUS_LABEL: Record<string, string> = {
+  new: "New",
+  pending: "Waiting",
+  submitted: "New",
+  approved: "Approved",
+  confirmed: "Booked",
+  published: "On the site",
+  open: "Open",
+  draft: "Hidden",
+  closed: "Closed",
+  completed: "Done",
+  cancelled: "Cancelled",
+  rejected: "Declined",
+  declined: "Declined",
+  changes_requested: "Sent back",
+  full: "Full",
+  urgent: "Urgent",
+};
+
 export function Status({ value }: { value: string }) {
-  const tone = STATUS_TONE[value.toLowerCase()] ?? "border-ink/20 text-ink";
+  const key = value.toLowerCase();
+  const tone = STATUS_TONE[key] ?? "border-ink/20 text-ink";
   return (
-    <span className={cx("label inline-flex border px-2 py-1", tone)}>
-      {value}
+    <span className={cx("inline-flex whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[0.8rem] font-semibold", tone)}>
+      {STATUS_LABEL[key] ?? value}
     </span>
   );
 }

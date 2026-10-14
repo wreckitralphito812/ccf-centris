@@ -6,7 +6,7 @@ import { hasSupabase } from "@/lib/supabase/server";
 import { manilaDateKey } from "@/lib/format";
 import { isDateKey, weekOf } from "@/lib/admin-day";
 
-export const metadata: Metadata = { title: "Week" };
+export const metadata: Metadata = { title: "This week" };
 export const dynamic = "force-dynamic";
 
 /**
