@@ -2,7 +2,7 @@ import Link from "next/link";
 import { MessageArt } from "@/components/cards";
 import { PosterImage } from "@/components/poster-image";
 import { cx } from "@/components/ui";
-import { shortWhen } from "@/lib/announcements";
+import { shortWhen, venueLabel } from "@/lib/announcements";
 import type { CcfEvent } from "@/lib/types";
 
 /**
@@ -47,7 +47,7 @@ export function PosterCard({ e, dark, priority }: { e: CcfEvent; dark?: boolean;
       </h3>
       {e.location_note ? (
         <p className={cx("mt-1 text-[0.88rem]", dark ? "text-paper-bright" : "text-ink-mute")}>
-          {e.location_note}
+          {venueLabel(e.location_note)}
         </p>
       ) : null}
     </Link>

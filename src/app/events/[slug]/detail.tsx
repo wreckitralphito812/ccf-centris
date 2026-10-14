@@ -5,7 +5,7 @@ import { AddToCalendar, IconLine } from "@/components/booking";
 import { ShareButton } from "./share-button";
 import { fmtPeso } from "@/lib/format";
 import { manilaDay, manilaMinutesOf } from "@/lib/admin-day";
-import { dateText, venueKind } from "@/lib/announcements";
+import { dateText, seriesText, venueKind, venueLabel } from "@/lib/announcements";
 import { SITE, MAPS_LINK } from "@/lib/site";
 import type { CcfEvent } from "@/lib/types";
 
@@ -30,6 +30,7 @@ const datesOf = (e: CcfEvent) => e.dates ?? [{ starts_at: e.starts_at, ends_at: 
 export function EventDetail({ e, others }: { e: CcfEvent; others: CcfEvent[] }) {
   const now = new Date().toISOString();
   const dates = datesOf(e);
+  const series = seriesText(dates);
   const next = dates.find((d) => (d.ends_at ?? d.starts_at) >= now) ?? dates[dates.length - 1];
   // The poster the admin added (any shape) wins; otherwise the ministry's
   // Main Hall TV file, with its phone version on small screens (2026-10-08).
@@ -111,12 +112,31 @@ export function EventDetail({ e, others }: { e: CcfEvent; others: CcfEvent[] }) 
                 : null}
 
               <div className="mt-6 space-y-3">
-                {dates.map((d) => (
-                  <IconLine key={d.starts_at} icon="calendar">
-                    <span className={(d.ends_at ?? d.starts_at) < now ? "text-ink-mute line-through" : undefined}>{dateText(d)}</span>
-                  </IconLine>
-                ))}
-                <IconLine icon="pin">{e.location_note ?? "CCF Centris"}</IconLine>
+                {/* A series on the same hours in two lines; otherwise the first
+                    three dates and the rest behind "Show all" (Ralph, 2026-10-14). */}
+                {series ? (
+                  <>
+                    <IconLine icon="calendar">{series.days}</IconLine>
+                    <IconLine icon="clock">{series.hours}</IconLine>
+                  </>
+                ) : (
+                  <>
+                    {dates.slice(0, 3).map((d) => (
+                      <DateLine key={d.starts_at} d={d} now={now} />
+                    ))}
+                    {dates.length > 3 ? (
+                      <details className="group space-y-3">
+                        <summary className="cursor-pointer list-none pl-[30px] text-[0.95rem] font-semibold text-clay underline underline-offset-4 group-open:hidden">
+                          Show all {dates.length} dates
+                        </summary>
+                        {dates.slice(3).map((d) => (
+                          <DateLine key={d.starts_at} d={d} now={now} />
+                        ))}
+                      </details>
+                    ) : null}
+                  </>
+                )}
+                <IconLine icon="pin">{venueLabel(e.location_note)}</IconLine>
                 <IconLine icon="people">{fee}</IconLine>
               </div>
 
@@ -198,5 +218,14 @@ export function EventDetail({ e, others }: { e: CcfEvent; others: CcfEvent[] }) 
         </Section>
       ) : null}
     </>
+  );
+}
+
+/** One date, struck through once it has passed. */
+function DateLine({ d, now }: { d: { starts_at: string; ends_at: string | null; all_day?: boolean }; now: string }) {
+  return (
+    <IconLine icon="calendar">
+      <span className={(d.ends_at ?? d.starts_at) < now ? "text-ink-mute line-through" : undefined}>{dateText(d)}</span>
+    </IconLine>
   );
 }
