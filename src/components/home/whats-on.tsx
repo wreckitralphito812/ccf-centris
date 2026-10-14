@@ -4,7 +4,7 @@ import { Reveal, RevealHead } from "@/components/motion";
 import { PosterImage } from "@/components/poster-image";
 import { PosterCard } from "@/components/poster-card";
 import { PosterRail } from "@/components/poster-rail";
-import { dateText } from "@/lib/announcements";
+import { dateText, venueLabel } from "@/lib/announcements";
 import { manilaDateKey } from "@/lib/format";
 import type { CcfEvent } from "@/lib/types";
 import type { AgendaDay, Featured } from "@/lib/whats-on";
@@ -62,7 +62,7 @@ export function FeaturedEvent({ featured }: { featured: Featured }) {
               {dateText(next)}
               {more > 0 ? <span className="font-normal text-ink-mute"> · and {more} more {more === 1 ? "date" : "dates"}</span> : null}
             </p>
-            {e.location_note ? <p className="mt-1 text-[0.95rem] text-ink-mute">{e.location_note}</p> : null}
+            {e.location_note ? <p className="mt-1 text-[0.95rem] text-ink-mute">{venueLabel(e.location_note)}</p> : null}
             {e.summary ? <p className="mt-4 max-w-md leading-relaxed text-ink-soft">{e.summary}</p> : null}
             <div className="mt-auto flex flex-col gap-3 pt-7 sm:flex-row sm:flex-wrap">
               {e.registration_url ? (

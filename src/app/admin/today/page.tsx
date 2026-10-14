@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { TodayBoard } from "./board";
-import { getDgroupTableBookings, getReservations, getRoomBlocks, getTableBlocks } from "@/lib/queries";
+import { getAdminEvents, getDgroupTableBookings, getReservations, getRoomBlocks, getTableBlocks } from "@/lib/queries";
 import { hasSupabase } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { manilaDateKey } from "@/lib/format";
@@ -21,11 +21,12 @@ export default async function AdminToday({ searchParams }: PageProps<"/admin/tod
   const today = manilaDateKey();
   const date = isDateKey(sp.d) ? sp.d : today;
   const dayStart = new Date(`${date}T00:00:00+08:00`);
-  const [tables, rooms, tableBlocks, roomBlocks] = await Promise.all([
+  const [tables, rooms, tableBlocks, roomBlocks, events] = await Promise.all([
     getDgroupTableBookings(),
     getReservations(),
     getTableBlocks({ dates: [date] }),
     getRoomBlocks(dayStart.toISOString(), new Date(dayStart.getTime() + 86_400_000).toISOString()),
+    getAdminEvents(),
   ]);
   return (
     <TodayBoard
@@ -37,6 +38,7 @@ export default async function AdminToday({ searchParams }: PageProps<"/admin/tod
       connected={hasSupabase()}
       tableBlocks={tableBlocks}
       roomBlocks={roomBlocks}
+      events={events}
     />
   );
 }

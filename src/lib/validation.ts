@@ -16,10 +16,10 @@ import {
   TABLE_KINDS,
   closedReason,
   firstOpenDay,
+  isRoomDay,
   ministryRoom,
   tableSeats,
   toMinutes,
-  weekdayOf,
   type Setup,
   type TableCounts,
 } from "@/lib/ministry-rooms";
@@ -191,7 +191,7 @@ export function parseRoomRequest(fd: FormData, now = Date.now()): Parsed<RoomReq
   // Manila's date today, for the notice rule.
   const today = new Date(now + 8 * 3600_000).toISOString().slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) fieldErrors.date = "Choose a date.";
-  else if (weekdayOf(date) === 0) fieldErrors.date = "Rooms can't be requested on Sundays.";
+  else if (!isRoomDay(date)) fieldErrors.date = "Rooms are requested for Tuesday to Friday only.";
   else if (date >= today && date < firstOpenDay(today))
     fieldErrors.date = "Requests need at least 2 days' notice. Pick a later date.";
   if (!times.test(start) || !times.test(end)) fieldErrors.time = "Choose a start and end time.";

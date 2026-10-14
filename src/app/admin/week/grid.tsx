@@ -2,8 +2,18 @@ import Link from "next/link";
 import { AdminHeader, AdminNote } from "../admin-ui";
 import { cx } from "@/components/ui";
 import type { RoomBlock } from "@/lib/queries";
-import { manilaDay, manilaMinutesOf, shiftDay, type DayRoomBooking, type DayTable } from "@/lib/admin-day";
-import { DGROUP_SLOTS, WEEKDAY_NAMES } from "@/lib/dgroup-tables";
+import {
+  eventsOn,
+  manilaDay,
+  manilaMinutesOf,
+  roomLabel,
+  shiftDay,
+  type BoardEvent,
+  type DayRoomBooking,
+  type DayTable,
+} from "@/lib/admin-day";
+import { DGROUP_NIGHTS, DGROUP_SLOTS, WEEKDAY_NAMES } from "@/lib/dgroup-tables";
+import { EventTags, eventTime } from "../today/board";
 import { MINISTRY_ROOMS, timeLabel } from "@/lib/ministry-rooms";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -19,6 +29,7 @@ export function WeekGrid({
   tables,
   rooms,
   blocks,
+  events = [],
   connected,
 }: {
   days: string[];
@@ -26,8 +37,11 @@ export function WeekGrid({
   tables: DayTable[];
   rooms: DayRoomBooking[];
   blocks: RoomBlock[];
+  /** Every event, published, hidden or calendar-only (2026-10-14). */
+  events?: BoardEvent[];
   connected: boolean;
 }) {
+  const eventsByDay = new Map(days.map((d) => [d, eventsOn(events, d)]));
   const live = rooms.filter((r) => ["pending", "approved"].includes(r.status));
   const awaiting = live.filter((r) => r.status === "pending" && days.includes(manilaDay(r.starts_at))).length;
   const tablesOn = (d: string, slot: string) =>
@@ -39,7 +53,7 @@ export function WeekGrid({
     <div className="space-y-6">
       <AdminHeader
         title="Week"
-        lead="Rooms and Dgroup tables, Monday to Saturday. Open a day to approve requests and see the floor plans."
+        lead="Events, rooms and Dgroup tables, Monday to Sunday. Open a day to approve requests and see the floor plans."
       />
       {!connected ? <AdminNote>Not connected to a database.</AdminNote> : null}
 
@@ -48,7 +62,7 @@ export function WeekGrid({
           ←
         </Link>
         <h2 className="mx-2 font-display text-2xl font-bold">
-          {short(days[0])} – {short(days[5])}
+          {short(days[0])} – {short(days[days.length - 1])}
         </h2>
         <Link href={`/admin/week?d=${shiftDay(days[0], 7)}`} className={nav} aria-label="Next week">
           →
@@ -66,7 +80,7 @@ export function WeekGrid({
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-hairline bg-paper-bright">
-        <table className="w-full min-w-[60rem] table-fixed border-collapse text-[0.85rem]">
+        <table className="w-full min-w-[68rem] table-fixed border-collapse text-[0.85rem]">
           <thead>
             <tr>
               <th className="w-40 border-b border-hairline px-3 py-2.5 text-left font-semibold text-ink-mute">Room</th>
@@ -80,11 +94,42 @@ export function WeekGrid({
             </tr>
           </thead>
           <tbody>
+            {/* Every event, wherever it is (Ralph, 2026-10-14). */}
+            <tr>
+              <td className="border-b border-hairline px-3 py-2.5 align-top font-semibold text-ink">Events</td>
+              {days.map((d) => {
+                const list = eventsByDay.get(d) ?? [];
+                return (
+                  <td key={d} className="border-b border-l border-hairline px-1.5 py-1.5 align-top">
+                    {list.length ? (
+                      <ul className="space-y-1">
+                        {list.map((e) => (
+                          <li key={e.key}>
+                            <Link href={`/admin/events/${e.id}`} className="block rounded-md bg-moss/15 px-2 py-1 leading-tight text-moss hover:bg-moss/25">
+                              <span className="block truncate font-semibold">{e.title}</span>
+                              <span className="block truncate opacity-90">{eventTime(e)}</span>
+                              {e.venue ? <span className="block truncate opacity-90">{e.venue}</span> : null}
+                              {e.hidden || e.calendarOnly ? (
+                                <span className="mt-1 flex flex-wrap gap-1">
+                                  <EventTags e={e} />
+                                </span>
+                              ) : null}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <span className="block px-1.5 py-1 text-ink-mute">—</span>
+                    )}
+                  </td>
+                );
+              })}
+            </tr>
             <tr className="bg-mist/60">
               <td className="border-b border-hairline px-3 py-2.5 align-top font-semibold text-ink">Dgroup tables</td>
-              {days.map((d, i) => (
+              {days.map((d) => (
                 <td key={d} className="border-b border-l border-hairline px-2 py-2.5 align-top text-ink-soft">
-                  {i < 5 ? (
+                  {DGROUP_NIGHTS.includes(new Date(`${d}T00:00:00Z`).getUTCDay()) ? (
                     <Link href={`/admin/today?d=${d}`} className="block space-y-0.5 hover:text-clay">
                       {DGROUP_SLOTS.map((s) => (
                         <span key={s.id} className="block tabular-nums">
@@ -103,12 +148,15 @@ export function WeekGrid({
                 <td className="border-b border-hairline px-3 py-2.5 align-top font-semibold text-ink">{room.name}</td>
                 {days.map((d) => {
                   const items = [
+                    ...(eventsByDay.get(d) ?? [])
+                      .filter((e) => e.rooms.includes(room.slug))
+                      .map((e) => ({ key: e.key, from: e.from ?? -1, to: e.to, title: e.title, tone: "event", when: eventTime(e) })),
                     ...live
-                      .filter((r) => r.facility_name === room.name && manilaDay(r.starts_at) === d)
-                      .map((r) => ({ key: r.id, from: manilaMinutesOf(r.starts_at), to: manilaMinutesOf(r.ends_at), title: r.activity_name ?? "Booking", tone: r.status })),
+                      .filter((r) => roomLabel(r) === room.name && manilaDay(r.starts_at) === d)
+                      .map((r) => ({ key: r.id, from: manilaMinutesOf(r.starts_at), to: manilaMinutesOf(r.ends_at), title: r.activity_name ?? "Booking", tone: r.status, when: null })),
                     ...blocks
-                      .filter((b) => b.facility_name === room.name && manilaDay(b.starts_at) === d)
-                      .map((b) => ({ key: b.id, from: manilaMinutesOf(b.starts_at), to: manilaMinutesOf(b.ends_at), title: b.reason ?? "Blocked", tone: "blocked" })),
+                      .filter((b) => roomLabel(b) === room.name && manilaDay(b.starts_at) === d)
+                      .map((b) => ({ key: b.id, from: manilaMinutesOf(b.starts_at), to: manilaMinutesOf(b.ends_at), title: b.reason ?? "Blocked", tone: "blocked", when: null })),
                   ].sort((a, b) => a.from - b.from);
                   return (
                     <td key={d} className="border-b border-l border-hairline px-1.5 py-1.5 align-top">
@@ -123,13 +171,14 @@ export function WeekGrid({
                                   it.tone === "approved" && "bg-clay text-paper-bright",
                                   it.tone === "pending" && "border border-dashed border-sky/60 bg-sky-wash text-sky",
                                   it.tone === "blocked" && "bg-ink/10 text-ink-soft",
+                                  it.tone === "event" && "bg-moss/15 text-moss",
                                 )}
                               >
                                 <span className="block truncate font-semibold">
                                   {it.tone === "blocked" ? `Blocked · ${it.title}` : it.title}
                                 </span>
                                 <span className="block truncate opacity-90">
-                                  {timeLabel(it.from)} – {timeLabel(it.to)}
+                                  {it.when ?? `${timeLabel(it.from)} – ${timeLabel(it.to ?? it.from)}`}
                                 </span>
                               </Link>
                             </li>
@@ -150,6 +199,7 @@ export function WeekGrid({
         <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-clay" /> Confirmed</span>
         <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm border border-dashed border-sky/60 bg-sky-wash" /> Awaiting approval</span>
         <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-ink/10" /> Blocked</span>
+        <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-moss/15" /> Event</span>
       </p>
     </div>
   );

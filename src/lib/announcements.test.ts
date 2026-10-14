@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { dateText, daysCovered, downloadName, isOurUpload, lastEnd, parseAnnouncement, shapeCheck, signupUrlFrom, slugFor, venueKind, venueRooms } from "./announcements";
+import { dateText, daysCovered, seriesText, venueLabel, downloadName, isOurUpload, lastEnd, parseAnnouncement, shapeCheck, signupUrlFrom, slugFor, venueKind, venueRooms } from "./announcements";
 
 const BLOB = "https://abc123.public.blob.vercel-storage.com/announcements/main-tv-x1y2.jpg";
 
@@ -108,8 +108,8 @@ test("admins can post without artwork; descriptions keep their paragraphs", () =
 });
 
 test("dates read the way people say them", () => {
-  assert.equal(dateText({ starts_at: "2026-11-07T00:00:00Z", ends_at: "2026-11-07T09:00:00Z" }), "Sat, Nov 7, 8:00 AM – 5:00 PM");
-  assert.equal(dateText({ starts_at: "2026-10-10T07:30:00Z", ends_at: null }), "Sat, Oct 10, 3:30 PM onwards");
+  assert.equal(dateText({ starts_at: "2026-11-07T00:00:00Z", ends_at: "2026-11-07T09:00:00Z" }), "Sat, Nov 7 · 8:00 AM – 5:00 PM");
+  assert.equal(dateText({ starts_at: "2026-10-10T07:30:00Z", ends_at: null }), "Sat, Oct 10 · 3:30 PM onwards");
   assert.equal(dateText({ starts_at: "2026-10-15T16:00:00Z", ends_at: "2026-10-18T15:59:00Z", all_day: true }), "Fri, Oct 16 – Sun, Oct 18");
   assert.equal(dateText({ starts_at: "2026-10-23T16:00:00Z", ends_at: "2026-10-24T15:59:00Z", all_day: true }), "Sat, Oct 24 · All day");
   assert.deepEqual(daysCovered({ starts_at: "2026-10-15T16:00:00Z", ends_at: "2026-10-18T15:59:00Z", all_day: true }), ["2026-10-16", "2026-10-17", "2026-10-18"]);
@@ -159,4 +159,29 @@ test("an event can use several rooms at Centris (Ralph, 2026-10-10)", () => {
   assert.deepEqual(venueRooms("Canyon Woods, Batangas"), []);
   assert.equal(venueKind("John (MPH 1), Luke (MPH 2)"), "centris");
   assert.equal(venueKind("Canyon Woods, Batangas"), "elsewhere");
+});
+
+test("venues read short: CCF Centris for every room, halls grouped (Ralph, 2026-10-14)", () => {
+  assert.equal(venueLabel("Main Hall, Welcome Center, Dgroup Lounge, John (MPH 1), Luke (MPH 2), Matthew (MPH 3), Mark (MPH 4)"), "CCF Centris");
+  assert.equal(venueLabel("Welcome Center, Dgroup Lounge"), "Welcome Center & Dgroup Lounge");
+  assert.equal(venueLabel("John (MPH 1), Luke (MPH 2)"), "John & Luke (MPH 1–2)");
+  assert.equal(venueLabel("John (MPH 1), Matthew (MPH 3)"), "John & Matthew (MPH 1 & 3)");
+  assert.equal(venueLabel("John (MPH 1), Luke (MPH 2), Matthew (MPH 3), Mark (MPH 4)"), "Multipurpose Halls 1–4");
+  assert.equal(venueLabel("Main Hall, John (MPH 1), Luke (MPH 2)"), "Main Hall, John & Luke (MPH 1–2)");
+  assert.equal(venueLabel("Mark (MPH 4)"), "Mark (MPH 4)");
+  assert.equal(venueLabel("Main Hall"), "Main Hall");
+  assert.equal(venueLabel("Fort Bonifacio"), "Fort Bonifacio");
+  assert.equal(venueLabel(null), "CCF Centris");
+});
+
+test("a series on the same hours reads as two lines", () => {
+  // Centris Connect: Tue–Fri, Oct 20–23 and 27–30, 1:00–9:30 PM Manila.
+  const dd = (d: number) => String(d).padStart(2, "0");
+  const day = (d: number) => ({ starts_at: `2026-10-${dd(d)}T05:00:00Z`, ends_at: `2026-10-${dd(d)}T13:30:00Z` });
+  assert.deepEqual(seriesText([20, 21, 22, 23, 27, 28, 29, 30].map(day)), { days: "Tue–Fri, Oct 20–23 & 27–30", hours: "1:00 – 9:30 PM" });
+  assert.deepEqual(seriesText([6, 13, 20].map(day)), { days: "Tuesdays, Oct 6, 13 & 20", hours: "1:00 – 9:30 PM" });
+  assert.equal(seriesText([day(20)]), null);
+  assert.equal(seriesText([day(20), { starts_at: "2026-10-21T01:00:00Z", ends_at: "2026-10-21T04:00:00Z" }]), null);
+  assert.equal(dateText({ starts_at: "2026-10-24T11:00:00Z", ends_at: "2026-10-24T14:00:00Z" }), "Sat, Oct 24 · 7:00 – 10:00 PM");
+  assert.equal(dateText({ starts_at: "2026-10-24T01:00:00Z", ends_at: "2026-10-24T04:00:00Z" }), "Sat, Oct 24 · 9:00 AM – 12 NN");
 });

@@ -47,6 +47,50 @@ export function venueRooms(venue: string | null | undefined): string[] {
 }
 
 /**
+ * A venue as people read it (Ralph, 2026-10-14): every room is just "CCF
+ * Centris", all four halls "Multipurpose Halls 1–4", some halls by name with
+ * their numbers, "John & Luke (MPH 1–2)", and the rest as written. The full
+ * list stays in `location_note` for the admin boards and directions.
+ */
+export function venueLabel(venue: string | null | undefined): string {
+  const rooms = venueRooms(venue);
+  if (!rooms.length) return venue || "CCF Centris";
+  if (CENTRIS_ROOMS.every((r) => rooms.includes(r))) return "CCF Centris";
+  const halls = HALLS.filter((h) => rooms.includes(h.venue));
+  const parts: string[] = [];
+  for (const r of CENTRIS_ROOMS) {
+    if (!rooms.includes(r)) continue;
+    const hall = HALLS.find((h) => h.venue === r);
+    if (!hall) parts.push(r);
+    else if (hall === halls[0]) parts.push(hallsLabel(halls));
+  }
+  return parts.length === 2 && !parts.some((p) => p.includes("&")) ? parts.join(" & ") : listJoin(parts, ", ");
+}
+
+const HALLS = [
+  { venue: "John (MPH 1)", name: "John", n: 1 },
+  { venue: "Luke (MPH 2)", name: "Luke", n: 2 },
+  { venue: "Matthew (MPH 3)", name: "Matthew", n: 3 },
+  { venue: "Mark (MPH 4)", name: "Mark", n: 4 },
+];
+
+function hallsLabel(halls: typeof HALLS): string {
+  if (halls.length === 1) return halls[0].venue;
+  if (halls.length === HALLS.length) return "Multipurpose Halls 1–4";
+  const ns = halls.map((h) => h.n);
+  const run = ns.every((n, i) => i === 0 || n === ns[i - 1] + 1);
+  const numbers = run ? `${ns[0]}–${ns[ns.length - 1]}` : listJoin(ns.map(String), " & ");
+  return `${listJoin(halls.map((h) => h.name), " & ")} (MPH ${numbers})`;
+}
+
+/** "a & b", "a, b & c" (the last pair always with "&"). */
+function listJoin(items: string[], sep: string): string {
+  if (items.length <= 1) return items.join("");
+  if (sep === ", ") return `${items.slice(0, -1).join(", ")}, ${items[items.length - 1]}`;
+  return `${items.slice(0, -1).join(", ")} & ${items[items.length - 1]}`;
+}
+
+/**
  * Where an event's venue is (2026-10-08): one or more rooms at Centris (or no
  * venue given), online, or somewhere else, which gets its own map link and
  * calendar location instead of the Centris address.
@@ -285,6 +329,7 @@ export function parseAnnouncement(
 const MANILA = 8 * 3_600_000;
 const manilaDate = (iso: string) => new Date(new Date(iso).getTime() + MANILA);
 const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WD_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const MO = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const dayLabel = (iso: string) => {
   const d = manilaDate(iso);
@@ -298,10 +343,19 @@ const timeOf = (iso: string) => {
   return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
 };
 
+/** "7:00 – 10:00 PM", "9:00 AM – 12 NN", "3:30 PM onwards": AM/PM once when both ends share it. */
+function hoursText(startIso: string, endIso: string | null): string {
+  const a = timeOf(startIso);
+  if (!endIso) return `${a} onwards`;
+  const b = timeOf(endIso);
+  const [ta, ma] = a.split(" ");
+  return ma === b.split(" ")[1] && ma !== "NN" ? `${ta} – ${b}` : `${a} – ${b}`;
+}
+
 /**
- * One date as people read it: "Sat, Nov 7, 8:00 AM – 5:00 PM",
- * "Sat, Oct 10, 3:30 PM onwards", "Fri, Oct 16 – Sun, Oct 18" or
- * "Sat, Oct 24 · All day".
+ * One date as people read it: "Sat, Nov 7 · 8:00 AM – 5:00 PM",
+ * "Sat, Oct 24 · 7:00 – 10:00 PM", "Sat, Oct 10 · 3:30 PM onwards",
+ * "Fri, Oct 16 – Sun, Oct 18" or "Sat, Oct 24 · All day".
  */
 export function dateText(d: { starts_at: string; ends_at: string | null; all_day?: boolean }): string {
   if (d.all_day) {
@@ -309,9 +363,55 @@ export function dateText(d: { starts_at: string; ends_at: string | null; all_day
     const last = d.ends_at ? dayLabel(d.ends_at) : first;
     return first === last ? `${first} · All day` : `${first} – ${last}`;
   }
-  return d.ends_at
-    ? `${dayLabel(d.starts_at)}, ${timeOf(d.starts_at)} – ${timeOf(d.ends_at)}`
-    : `${dayLabel(d.starts_at)}, ${timeOf(d.starts_at)} onwards`;
+  return `${dayLabel(d.starts_at)} · ${hoursText(d.starts_at, d.ends_at)}`;
+}
+
+/**
+ * A series on the same hours, in two lines (Ralph, 2026-10-14): eight dates
+ * of Centris Connect become "Tue–Fri, Oct 20–23 & 27–30" and
+ * "1:00 – 9:30 PM". Null when there's one date, an all-day date, or the
+ * hours differ; those are listed date by date.
+ */
+export function seriesText(
+  dates: { starts_at: string; ends_at: string | null; all_day?: boolean }[],
+): { days: string; hours: string } | null {
+  if (dates.length < 2 || dates.some((d) => d.all_day)) return null;
+  const hours = hoursText(dates[0].starts_at, dates[0].ends_at);
+  if (dates.some((d) => hoursText(d.starts_at, d.ends_at) !== hours)) return null;
+
+  const keys = [...new Set(dates.map((d) => manilaDate(d.starts_at).toISOString().slice(0, 10)))].sort();
+  const at = (k: string) => new Date(`${k}T00:00:00Z`);
+  const runs: string[][] = [];
+  for (const k of keys) {
+    const run = runs[runs.length - 1];
+    if (run && at(k).getTime() - at(run[run.length - 1]).getTime() === 86_400_000) run.push(k);
+    else runs.push([k]);
+  }
+
+  let lastMonth = -1;
+  const ranges = runs.map((run) => {
+    const a = at(run[0]);
+    const b = at(run[run.length - 1]);
+    const head = a.getUTCMonth() === lastMonth ? `${a.getUTCDate()}` : `${MO[a.getUTCMonth()]} ${a.getUTCDate()}`;
+    lastMonth = b.getUTCMonth();
+    if (run.length === 1) return head;
+    return a.getUTCMonth() === b.getUTCMonth() ? `${head}–${b.getUTCDate()}` : `${head} – ${MO[b.getUTCMonth()]} ${b.getUTCDate()}`;
+  });
+
+  // "Tue–Fri" when every run spans the same weekdays; "Tuesdays" for one weekday a week.
+  const firstWd = runs.map((r) => at(r[0]).getUTCDay());
+  const lastWd = runs.map((r) => at(r[r.length - 1]).getUTCDay());
+  const same = (xs: number[]) => xs.every((x) => x === xs[0]);
+  const prefix =
+    runs.length < 2 || !same(firstWd) || !same(lastWd)
+      ? null
+      : runs.every((r) => r.length === 1)
+        ? `${WD_LONG[firstWd[0]]}s`
+        : runs.every((r) => r.length > 1)
+          ? `${WD[firstWd[0]]}–${WD[lastWd[0]]}`
+          : null;
+  const list = listJoin(ranges, " & ");
+  return { days: prefix ? `${prefix}, ${list}` : list, hours };
 }
 
 /** Every Manila day a date covers (a multi-day all-day date covers several). */
@@ -335,6 +435,8 @@ export const lastEnd = (dates: { startsAt: string; endsAt: string | null }[]) =>
 /** A card's date line: the first date, plus how many more ("+ 2 more"). */
 export function shortWhen(e: { starts_at: string; ends_at: string | null; dates?: { starts_at: string; ends_at: string | null; all_day?: boolean }[] }): string {
   const ds = e.dates?.length ? e.dates : [{ starts_at: e.starts_at, ends_at: e.ends_at }];
+  const series = seriesText(ds);
+  if (series) return series.days;
   const first = ds[0];
   const text = first.all_day
     ? dateText(first).replace(" · All day", "")

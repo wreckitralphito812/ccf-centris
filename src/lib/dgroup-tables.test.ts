@@ -123,19 +123,15 @@ test("offers nothing past the group limit", () => {
   assert.deepEqual(candidateTables(13, none), []);
 });
 
-test("any weeknight up to 8 days ahead can be booked", () => {
+test("any Tuesday to Friday night up to 8 days ahead can be booked", () => {
   // Ralph, 2026-10-10: a rolling window, not a week that opens on Sunday.
   assert.equal(BOOKING_DAYS_AHEAD, 8);
-  // Wednesday Oct 7 -> through Thursday Oct 15, weekdays only.
-  assert.deepEqual(bookableNights("2026-10-07"), [
-    "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15",
-  ]);
-  // Saturday Oct 10 -> through Sunday Oct 18: Monday Oct 12 to Friday Oct 16.
-  assert.deepEqual(bookableNights("2026-10-10"), ["2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16"]);
-  // Sunday Oct 4 -> Monday Oct 5 to Monday Oct 12.
-  assert.deepEqual(bookableNights("2026-10-04"), [
-    "2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-12",
-  ]);
+  // Wednesday Oct 7 -> through Thursday Oct 15, Tuesday to Friday only (Ralph, 2026-10-14).
+  assert.deepEqual(bookableNights("2026-10-07"), ["2026-10-07", "2026-10-08", "2026-10-09", "2026-10-13", "2026-10-14", "2026-10-15"]);
+  // Saturday Oct 10 -> through Sunday Oct 18: Tuesday Oct 13 to Friday Oct 16.
+  assert.deepEqual(bookableNights("2026-10-10"), ["2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16"]);
+  // Sunday Oct 4 -> through Monday Oct 12: Tuesday Oct 6 to Friday Oct 9; the Mondays are closed.
+  assert.deepEqual(bookableNights("2026-10-04"), ["2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09"]);
 });
 
 test("today's slots close once they start", () => {
@@ -235,10 +231,10 @@ test("availability is counted per day and slot", () => {
 test("book again lands on the next open date with the same weekday and slot", () => {
   // Booked Wed Oct 7, 4 PM. The next day, the following Wednesday is within 8 days.
   assert.equal(rebookDate("2026-10-07", "1600", "2026-10-08", 600), "2026-10-14");
-  // A Monday booking, looked at a few days later: the coming Monday.
-  assert.equal(rebookDate("2026-10-05", "1300", "2026-10-08", 600), "2026-10-12");
-  // That Monday itself, after the slot has started: next Monday is 7 days on.
-  assert.equal(rebookDate("2026-10-05", "1300", "2026-10-12", 14 * 60), "2026-10-19");
-  // Looked at the same day: next Monday is 7 days on, inside the window.
-  assert.equal(rebookDate("2026-10-05", "1300", "2026-10-05", 14 * 60), "2026-10-12");
+  // A Tuesday booking, looked at a few days later: the coming Tuesday.
+  assert.equal(rebookDate("2026-10-06", "1300", "2026-10-08", 600), "2026-10-13");
+  // That Tuesday itself, after the slot has started: next Tuesday is 7 days on.
+  assert.equal(rebookDate("2026-10-06", "1300", "2026-10-13", 14 * 60), "2026-10-20");
+  // Looked at the same day: next Tuesday is 7 days on, inside the window.
+  assert.equal(rebookDate("2026-10-06", "1300", "2026-10-06", 14 * 60), "2026-10-13");
 });

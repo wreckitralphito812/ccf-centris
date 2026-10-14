@@ -27,7 +27,7 @@ export function AuthLayout({
           <h1 className="page-title mt-2 text-balance">{title}</h1>
           <p className="mt-4 text-[1.05rem] leading-relaxed text-ink-mute">{lead}</p>
           <div className="mt-8 hidden space-y-3.5 lg:block">
-            <IconLine icon="calendar">Book a table for your Dgroup, Monday to Friday</IconLine>
+            <IconLine icon="calendar">Book a table for your Dgroup, Tuesday to Friday</IconLine>
             <IconLine icon="pin">Request a room for your ministry</IconLine>
             <IconLine icon="people">Post and pray on the Prayer Wall</IconLine>
             <IconLine icon="check">See, change and cancel your bookings in one place</IconLine>

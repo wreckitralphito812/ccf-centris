@@ -22,7 +22,7 @@ import { BookingForm } from "./booking-form";
 export const metadata: Metadata = {
   title: "Reserve a Dgroup table",
   description:
-    "Book a table for your Dgroup in the Dgroup Lounge or the Welcome Center at CCF Centris, Monday to Friday.",
+    "Book a table for your Dgroup in the Dgroup Lounge or the Welcome Center at CCF Centris, Tuesday to Friday.",
 };
 
 /** "1:00, 4:00 or 7:00 PM", from the slot labels ("1:00 – 3:30 PM"). */
@@ -45,7 +45,7 @@ export default function DgroupTablesPage() {
       <Section tone="mist">
         <Container className="max-w-2xl lg:max-w-6xl">
           <div className="grid gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
-            <IconLine icon="calendar">Monday to Friday</IconLine>
+            <IconLine icon="calendar">Tuesday to Friday</IconLine>
             <IconLine icon="clock">Starts at {SLOT_STARTS}</IconLine>
             <IconLine icon="people">Groups up to {MAX_GROUP_SIZE}</IconLine>
             <IconLine icon="pin">Dgroup Lounge or Welcome Center</IconLine>

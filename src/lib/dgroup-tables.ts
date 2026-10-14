@@ -6,7 +6,8 @@
  * - Two rooms, the Dgroup Lounge and the Welcome Center, with the tables on
  *   Adrian Camacho's floor plans (DGROUP PLAN and WELCOME PLAN). Labels are the
  *   numbers printed on those plans, so "Table 7" matches the drawing on the wall.
- * - Monday to Friday, three slots: 1:00–3:30, 4:00–6:30, 7:00–9:30 PM.
+ * - Tuesday to Friday (the center rests on Mondays, Ralph 2026-10-14), three
+ *   slots: 1:00–3:30, 4:00–6:30, 7:00–9:30 PM.
  * - A leader can book any weeknight up to BOOKING_DAYS_AHEAD days ahead, a
  *   rolling window (Ralph, 2026-10-10; it used to open a week at a time each
  *   Sunday).
@@ -93,8 +94,8 @@ export const DGROUP_ROOMS: DgroupRoom[] = [
   },
 ];
 
-/** Bookable weekdays, as JavaScript weekdays: 1 is Monday, 5 Friday. */
-export const DGROUP_NIGHTS = [1, 2, 3, 4, 5];
+/** Bookable weekdays, as JavaScript weekdays: 2 is Tuesday, 5 Friday. Mondays the center is closed. */
+export const DGROUP_NIGHTS = [2, 3, 4, 5];
 
 export const DGROUP_SLOTS: DgroupSlot[] = [
   { id: "1300", label: "1:00 – 3:30 PM", start: "13:00", end: "15:30" },
@@ -157,7 +158,7 @@ export const BOOKING_DAYS_AHEAD = 8;
 
 /**
  * The dates a leader can book from `today`: today and the next
- * BOOKING_DAYS_AHEAD days, on Dgroup nights only (Monday to Friday).
+ * BOOKING_DAYS_AHEAD days, on Dgroup nights only (Tuesday to Friday).
  */
 export function bookableNights(today: string, nights: number[] = DGROUP_NIGHTS): string[] {
   const out: string[] = [];

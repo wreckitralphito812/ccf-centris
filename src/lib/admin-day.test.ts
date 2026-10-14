@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { blockPosition, buildDayBoard, DAY_END, DAY_START, isDateKey, manilaDay, shiftDay, weekOf } from "./admin-day";
+import { blockPosition, buildDayBoard, DAY_END, DAY_START, eventsOn, isDateKey, manilaDay, roomFor, shiftDay, weekOf } from "./admin-day";
 
 const table = (over: Partial<Parameters<typeof buildDayBoard>[1][number]> = {}) => ({
   id: "t1",
@@ -80,12 +80,36 @@ test("timeline blocks are clamped to the center's hours", () => {
   assert.equal(Math.round(early.width), 10);
 });
 
-test("days shift and weeks run Monday to Saturday", () => {
+test("days shift and weeks run Monday to Sunday", () => {
   assert.equal(shiftDay("2026-10-31", 1), "2026-11-01");
-  assert.deepEqual(weekOf("2026-10-07"), ["2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-10"]);
+  assert.deepEqual(weekOf("2026-10-07"), ["2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-10", "2026-10-11"]);
   // Sunday belongs to the week that just ended.
   assert.equal(weekOf("2026-10-04")[0], "2026-09-28");
   assert.equal(isDateKey("2026-10-05"), true);
   assert.equal(isDateKey("2026-13-45"), false);
   assert.equal(isDateKey("tomorrow"), false);
+});
+
+test("bookings match their room by slug, whatever the database calls it (2026-10-14)", () => {
+  // Production names the halls "Multipurpose Hall 1"; the site says "John (MPH 1)".
+  const r = room({ facility_name: "Multipurpose Hall 1", facility_slug: "multipurpose-hall-1" });
+  assert.equal(roomFor(r)?.name, "John (MPH 1)");
+  const board = buildDayBoard("2026-10-05", [], [r]);
+  assert.equal(board.rooms.find((x) => x.slug === "multipurpose-hall-1")!.blocks.length, 1);
+  assert.ok(!board.rooms.some((x) => x.name === "Multipurpose Hall 1"));
+});
+
+test("the boards show every event on a day: published, hidden and calendar-only", () => {
+  const events = [
+    { id: "e1", title: "Elevate night", starts_at: "2026-10-05T11:00:00Z", ends_at: "2026-10-05T13:00:00Z", location_note: "John (MPH 1), Luke (MPH 2)", status: "published" },
+    { id: "e2", title: "Staff retreat", starts_at: "2026-10-04T16:00:00Z", ends_at: "2026-10-06T16:00:00Z", location_note: "CCF Centris", status: "draft", calendar_only: true, dates: [{ starts_at: "2026-10-04T16:00:00Z", ends_at: "2026-10-06T16:00:00Z", all_day: true }] },
+    { id: "e3", title: "Another day", starts_at: "2026-10-07T11:00:00Z", ends_at: null, location_note: "Main Hall" },
+  ];
+  const day = eventsOn(events, "2026-10-05");
+  assert.deepEqual(day.map((e) => e.id), ["e2", "e1"]); // all-day first
+  assert.deepEqual(day[1].rooms, ["multipurpose-hall-1", "multipurpose-hall-2"]);
+  assert.equal(day[1].from, 19 * 60);
+  assert.equal(day[0].from, null);
+  assert.ok(day[0].hidden && day[0].calendarOnly);
+  assert.deepEqual(day[0].rooms, []);
 });
