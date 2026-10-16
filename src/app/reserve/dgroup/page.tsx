@@ -95,7 +95,10 @@ async function Booking() {
     getDgroupHolds(open.map((n) => n.date)),
     getMyDgroups(user.id),
   ]);
-  const approved = myDgroups.filter((d) => d.status === "approved");
+  // Only registered Dgroups book tables (Adrian, 2026-10-16); one waiting for
+  // approval may book while the team reviews it.
+  const registered = myDgroups.filter((d) => d.status === "approved" || d.status === "pending");
+  const waiting = registered.length > 0 && registered.every((d) => d.status === "pending");
   // Without the holds the form still books; it just can't show what's left.
   const nights = holds ? withAvailability(open, holds) : open;
 
@@ -113,20 +116,23 @@ async function Booking() {
         </Link>
       ) : null}
 
-      {approved.length ? null : (
-        <Link
-          href={myDgroups.length ? "/my/dgroups" : "/my/dgroups/new"}
-          className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-2xl border border-clay/25 bg-clay-wash px-6 py-4 text-[1rem] text-clay-deep transition-colors hover:border-clay"
-        >
-          <span>
-            {myDgroups.length
-              ? "Your Dgroup is waiting for approval. Once it's approved, booking takes one tap."
-              : "Lead a Dgroup? Register it once, and booking a table takes one tap."}
-          </span>
-          <span className="font-semibold">{myDgroups.length ? "See it →" : "Register your Dgroup →"}</span>
-        </Link>
-      )}
+      {!registered.length ? (
+        <Notice label="Register your Dgroup first">
+          <p>
+            Dgroup tables are for registered Dgroups. Tell us about your group once: its name, when it meets, and
+            your own Dgroup leader. Then come back here to book.
+          </p>
+          <ButtonLink href={myDgroups.length ? "/my/dgroups" : "/my/dgroups/new"}>
+            {myDgroups.length ? "See my Dgroups" : "Register my Dgroup"}
+          </ButtonLink>
+        </Notice>
+      ) : waiting ? (
+        <p className="rounded-2xl border border-clay/25 bg-clay-wash px-6 py-4 text-[1rem] text-clay-deep">
+          Your Dgroup is waiting for approval. You can book a table now; the team will review your group soon.
+        </p>
+      ) : null}
 
+      {registered.length ? (
       <section aria-labelledby="book-h">
         <h2 id="book-h" className="sr-only">
           Book a table
@@ -137,7 +143,7 @@ async function Booking() {
             email={contact?.email || user.email}
             name={contact?.name ?? ""}
             mobile={contact?.mobile ?? ""}
-            dgroups={approved.map((d) => ({
+            dgroups={registered.map((d) => ({
               id: d.id,
               name: d.name,
               size: d.current_size,
@@ -147,6 +153,7 @@ async function Booking() {
           />
         </div>
       </section>
+      ) : <Rooms />}
     </div>
   );
 }

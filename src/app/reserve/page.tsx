@@ -34,7 +34,7 @@ const OPTIONS: {
 }[] = [
   {
     title: "Dgroup table",
-    badge: "Mon–Fri",
+    badge: "Tue–Fri",
     href: "/reserve/dgroup",
     cta: "Book a table",
     facts: [
@@ -45,7 +45,7 @@ const OPTIONS: {
   },
   {
     title: "Ministry room",
-    badge: "Tue–Fri",
+    badge: "Tue–Sun",
     href: "/centris/reserve",
     cta: "Request a room",
     facts: [

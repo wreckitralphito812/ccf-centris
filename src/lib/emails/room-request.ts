@@ -11,7 +11,7 @@ import { CONTACT, SITE } from "@/lib/site";
  * unconfirmed request never lands in anyone's calendar.
  */
 
-export type RoomEmailKind = "received" | "admin" | "approved" | "rejected" | "cancelled" | "reminder";
+export type RoomEmailKind = "received" | "admin" | "approved" | "rejected" | "cancelled" | "reminder" | "updated";
 
 export interface RoomEmailData {
   kind: RoomEmailKind;
@@ -34,6 +34,10 @@ export interface RoomEmailData {
   notes: string | null;
   /** The booked time as UTC ISO strings, for the calendar invite. */
   span?: { startsAt: string; endsAt: string };
+  /** "updated" (2026-10-16): what the team changed, one line each. */
+  changes?: string[];
+  /** "updated": whether the request is approved (it gets a calendar invite) or still waiting. */
+  confirmed?: boolean;
 }
 
 const TEAL = "#007a87";
@@ -55,7 +59,7 @@ export function roomRequestEmail(d: RoomEmailData): {
   const first = d.requester.split(" ")[0];
   const rooms = d.rooms.join(", ");
   const event =
-    (d.kind === "approved" || d.kind === "reminder") && d.span
+    (d.kind === "approved" || d.kind === "reminder" || (d.kind === "updated" && d.confirmed)) && d.span
       ? (() => {
           const from = manilaParts(d.span.startsAt);
           const to = manilaParts(d.span.endsAt);
@@ -79,6 +83,7 @@ export function roomRequestEmail(d: RoomEmailData): {
     rejected: `Your room request for ${d.activity}`,
     cancelled: `Cancelled: ${rooms} for ${d.activity}`,
     reminder: `Tomorrow: ${d.activity} in ${rooms}`,
+    updated: `Updated: ${d.activity}, ${d.when}`,
   }[d.kind];
 
   const eyebrow = {
@@ -88,6 +93,7 @@ export function roomRequestEmail(d: RoomEmailData): {
     rejected: "Room request",
     cancelled: "Room cancelled",
     reminder: "Room reminder",
+    updated: "Booking updated",
   }[d.kind];
 
   const headline = {
@@ -97,6 +103,7 @@ export function roomRequestEmail(d: RoomEmailData): {
     rejected: `We can't confirm this one, ${first}.`,
     cancelled: `Your booking is cancelled, ${first}.`,
     reminder: `See you tomorrow, ${first}.`,
+    updated: `We updated your booking, ${first}.`,
   }[d.kind];
 
   const intro = {
@@ -109,6 +116,9 @@ export function roomRequestEmail(d: RoomEmailData): {
     cancelled: "These rooms have been released for other ministries.",
     reminder:
       "A reminder that your room is booked. If plans changed, please cancel from My reservations so another ministry can use it.",
+    updated: d.confirmed
+      ? "The facilities team changed your booking. It's still confirmed; here's what changed and the booking as it is now."
+      : "The facilities team changed your request while reviewing it. Here's what changed; we'll email you again once it's confirmed.",
   }[d.kind];
 
   const button =
@@ -118,6 +128,7 @@ export function roomRequestEmail(d: RoomEmailData): {
         ? { href: `${d.origin}/centris/reserve`, label: "Request a room" }
         : { href: `${d.origin}/my/reservations`, label: "See my requests" };
 
+  const changed = d.kind === "updated" && d.changes?.length ? d.changes : [];
   const rows: [string, string][] = [
     ["Reference", d.reference],
     ["Event", d.activity],
@@ -128,7 +139,7 @@ export function roomRequestEmail(d: RoomEmailData): {
     ["Set-up", setupLabel(d.setup)],
   ];
   if (d.setup === "tables") rows.push(["Tables", tablesSummary(d.tables)]);
-  if (d.kind === "admin" || d.kind === "received") {
+  if (d.kind === "admin" || d.kind === "received" || d.kind === "updated") {
     rows.push(["Equipment", equipmentSummary(d.equipment)], ["Food", foodLabel(d.food)]);
     if (d.notes) rows.push(["Notes", d.notes]);
   }
@@ -157,6 +168,14 @@ export function roomRequestEmail(d: RoomEmailData): {
     <p style="margin:0;font:600 11px/1.4 ${FONT};letter-spacing:3px;text-transform:uppercase;color:${TEAL};">${eyebrow}</p>
     <h1 style="margin:14px 0 0;font:500 28px/1.25 ${FONT};color:${TEAL};">${esc(headline)}</h1>
     <p style="margin:14px auto 0;max-width:440px;font:400 15px/1.6 ${FONT};color:${SOFT};">${esc(intro)}</p>
+    ${
+      changed.length
+        ? `<div style="max-width:460px;margin:26px auto 0;padding:16px 20px;background:#ffffff;border-left:3px solid ${TEAL};text-align:left;">
+      <p style="margin:0 0 8px;font:600 11px/1.4 ${FONT};letter-spacing:2px;text-transform:uppercase;color:${TEAL};">What changed</p>
+      ${changed.map((c) => `<p style="margin:4px 0 0;font:400 15px/1.5 ${FONT};color:${INK};">${esc(c)}</p>`).join("")}
+    </div>`
+        : ""
+    }
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:460px;margin:26px auto 0;">
       ${rows.map(([k, v]) => row(k, v)).join("")}
     </table>
@@ -187,6 +206,7 @@ export function roomRequestEmail(d: RoomEmailData): {
     "",
     intro,
     "",
+    ...(changed.length ? ["What changed:", ...changed.map((c) => `- ${c}`), ""] : []),
     ...rows.map(([k, v]) => `${k}: ${v}`),
     "",
     `${button.label}: ${button.href}`,

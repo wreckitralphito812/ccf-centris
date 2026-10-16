@@ -102,17 +102,40 @@ export async function reserveDgroupTable(
   const user = await currentUser();
   if (!user) return { ok: false, needsAuth: true, formError: "Sign in to reserve a table." };
 
+  // Tables are for registered Dgroups only (Adrian, 2026-10-16).
+  const dgroupId = await registeredDgroup(user.id, String(formData.get("dgroup_id") ?? ""));
+  if (!dgroupId) return { ok: false, formError: NEEDS_DGROUP };
+
   const parsed = parseDgroupBooking(formData, today, manilaMinutes());
   if (!parsed.ok) return { ok: false, fieldErrors: parsed.fieldErrors };
   const result = await bookTables(user.id, parsed.value);
-  if (result.ok && result.booking) await linkDgroup(user.id, result.booking.id, String(formData.get("dgroup_id") ?? ""));
+  if (result.ok && result.booking) await linkDgroup(user.id, result.booking.id, dgroupId);
   return result;
+}
+
+const NEEDS_DGROUP = "Register your Dgroup first (account menu → My Dgroups), then book its table.";
+
+/**
+ * The member's registered Dgroup to book for (2026-10-16): the one they
+ * picked, or their only one, as long as it's waiting for approval or
+ * approved. Null when they have none, so the booking is refused.
+ */
+async function registeredDgroup(memberId: string, picked: string | null): Promise<string | null> {
+  const { data } = await supabaseAdmin()
+    .from("dgroups")
+    .select("id")
+    .eq("satellite_id", SATELLITE_ID)
+    .eq("leader_id", memberId)
+    .in("status", ["pending", "approved"]);
+  const ids = (data ?? []).map((d) => d.id as string);
+  if (picked && ids.includes(picked)) return picked;
+  return ids[0] ?? null;
 }
 
 /**
  * Note which Dgroup a booking is for (2026-10-08), so the team sees which
- * groups meet at Centris. Only the member's own approved Dgroup counts; a
- * failure here never undoes the booking.
+ * groups meet at Centris. Only the member's own registered Dgroup counts
+ * (waiting or approved); a failure here never undoes the booking.
  */
 async function linkDgroup(memberId: string, bookingId: string, dgroupId: string | null) {
   if (!dgroupId || !/^[0-9a-f-]{36}$/i.test(dgroupId)) return;
@@ -123,7 +146,7 @@ async function linkDgroup(memberId: string, bookingId: string, dgroupId: string 
     .eq("id", dgroupId)
     .eq("satellite_id", SATELLITE_ID)
     .eq("leader_id", memberId)
-    .eq("status", "approved")
+    .in("status", ["pending", "approved"])
     .maybeSingle();
   if (!mine) return;
   const { error } = await db.from("dgroup_table_bookings").update({ dgroup_id: dgroupId }).eq("id", bookingId).eq("user_id", memberId);
@@ -149,6 +172,8 @@ export async function rebookDgroupTable(id: string): Promise<DgroupBookingResult
     .eq("user_id", user.id)
     .maybeSingle();
   if (error || !row) return { ok: false, formError: "That booking can’t be found." };
+  const dgroupId = await registeredDgroup(user.id, row.dgroup_id as string | null);
+  if (!dgroupId) return { ok: false, formError: NEEDS_DGROUP };
 
   const date = rebookDate(row.booked_on as string, row.slot_id as string, today, manilaMinutes());
   if (!date) return { ok: false, formError: "That day isn’t open yet. Days open 8 days ahead." };
@@ -161,7 +186,7 @@ export async function rebookDgroupTable(id: string): Promise<DgroupBookingResult
     contactMobile: row.contact_mobile as string,
     leaderEmail: (row.leader_email as string | null) ?? user.email,
   });
-  if (result.ok && result.booking) await linkDgroup(user.id, result.booking.id, row.dgroup_id as string | null);
+  if (result.ok && result.booking) await linkDgroup(user.id, result.booking.id, dgroupId);
   return result;
 }
 

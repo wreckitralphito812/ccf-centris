@@ -380,9 +380,9 @@ function Request({
   };
 
   const prevWeek = addDays(week, -7);
-  const canPrev = addDays(prevWeek, 4) >= today;
-  // Tuesday to Friday (Ralph, 2026-10-14): the center rests on Mondays.
-  const days = Array.from({ length: 4 }, (_, i) => addDays(week, i + 1));
+  const canPrev = addDays(prevWeek, 6) >= today;
+  // Tuesday to Sunday (Adrian, 2026-10-16): the center rests on Mondays.
+  const days = Array.from({ length: 6 }, (_, i) => addDays(week, i + 1));
   const whenText = timed ? range(start!, end!) : null;
 
   return (
@@ -427,10 +427,10 @@ function Request({
       {step === 1 ? (
         <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
         <div className="calm-card px-6 py-8 sm:px-9 sm:py-10">
-          <Question id="q-day" title="Which day?" note="Tuesday to Friday, at least 2 days from today." error={e.date}>
+          <Question id="q-day" title="Which day?" note="Tuesday to Sunday, at least 2 days from today. Closed Mondays." error={e.date}>
             <div className="flex items-center justify-between gap-4">
               <p className="text-[1rem] font-semibold text-ink">
-                {dayNum(days[0])} {monthOf(days[0])} – {dayNum(days[3])} {monthOf(days[3])}
+                {dayNum(days[0])} {monthOf(days[0])} – {dayNum(days[5])} {monthOf(days[5])}
               </p>
               <div className="flex gap-2">
                 <ArrowButton label="Previous week" disabled={!canPrev} onClick={() => setWeek(prevWeek)}>
@@ -441,7 +441,7 @@ function Request({
                 </ArrowButton>
               </div>
             </div>
-            <div role="radiogroup" aria-labelledby="q-day" className="mt-5 grid grid-cols-4 gap-1">
+            <div role="radiogroup" aria-labelledby="q-day" className="mt-5 grid grid-cols-6 gap-1">
               {days.map((d) => {
                 const past = d < today;
                 // Requests need 2 days' notice (Ralph, 2026-10-10).

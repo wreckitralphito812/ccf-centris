@@ -37,12 +37,25 @@ export interface DayRoomBooking {
 }
 
 /**
- * The ministry room a booking or block is for, by slug. Until 2026-10-14 the
+ * Every room on the admin boards: the ministry rooms, and the Main Hall
+ * (Adrian, 2026-10-16), which ministries don't request but the team books
+ * and blocks for services and big events.
+ */
+export const BOARD_ROOMS: { slug: string; name: string; dgroupRoom: boolean }[] = [
+  { slug: "main-worship-hall", name: "Main Hall", dgroupRoom: false },
+  ...MINISTRY_ROOMS.map((r) => ({ slug: r.slug, name: r.name, dgroupRoom: r.dgroupRoom })),
+];
+
+/**
+ * The room a booking or block is for, by slug. Until 2026-10-14 the
  * boards matched on names, and production names the halls "Multipurpose Hall
  * 1–4" where the site says "John (MPH 1)", so hall bookings never showed.
  */
 export function roomFor(r: { facility_slug?: string | null; facility_name?: string | null }) {
-  return MINISTRY_ROOMS.find((m) => (r.facility_slug ? m.slug === r.facility_slug : m.name === r.facility_name)) ?? null;
+  return (
+    BOARD_ROOMS.find((m) => (r.facility_slug ? m.slug === r.facility_slug : m.name === r.facility_name)) ??
+    (r.facility_name === "Main Worship Hall" ? BOARD_ROOMS[0] : null)
+  );
 }
 
 /** The name the boards show for a booking's room. */
@@ -85,7 +98,7 @@ export function eventsOn(events: BoardEvent[], date: string): DayEvent[] {
   const out: DayEvent[] = [];
   for (const e of events) {
     const rooms = venueRooms(e.location_note)
-      .map((name) => MINISTRY_ROOMS.find((m) => m.name === name)?.slug)
+      .map((name) => BOARD_ROOMS.find((m) => m.name === name)?.slug)
       .filter((s): s is string => Boolean(s));
     const dates = e.dates?.length ? e.dates : [{ starts_at: e.starts_at, ends_at: e.ends_at, all_day: false }];
     dates.forEach((d, i) => {
@@ -154,13 +167,13 @@ export function buildDayBoard(date: string, tables: DayTable[], rooms: DayRoomBo
 
   const dayRooms = rooms.filter((r) => LIVE_ROOM.includes(r.status) && manilaDay(r.starts_at) === date);
   const names = [
-    ...MINISTRY_ROOMS.map((r) => r.name),
+    ...BOARD_ROOMS.map((r) => r.name),
     // Anything booked in a room the list doesn't know still shows.
-    ...[...new Set(dayRooms.map(roomLabel))].filter((n) => !MINISTRY_ROOMS.some((r) => r.name === n)),
+    ...[...new Set(dayRooms.map(roomLabel))].filter((n) => !BOARD_ROOMS.some((r) => r.name === n)),
   ];
   const roomRows = names.map((name) => ({
     name,
-    slug: MINISTRY_ROOMS.find((r) => r.name === name)?.slug ?? null,
+    slug: BOARD_ROOMS.find((r) => r.name === name)?.slug ?? null,
     blocks: dayRooms
       .filter((r) => roomLabel(r) === name)
       .map((r) => ({ ...r, from: manilaMinutesOf(r.starts_at), to: manilaMinutesOf(r.ends_at) }))
@@ -195,14 +208,11 @@ export function shiftDay(date: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-/**
- * Monday to Sunday of the week holding `date`. Sunday joined the boards on
- * 2026-10-14, when they started showing events.
- */
+/** Sunday to Saturday of the week holding `date`: the church week (Adrian, 2026-10-16). */
 export function weekOf(date: string): string[] {
   const dow = new Date(`${date}T00:00:00Z`).getUTCDay(); // 0 = Sunday
-  const monday = shiftDay(date, dow === 0 ? -6 : 1 - dow);
-  return Array.from({ length: 7 }, (_, i) => shiftDay(monday, i));
+  const sunday = shiftDay(date, -dow);
+  return Array.from({ length: 7 }, (_, i) => shiftDay(sunday, i));
 }
 
 export const isDateKey = (v: unknown): v is string =>

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { isAdmin, isAdminConfigured } from "@/lib/admin-auth";
-import { isDateKey } from "@/lib/admin-day";
+import { BOARD_ROOMS, isDateKey } from "@/lib/admin-day";
 import {
   candidateTables,
   DGROUP_ROOMS,
@@ -18,7 +18,7 @@ import { takenTables } from "@/lib/dgroup-taken";
 import { sendEmail, siteOrigin } from "@/lib/email";
 import { bookingEmail } from "@/lib/emails/dgroup-booking";
 import { manilaDateKey } from "@/lib/format";
-import { MINISTRY_ROOMS, toMinutes } from "@/lib/ministry-rooms";
+import { toMinutes } from "@/lib/ministry-rooms";
 import { hasSupabase, SATELLITE_ID, supabaseAdmin } from "@/lib/supabase/server";
 
 /**
@@ -128,7 +128,7 @@ export async function addRoomBlock(_prev: ToolResult | null, fd: FormData): Prom
   const end = field(fd, "end");
   const reason = field(fd, "reason").slice(0, 200) || null;
 
-  const room = MINISTRY_ROOMS.find((r) => r.slug === slug);
+  const room = BOARD_ROOMS.find((r) => r.slug === slug);
   if (!room) return { ok: false, formError: "Choose a room." };
   if (!isDateKey(date)) return { ok: false, formError: "Choose a date." };
   if (date < manilaDateKey()) return { ok: false, formError: "That day has passed." };

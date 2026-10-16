@@ -126,7 +126,8 @@ function BookingAttempt({
   const [slot, setSlot] = useState("");
   // A leader with one approved Dgroup has it picked already; its leader,
   // mobile and size fill the form (2026-10-08).
-  const [dgroupId, setDgroupId] = useState(dgroups.length === 1 ? dgroups[0].id : "");
+  // Every booking is for a registered Dgroup (2026-10-16); the first is picked.
+  const [dgroupId, setDgroupId] = useState(dgroups[0]?.id ?? "");
   const group = dgroups.find((g) => g.id === dgroupId);
   const [count, setCount] = useState(group ? String(Math.min(group.size, MAX_GROUP_SIZE)) : "");
   const [agreed, setAgreed] = useState(false);
@@ -252,10 +253,10 @@ function BookingAttempt({
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
       <div className="calm-card px-6 py-8 sm:px-9 sm:py-10">
         <input type="hidden" name="dgroup_id" value={dgroupId} />
-        {dgroups.length ? (
+        {dgroups.length > 1 ? (
           <Question id="q-group" title="Which Dgroup?" note="Pick yours and we fill in the rest.">
             <div role="radiogroup" aria-labelledby="q-group" className="flex flex-wrap gap-2">
-              {[...dgroups, { id: "", name: "Another group", size: 0, leaderName: "", leaderMobile: "" }].map((g) => {
+              {dgroups.map((g) => {
                 const on = dgroupId === g.id;
                 return (
                   <label key={g.id || "other"} className={cx("inline-flex min-h-12 items-center px-4 py-2 text-[1rem]", choiceClass(on, false))}>

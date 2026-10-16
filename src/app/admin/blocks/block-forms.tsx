@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { addRoomBlock, addTableBlock, type ToolResult } from "@/app/actions/admin-tools";
 import { cx } from "@/components/ui";
 import { DGROUP_ROOMS, DGROUP_SLOTS } from "@/lib/dgroup-tables";
-import { MINISTRY_ROOMS } from "@/lib/ministry-rooms";
+import { BOARD_ROOMS } from "@/lib/admin-day";
 import { keepForm } from "@/lib/keep-form";
 
 const INPUT = "calm-input min-h-11 w-full px-3.5 text-[0.95rem] text-ink";
@@ -93,8 +93,8 @@ export function RoomBlockForm({ today }: { today: string }) {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <label className="block">
           <span className={LABEL}>Room</span>
-          <select name="room" className={cx(INPUT, "mt-1.5")} defaultValue={MINISTRY_ROOMS[0].slug}>
-            {MINISTRY_ROOMS.map((r) => (
+          <select name="room" className={cx(INPUT, "mt-1.5")} defaultValue={BOARD_ROOMS[1].slug}>
+            {BOARD_ROOMS.map((r) => (
               <option key={r.slug} value={r.slug}>
                 {r.name}
               </option>

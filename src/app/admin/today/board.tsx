@@ -82,7 +82,7 @@ export function TodayBoard({
     <div className="space-y-8">
       <AdminHeader
         title="Today"
-        lead="Everything on one day: events, Dgroup tables on the floor plans, and room requests on each room's timeline."
+        lead="Everything on one day: events, Dgroup tables on the floor plans, and room bookings on each room's timeline. Tap a booking to see or change it."
         action={<PrintButton />}
       />
 
@@ -293,9 +293,10 @@ export function TodayBoard({
                         const pos = blockPosition(b.from, b.to);
                         const pendingBlock = b.status === "pending";
                         return (
-                          <div
+                          <Link
+                            href={`/admin/reservations/${b.id}`}
                             key={b.id}
-                            title={`${b.activity_name ?? "Booking"} · ${timeLabel(b.from)} – ${timeLabel(b.to)}`}
+                            title={`${b.activity_name ?? "Booking"} · ${timeLabel(b.from)} – ${timeLabel(b.to)}: see or change`}
                             className={cx(
                               "absolute inset-y-1 overflow-hidden rounded-md px-2.5 py-1.5 text-[0.8rem] leading-tight",
                               pendingBlock ? "border-2 border-dashed border-sky/60 bg-sky-wash text-sky" : "bg-clay text-paper-bright",
@@ -307,7 +308,7 @@ export function TodayBoard({
                               {timeLabel(b.from)} – {timeLabel(b.to)} · {b.participants}
                               {pendingBlock ? " · awaiting" : ""}
                             </span>
-                          </div>
+                          </Link>
                         );
                       })}
                     </div>
@@ -337,7 +338,10 @@ export function TodayBoard({
                       · {roomLabel(b)} · {timeLabel(b.from)} – {timeLabel(b.to)} · {b.participants} people ·{" "}
                       {b.contact_name}
                       {b.organization ? ` (${b.organization})` : ""}
-                    </span>
+                    </span>{" "}
+                    <Link href={`/admin/reservations/${b.id}`} className="font-semibold text-clay underline underline-offset-4">
+                      Details
+                    </Link>
                   </span>
                   {readOnly ? (
                     <span className="label text-ink-mute">Read-only</span>
