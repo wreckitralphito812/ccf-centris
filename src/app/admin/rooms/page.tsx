@@ -6,9 +6,9 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { hasSupabase } from "@/lib/supabase/server";
 import { getAdminEvents, getDgroupTableBookings, getReservations, getRoomBlocks } from "@/lib/queries";
 import { manilaDateKey } from "@/lib/format";
-import { manilaDay, manilaMinutesOf, roomFor } from "@/lib/admin-day";
+import { BOARD_ROOMS, manilaDay, manilaMinutesOf, roomFor } from "@/lib/admin-day";
 import { daysCovered, venueRooms } from "@/lib/announcements";
-import { MINISTRY_ROOMS, setupLabel, tablesSummary, timeLabel } from "@/lib/ministry-rooms";
+import { setupLabel, tablesSummary, timeLabel } from "@/lib/ministry-rooms";
 
 export const metadata: Metadata = { title: "Room calendar" };
 export const dynamic = "force-dynamic";
@@ -18,6 +18,8 @@ const MONTHS = ["January", "February", "March", "April", "May", "June", "July", 
 
 interface Item {
   key: string;
+  /** Where tapping it goes: the request's details, the event, or the day. */
+  link: string;
   from: number | null;
   to: number | null;
   title: string;
@@ -34,7 +36,7 @@ interface Item {
 export default async function AdminRooms({ searchParams }: PageProps<"/admin/rooms">) {
   await requireAdmin();
   const sp = await searchParams;
-  const room = MINISTRY_ROOMS.find((r) => r.slug === sp.room) ?? MINISTRY_ROOMS[0];
+  const room = BOARD_ROOMS.find((r) => r.slug === sp.room) ?? BOARD_ROOMS[1];
   const today = manilaDateKey();
   const month = typeof sp.m === "string" && /^\d{4}-\d{2}$/.test(sp.m) ? sp.m : today.slice(0, 7);
   const [y, m] = month.split("-").map(Number);
@@ -65,6 +67,7 @@ export default async function AdminRooms({ searchParams }: PageProps<"/admin/roo
     if (roomFor(r)?.slug !== room.slug || !["pending", "approved"].includes(r.status)) continue;
     add(manilaDay(r.starts_at), {
       key: r.id,
+      link: `/admin/reservations/${r.id}`,
       from: manilaMinutesOf(r.starts_at),
       to: manilaMinutesOf(r.ends_at),
       title: r.activity_name ?? "Room request",
@@ -83,6 +86,7 @@ export default async function AdminRooms({ searchParams }: PageProps<"/admin/roo
     if (roomFor(b)?.slug !== room.slug) continue;
     add(manilaDay(b.starts_at), {
       key: b.id,
+      link: "/admin/blocks",
       from: manilaMinutesOf(b.starts_at),
       to: manilaMinutesOf(b.ends_at),
       title: `Blocked${b.reason ? ` · ${b.reason}` : ""}`,
@@ -95,6 +99,7 @@ export default async function AdminRooms({ searchParams }: PageProps<"/admin/roo
       for (const day of daysCovered(d)) {
         add(day, {
           key: `${e.id}-${day}`,
+          link: `/admin/events/${e.id}`,
           from: d.all_day ? null : manilaMinutesOf(d.starts_at),
           to: d.all_day || !d.ends_at ? null : manilaMinutesOf(d.ends_at),
           title: e.title,
@@ -111,7 +116,7 @@ export default async function AdminRooms({ searchParams }: PageProps<"/admin/roo
     tableCount.set(t.booked_on, (tableCount.get(t.booked_on) ?? 0) + 1);
   }
   for (const [day, n] of tableCount) {
-    add(day, { key: `tables-${day}`, from: 13 * 60, to: 21 * 60 + 30, title: `Dgroup tables · ${n} ${n === 1 ? "booking" : "bookings"}`, tone: "tables" });
+    add(day, { key: `tables-${day}`, link: `/admin/today?d=${day}`, from: 13 * 60, to: 21 * 60 + 30, title: `Dgroup tables · ${n} ${n === 1 ? "booking" : "bookings"}`, tone: "tables" });
   }
   for (const list of byDay.values()) list.sort((a, b) => (a.from ?? -1) - (b.from ?? -1));
 
@@ -135,11 +140,11 @@ export default async function AdminRooms({ searchParams }: PageProps<"/admin/roo
 
   return (
     <div className="space-y-6">
-      <AdminHeader title="Room calendar" lead="One room's month: requests, blocks, events and Dgroup tables. Open a day to approve requests." />
+      <AdminHeader title="Room calendar" lead="One room's month: requests, events, closures and Dgroup tables. Tap anything to see its details; tap a request to change it." />
       {!hasSupabase() ? <AdminNote>Not connected to a database.</AdminNote> : null}
 
       <nav aria-label="Room" className="flex flex-wrap gap-2">
-        {MINISTRY_ROOMS.map((r) => (
+        {BOARD_ROOMS.map((r) => (
           <Link
             key={r.slug}
             href={href({ room: r.slug })}
@@ -206,9 +211,11 @@ export default async function AdminRooms({ searchParams }: PageProps<"/admin/roo
                 </Link>
                 <ul className="mt-1 space-y-1">
                   {(byDay.get(d) ?? []).map((it) => (
-                    <li key={it.key} title={[it.title, when(it), it.detail].filter(Boolean).join(" · ")} className={cx("rounded px-1.5 py-1 text-[0.72rem] leading-tight", toneClass[it.tone])}>
-                      <span className="block truncate font-semibold">{it.title}</span>
-                      <span className="block truncate opacity-90">{when(it)}</span>
+                    <li key={it.key}>
+                      <Link href={it.link} title={[it.title, when(it), it.detail].filter(Boolean).join(" · ")} className={cx("block rounded px-1.5 py-1 text-[0.72rem] leading-tight hover:ring-1 hover:ring-clay", toneClass[it.tone])}>
+                        <span className="block truncate font-semibold">{it.title}</span>
+                        <span className="block truncate opacity-90">{when(it)}</span>
+                      </Link>
                     </li>
                   ))}
                 </ul>
@@ -230,9 +237,11 @@ export default async function AdminRooms({ searchParams }: PageProps<"/admin/roo
               </Link>
               <ul className="mt-2 space-y-1.5">
                 {(byDay.get(d) ?? []).map((it) => (
-                  <li key={it.key} className={cx("rounded-lg px-3 py-2 text-[0.9rem]", toneClass[it.tone])}>
-                    <span className="block font-semibold">{it.title}</span>
-                    <span className="block opacity-90">{[when(it), it.detail].filter(Boolean).join(" · ")}</span>
+                  <li key={it.key}>
+                    <Link href={it.link} className={cx("block rounded-lg px-3 py-2 text-[0.9rem]", toneClass[it.tone])}>
+                      <span className="block font-semibold">{it.title}</span>
+                      <span className="block opacity-90">{[when(it), it.detail].filter(Boolean).join(" · ")}</span>
+                    </Link>
                   </li>
                 ))}
               </ul>

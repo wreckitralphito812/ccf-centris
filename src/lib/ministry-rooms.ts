@@ -6,10 +6,9 @@
  * the old "MPH n" number stays in brackets while people learn the new names.
  * Capacities are the form's figures for each set-up.
  *
- * Rooms are requested for Tuesday to Friday only (Ralph, 2026-10-14): the
- * center rests on Mondays, and weekends are for the services. The Dgroup
- * Lounge and the Welcome Center belong to Dgroups in the afternoons and
- * evenings (booked by the table at /reserve/dgroup), so ministries can only
+ * Rooms are requested for Tuesday to Sunday (Adrian, 2026-10-16): the
+ * center rests on Mondays. On Tuesday to Friday the Dgroup Lounge and the
+ * Welcome Center belong to Dgroups in the afternoons and evenings (booked by the table at /reserve/dgroup), so ministries can only
  * request them until 12 NN.
  *
  * This file is shared by the request form, the server action that checks each
@@ -129,8 +128,13 @@ export function weekdayOf(date: string): number {
   return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
 }
 
-/** Days rooms can be requested for, as JavaScript weekdays: Tuesday (2) to Friday (5). */
-export const ROOM_DAYS = [2, 3, 4, 5];
+/**
+ * Days rooms can be requested for, as JavaScript weekdays: Tuesday to Sunday
+ * (Adrian, 2026-10-16). The center rests on Mondays.
+ */
+export const ROOM_DAYS = [2, 3, 4, 5, 6, 0];
+/** Tuesday to Friday: the Dgroup rooms are Dgroups' in the afternoons and evenings. */
+const DGROUP_DAYS = [2, 3, 4, 5];
 export const isRoomDay = (date: string) => ROOM_DAYS.includes(weekdayOf(date));
 
 /** When a ministry may use this room on this date. Empty when it's closed. */
@@ -138,7 +142,7 @@ export function ministryWindow(slug: string, date: string): { from: Minutes; to:
   const room = ministryRoom(slug);
   if (!room) return null;
   if (!isRoomDay(date)) return null;
-  if (room.dgroupRoom) return { from: OPEN, to: NOON };
+  if (room.dgroupRoom && DGROUP_DAYS.includes(weekdayOf(date))) return { from: OPEN, to: NOON };
   return { from: OPEN, to: CLOSE };
 }
 
@@ -150,10 +154,10 @@ export function dayWindow(date: string): { from: Minutes; to: Minutes } | null {
 /** Why a room can't be used for this time, or null when it can. */
 export function closedReason(slug: string, date: string, start: Minutes, end: Minutes): string | null {
   const w = ministryWindow(slug, date);
-  if (!w) return "Rooms are requested Tuesday to Friday only";
+  if (!w) return "Closed on Mondays";
   if (start >= w.from && end <= w.to) return null;
   const room = ministryRoom(slug);
-  if (room?.dgroupRoom && w.to === NOON) return "Until 12 NN only. Dgroups use it after.";
+  if (room?.dgroupRoom && w.to === NOON) return "Until 12 NN on Tuesday to Friday. Dgroups use it after.";
   return `Open ${timeLabel(w.from)} to ${timeLabel(w.to)}`;
 }
 
@@ -175,7 +179,7 @@ const plusDays = (date: string, n: number) => {
   return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
 };
 
-/** The earliest date a room can be requested for: LEAD_DAYS on, on a room day (Tuesday to Friday). */
+/** The earliest date a room can be requested for: LEAD_DAYS on, on a room day (Tuesday to Sunday). */
 export function firstOpenDay(today: string): string {
   let day = plusDays(today, LEAD_DAYS);
   while (!isRoomDay(day)) day = plusDays(day, 1);
@@ -184,9 +188,9 @@ export function firstOpenDay(today: string): string {
 
 /** Plain-language hours, for the page and the policies. */
 export const HOURS_SUMMARY: [string, string][] = [
-  ["John, Luke, Matthew, Mark", "Tuesday to Friday, 9:00 AM to 9:30 PM"],
-  ["Welcome Center, Dgroup Lounge", "Tuesday to Friday, 9:00 AM to 12 NN. Dgroups use both rooms in the afternoons and evenings."],
-  ["Mondays and weekends", "No room requests. The center rests on Mondays; weekends are for the services."],
+  ["John, Luke, Matthew, Mark", "Tuesday to Sunday, 9:00 AM to 9:30 PM"],
+  ["Welcome Center, Dgroup Lounge", "Saturday and Sunday, 9:00 AM to 9:30 PM. Tuesday to Friday, 9:00 AM to 12 NN only: Dgroups use both rooms in the afternoons and evenings."],
+  ["Mondays", "Closed. The center rests on Mondays."],
 ];
 
 /** From the Venue Reservation Form. The lead ministry when several are involved. */

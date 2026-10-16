@@ -137,7 +137,9 @@ export default async function AdminBookings({ searchParams }: PageProps<"/admin/
                   return (
                     <tr key={r.id}>
                       <Td>
-                        <span className="font-semibold">{r.activity_name ?? "—"}</span>
+                        <Link href={`/admin/reservations/${r.id}`} className="font-semibold text-ink underline-offset-4 hover:text-clay hover:underline">
+                          {r.activity_name ?? "Room request"}
+                        </Link>
                         <span className="mt-0.5 block text-[0.82rem] text-ink-mute">{names.join(", ")}</span>
                       </Td>
                       <Td>

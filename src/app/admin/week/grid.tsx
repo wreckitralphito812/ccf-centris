@@ -6,6 +6,7 @@ import {
   eventsOn,
   manilaDay,
   manilaMinutesOf,
+  BOARD_ROOMS,
   roomLabel,
   shiftDay,
   type BoardEvent,
@@ -14,7 +15,7 @@ import {
 } from "@/lib/admin-day";
 import { DGROUP_NIGHTS, DGROUP_SLOTS, WEEKDAY_NAMES } from "@/lib/dgroup-tables";
 import { EventTags, eventTime } from "../today/board";
-import { MINISTRY_ROOMS, timeLabel } from "@/lib/ministry-rooms";
+import { timeLabel } from "@/lib/ministry-rooms";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const short = (d: string) => {
@@ -53,7 +54,7 @@ export function WeekGrid({
     <div className="space-y-6">
       <AdminHeader
         title="This week"
-        lead="Events, rooms and Dgroup tables, Monday to Sunday. Open a day to approve requests and see the floor plans."
+        lead="Events, rooms and Dgroup tables, Sunday to Saturday. Tap a booking to see or change its details, or a day to open it."
       />
       {!connected ? <AdminNote>Not connected to a database.</AdminNote> : null}
 
@@ -143,20 +144,20 @@ export function WeekGrid({
                 </td>
               ))}
             </tr>
-            {MINISTRY_ROOMS.map((room) => (
+            {BOARD_ROOMS.map((room) => (
               <tr key={room.slug}>
                 <td className="border-b border-hairline px-3 py-2.5 align-top font-semibold text-ink">{room.name}</td>
                 {days.map((d) => {
                   const items = [
                     ...(eventsByDay.get(d) ?? [])
                       .filter((e) => e.rooms.includes(room.slug))
-                      .map((e) => ({ key: e.key, from: e.from ?? -1, to: e.to, title: e.title, tone: "event", when: eventTime(e) })),
+                      .map((e) => ({ key: e.key, from: e.from ?? -1, to: e.to, title: e.title, tone: "event", when: eventTime(e), href: `/admin/events/${e.id}` })),
                     ...live
                       .filter((r) => roomLabel(r) === room.name && manilaDay(r.starts_at) === d)
-                      .map((r) => ({ key: r.id, from: manilaMinutesOf(r.starts_at), to: manilaMinutesOf(r.ends_at), title: r.activity_name ?? "Booking", tone: r.status, when: null })),
+                      .map((r) => ({ key: r.id, from: manilaMinutesOf(r.starts_at), to: manilaMinutesOf(r.ends_at), title: r.activity_name ?? "Booking", tone: r.status, when: null, href: `/admin/reservations/${r.id}` })),
                     ...blocks
                       .filter((b) => roomLabel(b) === room.name && manilaDay(b.starts_at) === d)
-                      .map((b) => ({ key: b.id, from: manilaMinutesOf(b.starts_at), to: manilaMinutesOf(b.ends_at), title: b.reason ?? "Blocked", tone: "blocked", when: null })),
+                      .map((b) => ({ key: b.id, from: manilaMinutesOf(b.starts_at), to: manilaMinutesOf(b.ends_at), title: b.reason ?? "Blocked", tone: "blocked", when: null, href: "/admin/blocks" })),
                   ].sort((a, b) => a.from - b.from);
                   return (
                     <td key={d} className="border-b border-l border-hairline px-1.5 py-1.5 align-top">
@@ -165,7 +166,7 @@ export function WeekGrid({
                           {items.map((it) => (
                             <li key={it.key}>
                               <Link
-                                href={`/admin/today?d=${d}`}
+                                href={it.href}
                                 className={cx(
                                   "block rounded-md px-2 py-1 leading-tight",
                                   it.tone === "approved" && "bg-clay text-paper-bright",

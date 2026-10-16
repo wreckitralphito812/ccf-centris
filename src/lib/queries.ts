@@ -1039,8 +1039,32 @@ export async function getReservations(): Promise<AdminReservation[]> {
     console.error("getReservations failed", error);
     return [];
   }
+  return (data ?? []).map(reservationFromRow);
+}
 
-  return (data ?? []).map((r) => {
+const RESERVATION_COLUMNS =
+  "id, contact_name, contact_email, contact_mobile, organization, activity_name, purpose, participants, during, status, created_at, request_group, layout, tables, equipment, food, facilities(name, slug), courts(name)";
+
+/**
+ * One room request with every room in it (2026-10-16), for the admin's
+ * details and edit page. `id` may be any of its rooms' rows.
+ */
+export async function getRoomRequest(id: string): Promise<AdminReservation[]> {
+  if (!hasSupabase() || !/^[0-9a-f-]{36}$/i.test(id)) return [];
+  const db = supabaseAdmin();
+  const { data: row } = await db.from("reservations").select("request_group").eq("id", id).eq("satellite_id", SATELLITE_ID).maybeSingle();
+  if (!row) return [];
+  const q = db.from("reservations").select(RESERVATION_COLUMNS).eq("satellite_id", SATELLITE_ID);
+  const { data, error } = await (row.request_group ? q.eq("request_group", row.request_group) : q.eq("id", id));
+  if (error) {
+    console.error("getRoomRequest failed", error);
+    return [];
+  }
+  return (data ?? []).map(reservationFromRow);
+}
+
+function reservationFromRow(r: Record<string, unknown>): AdminReservation {
+  {
     const [starts_at, ends_at] = parseRange(r.during as string);
     const facility = one(r.facilities as { name: string; slug: string } | { name: string; slug: string }[] | null);
     const court = one(r.courts as { name: string } | { name: string }[] | null);
@@ -1066,7 +1090,7 @@ export async function getReservations(): Promise<AdminReservation[]> {
       food: (r.food as string | null) ?? null,
       facility_slug: facility?.slug ?? null,
     };
-  });
+  }
 }
 
 /** Dgroup inquiries, newest first. Empty offline. */

@@ -80,11 +80,12 @@ test("timeline blocks are clamped to the center's hours", () => {
   assert.equal(Math.round(early.width), 10);
 });
 
-test("days shift and weeks run Monday to Sunday", () => {
+test("days shift and weeks run Sunday to Saturday", () => {
   assert.equal(shiftDay("2026-10-31", 1), "2026-11-01");
-  assert.deepEqual(weekOf("2026-10-07"), ["2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-10", "2026-10-11"]);
-  // Sunday belongs to the week that just ended.
-  assert.equal(weekOf("2026-10-04")[0], "2026-09-28");
+  assert.deepEqual(weekOf("2026-10-07"), ["2026-10-04", "2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-10"]);
+  // Sunday starts its own week.
+  assert.equal(weekOf("2026-10-04")[0], "2026-10-04");
+  assert.equal(weekOf("2026-10-10")[0], "2026-10-04");
   assert.equal(isDateKey("2026-10-05"), true);
   assert.equal(isDateKey("2026-13-45"), false);
   assert.equal(isDateKey("tomorrow"), false);
@@ -112,4 +113,11 @@ test("the boards show every event on a day: published, hidden and calendar-only"
   assert.equal(day[0].from, null);
   assert.ok(day[0].hidden && day[0].calendarOnly);
   assert.deepEqual(day[0].rooms, []);
+});
+
+test("the Main Hall is on the boards, for bookings and events", () => {
+  assert.equal(roomFor({ facility_slug: "main-worship-hall", facility_name: "Main Worship Hall" })?.name, "Main Hall");
+  const day = eventsOn([{ id: "m", title: "Family Camp", starts_at: "2026-11-07T00:00:00Z", ends_at: "2026-11-07T09:00:00Z", location_note: "Main Hall" }], "2026-11-07");
+  assert.deepEqual(day[0].rooms, ["main-worship-hall"]);
+  assert.equal(buildDayBoard("2026-10-05", [], []).rooms[0].name, "Main Hall");
 });

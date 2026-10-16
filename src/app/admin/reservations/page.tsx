@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import {
   AdminHeader,
   AdminNote,
@@ -56,7 +57,9 @@ export default async function AdminReservations() {
     <li key={r.id} className="flex flex-wrap items-start justify-between gap-4 px-5 py-4">
       <div className="min-w-0 flex-1 space-y-1">
         <p className="flex flex-wrap items-center gap-2">
-          <span className="text-[1.05rem] font-semibold text-ink">{r.activity_name ?? "Room request"}</span>
+          <Link href={`/admin/reservations/${r.id}`} className="text-[1.05rem] font-semibold text-ink underline-offset-4 hover:text-clay hover:underline">
+            {r.activity_name ?? "Room request"}
+          </Link>
           <Status value={r.status === "approved" && r.ends_at < now ? "completed" : r.status} />
         </p>
         <p className="text-[0.98rem] text-ink">
@@ -87,9 +90,17 @@ export default async function AdminReservations() {
         ) : null}
         {r.purpose ? <p className="max-w-2xl text-[0.88rem] italic text-ink-mute">&ldquo;{r.purpose}&rdquo;</p> : null}
       </div>
-      {readOnly ? null : transitions.length ? (
-        <QueueActions id={r.id} current={r.status} transitions={transitions} onSet={setReservationStatus} />
-      ) : null}
+      <div className="flex flex-wrap items-start gap-2">
+        <Link
+          href={`/admin/reservations/${r.id}`}
+          className="btn-press inline-flex min-h-10 items-center rounded-lg border border-edge px-3.5 text-[0.9rem] font-semibold text-ink hover:border-clay hover:text-clay"
+        >
+          {["pending", "approved"].includes(r.status) && r.ends_at >= now ? "See or change" : "See details"}
+        </Link>
+        {readOnly ? null : transitions.length ? (
+          <QueueActions id={r.id} current={r.status} transitions={transitions} onSet={setReservationStatus} />
+        ) : null}
+      </div>
     </li>
   );
 
@@ -101,7 +112,7 @@ export default async function AdminReservations() {
     <div className="space-y-8">
       <AdminHeader
         title="Room requests"
-        lead="Ministries ask for rooms here. Each request holds its rooms until you decide. Approve or decline it, and the person who asked gets an email either way."
+        lead="Ministries ask for rooms here. Each request holds its rooms until you decide. Approve or decline it, and the person who asked gets an email either way. Tap “See or change” to move a request to another room or time, or fix any detail."
       />
 
       {!hasSupabase() ? (

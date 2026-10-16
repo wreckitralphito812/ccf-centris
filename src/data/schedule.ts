@@ -58,7 +58,9 @@ export function buildServices(now: Date = new Date()): Service[] {
   const { y, m, d } = manilaParts(now);
   const anchor = Date.UTC(y, m, d);
 
-  for (let week = -8; week <= 8; week++) {
+  // Eight weeks back, and 27 ahead: the month calendar looks up to five
+  // months on, and Sunday Worship ran out after eight weeks (Adrian, 2026-10-16).
+  for (let week = -8; week <= 27; week++) {
     for (const slot of SLOTS) {
       const dayCursor = new Date(anchor + week * 7 * 86_400_000);
       const cursorDow = dayCursor.getUTCDay();

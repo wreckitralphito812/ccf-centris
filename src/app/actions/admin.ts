@@ -9,7 +9,8 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { hasSupabase, supabaseAdmin } from "@/lib/supabase/server";
+import { hasSupabase, SATELLITE_ID, supabaseAdmin } from "@/lib/supabase/server";
+import { describeChanges, EDIT_ROOMS, parseRoomEdit, type RoomRequestDetails } from "@/lib/room-edit";
 import { ADMIN_COOKIE, hashCode, isAdmin, isAdminConfigured } from "@/lib/admin-auth";
 
 export interface AdminActionResult {
@@ -250,4 +251,176 @@ export async function adminLogout(): Promise<void> {
   const jar = await cookies();
   jar.delete(ADMIN_COOKIE);
   redirect("/admin");
+}
+
+
+export interface RoomEditResult {
+  ok: boolean;
+  formError?: string;
+  /** What changed, so the page can say so; empty when nothing did. */
+  changes?: string[];
+  emailed?: boolean;
+  /** The row the page should show now: rooms taken out of a request take their rows with them. */
+  id?: string;
+}
+
+const H8 = 8 * 3_600_000;
+const manilaKey = (iso: string) => new Date(new Date(iso).getTime() + H8).toISOString().slice(0, 10);
+const manilaHHMM = (iso: string) => new Date(new Date(iso).getTime() + H8).toISOString().slice(11, 16);
+const rangeOf = (during: string): [string, string] | null => {
+  const m = /[[(]"?([^",]+)"?,\s*"?([^")]+)"?[)\]]/.exec(during);
+  return m ? [new Date(m[1]).toISOString(), new Date(m[2]).toISOString()] : null;
+};
+
+/**
+ * Change a room request, waiting or approved (Adrian, 2026-10-16): its rooms,
+ * day and time, and every detail the ministry gave. All its rooms change
+ * together. The rows are replaced in one insert, so a room that's taken then
+ * fails the whole change, and the request is put back exactly as it was. The
+ * requester is emailed what changed unless the admin unticks it.
+ */
+export async function adminUpdateRoomRequest(_prev: RoomEditResult | null, fd: FormData): Promise<RoomEditResult> {
+  const blocked = await guard();
+  if (blocked) return blocked;
+  const id = String(fd.get("id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return { ok: false, formError: "That request could not be found." };
+
+  const parsed = parseRoomEdit(fd);
+  if (!parsed.ok) return { ok: false, formError: parsed.error };
+  const next = parsed.value;
+
+  const db = supabaseAdmin();
+  const { data: anchor } = await db.from("reservations").select("request_group").eq("id", id).eq("satellite_id", SATELLITE_ID).maybeSingle();
+  if (!anchor) return { ok: false, formError: "That request could not be found." };
+  const group = anchor.request_group as string | null;
+  const sel = db.from("reservations").select("*, facilities(slug, name)").eq("satellite_id", SATELLITE_ID);
+  const { data: rows, error: readErr } = await (group ? sel.eq("request_group", group) : sel.eq("id", id)).order("created_at");
+  if (readErr || !rows?.length) return { ok: false, formError: "That request could not be found." };
+  const status = rows[0].status as string;
+  if (status !== "pending" && status !== "approved")
+    return { ok: false, formError: "Only requests that are waiting or approved can be changed." };
+
+  // The request as it was, in the edit form's terms.
+  const span = rangeOf(rows[0].during as string);
+  if (!span) return { ok: false, formError: "That request's time can't be read." };
+  const slugOf = (f: unknown) => ((Array.isArray(f) ? f[0] : f) as { slug?: string } | null)?.slug ?? "";
+  const before: RoomRequestDetails = {
+    rooms: rows.map((r) => slugOf(r.facilities)).filter(Boolean),
+    date: manilaKey(span[0]),
+    start: manilaHHMM(span[0]),
+    end: manilaHHMM(span[1]),
+    activity_name: (rows[0].activity_name as string | null) ?? "",
+    organization: (rows[0].organization as string | null) ?? "",
+    participants: rows[0].participants as number,
+    layout: (rows[0].layout as string | null) ?? "",
+    tables: (rows[0].tables as RoomRequestDetails["tables"]) ?? {},
+    equipment: (rows[0].equipment as Record<string, number> | null) ?? {},
+    food: (rows[0].food as string | null) ?? "",
+    purpose: (rows[0].purpose as string | null) ?? "",
+    contact_name: rows[0].contact_name as string,
+    contact_email: rows[0].contact_email as string,
+    contact_mobile: (rows[0].contact_mobile as string | null) ?? "",
+  };
+  const changes = describeChanges(before, next);
+  if (!changes.length) return { ok: true, changes: [] };
+
+  const { data: facilities } = await db.from("facilities").select("id, slug").eq("satellite_id", SATELLITE_ID).in("slug", next.rooms);
+  const facilityId = (slug: string) => facilities?.find((f) => f.slug === slug)?.id as string | undefined;
+  const missing = next.rooms.find((r) => !facilityId(r));
+  if (missing) return { ok: false, formError: `${EDIT_ROOMS.find((r) => r.slug === missing)?.name ?? missing} isn't set up for bookings yet.` };
+
+  const startsAt = new Date(`${next.date}T${next.start}:00+08:00`).toISOString();
+  const endsAt = new Date(`${next.date}T${next.end}:00+08:00`).toISOString();
+  const during = `[${startsAt},${endsAt})`;
+
+  // A room closed by the team (Close a room or table) can't be booked over.
+  const { data: closures } = await db
+    .from("facility_blackouts")
+    .select("reason, facilities(slug)")
+    .in("facility_id", next.rooms.map((r) => facilityId(r)!))
+    .is("court_id", null)
+    .overlaps("during", during);
+  if (closures?.length) {
+    const name = EDIT_ROOMS.find((r) => r.slug === slugOf(closures[0].facilities))?.name ?? "A room";
+    return { ok: false, formError: `${name} is closed then${closures[0].reason ? ` (${closures[0].reason})` : ""}. Reopen it on "Close a room or table" first, or pick another room or time.` };
+  }
+
+  const groupKey = group ?? (next.rooms.length > 1 ? (rows[0].id as string) : null);
+  const snapshot = rows.map((r) => {
+    const copy = { ...r };
+    delete (copy as Record<string, unknown>).facilities;
+    return copy;
+  });
+  const replacement = next.rooms.map((slug, i) => {
+    // A room added to the request gets its own row and id: one insert sends
+    // every row with the same columns, so a missing id would go in as null.
+    const base = { ...(snapshot[i] ?? snapshot[0]), ...(snapshot[i] ? {} : { id: crypto.randomUUID() }) } as Record<string, unknown>;
+    return {
+      ...base,
+      facility_id: facilityId(slug),
+      during,
+      request_group: groupKey,
+      activity_name: next.activity_name,
+      organization: next.organization || null,
+      participants: next.participants,
+      layout: next.layout || null,
+      tables: next.layout === "tables" ? next.tables : {},
+      equipment: next.equipment,
+      food: next.food || null,
+      purpose: next.purpose || null,
+      contact_name: next.contact_name,
+      contact_email: next.contact_email,
+      contact_mobile: next.contact_mobile || null,
+    };
+  });
+
+  const ids = snapshot.map((r) => r.id as string);
+  const { error: delErr } = await db.from("reservations").delete().in("id", ids);
+  if (delErr) {
+    console.error("adminUpdateRoomRequest delete failed", delErr);
+    return { ok: false, formError: "Couldn't save the change. Nothing was changed; try again." };
+  }
+  const { error: insErr } = await db.from("reservations").insert(replacement);
+  if (insErr) {
+    const { error: restoreErr } = await db.from("reservations").insert(snapshot);
+    if (restoreErr) console.error("adminUpdateRoomRequest restore FAILED", restoreErr, JSON.stringify(snapshot));
+    if (insErr.code === "23P01")
+      return { ok: false, formError: "One of those rooms is already booked at that time. Nothing was changed; pick another room or time." };
+    console.error("adminUpdateRoomRequest insert failed", insErr);
+    return { ok: false, formError: "Couldn't save the change. Nothing was changed; try again." };
+  }
+
+  let emailed = false;
+  if (fd.get("notify") === "1") {
+    const names = next.rooms.map((r) => EDIT_ROOMS.find((x) => x.slug === r)?.name ?? r);
+    const res = await sendEmail({
+      to: next.contact_email,
+      ...roomRequestEmail({
+        kind: "updated",
+        confirmed: status === "approved",
+        changes,
+        origin: siteOrigin(),
+        reference: referenceFor("reservation", groupKey ?? id),
+        requester: next.contact_name,
+        requesterEmail: next.contact_email,
+        mobile: next.contact_mobile || null,
+        activity: next.activity_name,
+        ministry: next.organization,
+        rooms: names,
+        when: `${fmtDayLong(startsAt)}, ${fmtTime(startsAt)} to ${fmtTime(endsAt)}`,
+        participants: next.participants,
+        setup: next.layout || null,
+        tables: next.tables,
+        equipment: next.equipment,
+        food: next.food || null,
+        notes: next.purpose || null,
+        span: { startsAt, endsAt },
+      }),
+    });
+    emailed = res.ok;
+  }
+
+  for (const p of ["/admin/reservations", "/admin/today", "/admin/week", "/admin/rooms", "/admin/bookings", "/admin", "/my/reservations", "/centris/reserve"]) revalidatePath(p);
+  revalidatePath(`/admin/reservations/${id}`);
+  return { ok: true, changes, emailed, id: snapshot[0].id as string };
 }
