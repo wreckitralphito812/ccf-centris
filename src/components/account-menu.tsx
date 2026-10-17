@@ -68,7 +68,7 @@ function AccountPlaceholder() {
       <div className="account-slot-out flex shrink-0 items-center gap-1">
         <span className="hidden whitespace-nowrap px-3 py-2 text-[0.95rem] font-medium sm:inline-flex lg:hidden xl:inline-flex">Sign in</span>
         <span className="inline-flex min-h-10 items-center px-3.5 text-[0.9rem] font-semibold whitespace-nowrap sm:px-4 sm:text-[0.92rem]">
-          Sign up
+          dude!
         </span>
       </div>
       <span className="account-slot-in h-10 w-10" />
@@ -105,7 +105,7 @@ export function AccountMenu() {
           href="/sign-up"
           className="btn-press inline-flex min-h-10 items-center rounded-lg bg-clay px-3.5 text-[0.9rem] font-semibold whitespace-nowrap text-paper-bright shadow-sm transition-colors hover:shadow-md hover:bg-clay-deep sm:px-4 sm:text-[0.92rem]"
         >
-          Sign up
+          dude!
         </Link>
       </div>
     );
@@ -243,7 +243,7 @@ export function MobileAccount() {
           href="/sign-up"
           className="btn-press flex min-h-12 items-center justify-center rounded-lg bg-clay text-[1rem] font-semibold text-paper-bright"
         >
-          Sign up
+          dude!
         </Link>
       </div>
     );
