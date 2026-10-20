@@ -20,6 +20,16 @@
  */
 import { normalizePhMobile } from "@/lib/phone";
 
+/**
+ * The switch for new rentals (Adrian, 2026-10-20: "Coming Real Soon!!!" until
+ * the team is ready). While false, the Reserve card shows the banner instead
+ * of a button, /reserve/courts shows it instead of the form, and the server
+ * refuses new bookings. Moving a rental already booked, and the admin pages,
+ * keep working. Set to true to open rentals.
+ */
+export const COURTS_OPEN = false;
+export const COURTS_SOON = "Coming Real Soon!!!";
+
 export type Sport = "pickleball" | "badminton" | "volleyball" | "basketball";
 
 export interface SportInfo {

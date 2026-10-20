@@ -7,6 +7,7 @@ import type { UiIconName } from "@/components/icons";
 import { currentUser, hasAccounts } from "@/lib/auth/session";
 import { whenLabel } from "@/lib/booking-status";
 import { MAX_GROUP_SIZE } from "@/lib/dgroup-tables";
+import { COURTS_OPEN, COURTS_SOON } from "@/lib/court-rentals";
 import { manilaDateKey } from "@/lib/format";
 import { getMyUpcoming } from "@/lib/queries";
 
@@ -31,6 +32,8 @@ const OPTIONS: {
   href: string;
   cta: string;
   facts: [UiIconName, string][];
+  /** Shown instead of the button while it can't be booked yet. */
+  soon?: string;
 }[] = [
   {
     title: "Dgroup table",
@@ -65,6 +68,7 @@ const OPTIONS: {
       ["people", "1 to 3 hours, for registered Dgroups"],
       ["check", "Confirmed once you've paid"],
     ],
+    soon: COURTS_OPEN ? undefined : COURTS_SOON,
   },
 ];
 
@@ -114,9 +118,15 @@ export default async function ReservePage() {
                   ))}
                 </div>
                 <div className="mt-auto pt-6 lg:pt-8">
-                  <ButtonLink href={o.href} size="lg" className="w-full sm:w-auto">
-                    {o.cta}
-                  </ButtonLink>
+                  {o.soon ? (
+                    <p className="flex min-h-12 items-center justify-center rounded-lg bg-sky-wash px-5 text-center text-[1.05rem] font-bold text-sky">
+                      {o.soon}
+                    </p>
+                  ) : (
+                    <ButtonLink href={o.href} size="lg" className="w-full sm:w-auto">
+                      {o.cta}
+                    </ButtonLink>
+                  )}
                 </div>
               </li>
             ))}

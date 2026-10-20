@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Section } from "@/components/ui";
 import { IconLine } from "@/components/booking";
-import { MAX_HOURS, peso, rentalDays, SPORTS } from "@/lib/court-rentals";
+import { COURTS_OPEN, COURTS_SOON, MAX_HOURS, peso, rentalDays, SPORTS } from "@/lib/court-rentals";
 import { manilaDateKey } from "@/lib/format";
 import { currentUser, hasAccounts } from "@/lib/auth/session";
 import { getCourtHolds, getMyContact, getMyCourtRentals, getMyDgroups } from "@/lib/queries";
@@ -57,6 +57,14 @@ async function Booking() {
   // Always render per visitor: this section shows members their own data.
   await connection();
   const today = manilaDateKey();
+
+  if (!COURTS_OPEN) {
+    return (
+      <Notice label={COURTS_SOON}>
+        <p>Court rentals aren&apos;t open yet. Check back here soon.</p>
+      </Notice>
+    );
+  }
 
   if (!hasAccounts()) {
     return (

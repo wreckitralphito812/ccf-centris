@@ -5,7 +5,7 @@ import { manilaMinutes, nightOptions, rebookDate } from "@/lib/dgroup-tables";
 import { manilaDateKey } from "@/lib/format";
 import { mergeUpcoming, type Upcoming } from "@/lib/my-bookings";
 import { getCourtHolds, getMyBookings, getMyCourtRentals, getMyDgroupBookings } from "@/lib/queries";
-import { manilaHour, rentalDays } from "@/lib/court-rentals";
+import { COURTS_OPEN, manilaHour, rentalDays } from "@/lib/court-rentals";
 import { CourtRentals } from "./court-rentals";
 import { referenceFor } from "@/lib/reference";
 import { LaterRow, NextUp, PastRow } from "./parts";
@@ -59,9 +59,11 @@ export default async function MyReservationsPage() {
                 <ButtonLink href="/centris/reserve" size="lg" tone="outline">
                   Request a room
                 </ButtonLink>
-                <ButtonLink href="/reserve/courts" size="lg" tone="outline">
-                  Rent a court
-                </ButtonLink>
+                {COURTS_OPEN ? (
+                  <ButtonLink href="/reserve/courts" size="lg" tone="outline">
+                    Rent a court
+                  </ButtonLink>
+                ) : null}
               </div>
             </div>
           )}
