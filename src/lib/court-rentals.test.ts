@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  COURT_POLICIES,
   courtsLabel,
   freeCourts,
   moveError,
@@ -33,8 +34,7 @@ const good = {
   renter_name: "Ana Reyes",
   contact_mobile: "09171234567",
   renter_email: "Ana@Example.com",
-  policy_payment: "on",
-  "policy_no-cancel": "on",
+  ...Object.fromEntries(COURT_POLICIES.map((p) => [`policy_${p.id}`, "on"])),
 };
 
 test("prices: ₱450 a court an hour for pickleball and badminton, ₱1,800 an hour for the whole floor", () => {
@@ -109,6 +109,7 @@ test("bookings outside the schedule, too long, for today, or without the rules t
   assert.ok(bad({ start: "21" }).start, "9 PM + 2 hours runs past 10 PM");
   assert.ok(bad({ courts: "4" }).courts);
   assert.ok(bad({ policy_payment: "" }).policies);
+  assert.ok(bad({ policy_floor: "" }).policies, "every rule, not just the first two");
   // Volleyball and basketball are always one court, whatever the form says.
   const v = parseCourtBooking(form({ ...good, date: "2026-10-27", sport: "volleyball", start: "7", courts: "3" }), TUE);
   assert.equal(v.ok && v.value.courts, 1);

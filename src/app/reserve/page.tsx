@@ -56,7 +56,7 @@ const OPTIONS: {
   },
   // Rentals opened 2026-10-20 (Adrian); the hours and prices are in lib/court-rentals.
   {
-    title: "Gym court",
+    title: "The court",
     badge: "Sun, Tue–Fri",
     href: "/reserve/courts",
     cta: "Rent a court",
