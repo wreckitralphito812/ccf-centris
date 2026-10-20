@@ -54,14 +54,18 @@ export default async function EventsPage({
   // A category gets its own band only with two or more events: a band holding
   // one poster reads as empty, and a lone event already shows in Coming up.
   // The fixed categories (EVENT_CATEGORIES) always keep their band, empty or
-  // not, so people know where big announcements will appear.
-  const fixed = new Set<string>(EVENT_CATEGORIES.map((c) => c.name));
+  // not, so people know where big announcements will appear. They lead, in
+  // their listed order, so Sports sits under Trainings and classes (Adrian,
+  // 2026-10-20).
+  const order = EVENT_CATEGORIES.map((c) => c.name as string);
+  const fixed = new Set<string>(order);
+  const rank = (name: string) => (fixed.has(name) ? order.indexOf(name) : order.length);
   const rows = categories
     .map((c) => ({ name: c, list: events.filter((e) => e.category === c) }))
     .filter((r) => fixed.has(r.name) || r.list.length > 1)
     .sort(
       (a, b) =>
-        Number(fixed.has(b.name)) - Number(fixed.has(a.name)) ||
+        rank(a.name) - rank(b.name) ||
         (a.list[0]?.starts_at ?? "").localeCompare(b.list[0]?.starts_at ?? ""),
     );
 

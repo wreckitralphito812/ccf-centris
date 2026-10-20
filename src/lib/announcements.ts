@@ -18,8 +18,8 @@ export type Artwork = Partial<Record<PlacementKey, string>>;
 
 export const placement = (key: string) => PLACEMENTS.find((p) => p.key === key) ?? null;
 
-/** Adrian's two sections (2026-10-06). */
-export const ANNOUNCEMENT_CATEGORIES = ["Events", "Trainings and classes"] as const;
+/** Adrian's two sections (2026-10-06), and Sports (2026-10-20). */
+export const ANNOUNCEMENT_CATEGORIES = ["Events", "Trainings and classes", "Sports"] as const;
 
 export const VENUES = [
   "CCF Centris",

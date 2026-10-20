@@ -175,7 +175,7 @@ export default function AnnounceGuidePage() {
               {[
                 ["Title", "Up to 80 characters, e.g. Family Camp Lite."],
                 ["Ministry", "Who it's from, e.g. Elevate or The Neighborhood."],
-                ["Category", "Events, or Trainings and classes."],
+                ["Category", "Events, Trainings and classes, or Sports."],
                 ["In one sentence", `What it is and who it's for, up to ${SUMMARY_MAX} characters.`],
                 ["When", "Every date. Add the start time (the end time is optional), or tick all day. Add another date for a series."],
                 ["More details", "Optional: a few lines for the event page."],
