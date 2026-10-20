@@ -6,6 +6,7 @@ import type { AdminActionResult } from "@/app/actions/admin";
 import { isAdmin, isAdminConfigured } from "@/lib/admin-auth";
 import { currentUser } from "@/lib/auth/session";
 import {
+  COURTS_OPEN,
   courtsLabel,
   dayLabel,
   freeThrough,
@@ -96,7 +97,7 @@ const isTaken = (e: { code?: string }) => e.code === "23505";
  * to check the payment. A screenshot whose booking fails is removed again.
  */
 export async function reserveCourt(_prev: CourtBookingResult | null, formData: FormData): Promise<CourtBookingResult> {
-  if (!hasSupabase()) return { ok: false, formError: "Court rentals aren't switched on yet." };
+  if (!hasSupabase() || !COURTS_OPEN) return { ok: false, formError: "Court rentals aren't open yet." };
   const user = await currentUser();
   if (!user) return { ok: false, needsAuth: true, formError: "Sign in to book a court." };
 
