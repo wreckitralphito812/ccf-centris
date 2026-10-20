@@ -73,8 +73,42 @@ export const MAX_HOURS = 3;
 /** New rentals open this many days ahead, and not for today. */
 export const DAYS_AHEAD = 7;
 
-/** What the renter accepts with one tick. */
+/**
+ * What the renter accepts with one tick. The first six are Adrian's rules for
+ * the Sports Facility (2026-10-20), shortened; the last two are how paying
+ * and moving work.
+ */
 export const COURT_POLICIES = [
+  {
+    id: "purpose",
+    title: "Honor God",
+    body: "The Gym is for Christ-centered fellowship, discipleship, stewardship, unity and service. CCF may stop any activity that is unsafe or goes against CCF's Statement of Faith, values and practices.",
+  },
+  {
+    id: "reschedule",
+    title: "Changes by CCF",
+    body: "CCF may move or reschedule your rental if something unforeseen comes up.",
+  },
+  {
+    id: "who",
+    title: "Who can book",
+    body: "Only COS, Ministry Heads, D12 and Dgroup leaders can rent the courts, so someone is accountable for the space.",
+  },
+  {
+    id: "stay",
+    title: "Stay in the Gym",
+    body: "During your time, stay in the Gym and its restrooms. Please don't wander into other rooms.",
+  },
+  {
+    id: "floor",
+    title: "Protect the floor",
+    body: "No chairs, tables or anything else that can damage the wooden court.",
+  },
+  {
+    id: "attire",
+    title: "Dress for the court",
+    body: "Wear proper, decent gym clothes and rubber shoes.",
+  },
   {
     id: "payment",
     title: "Pay first",
