@@ -75,7 +75,7 @@ test("a room the list doesn't know still gets a row", () => {
 
 test("timeline blocks are clamped to the center's hours", () => {
   assert.deepEqual(blockPosition(DAY_START, DAY_END), { left: 0, width: 100 });
-  const early = blockPosition(7 * 60, DAY_START + 75);
+  const early = blockPosition(6 * 60, DAY_START + 90);
   assert.equal(early.left, 0);
   assert.equal(Math.round(early.width), 10);
 });
@@ -120,4 +120,12 @@ test("the Main Hall is on the boards, for bookings and events", () => {
   const day = eventsOn([{ id: "m", title: "Family Camp", starts_at: "2026-11-07T00:00:00Z", ends_at: "2026-11-07T09:00:00Z", location_note: "Main Hall" }], "2026-11-07");
   assert.deepEqual(day[0].rooms, ["main-worship-hall"]);
   assert.equal(buildDayBoard("2026-10-05", [], []).rooms[0].name, "Main Hall");
+});
+
+test("the Gym is on the boards, for bookings, blocks and events", () => {
+  assert.equal(roomFor({ facility_slug: "sports-hall", facility_name: "Sports Hall" })?.name, "Gym");
+  assert.equal(roomFor({ facility_name: "Sports Hall" })?.name, "Gym");
+  const day = eventsOn([{ id: "g", title: "Sports Fest", starts_at: "2026-11-07T00:00:00Z", ends_at: "2026-11-07T09:00:00Z", location_note: "Gym, Main Hall" }], "2026-11-07");
+  assert.deepEqual(day[0].rooms, ["sports-hall", "main-worship-hall"]);
+  assert.ok(buildDayBoard("2026-10-05", [], []).rooms.some((r) => r.name === "Gym"));
 });

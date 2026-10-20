@@ -39,11 +39,14 @@ export interface DayRoomBooking {
 /**
  * Every room on the admin boards: the ministry rooms, and the Main Hall
  * (Adrian, 2026-10-16), which ministries don't request but the team books
- * and blocks for services and big events.
+ * and blocks for services and big events. The Gym joined on the same terms
+ * (Adrian, 2026-10-20): it's the room the database calls the Sports Hall.
+ * It goes last, so the first ministry room stays the boards' default.
  */
 export const BOARD_ROOMS: { slug: string; name: string; dgroupRoom: boolean }[] = [
   { slug: "main-worship-hall", name: "Main Hall", dgroupRoom: false },
   ...MINISTRY_ROOMS.map((r) => ({ slug: r.slug, name: r.name, dgroupRoom: r.dgroupRoom })),
+  { slug: "sports-hall", name: "Gym", dgroupRoom: false },
 ];
 
 /**
@@ -54,7 +57,11 @@ export const BOARD_ROOMS: { slug: string; name: string; dgroupRoom: boolean }[] 
 export function roomFor(r: { facility_slug?: string | null; facility_name?: string | null }) {
   return (
     BOARD_ROOMS.find((m) => (r.facility_slug ? m.slug === r.facility_slug : m.name === r.facility_name)) ??
-    (r.facility_name === "Main Worship Hall" ? BOARD_ROOMS[0] : null)
+    (r.facility_name === "Main Worship Hall"
+      ? BOARD_ROOMS[0]
+      : r.facility_name === "Sports Hall"
+        ? BOARD_ROOMS[BOARD_ROOMS.length - 1]
+        : null)
   );
 }
 
@@ -118,9 +125,13 @@ export function eventsOn(events: BoardEvent[], date: string): DayEvent[] {
   }
   return out.sort((a, b) => (a.from ?? -1) - (b.from ?? -1));
 }
-/** The room timeline runs from the center's first slot to its last. */
-export const DAY_START = 9 * 60;
-export const DAY_END = 21 * 60 + 30;
+/**
+ * The room timeline runs from the center's first slot to its last. It starts
+ * at 7:00 AM and ends at 10:00 PM since the Gym joined (2026-10-20): sports
+ * run 7 AM to 10 PM, wider than the rooms' 9:00 AM to 9:30 PM.
+ */
+export const DAY_START = 7 * 60;
+export const DAY_END = 22 * 60;
 
 const H8 = 8 * 3_600_000;
 /** Manila "YYYY-MM-DD" of an instant. */

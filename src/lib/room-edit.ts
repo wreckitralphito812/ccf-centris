@@ -24,7 +24,7 @@ import {
   type TableCounts,
 } from "@/lib/ministry-rooms";
 
-/** The rooms an admin can put a request in: the Main Hall and the ministry rooms. */
+/** The rooms an admin can put a request in: the Main Hall, the ministry rooms and the Gym. */
 export const EDIT_ROOMS = BOARD_ROOMS;
 
 /** Times an admin can pick: every half hour, 6:00 AM to 10:00 PM. */
