@@ -30,6 +30,7 @@ export const VENUES = [
   "Luke (MPH 2)",
   "Matthew (MPH 3)",
   "Mark (MPH 4)",
+  "Gym",
   "Online",
 ] as const;
 
@@ -55,7 +56,9 @@ export function venueRooms(venue: string | null | undefined): string[] {
 export function venueLabel(venue: string | null | undefined): string {
   const rooms = venueRooms(venue);
   if (!rooms.length) return venue || "CCF Centris";
-  if (CENTRIS_ROOMS.every((r) => rooms.includes(r))) return "CCF Centris";
+  // Every room still reads "CCF Centris" without the Gym, which joined later
+  // (2026-10-20), so events already saved with all the rooms read as before.
+  if (CENTRIS_ROOMS.every((r) => r === "Gym" || rooms.includes(r))) return "CCF Centris";
   const halls = HALLS.filter((h) => rooms.includes(h.venue));
   const parts: string[] = [];
   for (const r of CENTRIS_ROOMS) {

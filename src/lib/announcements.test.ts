@@ -170,6 +170,8 @@ test("venues read short: CCF Centris for every room, halls grouped (Ralph, 2026-
   assert.equal(venueLabel("Main Hall, John (MPH 1), Luke (MPH 2)"), "Main Hall, John & Luke (MPH 1–2)");
   assert.equal(venueLabel("Mark (MPH 4)"), "Mark (MPH 4)");
   assert.equal(venueLabel("Main Hall"), "Main Hall");
+  assert.equal(venueLabel("Gym"), "Gym");
+  assert.equal(venueLabel("Main Hall, Gym"), "Main Hall & Gym");
   assert.equal(venueLabel("Fort Bonifacio"), "Fort Bonifacio");
   assert.equal(venueLabel(null), "CCF Centris");
 });
