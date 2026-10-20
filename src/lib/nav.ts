@@ -80,6 +80,7 @@ export const ADMIN_NAV: { section: string; items: (NavItem & { count?: AdminCoun
     section: "Bookings",
     items: [
       { label: "Dgroup tables", href: "/admin/dgroup-tables" },
+      { label: "Court rentals", href: "/admin/courts" },
       { label: "Find a booking", href: "/admin/bookings" },
       { label: "Close a room or table", href: "/admin/blocks" },
     ],

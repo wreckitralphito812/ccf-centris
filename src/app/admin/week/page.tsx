@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { WeekGrid } from "./grid";
-import { getAdminEvents, getDgroupTableBookings, getReservations, getRoomBlocks } from "@/lib/queries";
+import { getAdminEvents, getCourtRentals, getDgroupTableBookings, getReservations, getRoomBlocks } from "@/lib/queries";
+import { rentalsAsGymBookings } from "@/lib/court-rentals";
 import { requireAdmin } from "@/lib/admin-auth";
 import { hasSupabase } from "@/lib/supabase/server";
 import { manilaDateKey } from "@/lib/format";
@@ -23,11 +24,14 @@ export default async function AdminWeek({ searchParams }: PageProps<"/admin/week
   const days = weekOf(isDateKey(sp.d) ? sp.d : today);
   const from = new Date(`${days[0]}T00:00:00+08:00`);
   const to = new Date(from.getTime() + 7 * 86_400_000);
-  const [tables, rooms, blocks, events] = await Promise.all([
+  const [tables, requests, blocks, events, rentals] = await Promise.all([
     getDgroupTableBookings(),
     getReservations(),
     getRoomBlocks(from.toISOString(), to.toISOString()),
     getAdminEvents(),
+    getCourtRentals(),
   ]);
+  // Gym court rentals show in the Gym's row with the room requests (2026-10-20).
+  const rooms = [...requests, ...rentalsAsGymBookings(rentals.filter((r) => days.includes(r.booked_on)))];
   return <WeekGrid days={days} today={today} tables={tables} rooms={rooms} blocks={blocks} events={events} connected={hasSupabase()} />;
 }

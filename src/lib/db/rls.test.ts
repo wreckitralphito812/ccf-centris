@@ -432,3 +432,57 @@ test("registered Dgroups, with their leaders' contact details, aren't readable w
   // The server, as the database owner (like the service role), still reads them.
   assert.equal((await db.query("select 1 from dgroups where name = 'Ana''s Dgroup'")).rows.length, 1);
 });
+
+// --- Gym court rentals (0020) -------------------------------------------------
+
+const rent = (user: string, start: number, courts: number, hours = 1, capacity = 3, day = "2026-10-22") => `
+  select book_court_rental('${SAT}', '${user}', null, 'pickleball', '${day}', ${start}, ${hours}, ${courts},
+    ${capacity}, ${450 * courts * hours}, '${user}/proof.jpg', 'Renter', '0917 123 4567', 'r@example.com') as id`;
+
+const rentalCourts = async (id: string) =>
+  (await db.query<{ court_numbers: number[] }>("select court_numbers from court_rentals where id = $1", [id])).rows[0]
+    .court_numbers;
+
+test("a rental takes the lowest free courts for every hour, and nobody gets a fourth court", async () => {
+  const a = (await db.query<{ id: string }>(rent(ANA, 18, 2, 2))).rows[0].id;
+  assert.deepEqual(await rentalCourts(a), [1, 2]);
+  const { rows } = await db.query<{ n: number }>("select count(*)::int as n from court_rental_holds where rental_id = $1", [a]);
+  assert.equal(rows[0].n, 4, "2 courts × 2 hours");
+  // One court left at 7 PM: Ben gets court 3, then two courts are refused whole.
+  const b = (await db.query<{ id: string }>(rent(BEN, 19, 1))).rows[0].id;
+  assert.deepEqual(await rentalCourts(b), [3]);
+  await assert.rejects(db.query(rent(DAN, 19, 1)), /courts taken/);
+  const left = await db.query<{ n: number }>("select count(*)::int as n from court_rentals where user_id = $1", [DAN]);
+  assert.equal(left.rows[0].n, 0);
+});
+
+test("moving a rental keeps its courts when they're free, and a failed move changes nothing", async () => {
+  const id = (await db.query<{ id: string }>(rent(CAL, 9, 1, 2))).rows[0].id;
+  // An hour later overlaps its own 10 AM hold: that counts as free.
+  await db.query(`select move_court_rental('${id}', '${CAL}', '2026-10-22', 10, 3)`);
+  const [moved] = (await db.query<{ start_hour: number }>("select start_hour from court_rentals where id = $1", [id])).rows;
+  assert.equal(moved.start_hour, 10);
+  assert.deepEqual(await rentalCourts(id), [1]);
+  // 6 to 8 PM is full (Ana has courts 1–2, Ben court 3 at 7): refused, still at 10.
+  await assert.rejects(db.query(`select move_court_rental('${id}', '${CAL}', '2026-10-22', 18, 3)`), /courts taken/);
+  const [kept] = (await db.query<{ start_hour: number }>("select start_hour from court_rentals where id = $1", [id])).rows;
+  assert.equal(kept.start_hour, 10);
+  // Only the renter can move it.
+  await assert.rejects(db.query(`select move_court_rental('${id}', '${BEN}', '2026-10-22', 12, 3)`), /not found/);
+});
+
+test("staff cancelling a rental frees its courts at once", async () => {
+  const id = (await db.query<{ id: string }>(rent(DAN, 20, 3, 1))).rows[0].id;
+  await assert.rejects(db.query(rent(BEN, 20, 1)), /courts taken/);
+  assert.equal((await db.query<{ ok: boolean }>(`select cancel_court_rental('${id}') as ok`)).rows[0].ok, true);
+  await db.query(rent(BEN, 20, 1));
+  assert.equal((await db.query<{ ok: boolean }>(`select cancel_court_rental('${id}') as ok`)).rows[0].ok, false, "only once");
+});
+
+test("court rentals, with renters' payment screenshots, are server-only", async () => {
+  for (const who of [null, ANA]) {
+    await assert.rejects(as(who, "select * from court_rentals"), /permission denied/);
+    await assert.rejects(as(who, "select * from court_rental_holds"), /permission denied/);
+    await assert.rejects(as(who, rent(ANA, 7, 1)), /permission denied/);
+  }
+});

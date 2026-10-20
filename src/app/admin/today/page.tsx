@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { TodayBoard } from "./board";
-import { getAdminEvents, getDgroupTableBookings, getReservations, getRoomBlocks, getTableBlocks } from "@/lib/queries";
+import { getAdminEvents, getCourtRentals, getDgroupTableBookings, getReservations, getRoomBlocks, getTableBlocks } from "@/lib/queries";
+import { rentalsAsGymBookings } from "@/lib/court-rentals";
 import { hasSupabase } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { manilaDateKey } from "@/lib/format";
@@ -21,13 +22,16 @@ export default async function AdminToday({ searchParams }: PageProps<"/admin/tod
   const today = manilaDateKey();
   const date = isDateKey(sp.d) ? sp.d : today;
   const dayStart = new Date(`${date}T00:00:00+08:00`);
-  const [tables, rooms, tableBlocks, roomBlocks, events] = await Promise.all([
+  const [tables, requests, tableBlocks, roomBlocks, events, rentals] = await Promise.all([
     getDgroupTableBookings(),
     getReservations(),
     getTableBlocks({ dates: [date] }),
     getRoomBlocks(dayStart.toISOString(), new Date(dayStart.getTime() + 86_400_000).toISOString()),
     getAdminEvents(),
+    getCourtRentals(),
   ]);
+  // Gym court rentals sit on the Gym's timeline with the room requests (2026-10-20).
+  const rooms = [...requests, ...rentalsAsGymBookings(rentals.filter((r) => r.booked_on === date))];
   return (
     <TodayBoard
       date={date}

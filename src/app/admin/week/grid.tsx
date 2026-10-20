@@ -154,7 +154,7 @@ export function WeekGrid({
                       .map((e) => ({ key: e.key, from: e.from ?? -1, to: e.to, title: e.title, tone: "event", when: eventTime(e), href: `/admin/events/${e.id}` })),
                     ...live
                       .filter((r) => roomLabel(r) === room.name && manilaDay(r.starts_at) === d)
-                      .map((r) => ({ key: r.id, from: manilaMinutesOf(r.starts_at), to: manilaMinutesOf(r.ends_at), title: r.activity_name ?? "Booking", tone: r.status, when: null, href: `/admin/reservations/${r.id}` })),
+                      .map((r) => ({ key: r.id, from: manilaMinutesOf(r.starts_at), to: manilaMinutesOf(r.ends_at), title: r.activity_name ?? "Booking", tone: r.status, when: null, href: r.href ?? `/admin/reservations/${r.id}` })),
                     ...blocks
                       .filter((b) => roomLabel(b) === room.name && manilaDay(b.starts_at) === d)
                       .map((b) => ({ key: b.id, from: manilaMinutesOf(b.starts_at), to: manilaMinutesOf(b.ends_at), title: b.reason ?? "Blocked", tone: "blocked", when: null, href: "/admin/blocks" })),

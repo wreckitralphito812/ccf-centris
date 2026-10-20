@@ -102,6 +102,25 @@ export async function prepareScreenFile(file: File): Promise<{ file: File; w: nu
   }
 }
 
+/**
+ * A payment screenshot for a court rental (2026-10-20), re-saved as a JPG
+ * small enough to send with the booking form: a server action takes up to
+ * 1 MB, and phone screenshots run larger. Readable at every step down.
+ */
+export async function prepareReceipt(file: File): Promise<File> {
+  if (looksPdf(file)) throw new Error("PDFs can't be used. Take a screenshot of the payment and upload that.");
+  const bmp = await decode(file);
+  try {
+    for (const [side, quality] of [[1600, 0.82], [1200, 0.72], [900, 0.65]] as const) {
+      const out = await toJpeg(bmp, file.name || "payment", side, quality);
+      if (out.size <= 850 * 1024) return out;
+    }
+  } finally {
+    bmp.close();
+  }
+  throw new Error("That picture is too big. Take a screenshot of the payment and upload that.");
+}
+
 export async function uploadImage(file: File, prefix: string): Promise<string> {
   const safe = file.name.replace(/[^a-zA-Z0-9.]+/g, "-").slice(-60);
   try {
