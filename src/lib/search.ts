@@ -87,6 +87,12 @@ export const PAGES: SearchablePage[] = [
     keywords: "book booking reserve reservation table lounge dgroup meet weekday",
   },
   {
+    title: "Rent a court in the Gym",
+    href: "/reserve/courts",
+    excerpt: "Rent a court for pickleball, badminton, volleyball or basketball. For registered Dgroups.",
+    keywords: "book booking reserve rent rental court gym sports pickleball badminton volleyball basketball",
+  },
+  {
     title: "Request a room",
     href: "/centris/reserve",
     excerpt: "Request a ministry room for a meeting, training or event.",

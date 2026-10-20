@@ -13,7 +13,7 @@ import { getMyUpcoming } from "@/lib/queries";
 export const metadata: Metadata = {
   title: "Reserve",
   description:
-    "Book a table for your Dgroup or request a room for a ministry gathering at CCF Centris.",
+    "Book a table for your Dgroup, rent a court in the Gym, or request a room for a ministry gathering at CCF Centris.",
 };
 
 /** Signed-in members see their next booking, so render per visitor. */
@@ -54,6 +54,18 @@ const OPTIONS: {
       ["check", "The facilities team confirms"],
     ],
   },
+  // Rentals opened 2026-10-20 (Adrian); the hours and prices are in lib/court-rentals.
+  {
+    title: "Gym court",
+    badge: "Sun, Tue–Fri",
+    href: "/reserve/courts",
+    cta: "Rent a court",
+    facts: [
+      ["clock", "Pickleball, badminton, volleyball, basketball"],
+      ["people", "1 to 3 hours, for registered Dgroups"],
+      ["check", "Confirmed once you've paid"],
+    ],
+  },
 ];
 
 export default async function ReservePage() {
@@ -66,7 +78,7 @@ export default async function ReservePage() {
       <PageHeader
         eyebrow="Reserve"
         title="What would you like to book?"
-        lead="Use a space at CCF Centris for your Dgroup or your ministry."
+        lead="Use a space at CCF Centris for your Dgroup, your ministry or a game."
       />
       <Section tone="mist">
         <Container className="max-w-5xl">
@@ -108,15 +120,6 @@ export default async function ReservePage() {
                 </div>
               </li>
             ))}
-            <li className="flex flex-col rounded-2xl border border-hairline bg-paper-deep p-6 lg:p-8">
-              <span>
-                <StatusBadge tone="grey">Coming soon</StatusBadge>
-              </span>
-              <h2 className="mt-4 text-[1.4rem] font-semibold tracking-[-0.01em] text-ink-mute">The court</h2>
-              <p className="mt-4 text-[1rem] leading-relaxed text-ink-mute">
-                Basketball and pickleball court bookings are coming soon.
-              </p>
-            </li>
           </ul>
 
           <p className="mt-10 text-center text-[1rem] text-ink-soft">

@@ -11,6 +11,8 @@ import type { DgroupHold } from "@/lib/dgroup-tables";
 import { mergeUpcoming, type Upcoming } from "@/lib/my-bookings";
 import { buildSiteStats, type SiteStats, type StatsInput } from "@/lib/site-stats";
 import { blocksAsHolds, type TableBlock } from "@/lib/dgroup-blocks";
+import type { CourtHold } from "@/lib/court-rentals";
+import { gymClosures } from "@/lib/court-closures";
 import { fmtDayLong, manilaDateKey } from "@/lib/format";
 import type { TableCounts } from "@/lib/ministry-rooms";
 import { allText, KIND_ORDER, matchScore, PAGES, queryTerms, type SearchHit } from "@/lib/search";
@@ -1586,4 +1588,137 @@ export async function getAdminPrayerWall(): Promise<AdminPrayerPost[]> {
       .map((r) => ({ ...r, reports: count("reply_id", r.id) }))
       .sort((a, b) => a.created_at.localeCompare(b.created_at)),
   }));
+}
+
+// --- Gym court rentals (2026-10-20) -------------------------------------------
+
+const RENTAL_COLUMNS =
+  "id, user_id, sport, booked_on, start_hour, hours, courts, court_numbers, amount_php, payment_proof, renter_name, contact_mobile, renter_email, status, created_at, changed_at, cancelled_at, dgroups(name)";
+
+export interface CourtRental {
+  id: string;
+  sport: string;
+  booked_on: string;
+  start_hour: number;
+  hours: number;
+  courts: number;
+  court_numbers: number[];
+  amount_php: number;
+  payment_proof: string;
+  renter_name: string;
+  contact_mobile: string;
+  renter_email: string;
+  dgroup_name: string | null;
+  status: string;
+  created_at: string;
+  changed_at: string | null;
+  cancelled_at: string | null;
+}
+
+function rentalFromRow(r: Record<string, unknown>): CourtRental {
+  return {
+    id: r.id as string,
+    sport: r.sport as string,
+    booked_on: r.booked_on as string,
+    start_hour: r.start_hour as number,
+    hours: r.hours as number,
+    courts: r.courts as number,
+    court_numbers: (r.court_numbers as number[] | null) ?? [],
+    amount_php: r.amount_php as number,
+    payment_proof: r.payment_proof as string,
+    renter_name: r.renter_name as string,
+    contact_mobile: r.contact_mobile as string,
+    renter_email: r.renter_email as string,
+    dgroup_name: embeddedName(r.dgroups),
+    status: r.status as string,
+    created_at: r.created_at as string,
+    changed_at: (r.changed_at as string | null) ?? null,
+    cancelled_at: (r.cancelled_at as string | null) ?? null,
+  };
+}
+
+/**
+ * Every court held on the given days, for the booking form: rentals' courts,
+ * and the whole Gym where a room block or an event closes it. No names. Null
+ * when it can't be read; the form then books without showing what's left,
+ * and the database still refuses a taken court.
+ */
+export async function getCourtHolds(dates: string[]): Promise<CourtHold[] | null> {
+  if (!hasSupabase() || !dates.length) return [];
+  const sorted = [...dates].sort();
+  const from = new Date(`${sorted[0]}T00:00:00+08:00`);
+  const to = new Date(new Date(`${sorted[sorted.length - 1]}T00:00:00+08:00`).getTime() + 86_400_000);
+  const [{ data, error }, blocks, events] = await Promise.all([
+    supabaseAdmin()
+      .from("court_rental_holds")
+      .select("rental_id, booked_on, hour, court_no")
+      .eq("satellite_id", SATELLITE_ID)
+      .in("booked_on", dates),
+    getRoomBlocks(from.toISOString(), to.toISOString()),
+    getAdminEvents(),
+  ]);
+  if (error) {
+    console.error("getCourtHolds failed", error);
+    return null;
+  }
+  return [
+    ...(data ?? []).map((h) => ({
+      date: h.booked_on as string,
+      hour: h.hour as number,
+      court: h.court_no as number,
+      rental: h.rental_id as string,
+    })),
+    ...gymClosures(blocks, events, dates),
+  ];
+}
+
+/** The signed-in member's confirmed rentals from `today` on, soonest first. */
+export async function getMyCourtRentals(today: string): Promise<CourtRental[]> {
+  if (!hasSupabase()) return [];
+  const user = await currentUser();
+  if (!user) return [];
+  const { data, error } = await supabaseAdmin()
+    .from("court_rentals")
+    .select(RENTAL_COLUMNS)
+    .eq("satellite_id", SATELLITE_ID)
+    .eq("user_id", user.id)
+    .eq("status", "confirmed")
+    .gte("booked_on", today)
+    .order("booked_on")
+    .order("start_hour");
+  if (error) {
+    console.error("getMyCourtRentals failed", error);
+    return [];
+  }
+  return (data ?? []).map(rentalFromRow);
+}
+
+/** Every rental, for the admin list and the boards, soonest first. */
+export async function getCourtRentals(): Promise<CourtRental[]> {
+  if (!hasSupabase()) return [];
+  const { data, error } = await supabaseAdmin()
+    .from("court_rentals")
+    .select(RENTAL_COLUMNS)
+    .eq("satellite_id", SATELLITE_ID)
+    .order("booked_on", { ascending: true })
+    .order("start_hour", { ascending: true })
+    .limit(1000);
+  if (error) {
+    console.error("getCourtRentals failed", error);
+    return [];
+  }
+  return (data ?? []).map(rentalFromRow);
+}
+
+/** One rental for its admin page. */
+export async function getCourtRental(id: string): Promise<CourtRental | null> {
+  if (!hasSupabase() || !/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const { data, error } = await supabaseAdmin()
+    .from("court_rentals")
+    .select(RENTAL_COLUMNS)
+    .eq("satellite_id", SATELLITE_ID)
+    .eq("id", id)
+    .maybeSingle();
+  if (error) console.error("getCourtRental failed", error);
+  return data ? rentalFromRow(data) : null;
 }

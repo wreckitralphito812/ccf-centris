@@ -4,7 +4,9 @@ import { ButtonLink, Container, Section } from "@/components/ui";
 import { manilaMinutes, nightOptions, rebookDate } from "@/lib/dgroup-tables";
 import { manilaDateKey } from "@/lib/format";
 import { mergeUpcoming, type Upcoming } from "@/lib/my-bookings";
-import { getMyBookings, getMyDgroupBookings } from "@/lib/queries";
+import { getCourtHolds, getMyBookings, getMyCourtRentals, getMyDgroupBookings } from "@/lib/queries";
+import { manilaHour, rentalDays } from "@/lib/court-rentals";
+import { CourtRentals } from "./court-rentals";
 import { referenceFor } from "@/lib/reference";
 import { LaterRow, NextUp, PastRow } from "./parts";
 
@@ -23,7 +25,9 @@ export const dynamic = "force-dynamic";
 export default async function MyReservationsPage() {
   const today = manilaDateKey();
   const now = manilaMinutes();
-  const [tables, rooms] = await Promise.all([getMyDgroupBookings(today), getMyBookings()]);
+  const [tables, rooms, rentals] = await Promise.all([getMyDgroupBookings(today), getMyBookings(), getMyCourtRentals(today)]);
+  // Gym rentals have their own list, since moving is their one action (2026-10-20).
+  const courtHolds = rentals.length ? await getCourtHolds(rentalDays(today, true)) : [];
   const upcoming = mergeUpcoming(tables, rooms);
   const [next, ...later] = upcoming;
   const past = rooms.filter((r) => !upcoming.some((u) => u.id === r.id));
@@ -44,7 +48,7 @@ export default async function MyReservationsPage() {
         <Container className="max-w-3xl space-y-10 lg:max-w-5xl">
           {next ? (
             <NextUp item={next} today={today} nights={nights} rebookTarget={rebook(next)} reference={reference(next)} />
-          ) : (
+          ) : rentals.length ? null : (
             <div className="calm-card px-8 py-12 text-center">
               <p className="text-[1.4rem] font-semibold text-ink">Nothing booked yet.</p>
               <p className="mt-2 text-[1rem] text-ink-mute">Book a table for your Dgroup or a room for your ministry.</p>
@@ -55,9 +59,14 @@ export default async function MyReservationsPage() {
                 <ButtonLink href="/centris/reserve" size="lg" tone="outline">
                   Request a room
                 </ButtonLink>
+                <ButtonLink href="/reserve/courts" size="lg" tone="outline">
+                  Rent a court
+                </ButtonLink>
               </div>
             </div>
           )}
+
+          {rentals.length ? <CourtRentals rentals={rentals} holds={courtHolds} today={today} nowHour={manilaHour()} /> : null}
 
           {later.length ? (
             <section aria-labelledby="later-h">

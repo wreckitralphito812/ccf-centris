@@ -4,7 +4,8 @@ import { AdminHeader, AdminNote } from "../admin-ui";
 import { cx } from "@/components/ui";
 import { requireAdmin } from "@/lib/admin-auth";
 import { hasSupabase } from "@/lib/supabase/server";
-import { getAdminEvents, getDgroupTableBookings, getReservations, getRoomBlocks } from "@/lib/queries";
+import { getAdminEvents, getCourtRentals, getDgroupTableBookings, getReservations, getRoomBlocks } from "@/lib/queries";
+import { courtsLabel, sportName, timeRange } from "@/lib/court-rentals";
 import { manilaDateKey } from "@/lib/format";
 import { BOARD_ROOMS, manilaDay, manilaMinutesOf, roomFor } from "@/lib/admin-day";
 import { daysCovered, venueRooms } from "@/lib/announcements";
@@ -49,12 +50,13 @@ export default async function AdminRooms({ searchParams }: PageProps<"/admin/roo
     return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
   };
 
-  const [rooms, blocks, tables, events] = await Promise.all([
+  const [rooms, blocks, tables, events, rentals] = await Promise.all([
     getReservations(),
     getRoomBlocks(from.toISOString(), to.toISOString()),
     room.dgroupRoom ? getDgroupTableBookings() : Promise.resolve([]),
     // Every event, published, hidden or calendar-only (Ralph, 2026-10-14).
     getAdminEvents(),
+    room.slug === "sports-hall" ? getCourtRentals() : Promise.resolve([]),
   ]);
 
   const byDay = new Map<string, Item[]>();
@@ -108,6 +110,19 @@ export default async function AdminRooms({ searchParams }: PageProps<"/admin/roo
         });
       }
     }
+  }
+  // The Gym: its court rentals (2026-10-20).
+  for (const r of rentals) {
+    if (r.status !== "confirmed") continue;
+    add(r.booked_on, {
+      key: r.id,
+      link: `/admin/courts/${r.id}`,
+      from: r.start_hour * 60,
+      to: (r.start_hour + r.hours) * 60,
+      title: `${sportName(r.sport)} rental`,
+      detail: [r.renter_name, courtsLabel(r.sport, r.court_numbers), timeRange(r.start_hour, r.hours)].join(" · "),
+      tone: "approved",
+    });
   }
   // The Dgroup rooms: one line a night for the table bookings.
   const tableCount = new Map<string, number>();

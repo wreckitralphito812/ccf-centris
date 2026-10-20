@@ -294,7 +294,7 @@ export function TodayBoard({
                         const pendingBlock = b.status === "pending";
                         return (
                           <Link
-                            href={`/admin/reservations/${b.id}`}
+                            href={b.href ?? `/admin/reservations/${b.id}`}
                             key={b.id}
                             title={`${b.activity_name ?? "Booking"} · ${timeLabel(b.from)} – ${timeLabel(b.to)}: see or change`}
                             className={cx(
@@ -305,7 +305,8 @@ export function TodayBoard({
                           >
                             <span className="block truncate font-semibold">{b.activity_name ?? "Booking"}</span>
                             <span className="block truncate opacity-90">
-                              {timeLabel(b.from)} – {timeLabel(b.to)} · {b.participants}
+                              {timeLabel(b.from)} – {timeLabel(b.to)}
+                              {b.participants ? ` · ${b.participants}` : ""}
                               {pendingBlock ? " · awaiting" : ""}
                             </span>
                           </Link>

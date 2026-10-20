@@ -34,6 +34,8 @@ export interface DayRoomBooking {
   starts_at: string;
   ends_at: string;
   status: string;
+  /** Where tapping it goes when it isn't a room request: a Gym court rental (2026-10-20). */
+  href?: string;
 }
 
 /**
