@@ -49,14 +49,15 @@ test("every join names two real tables in its room", () => {
   }
 });
 
-test("the lounge 8-seaters and the Welcome Center wall sets never join the rest", () => {
+test("the lounge 8-seaters and the Welcome Center sofa sets never join anything", () => {
   const groups = (slug: string) => tableGroups(room(slug)).filter((g) => g.length > 1);
   assert.deepEqual(groups("dgroup-lounge").map((g) => g.join("+")), ["4+5", "6+7"]);
-  const wall = new Set(["1", "2", "3"]);
+  // Welcome Center 1–3 are sofas that can't be moved: 4 each, never joined (Adrian, 2026-10-26).
+  const sofas = new Set(["1", "2", "3"]);
   for (const g of groups("welcome-center")) {
-    const onWall = g.filter((l) => wall.has(l)).length;
-    assert.ok(onWall === 0 || onWall === g.length, `mixed group ${g}`);
+    assert.ok(!g.some((l) => sofas.has(l)), `sofa set joined: ${g.join("+")}`);
   }
+  assert.ok(candidateTables(8, new Set()).every((c) => c.roomSlug !== "welcome-center" || !c.labels.some((l) => sofas.has(l))));
 });
 
 test("joined tables are always neighbours", () => {
