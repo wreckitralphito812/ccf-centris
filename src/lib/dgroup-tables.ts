@@ -81,12 +81,12 @@ export const DGROUP_ROOMS: DgroupRoom[] = [
   {
     // WELCOME PLAN: 15 tables of 4, 60 seats. Tables 1–3 are the lounge sets
     // down the west wall; 4–9 and 10–15 are two columns of square clusters.
-    // The wall sets are not joined to the clusters.
+    // The lounge sets are sofas that can't be moved, so they never join each
+    // other or the clusters: 4 people each at most (Adrian, 2026-10-26).
     slug: "welcome-center",
     name: "Welcome Center",
     tables: run(15, 4, 1),
     joins: [
-      ...line(1, 2, 3),
       ...line(4, 5, 6, 7, 8, 9),
       ...line(10, 11, 12, 13, 14, 15),
       ["4", "10"], ["5", "11"], ["6", "12"], ["7", "13"], ["8", "14"], ["9", "15"],
