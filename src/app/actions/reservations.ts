@@ -23,6 +23,8 @@ import { roomRequestEmail } from "@/lib/emails/room-request";
 import { sendEmail, siteOrigin } from "@/lib/email";
 import { fmtDayLong } from "@/lib/format";
 import { CONTACT } from "@/lib/site";
+import { eventRoomTimes } from "@/lib/admin-day";
+import { getAdminEvents } from "@/lib/queries";
 
 export interface ReservationResult {
   ok: boolean;
@@ -200,6 +202,21 @@ export async function createRoomRequest(
     };
   }
 
+  // Nor a room an event already holds, published or hidden (Adrian,
+  // 2026-11-07): the admin used to catch these by hand and ask the ministry
+  // to pick again.
+  const eventTimes = eventRoomTimes(await getAdminEvents(), r.date);
+  const [from, to] = [toMinutes(r.start), toMinutes(r.end)];
+  const clash = r.rooms.find((slug) => (eventTimes[slug] ?? []).some(([a, b]) => a < to && b > from));
+  if (clash) {
+    return {
+      ok: false,
+      fieldErrors: {
+        rooms: `${ministryRoom(clash)!.name} is already booked at that time. Pick another day, time or room.`,
+      },
+    };
+  }
+
   // The tables have to be free then too: the center's stock is shared by
   // every request at the same time (Ralph, 2026-10-10).
   if (r.setup === "tables") {
@@ -285,8 +302,9 @@ function whenLabel(startsAt: string, start: string, end: string): string {
 
 /**
  * When each ministry room is already held on a date, as minutes after
- * midnight in Manila. Pending requests count, since they hold the room too.
- * Only times: never who asked or what for.
+ * midnight in Manila. Pending requests count, since they hold the room too,
+ * and so do events in the room, published or hidden (2026-11-07). Only
+ * times: never who asked or what for.
  */
 export async function roomBusyTimes(date: string): Promise<Record<string, [Minutes, Minutes][]>> {
   const out: Record<string, [Minutes, Minutes][]> = {};
@@ -305,7 +323,7 @@ export async function roomBusyTimes(date: string): Promise<Record<string, [Minut
   const slugOf = new Map(facilities.map((f) => [f.id as string, f.slug as string]));
   const ids = [...slugOf.keys()];
 
-  const [{ data: held }, { data: blocked }] = await Promise.all([
+  const [{ data: held }, { data: blocked }, events] = await Promise.all([
     db
       .from("reservations")
       .select("facility_id, during")
@@ -314,6 +332,7 @@ export async function roomBusyTimes(date: string): Promise<Record<string, [Minut
       .in("status", ["pending", "approved"])
       .overlaps("during", range),
     db.from("facility_blackouts").select("facility_id, during").in("facility_id", ids).overlaps("during", range),
+    getAdminEvents(),
   ]);
 
   const minutes = (iso: string) =>
@@ -324,6 +343,9 @@ export async function roomBusyTimes(date: string): Promise<Record<string, [Minut
     const m = /[[(]"?([^",]+)"?,\s*"?([^")]+)"?[)\]]/.exec(row.during as string);
     if (!slug || !m) continue;
     (out[slug] ??= []).push([minutes(m[1]), minutes(m[2])]);
+  }
+  for (const [slug, times] of Object.entries(eventRoomTimes(events, date))) {
+    if (ministryRoom(slug)) (out[slug] ??= []).push(...times);
   }
   return out;
 }

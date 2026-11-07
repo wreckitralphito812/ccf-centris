@@ -127,6 +127,24 @@ export function eventsOn(events: BoardEvent[], date: string): DayEvent[] {
   }
   return out.sort((a, b) => (a.from ?? -1) - (b.from ?? -1));
 }
+
+/**
+ * When each room is taken by events on a date, as Manila minutes, by room
+ * slug: published, hidden or calendar-only, like the boards (Adrian,
+ * 2026-11-07). An all-day date takes the whole day; one with no end takes an
+ * hour. The room request form and its server action read this, so a ministry
+ * can't request a room an event already holds.
+ */
+export function eventRoomTimes(events: BoardEvent[], date: string): Record<string, [number, number][]> {
+  const out: Record<string, [number, number][]> = {};
+  for (const e of eventsOn(events, date)) {
+    const from = e.from ?? 0;
+    const to = e.from === null ? 24 * 60 : (e.to ?? e.from + 60);
+    for (const slug of e.rooms) (out[slug] ??= []).push([from, to]);
+  }
+  return out;
+}
+
 /**
  * The room timeline runs from the center's first slot to its last. It starts
  * at 7:00 AM and ends at 10:00 PM since the Gym joined (2026-10-20): sports

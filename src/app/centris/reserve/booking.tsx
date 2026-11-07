@@ -276,7 +276,7 @@ function Request({
     const why = closedReason(r.slug, date, start!, end!);
     if (why) return why;
     const clash = loaded ? (busy!.times[r.slug] ?? []).find(([a, b]) => a < end! && b > start!) : undefined;
-    return clash ? `Taken ${range(clash[0], clash[1])}` : null;
+    return clash ? `Already booked ${range(clash[0], clash[1])}` : null;
   };
   const openRooms = MINISTRY_ROOMS.filter((r) => !unavailable(r));
   const anyFits = !people || openRooms.some((r) => (r.capacity[setup] ?? 0) >= people);
@@ -643,7 +643,11 @@ function Request({
             }
             error={e.rooms}
           >
-            {timed && people && !anyFits ? (
+            {timed && loaded && !openRooms.length && MINISTRY_ROOMS.some((r) => r.capacity[setup]) ? (
+              <p className="mb-4 rounded-2xl bg-mist p-4 text-[1rem] leading-relaxed text-ink">
+                Every room is already booked or closed at that time. Pick another day or time.
+              </p>
+            ) : timed && people && !anyFits ? (
               <p className="mb-4 rounded-2xl bg-mist p-4 text-[1rem] leading-relaxed text-ink">
                 {openSeats >= people
                   ? `No room seats ${people} on its own at that time. Tick several rooms to split your group, or try another time.`

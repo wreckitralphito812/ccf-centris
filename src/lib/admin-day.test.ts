@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { blockPosition, buildDayBoard, DAY_END, DAY_START, eventsOn, isDateKey, manilaDay, roomFor, shiftDay, weekOf } from "./admin-day";
+import { blockPosition, buildDayBoard, DAY_END, DAY_START, eventRoomTimes, eventsOn, isDateKey, manilaDay, roomFor, shiftDay, weekOf } from "./admin-day";
 
 const table = (over: Partial<Parameters<typeof buildDayBoard>[1][number]> = {}) => ({
   id: "t1",
@@ -128,4 +128,26 @@ test("the Gym is on the boards, for bookings, blocks and events", () => {
   const day = eventsOn([{ id: "g", title: "Sports Fest", starts_at: "2026-11-07T00:00:00Z", ends_at: "2026-11-07T09:00:00Z", location_note: "Gym, Main Hall" }], "2026-11-07");
   assert.deepEqual(day[0].rooms, ["sports-hall", "main-worship-hall"]);
   assert.ok(buildDayBoard("2026-10-05", [], []).rooms.some((r) => r.name === "Gym"));
+});
+
+test("events hold their rooms for room requests, hidden ones too (Adrian, 2026-11-07)", () => {
+  const times = eventRoomTimes(
+    [
+      // 1–3 PM Manila in John and Luke, hidden from the site.
+      { id: "a", title: "Leaders meeting", starts_at: "2026-11-10T05:00:00Z", ends_at: "2026-11-10T07:00:00Z", location_note: "John (MPH 1), Luke (MPH 2)", status: "draft" },
+      // All day in the Welcome Center.
+      { id: "b", title: "Retreat", starts_at: "2026-11-10T00:00:00Z", ends_at: null, location_note: "Welcome Center", dates: [{ starts_at: "2026-11-10T00:00:00Z", ends_at: null, all_day: true }] },
+      // No end given: an hour.
+      { id: "c", title: "Prayer", starts_at: "2026-11-10T11:00:00Z", ends_at: null, location_note: "Mark (MPH 4)" },
+      // Somewhere else, and another day: no rooms held.
+      { id: "d", title: "Outreach", starts_at: "2026-11-10T01:00:00Z", ends_at: "2026-11-10T03:00:00Z", location_note: "Fort Bonifacio" },
+      { id: "e", title: "Next day", starts_at: "2026-11-11T05:00:00Z", ends_at: "2026-11-11T07:00:00Z", location_note: "Matthew (MPH 3)" },
+    ],
+    "2026-11-10",
+  );
+  assert.deepEqual(times["multipurpose-hall-1"], [[13 * 60, 15 * 60]]);
+  assert.deepEqual(times["multipurpose-hall-2"], [[13 * 60, 15 * 60]]);
+  assert.deepEqual(times["welcome-center"], [[0, 24 * 60]]);
+  assert.deepEqual(times["multipurpose-hall-4"], [[19 * 60, 20 * 60]]);
+  assert.equal(times["multipurpose-hall-3"], undefined);
 });
