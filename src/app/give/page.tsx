@@ -12,45 +12,12 @@ export const metadata: Metadata = {
 /**
  * Giving (2026-10-11). CCF's giving form lives on its own site, and framed
  * here it brought its full-page photo background with it, which Ralph found
- * untidy; there's no way to frame just its form. So the four ways to give are
- * set out here in the site's own design, and each opens CCF's secure form (or
- * CCF's own guide) in a new tab, where the payment happens. Bank and card
- * checks also work best there.
+ * untidy; there's no way to frame just its form. The four ways to give had a
+ * card each, but every card opened the same page, since CCF's form can't be
+ * linked to one way. So they're one card now, with one button (Adrian,
+ * 2026-11-08). The payment happens on CCF's site, in a new tab.
  */
-const METHODS: { title: string; via: string; body: string; channels: string; cta: string; href: string }[] = [
-  {
-    title: "Debit or credit card",
-    via: "ATM, debit or credit card",
-    body: "Give online with your card. Choose the card option on CCF's giving form.",
-    channels: "Mastercard · Visa",
-    cta: "Give by card",
-    href: GIVE_URL,
-  },
-  {
-    title: "Bank transfer",
-    via: "Bank transfer, deposit or bills payment",
-    body: "Send from your bank or e-wallet. Choose bank transfer on CCF's giving form for the account details.",
-    channels: "GCash · BDO · BPI · RCBC · UnionBank and others",
-    cta: "Give by bank transfer",
-    href: GIVE_URL,
-  },
-  {
-    title: "Bills payment",
-    via: "Pay CCF as a biller",
-    body: "Add CCF as a biller in your bank or e-wallet app. CCF's step-by-step guides show how for each one.",
-    channels: "GCash · BDO · BPI · RCBC · UnionBank and others",
-    cta: "See the guides",
-    href: GIVE_HELP.billsPayment,
-  },
-  {
-    title: "PH QR Pay",
-    via: "Scan CCF's QR code",
-    body: "Scan CCF's QR code with your banking or e-wallet app. Choose “View CCF QR images” on CCF's giving form.",
-    channels: "GCash · GoTyme · Grab · ShopeePay · BDO Pay and others",
-    cta: "View CCF's QR codes",
-    href: GIVE_URL,
-  },
-];
+const WAYS = "Debit or credit card, bank transfer, bills payment, or PH QR Pay";
 
 export default function GivePage() {
   return (
@@ -58,33 +25,33 @@ export default function GivePage() {
       <PageHeader
         eyebrow="Give"
         title="Thank you for your heart to give."
-        lead="Your tithes and offerings go to Christ's Commission Fellowship. Choose how you'd like to give; each way opens CCF's secure giving form or guide."
+        lead="Your tithes and offerings go to Christ's Commission Fellowship, through CCF's secure giving page."
       />
 
       <Section>
         <Container>
-          <div className="grid gap-5 md:grid-cols-2">
-            {METHODS.map((m) => (
-              <article key={m.title} className="calm-card flex flex-col p-6 sm:p-8">
-                <p className="text-[0.9rem] font-semibold text-clay">{m.via}</p>
-                <h2 className="mt-1.5 text-[1.5rem] font-semibold tracking-[-0.01em] text-ink">{m.title}</h2>
-                <p className="mt-3 leading-relaxed text-ink-soft">{m.body}</p>
-                <p className="mt-4 text-[0.9rem] text-ink-mute">{m.channels}</p>
-                <div className="mt-auto pt-6">
-                  <a
-                    href={m.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn-press inline-flex min-h-12 items-center gap-2 rounded-lg bg-clay px-5 text-[1rem] font-semibold text-paper-bright transition-colors hover:bg-clay-deep"
-                  >
-                    {m.cta}
-                    <span aria-hidden>↗</span>
-                    <span className="sr-only">(opens CCF&rsquo;s site in a new tab)</span>
-                  </a>
-                </div>
-              </article>
-            ))}
-          </div>
+          <article className="calm-card flex flex-col gap-6 p-6 sm:p-8 md:flex-row md:items-center md:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-[0.9rem] font-semibold text-clay">{WAYS}</p>
+              <h2 className="mt-1.5 text-[1.5rem] font-semibold tracking-[-0.01em] text-ink">Give online</h2>
+              <p className="mt-3 leading-relaxed text-ink-soft">
+                CCF&rsquo;s secure giving page has every way to give: card, bank transfer, bills payment through your bank or
+                e-wallet, and CCF&rsquo;s QR codes for GCash, GoTyme and other apps. Pick the one you like there.
+              </p>
+            </div>
+            <div className="shrink-0">
+              <a
+                href={GIVE_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="btn-press inline-flex min-h-12 items-center gap-2 rounded-lg bg-clay px-6 text-[1rem] font-semibold text-paper-bright transition-colors hover:bg-clay-deep"
+              >
+                Give now
+                <span aria-hidden>↗</span>
+                <span className="sr-only">(opens CCF&rsquo;s giving page in a new tab)</span>
+              </a>
+            </div>
+          </article>
 
           <div className="mt-10 grid gap-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
             <figure className="rounded-2xl bg-night p-7 text-paper-bright sm:p-9">
