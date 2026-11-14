@@ -60,11 +60,11 @@ const OPTIONS: {
   // Rentals opened 2026-10-20 (Adrian); the hours and prices are in lib/court-rentals.
   {
     title: "The court",
-    badge: "Sun, Tue–Fri",
+    badge: "Every day",
     href: "/reserve/courts",
     cta: "Rent a court",
     facts: [
-      ["clock", "Pickleball, badminton, volleyball, basketball"],
+      ["clock", "Pickleball and basketball"],
       ["people", "1 to 3 hours, for registered Dgroups"],
       ["check", "Confirmed once you've paid"],
     ],

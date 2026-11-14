@@ -3,9 +3,10 @@
  * rules for checking a booking. From Adrian Camacho (facilities), 2026-10-20,
  * and his Sports Hall schedule (Sched.xlsx):
  *
- * - The Sports Ministry keeps the dark blocks on the schedule (Monday and
- *   Saturday sports fellowship, Wednesday and Friday evenings, Filchi on
- *   Saturday). The light blocks are for rent, each for one sport.
+ * - The Sports Ministry keeps the dark blocks on the schedule (Monday,
+ *   Wednesday and Friday evenings, Saturday morning and afternoon). The
+ *   light blocks are for rent, each for one sport. Adrian's second schedule
+ *   (2026-11-14) rents only pickleball and basketball, every day.
  * - Pickleball and badminton: 3 courts at once, ₱450 a court an hour.
  *   Volleyball and basketball: 1 court (the whole floor), ₱1,800 an hour.
  * - Leaders of a registered Dgroup book, like Dgroup tables.
@@ -25,9 +26,9 @@ import { normalizePhMobile } from "@/lib/phone";
  * the team is ready). While false, the Reserve card shows the banner instead
  * of a button, /reserve/courts shows it instead of the form, and the server
  * refuses new bookings. Moving a rental already booked, and the admin pages,
- * keep working. Set to true to open rentals.
+ * keep working. Set to true to open rentals: opened 2026-11-14 (Adrian).
  */
-export const COURTS_OPEN = false;
+export const COURTS_OPEN = true;
 export const COURTS_SOON = "Coming Real Soon!!!";
 
 export type Sport = "pickleball" | "badminton" | "volleyball" | "basketball";
@@ -59,25 +60,26 @@ export interface RentalWindow {
 }
 
 /**
- * The light blocks on Adrian's schedule, by weekday (0 = Sunday). Sunday's
- * services (10 AM to 12 NN and 3 to 5 PM) and the hours around them stay
- * closed; Monday and Saturday belong to the Sports Ministry.
+ * The light blocks on Adrian's schedule of 2026-11-14, by weekday (0 =
+ * Sunday). Sunday's services (10 AM to 12 NN and 3 to 5 PM) and the hours
+ * around them stay closed; the Sports Ministry keeps Monday from 7 PM,
+ * Wednesday and Friday from 6 PM, and Saturday until 4 PM.
  */
 export const RENTAL_SCHEDULE: Record<number, RentalWindow[]> = {
   0: [
     { sport: "pickleball", from: 12, to: 14 },
     { sport: "pickleball", from: 17, to: 22 },
   ],
-  1: [],
-  2: [
-    { sport: "volleyball", from: 7, to: 13 },
-    { sport: "badminton", from: 13, to: 22 },
-  ],
+  1: [{ sport: "basketball", from: 7, to: 19 }],
+  2: [{ sport: "basketball", from: 7, to: 22 }],
   3: [{ sport: "pickleball", from: 7, to: 18 }],
-  4: [{ sport: "pickleball", from: 7, to: 22 }],
-  5: [{ sport: "basketball", from: 7, to: 18 }],
-  6: [],
+  4: [{ sport: "basketball", from: 7, to: 22 }],
+  5: [{ sport: "pickleball", from: 7, to: 18 }],
+  6: [{ sport: "pickleball", from: 16, to: 22 }],
 };
+
+/** The sports the schedule rents at all, in SPORTS order, for the page's summary. */
+export const RENTED_SPORTS = SPORTS.filter((s) => Object.values(RENTAL_SCHEDULE).some((ws) => ws.some((w) => w.sport === s.id)));
 
 export const MAX_HOURS = 3;
 /** New rentals open this many days ahead, and not for today. */

@@ -89,7 +89,7 @@ export const PAGES: SearchablePage[] = [
   {
     title: "Rent a court in the Gym",
     href: "/reserve/courts",
-    excerpt: "Rent a court for pickleball, badminton, volleyball or basketball. For registered Dgroups.",
+    excerpt: "Rent a court for pickleball or basketball. For registered Dgroups.",
     keywords: "book booking reserve rent rental court gym sports pickleball badminton volleyball basketball",
   },
   {
