@@ -6,7 +6,6 @@ import { isAdmin, isAdminConfigured } from "@/lib/admin-auth";
 import { BOARD_ROOMS, isDateKey } from "@/lib/admin-day";
 import {
   candidateTables,
-  DGROUP_ROOMS,
   DGROUP_NIGHTS,
   DGROUP_SLOTS,
   nightLabel,
@@ -18,7 +17,7 @@ import { takenTables } from "@/lib/dgroup-taken";
 import { sendEmail, siteOrigin } from "@/lib/email";
 import { bookingEmail } from "@/lib/emails/dgroup-booking";
 import { manilaDateKey } from "@/lib/format";
-import { toMinutes } from "@/lib/ministry-rooms";
+import { closeDays, manilaInstant, parseTablePicks, tableBlockRows } from "@/lib/close-range";
 import { hasSupabase, SATELLITE_ID, supabaseAdmin } from "@/lib/supabase/server";
 
 /**
@@ -47,61 +46,119 @@ function refresh() {
   }
 }
 
-// --- Dgroup table blocks -------------------------------------------------------
+// --- Closing rooms and tables ----------------------------------------------------
 
-export async function addTableBlock(_prev: ToolResult | null, fd: FormData): Promise<ToolResult> {
+/**
+ * Close any number of rooms and Dgroup tables, from one day and time until
+ * another (Adrian, 2026-11-14; it used to be one room or one table, one day).
+ * Saved one day at a time (see lib/close-range), so every board and form
+ * reads it as before. Bookings already made are kept, and counted in the
+ * message so the admin can decide.
+ */
+export async function closeRoomsAndTables(_prev: ToolResult | null, fd: FormData): Promise<ToolResult> {
   const blocked = await guard();
   if (blocked) return blocked;
 
-  const room = field(fd, "room");
-  const table = field(fd, "table") || null;
-  const date = field(fd, "date");
-  const slot = field(fd, "slot") || null;
+  const rooms = BOARD_ROOMS.filter((r) => fd.getAll("room").map(String).includes(r.slug));
+  const picks = parseTablePicks(fd.getAll("table").map(String));
+  if (!rooms.length && !picks.length) return { ok: false, formError: "Tick at least one room or table." };
+
+  const span = closeDays(field(fd, "from_date"), field(fd, "from_time"), field(fd, "to_date"), field(fd, "to_time"));
+  if (!span.ok) return { ok: false, formError: span.error };
+  if (span.days[span.days.length - 1].date < manilaDateKey()) return { ok: false, formError: "That time has passed." };
   const reason = field(fd, "reason").slice(0, 200) || null;
-
-  const rooms = room === "all" ? DGROUP_ROOMS : DGROUP_ROOMS.filter((r) => r.slug === room);
-  if (!rooms.length) return { ok: false, formError: "Choose a room." };
-  if (!isDateKey(date)) return { ok: false, formError: "Choose a date." };
-  if (date < manilaDateKey()) return { ok: false, formError: "That day has passed." };
-  if (slot && !DGROUP_SLOTS.some((s) => s.id === slot)) return { ok: false, formError: "Choose a time." };
-  if (table && (rooms.length !== 1 || !rooms[0].tables.some((t) => t.label === table))) {
-    return { ok: false, formError: `There's no Table ${table} in that room.` };
-  }
-
   const db = supabaseAdmin();
-  const { error } = await db.from("dgroup_table_blocks").insert(
-    rooms.map((r) => ({
-      satellite_id: SATELLITE_ID,
-      room_slug: r.slug,
-      table_label: table,
-      booked_on: date,
-      slot_id: slot,
-      reason,
-    })),
-  );
-  if (error) {
-    console.error("addTableBlock failed", error);
-    return { ok: false, formError: "Couldn't save the block. Try again." };
+
+  let facilities: { id: string; slug: string }[] = [];
+  if (rooms.length) {
+    const { data } = await db
+      .from("facilities")
+      .select("id, slug")
+      .eq("satellite_id", SATELLITE_ID)
+      .in("slug", rooms.map((r) => r.slug));
+    facilities = (data ?? []) as { id: string; slug: string }[];
+    const missing = rooms.find((r) => !facilities.some((f) => f.slug === r.slug));
+    if (missing) return { ok: false, formError: `${missing.name} isn't set up in the database.` };
   }
 
-  // Bookings already on those tables are kept; the admin decides.
-  let q = db
-    .from("dgroup_table_bookings")
-    .select("table_labels, room_slug")
-    .eq("satellite_id", SATELLITE_ID)
-    .eq("booked_on", date)
-    .in("room_slug", rooms.map((r) => r.slug))
-    .in("status", ["pending", "confirmed"]);
-  if (slot) q = q.eq("slot_id", slot);
-  const { data: clash } = await q;
-  const hit = (clash ?? []).filter((b) => !table || (b.table_labels as string[]).includes(table)).length;
+  const ranges = span.days.map((d) => `[${manilaInstant(d.date, d.from)},${manilaInstant(d.date, d.to)})`);
+  const tableRows = tableBlockRows(span.days, picks);
+  if (picks.length && !tableRows.length) {
+    return { ok: false, formError: "Dgroup tables are only booked Tuesday to Friday, 1:00 to 9:30 PM. Pick days and times inside that." };
+  }
+
+  if (facilities.length) {
+    const { error } = await db
+      .from("facility_blackouts")
+      .insert(facilities.flatMap((f) => ranges.map((during) => ({ facility_id: f.id, during, reason }))));
+    if (error) {
+      console.error("closeRoomsAndTables: rooms failed", error);
+      return { ok: false, formError: "Couldn't close the rooms. Try again." };
+    }
+  }
+  if (tableRows.length) {
+    const { error } = await db
+      .from("dgroup_table_blocks")
+      .insert(tableRows.map((r) => ({ ...r, satellite_id: SATELLITE_ID, reason })));
+    if (error) {
+      console.error("closeRoomsAndTables: tables failed", error);
+      refresh();
+      return {
+        ok: false,
+        formError: facilities.length ? "The rooms are closed, but the tables couldn't be. Try the tables again." : "Couldn't close the tables. Try again.",
+      };
+    }
+  }
+
+  // What's already booked in that time is kept; say how much, so the admin can decide.
+  const [roomClash, tableClash] = await Promise.all([
+    facilities.length
+      ? Promise.all(
+          ranges.map((during) =>
+            db
+              .from("reservations")
+              .select("id")
+              .in("facility_id", facilities.map((f) => f.id))
+              .in("status", ["pending", "approved"])
+              .overlaps("during", during),
+          ),
+        ).then((rs) => new Set(rs.flatMap((r) => (r.data ?? []).map((x) => x.id as string))).size)
+      : Promise.resolve(0),
+    tableRows.length
+      ? db
+          .from("dgroup_table_bookings")
+          .select("id, room_slug, table_labels, booked_on, slot_id")
+          .eq("satellite_id", SATELLITE_ID)
+          .in("booked_on", [...new Set(tableRows.map((r) => r.booked_on))])
+          .in("status", ["pending", "confirmed"])
+          .then(
+            ({ data }) =>
+              (data ?? []).filter((b) =>
+                tableRows.some(
+                  (r) =>
+                    r.room_slug === b.room_slug &&
+                    r.booked_on === b.booked_on &&
+                    (!r.slot_id || r.slot_id === b.slot_id) &&
+                    (!r.table_label || (b.table_labels as string[]).includes(r.table_label)),
+                ),
+              ).length,
+          )
+      : Promise.resolve(0),
+  ]);
 
   refresh();
+  const what = [rooms.length ? `${rooms.length} ${rooms.length === 1 ? "room" : "rooms"}` : null, picks.length ? "the Dgroup tables" : null]
+    .filter(Boolean)
+    .join(" and ");
+  const kept = [
+    roomClash ? `${roomClash} room request${roomClash === 1 ? "" : "s"}` : null,
+    tableClash ? `${tableClash} Dgroup table booking${tableClash === 1 ? "" : "s"}` : null,
+  ].filter(Boolean);
   return {
     ok: true,
-    message: hit
-      ? `Blocked. ${hit} booking${hit === 1 ? " is" : "s are"} already on those tables and ${hit === 1 ? "was" : "were"} kept; cancel from Today if needed.`
-      : "Blocked. Members now see those tables as taken.",
+    message: kept.length
+      ? `Closed ${what}. ${kept.join(" and ")} already in that time ${kept.length === 1 && (roomClash + tableClash) === 1 ? "was" : "were"} kept; decline or cancel from Today if needed.`
+      : `Closed ${what} for ${span.days.length} ${span.days.length === 1 ? "day" : "days"}. Nobody can book them then.`,
   };
 }
 
@@ -117,57 +174,6 @@ export async function removeTableBlock(fd: FormData): Promise<void> {
 }
 
 // --- Room blocks (facility_blackouts) -------------------------------------------
-
-export async function addRoomBlock(_prev: ToolResult | null, fd: FormData): Promise<ToolResult> {
-  const blocked = await guard();
-  if (blocked) return blocked;
-
-  const slug = field(fd, "room");
-  const date = field(fd, "date");
-  const start = field(fd, "start");
-  const end = field(fd, "end");
-  const reason = field(fd, "reason").slice(0, 200) || null;
-
-  const room = BOARD_ROOMS.find((r) => r.slug === slug);
-  if (!room) return { ok: false, formError: "Choose a room." };
-  if (!isDateKey(date)) return { ok: false, formError: "Choose a date." };
-  if (date < manilaDateKey()) return { ok: false, formError: "That day has passed." };
-  if (!/^\d{2}:\d{2}$/.test(start) || !/^\d{2}:\d{2}$/.test(end) || toMinutes(end) <= toMinutes(start)) {
-    return { ok: false, formError: "Choose a start time before the end time." };
-  }
-
-  const db = supabaseAdmin();
-  const { data: facility } = await db
-    .from("facilities")
-    .select("id")
-    .eq("satellite_id", SATELLITE_ID)
-    .eq("slug", slug)
-    .maybeSingle();
-  if (!facility) return { ok: false, formError: "That room isn't set up in the database." };
-
-  const during = `[${new Date(`${date}T${start}:00+08:00`).toISOString()},${new Date(`${date}T${end}:00+08:00`).toISOString()})`;
-  const { error } = await db.from("facility_blackouts").insert({ facility_id: facility.id, during, reason });
-  if (error) {
-    console.error("addRoomBlock failed", error);
-    return { ok: false, formError: "Couldn't save the block. Try again." };
-  }
-
-  const { data: clash } = await db
-    .from("reservations")
-    .select("id")
-    .eq("facility_id", facility.id)
-    .in("status", ["pending", "approved"])
-    .overlaps("during", during);
-  const hit = clash?.length ?? 0;
-
-  refresh();
-  return {
-    ok: true,
-    message: hit
-      ? `Blocked. ${hit} request${hit === 1 ? " overlaps" : "s overlap"} that time and ${hit === 1 ? "was" : "were"} kept; decline or cancel from Reservations if needed.`
-      : `Blocked. ${room.name} can't be requested then.`,
-  };
-}
 
 export async function removeRoomBlock(fd: FormData): Promise<void> {
   if (await guard()) return;
