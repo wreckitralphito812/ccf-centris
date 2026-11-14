@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { AdminHeader, AdminNote, AdminPanel } from "../admin-ui";
-import { RoomBlockForm, TableBlockForm } from "./block-forms";
+import { CloseForm } from "./block-forms";
 import { removeRoomBlock, removeTableBlock } from "@/app/actions/admin-tools";
 import { getRoomBlocks, getTableBlocks } from "@/lib/queries";
 import { describeBlock } from "@/lib/dgroup-blocks";
@@ -35,7 +35,7 @@ export default async function AdminBlocks() {
     <div className="space-y-8">
       <AdminHeader
         title="Close a room or table"
-        lead="Close a Dgroup table or a room for a repair, cleaning or a staff meeting, so nobody can book it then. Bookings already made stay; you'll be told if one is affected."
+        lead="Close rooms and Dgroup tables for repairs, cleaning or a staff meeting, as many as you need, for an afternoon or several days. Nobody can book them then. Bookings already made stay; you'll be told if any are affected."
       />
 
       {!hasSupabase() || readOnly ? (
@@ -44,12 +44,8 @@ export default async function AdminBlocks() {
         </AdminNote>
       ) : null}
 
-      <AdminPanel title="Close Dgroup tables">
-        <TableBlockForm today={today} />
-      </AdminPanel>
-
-      <AdminPanel title="Close a room">
-        <RoomBlockForm today={today} />
+      <AdminPanel title="Close rooms and tables">
+        <CloseForm today={today} />
       </AdminPanel>
 
       <AdminPanel title="Coming up">
