@@ -24,6 +24,9 @@ export const metadata: Metadata = {
   title: "Search",
   description:
     "Search CCF Centris: pages, events, 4Ws guides, past Sunday services and the center.",
+  // Result pages aren't worth a place in Google (2026-11-14): every ?q= is a
+  // thin copy of other pages. Links on them are still followed.
+  robots: { index: false, follow: true },
 };
 
 /** Each finds something that doesn't come and go with the events list (2026-10-10). */

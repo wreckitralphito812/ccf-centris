@@ -49,11 +49,30 @@ const nextConfig: NextConfig = {
   // the old page code (a fixed bug "still broken" in an old admin tab).
   // Vercel sets VERCEL_DEPLOYMENT_ID; locally it's unset and nothing changes.
   deploymentId: process.env.VERCEL_DEPLOYMENT_ID,
+  // Don't advertise the framework in every response (2026-11-14).
+  poweredByHeader: false,
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "i.ytimg.com" },
       { protocol: "https", hostname: "yt3.ggpht.com" },
     ],
+  },
+  /* Baseline security headers on every response (2026-11-14); the live site
+     sent only HSTS. No Content-Security-Policy yet: Firebase sign-in, YouTube
+     and Maps embeds each need allowances, so it wants its own tested change.
+     frame-ancestors is what stops other sites framing ours (clickjacking). */
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+          { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=()" },
+        ],
+      },
+    ];
   },
   async redirects() {
     return [
