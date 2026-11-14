@@ -1604,7 +1604,8 @@ export interface CourtRental {
   courts: number;
   court_numbers: number[];
   amount_php: number;
-  payment_proof: string;
+  /** Null for a free rental (2026-11-14). */
+  payment_proof: string | null;
   renter_name: string;
   contact_mobile: string;
   renter_email: string;
@@ -1625,7 +1626,7 @@ function rentalFromRow(r: Record<string, unknown>): CourtRental {
     courts: r.courts as number,
     court_numbers: (r.court_numbers as number[] | null) ?? [],
     amount_php: r.amount_php as number,
-    payment_proof: r.payment_proof as string,
+    payment_proof: (r.payment_proof as string | null) ?? null,
     renter_name: r.renter_name as string,
     contact_mobile: r.contact_mobile as string,
     renter_email: r.renter_email as string,

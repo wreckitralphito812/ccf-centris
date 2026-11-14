@@ -31,6 +31,18 @@ import { normalizePhMobile } from "@/lib/phone";
 export const COURTS_OPEN = true;
 export const COURTS_SOON = "Coming Real Soon!!!";
 
+/**
+ * Free for now (Adrian, 2026-11-14): no payment or screenshot is asked for,
+ * and the page and emails say the Gym is free to use. The QR code step and
+ * the prices in SPORTS stay, ready for when fees start: set this to false.
+ */
+export const COURTS_FREE = true;
+export const FREE_NOTE = "Use of the sports facility is free for now. No payment needed.";
+
+/** The first and last days rentals open for (Adrian, 2026-11-14). Calendar closures still win. */
+export const RENTALS_FROM = "2026-11-15";
+export const RENTALS_UNTIL = "2026-12-20";
+
 export type Sport = "pickleball" | "badminton" | "volleyball" | "basketball";
 
 export interface SportInfo {
@@ -88,9 +100,9 @@ export const DAYS_AHEAD = 7;
 /**
  * What the renter accepts with one tick. The first six are Adrian's rules for
  * the Sports Facility (2026-10-20), shortened; the last two are how paying
- * and moving work.
+ * and moving work. Paying is left out while the Gym is free (COURTS_FREE).
  */
-export const COURT_POLICIES = [
+const ALL_COURT_POLICIES = [
   {
     id: "purpose",
     title: "Honor God",
@@ -133,6 +145,8 @@ export const COURT_POLICIES = [
   },
 ] as const;
 
+export const COURT_POLICIES = ALL_COURT_POLICIES.filter((p) => !(COURTS_FREE && p.id === "payment"));
+
 // --- Dates -------------------------------------------------------------------
 
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -174,16 +188,25 @@ export function courtsLabel(sport: string, numbers: readonly number[]): string {
   return `Courts ${sorted.slice(0, -1).join(", ")} & ${sorted[sorted.length - 1]}`;
 }
 
-export const priceOf = (sport: string, courts: number, hours: number) => (sportInfo(sport)?.rate ?? 0) * courts * hours;
+export const priceOf = (sport: string, courts: number, hours: number) =>
+  COURTS_FREE ? 0 : (sportInfo(sport)?.rate ?? 0) * courts * hours;
+
+/** "₱1,350", or "Free" for a free rental. */
+export const amountLabel = (n: number) => (n ? peso(n) : "Free");
+
+/** A sport's rate as the page shows it: "₱450 a court an hour", or "Free for now". */
+export const rateLabel = (s: SportInfo) => (COURTS_FREE ? "Free for now" : s.courts > 1 ? `${peso(s.rate)} a court an hour` : `${peso(s.rate)} an hour`);
 
 /**
  * The days a new rental can be for: tomorrow to DAYS_AHEAD days ahead, on
- * days with rentable hours. Moves may also use today.
+ * days with rentable hours, from RENTALS_FROM to RENTALS_UNTIL. Moves may
+ * also use today.
  */
 export function rentalDays(today: string, includeToday = false): string[] {
   const out: string[] = [];
   for (let i = includeToday ? 0 : 1; i <= DAYS_AHEAD; i++) {
     const key = addDays(today, i);
+    if (key < RENTALS_FROM || key > RENTALS_UNTIL) continue;
     if (RENTAL_SCHEDULE[weekdayOf(key)].length) out.push(key);
   }
   return out;

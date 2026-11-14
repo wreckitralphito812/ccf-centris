@@ -6,6 +6,8 @@ import type { AdminActionResult } from "@/app/actions/admin";
 import { isAdmin, isAdminConfigured } from "@/lib/admin-auth";
 import { currentUser } from "@/lib/auth/session";
 import {
+  amountLabel,
+  COURTS_FREE,
   COURTS_OPEN,
   courtsLabel,
   dayLabel,
@@ -13,7 +15,6 @@ import {
   manilaHour,
   moveError,
   parseCourtBooking,
-  peso,
   priceOf,
   sportInfo,
   sportName,
@@ -105,16 +106,19 @@ export async function reserveCourt(_prev: CourtBookingResult | null, formData: F
   if (!dgroup) return { ok: false, formError: NEEDS_DGROUP };
 
   const parsed = parseCourtBooking(formData, manilaDateKey());
+  // While the Gym is free (Adrian, 2026-11-14), no screenshot is asked for.
   const proof = formData.get("proof");
-  const proofError = proofProblem(proof);
+  const proofError = COURTS_FREE ? null : proofProblem(proof);
   if (!parsed.ok || proofError) {
     return { ok: false, fieldErrors: { ...(parsed.ok ? {} : parsed.fieldErrors), ...(proofError ? { proof: proofError } : {}) } };
   }
   const b = parsed.value;
   if (await gymClosed(b.sport, b.date, b.start, b.hours)) return { ok: false, fieldErrors: { start: CLOSED } };
 
-  const path = await saveProof(user.id, proof as File);
-  if (!path) return { ok: false, fieldErrors: { proof: "We couldn't save that picture. Upload a screenshot (JPG or PNG) and try again." } };
+  const path = COURTS_FREE ? null : await saveProof(user.id, proof as File);
+  if (!COURTS_FREE && !path) {
+    return { ok: false, fieldErrors: { proof: "We couldn't save that picture. Upload a screenshot (JPG or PNG) and try again." } };
+  }
 
   const amount = priceOf(b.sport, b.courts, b.hours);
   const { data: id, error } = await supabaseAdmin().rpc("book_court_rental", {
@@ -134,7 +138,7 @@ export async function reserveCourt(_prev: CourtBookingResult | null, formData: F
     p_email: b.renterEmail,
   });
   if (error) {
-    await deleteProof(path);
+    if (path) await deleteProof(path);
     refresh();
     if (isTaken(error)) return { ok: false, fieldErrors: { start: TAKEN } };
     console.error("reserveCourt failed", error);
@@ -168,7 +172,7 @@ export async function reserveCourt(_prev: CourtBookingResult | null, formData: F
       start: b.start,
       hours: b.hours,
       courts: courtsLabel(b.sport, courtNumbers),
-      amount: peso(amount),
+      amount: amountLabel(amount),
       email: b.renterEmail,
       emailed: sent.ok,
     },

@@ -75,7 +75,7 @@ function RentalCard({ r, holds, today, nowHour }: { r: MyRental; holds: CourtHol
       <div className="mt-4 space-y-2.5">
         <IconLine icon="calendar">{dayLabel(r.booked_on)}</IconLine>
         <IconLine icon="clock">{timeRange(r.start_hour, r.hours)}</IconLine>
-        <IconLine icon="check">Paid {peso(r.amount_php)}</IconLine>
+        <IconLine icon="check">{r.amount_php ? `Paid ${peso(r.amount_php)}` : "Free"}</IconLine>
         <IconLine icon="pin">Gym, CCF Centris</IconLine>
       </div>
       {done ? (

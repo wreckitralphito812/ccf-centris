@@ -486,3 +486,21 @@ test("court rentals, with renters' payment screenshots, are server-only", async 
     await assert.rejects(as(who, rent(ANA, 7, 1)), /permission denied/);
   }
 });
+
+test("a free rental needs no payment or screenshot (0021)", async () => {
+  const { rows } = await db.query<{ id: string }>(`
+    select book_court_rental('${SAT}', '${BEN}', null, 'pickleball', '2026-11-25', 9, 1, 1, 3, 0, null,
+      'Renter', '0917 123 4567', 'r@example.com') as id`);
+  const [r] = (
+    await db.query<{ amount_php: number; payment_proof: string | null }>(
+      "select amount_php, payment_proof from court_rentals where id = $1",
+      [rows[0].id],
+    )
+  ).rows;
+  assert.equal(r.amount_php, 0);
+  assert.equal(r.payment_proof, null);
+  await assert.rejects(
+    db.query(`select book_court_rental('${SAT}', '${BEN}', null, 'pickleball', '2026-11-25', 10, 1, 1, 3, -1, null, 'Renter', '0917 123 4567', 'r@example.com')`),
+    /amount_php_check/,
+  );
+});
