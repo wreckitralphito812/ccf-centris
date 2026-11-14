@@ -22,6 +22,9 @@ import { PICTURE_ACCEPT, prepareReceipt } from "@/lib/upload-image";
 import { SITE } from "@/lib/site";
 import {
   COURT_POLICIES,
+  COURTS_FREE,
+  FREE_NOTE,
+  rateLabel,
   MAX_HOURS,
   dayLabel,
   freeThrough,
@@ -139,7 +142,7 @@ function CourtAttempt({
           ? "How many courts?"
           : chosen === null
             ? "Choose a time"
-            : !proof
+            : !proof && !COURTS_FREE
               ? "Upload your payment"
               : !agreed
                 ? "Tick the rental rules"
@@ -195,7 +198,7 @@ function CourtAttempt({
           </p>
           <IconLine icon="calendar">{dayLabel(r.date)}</IconLine>
           <IconLine icon="clock">{timeRange(r.start, r.hours)}</IconLine>
-          <IconLine icon="check">Paid {r.amount}. The team checks every payment.</IconLine>
+          <IconLine icon="check">{r.amount === "Free" ? FREE_NOTE : `Paid ${r.amount}. The team checks every payment.`}</IconLine>
           <IconLine icon="pin">Gym · {SITE.addressLines.slice(0, 2).join(", ")}</IconLine>
         </div>
         <AddToCalendar
@@ -233,9 +236,9 @@ function CourtAttempt({
       className="pb-36"
       onSubmit={(ev) => {
         ev.preventDefault();
-        if (missing || pending || preparing || !proof) return;
+        if (missing || pending || preparing || (!proof && !COURTS_FREE)) return;
         const fd = new FormData(ev.currentTarget);
-        fd.set("proof", proof, proof.name);
+        if (proof) fd.set("proof", proof, proof.name);
         startTransition(() => action(fd));
       }}
     >
@@ -320,7 +323,7 @@ function CourtAttempt({
                     />
                     <span className={cx(on && "font-semibold")}>{s.name}</span>
                     <span className={cx("text-[0.9rem]", on ? "text-paper-bright/85" : "text-ink-mute")}>
-                      {s.courts > 1 ? `${peso(s.rate)} a court an hour` : `${peso(s.rate)} an hour`}
+                      {rateLabel(s)}
                     </span>
                   </label>
                 );
@@ -352,7 +355,7 @@ function CourtAttempt({
           </Question>
 
           {info && info.courts > 1 ? (
-            <Question id="q-courts" title="How many courts?" note={`Up to ${info.courts}, at ${peso(info.rate)} each an hour.`} error={e.courts}>
+            <Question id="q-courts" title="How many courts?" note={COURTS_FREE ? `Up to ${info.courts}.` : `Up to ${info.courts}, at ${peso(info.rate)} each an hour.`} error={e.courts}>
               <div role="radiogroup" aria-labelledby="q-courts" className="flex flex-wrap gap-2">
                 {Array.from({ length: info.courts }, (_, i) => i + 1).map((n) => (
                   <label key={n} className={calmChipClass(courts === n)}>
@@ -437,65 +440,72 @@ function CourtAttempt({
             />
           </Question>
 
-          <Question
-            id="q-pay"
-            title={total ? `Pay ${peso(total)}` : "Pay"}
-            note="Scan the QR code with your e-wallet or banking app, then upload a screenshot of the payment."
-            error={e.proof ?? proofNote ?? undefined}
-          >
-            <div className="grid gap-5 sm:grid-cols-[10rem_minmax(0,1fr)] sm:items-start">
-              {/* The CCF Centris giving QR, as Adrian sent it (2026-10-20). */}
-              <a
-                href="/payments/ccf-centris-qr.webp"
-                target="_blank"
-                rel="noreferrer"
-                className="mx-auto block w-full max-w-[12rem] overflow-hidden rounded-xl border border-hairline sm:mx-0 sm:max-w-none"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/payments/ccf-centris-qr.webp" alt="CCF Centris payment QR code, for e-wallets and banking apps" width={1080} height={1920} className="h-auto w-full" />
-              </a>
-              <div>
-                <p className="mb-3 text-[0.92rem] leading-relaxed text-ink-mute sm:hidden">
-                  Paying on this phone? Tap the QR code, save the picture, then choose it from your gallery in your e-wallet or banking app.
-                </p>
-                {total ? (
-                  <p className="text-[1rem] text-ink-soft">
-                    {info?.name}, {courts} {courts === 1 ? "court" : "courts"} × {hours} {hours === 1 ? "hour" : "hours"}:{" "}
-                    <span className="font-semibold text-ink tabular-nums">{peso(total)}</span>
-                  </p>
-                ) : (
-                  <p className="text-[1rem] text-ink-mute">The amount shows once you’ve picked a sport, hours and courts.</p>
-                )}
-                <label
-                  className={cx(
-                    "btn-press mt-4 inline-flex min-h-12 cursor-pointer items-center rounded-lg border px-5 text-[1rem] font-semibold transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-clay",
-                    proof ? "border-edge bg-paper-bright text-clay hover:border-clay/50" : "border-clay bg-clay text-paper-bright hover:bg-clay-deep",
-                  )}
+          {/* Free for now (Adrian, 2026-11-14): the QR step below comes back when COURTS_FREE is false. */}
+          {COURTS_FREE ? (
+            <Question id="q-pay" title="Free for now">
+              <p className="rounded-2xl bg-clay-wash px-5 py-4 text-[1rem] font-semibold text-clay-deep">{FREE_NOTE}</p>
+            </Question>
+          ) : (
+            <Question
+              id="q-pay"
+              title={total ? `Pay ${peso(total)}` : "Pay"}
+              note="Scan the QR code with your e-wallet or banking app, then upload a screenshot of the payment."
+              error={e.proof ?? proofNote ?? undefined}
+            >
+              <div className="grid gap-5 sm:grid-cols-[10rem_minmax(0,1fr)] sm:items-start">
+                {/* The CCF Centris giving QR, as Adrian sent it (2026-10-20). */}
+                <a
+                  href="/payments/ccf-centris-qr.webp"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mx-auto block w-full max-w-[12rem] overflow-hidden rounded-xl border border-hairline sm:mx-0 sm:max-w-none"
                 >
-                  <input
-                    type="file"
-                    accept={PICTURE_ACCEPT}
-                    className="sr-only"
-                    onChange={(ev) => {
-                      void pickProof(ev.target.files?.[0]);
-                      ev.target.value = "";
-                    }}
-                  />
-                  {preparing ? "Preparing…" : proof ? "Change the screenshot" : "Upload the screenshot"}
-                </label>
-                {preview ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={preview} alt="Your payment screenshot" className="mt-4 max-h-56 w-auto rounded-xl border border-hairline" />
-                ) : null}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/payments/ccf-centris-qr.webp" alt="CCF Centris payment QR code, for e-wallets and banking apps" width={1080} height={1920} className="h-auto w-full" />
+                </a>
+                <div>
+                  <p className="mb-3 text-[0.92rem] leading-relaxed text-ink-mute sm:hidden">
+                    Paying on this phone? Tap the QR code, save the picture, then choose it from your gallery in your e-wallet or banking app.
+                  </p>
+                  {total ? (
+                    <p className="text-[1rem] text-ink-soft">
+                      {info?.name}, {courts} {courts === 1 ? "court" : "courts"} × {hours} {hours === 1 ? "hour" : "hours"}:{" "}
+                      <span className="font-semibold text-ink tabular-nums">{peso(total)}</span>
+                    </p>
+                  ) : (
+                    <p className="text-[1rem] text-ink-mute">The amount shows once you’ve picked a sport, hours and courts.</p>
+                  )}
+                  <label
+                    className={cx(
+                      "btn-press mt-4 inline-flex min-h-12 cursor-pointer items-center rounded-lg border px-5 text-[1rem] font-semibold transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-clay",
+                      proof ? "border-edge bg-paper-bright text-clay hover:border-clay/50" : "border-clay bg-clay text-paper-bright hover:bg-clay-deep",
+                    )}
+                  >
+                    <input
+                      type="file"
+                      accept={PICTURE_ACCEPT}
+                      className="sr-only"
+                      onChange={(ev) => {
+                        void pickProof(ev.target.files?.[0]);
+                        ev.target.value = "";
+                      }}
+                    />
+                    {preparing ? "Preparing…" : proof ? "Change the screenshot" : "Upload the screenshot"}
+                  </label>
+                  {preview ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={preview} alt="Your payment screenshot" className="mt-4 max-h-56 w-auto rounded-xl border border-hairline" />
+                  ) : null}
+                </div>
               </div>
-            </div>
-          </Question>
+            </Question>
+          )}
 
           <Question id="q-rules" title="The rental rules">
             <PolicyAgreement
               id="rules-ok"
               policies={[...COURT_POLICIES]}
-              label="I’ve paid, and I agree to the rental rules."
+              label={COURTS_FREE ? "I agree to the rental rules." : "I’ve paid, and I agree to the rental rules."}
               checked={agreed}
               onChange={setAgreed}
               error={e.policies}
@@ -527,7 +537,7 @@ function CourtAttempt({
               {chosen !== null && hours ? `, ${timeRange(chosen, hours).split(" – ")[0]}` : ""}
             </span>
           ) : null}
-          <span className="block truncate text-[0.92rem] text-ink-mute">{missing ?? `${peso(total)} paid`}</span>
+          <span className="block truncate text-[0.92rem] text-ink-mute">{missing ?? (COURTS_FREE ? "Free for now" : `${peso(total)} paid`)}</span>
         </div>
         <button type="submit" disabled={!!missing || pending || preparing} className={barButtonClass}>
           {pending ? "Booking…" : "Book my court"}

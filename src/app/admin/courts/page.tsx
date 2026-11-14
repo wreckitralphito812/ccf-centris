@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AdminHeader, AdminNote, AdminPanel, Stat, Status, Table, Td } from "../admin-ui";
 import { requireAdmin } from "@/lib/admin-auth";
-import { courtsLabel, dayLabel, peso, sportName, timeRange } from "@/lib/court-rentals";
+import { amountLabel, COURTS_FREE, courtsLabel, dayLabel, sportName, timeRange } from "@/lib/court-rentals";
 import { manilaDateKey } from "@/lib/format";
 import { getCourtRentals, type CourtRental } from "@/lib/queries";
 import { hasSupabase } from "@/lib/supabase/server";
@@ -41,13 +41,13 @@ export default async function AdminCourts() {
         <span className="font-semibold">{sportName(r.sport)}</span>
         <span className="mt-0.5 block text-[0.82rem] text-ink-mute">{courtsLabel(r.sport, r.court_numbers)}</span>
       </Td>
-      <Td className="tabular-nums">{peso(r.amount_php)}</Td>
+      <Td className="tabular-nums">{amountLabel(r.amount_php)}</Td>
       <Td>
         <Status value={r.status} />
       </Td>
       <Td>
         <Link href={`/admin/courts/${r.id}`} className="font-semibold text-clay underline underline-offset-4">
-          See payment
+          {r.payment_proof ? "See payment" : "See rental"}
         </Link>
       </Td>
     </tr>
@@ -60,7 +60,11 @@ export default async function AdminCourts() {
     <div className="space-y-8">
       <AdminHeader
         title="Court rentals"
-        lead="Rentals in the Gym confirm as soon as the renter uploads a payment screenshot. Open one to check the payment; cancel it there if the money isn't in, and the renter is told and the courts are freed."
+        lead={
+          COURTS_FREE
+            ? "The Gym is free to use for now, so rentals confirm at once with no payment. Open one to see it; cancel it there if needed, and the renter is told and the courts are freed."
+            : "Rentals in the Gym confirm as soon as the renter uploads a payment screenshot. Open one to check the payment; cancel it there if the money isn't in, and the renter is told and the courts are freed."
+        }
       />
 
       {!hasSupabase() ? (
@@ -71,7 +75,7 @@ export default async function AdminCourts() {
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Stat label="Upcoming" value={upcoming.length} tone="clay" />
-        <Stat label="Paid for upcoming" value={peso(paidAhead)} tone="moss" />
+        <Stat label="Paid for upcoming" value={amountLabel(paidAhead)} tone="moss" />
         <Stat label="Cancelled" value={cancelled.length} />
       </div>
 

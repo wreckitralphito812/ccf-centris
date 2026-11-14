@@ -7,7 +7,7 @@ import type { UiIconName } from "@/components/icons";
 import { currentUser, hasAccounts } from "@/lib/auth/session";
 import { whenLabel } from "@/lib/booking-status";
 import { MAX_GROUP_SIZE } from "@/lib/dgroup-tables";
-import { COURTS_OPEN, COURTS_SOON } from "@/lib/court-rentals";
+import { COURTS_FREE, COURTS_OPEN, COURTS_SOON } from "@/lib/court-rentals";
 import { manilaDateKey } from "@/lib/format";
 import { getMyUpcoming } from "@/lib/queries";
 
@@ -60,13 +60,13 @@ const OPTIONS: {
   // Rentals opened 2026-10-20 (Adrian); the hours and prices are in lib/court-rentals.
   {
     title: "The court",
-    badge: "Sun, Tue–Fri",
+    badge: "Every day",
     href: "/reserve/courts",
     cta: "Rent a court",
     facts: [
-      ["clock", "Pickleball, badminton, volleyball, basketball"],
+      ["clock", "Pickleball and basketball"],
       ["people", "1 to 3 hours, for registered Dgroups"],
-      ["check", "Confirmed once you've paid"],
+      ["check", COURTS_FREE ? "Free for now, confirmed at once" : "Confirmed once you've paid"],
     ],
     soon: COURTS_OPEN ? undefined : COURTS_SOON,
   },

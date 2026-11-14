@@ -1,5 +1,5 @@
 import { noticeLayout } from "@/lib/emails/announcement";
-import { courtsLabel, dayLabel, peso, sportName, timeRange } from "@/lib/court-rentals";
+import { courtsLabel, dayLabel, FREE_NOTE, peso, sportName, timeRange } from "@/lib/court-rentals";
 
 /**
  * Court rental emails (2026-10-20): to the renter when a rental is booked,
@@ -33,7 +33,10 @@ export function rentalEmail(kind: RentalEmailKind, d: RentalEmailData) {
       headline: `You're booked, ${first}.`,
       paragraphs: [
         `${sportName(d.sport)} in the Gym at CCF Centris: ${courtsLabel(d.sport, d.courtNumbers).toLowerCase()}, ${when}.`,
-        `You paid ${peso(d.amount)}. The team checks every payment screenshot; if something's wrong with yours, we'll be in touch.`,
+        // A free rental (amount 0) has no payment to check (2026-11-14).
+        d.amount
+          ? `You paid ${peso(d.amount)}. The team checks every payment screenshot; if something's wrong with yours, we'll be in touch.`
+          : FREE_NOTE,
         "Rentals can't be cancelled, but you can move yours to another open time from your reservations page, even on the day itself.",
       ],
     },
@@ -48,8 +51,12 @@ export function rentalEmail(kind: RentalEmailKind, d: RentalEmailData) {
       subject: `Cancelled: your Gym rental on ${dayLabel(d.date)}`,
       headline: `Your rental is cancelled, ${first}.`,
       paragraphs: [
-        `The CCF Centris team cancelled your ${sportName(d.sport).toLowerCase()} rental on ${when}, usually because the payment couldn't be found.`,
-        "If you think this is a mistake, reply to this email with your payment details.",
+        d.amount
+          ? `The CCF Centris team cancelled your ${sportName(d.sport).toLowerCase()} rental on ${when}, usually because the payment couldn't be found.`
+          : `The CCF Centris team cancelled your ${sportName(d.sport).toLowerCase()} rental on ${when}.`,
+        d.amount
+          ? "If you think this is a mistake, reply to this email with your payment details."
+          : "If you have questions, reply to this email.",
       ],
     },
   }[kind];
@@ -72,13 +79,15 @@ export function adminRentalEmail(d: RentalEmailData & { dgroupName: string | nul
     ...noticeLayout({
       origin: d.origin,
       eyebrow: "Gym rental",
-      headline: "A court rental is booked. Check the payment.",
+      headline: d.amount ? "A court rental is booked. Check the payment." : "A court rental is booked.",
       paragraphs: [
         summary(d),
-        `${d.renterName}${d.dgroupName ? ` (${d.dgroupName})` : ""}, ${d.mobile}. Paid ${peso(d.amount)}.`,
-        "It's confirmed already. Open it to see the payment screenshot, and cancel it if the payment isn't there.",
+        `${d.renterName}${d.dgroupName ? ` (${d.dgroupName})` : ""}, ${d.mobile}. ${d.amount ? `Paid ${peso(d.amount)}.` : "Free, no payment."}`,
+        d.amount
+          ? "It's confirmed already. Open it to see the payment screenshot, and cancel it if the payment isn't there."
+          : "It's confirmed already. Open it to see the details, or cancel it if needed.",
       ],
-      button: { label: "See the payment", href: `${d.origin}/admin/courts/${d.id}` },
+      button: { label: d.amount ? "See the payment" : "See the rental", href: `${d.origin}/admin/courts/${d.id}` },
     }),
   };
 }

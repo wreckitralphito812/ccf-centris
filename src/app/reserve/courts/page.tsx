@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Section } from "@/components/ui";
 import { IconLine } from "@/components/booking";
-import { COURTS_OPEN, COURTS_SOON, MAX_HOURS, peso, rentalDays, SPORTS } from "@/lib/court-rentals";
+import { COURTS_FREE, COURTS_OPEN, COURTS_SOON, FREE_NOTE, MAX_HOURS, peso, rentalDays, RENTED_SPORTS } from "@/lib/court-rentals";
 import { manilaDateKey } from "@/lib/format";
 import { currentUser, hasAccounts } from "@/lib/auth/session";
 import { getCourtHolds, getMyContact, getMyCourtRentals, getMyDgroups } from "@/lib/queries";
@@ -14,7 +14,7 @@ import { CourtForm } from "./court-form";
 export const metadata: Metadata = {
   title: "Rent a court",
   description:
-    "Rent a court in the Gym at CCF Centris for pickleball, badminton, volleyball or basketball. For registered Dgroups.",
+    "Rent a court in the Gym at CCF Centris for pickleball or basketball. For registered Dgroups.",
 };
 
 /**
@@ -23,27 +23,34 @@ export const metadata: Metadata = {
  * screenshot. For leaders of registered Dgroups, like the tables.
  */
 export default function CourtsPage() {
-  const perCourt = SPORTS.filter((s) => s.courts > 1);
-  const wholeFloor = SPORTS.filter((s) => s.courts === 1);
+  const perCourt = RENTED_SPORTS.filter((s) => s.courts > 1);
+  const wholeFloor = RENTED_SPORTS.filter((s) => s.courts === 1);
   return (
     <>
       <PageHeader
         eyebrow="Reserve · Gym"
         title="Rent a court in the Gym."
-        lead="Pick a day, a sport and a time, then pay with the QR code. You're booked as soon as you upload the screenshot."
+        lead={
+          COURTS_FREE
+            ? "Pick a day, a sport and a time. The Gym is free to use for now, so you're booked right away."
+            : "Pick a day, a sport and a time, then pay with the QR code. You're booked as soon as you upload the screenshot."
+        }
       />
       <Section tone="mist">
         <Container className="max-w-2xl lg:max-w-6xl">
           <div className="grid gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
-            <IconLine icon="calendar">Sunday and Tuesday to Friday</IconLine>
+            <IconLine icon="calendar">Every day, at set hours</IconLine>
             <IconLine icon="clock">1 to {MAX_HOURS} hours, up to a week ahead</IconLine>
             <IconLine icon="people">
-              {perCourt.map((s) => s.name).join(" or ")}: {peso(perCourt[0].rate)} a court an hour
+              {perCourt.map((s) => s.name).join(" or ")}: {COURTS_FREE ? "up to 3 courts" : `${peso(perCourt[0].rate)} a court an hour`}
             </IconLine>
             <IconLine icon="pin">
-              {wholeFloor.map((s) => s.name).join(" or ")}: {peso(wholeFloor[0].rate)} an hour
+              {wholeFloor.map((s) => s.name).join(" or ")}: {COURTS_FREE ? "the whole court" : `${peso(wholeFloor[0].rate)} an hour`}
             </IconLine>
           </div>
+          {COURTS_FREE && COURTS_OPEN ? (
+            <p className="mt-8 rounded-2xl bg-clay-wash px-6 py-4 text-[1.02rem] font-semibold text-clay-deep">{FREE_NOTE}</p>
+          ) : null}
           <div className="mt-10">
             <Booking />
           </div>

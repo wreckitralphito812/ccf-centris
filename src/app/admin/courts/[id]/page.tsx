@@ -4,7 +4,7 @@ import { AdminHeader, AdminNote, Status } from "../../admin-ui";
 import { QueueActions } from "../../queue-actions";
 import { setCourtRentalStatus } from "@/app/actions/court-rentals";
 import { requireAdmin } from "@/lib/admin-auth";
-import { courtsLabel, dayLabel, manilaHour, peso, sportName, timeRange } from "@/lib/court-rentals";
+import { amountLabel, courtsLabel, dayLabel, manilaHour, sportName, timeRange } from "@/lib/court-rentals";
 import { fmtDayLong, fmtTime, manilaDateKey } from "@/lib/format";
 import { proofUrl } from "@/lib/payment-proofs";
 import { getCourtRental } from "@/lib/queries";
@@ -38,7 +38,7 @@ export default async function CourtRentalPage({ params }: { params: Promise<{ id
   }
 
   // Without the access code the console is open to anyone, so no screenshots then.
-  const picture = noCode ? null : await proofUrl(r.payment_proof);
+  const picture = noCode || !r.payment_proof ? null : await proofUrl(r.payment_proof);
   const today = manilaDateKey();
   const past = r.booked_on < today || (r.booked_on === today && r.start_hour + r.hours <= manilaHour());
 
@@ -46,7 +46,7 @@ export default async function CourtRentalPage({ params }: { params: Promise<{ id
     ["When", `${dayLabel(r.booked_on)}, ${timeRange(r.start_hour, r.hours)}`],
     ["Sport", sportName(r.sport)],
     ["Courts", courtsLabel(r.sport, r.court_numbers)],
-    ["Paid", peso(r.amount_php)],
+    ["Paid", amountLabel(r.amount_php)],
     ["Renter", r.renter_name],
     ["Dgroup", r.dgroup_name ?? "Not linked"],
     ["Mobile", r.contact_mobile],
@@ -62,7 +62,11 @@ export default async function CourtRentalPage({ params }: { params: Promise<{ id
       </Link>
       <AdminHeader
         title={`${sportName(r.sport)} · ${r.renter_name}`}
-        lead="Check that the payment screenshot shows the right amount, paid to CCF Centris. If it doesn't, cancel the rental: the renter gets an email and the courts are freed."
+        lead={
+          r.payment_proof
+            ? "Check that the payment screenshot shows the right amount, paid to CCF Centris. If it doesn't, cancel the rental: the renter gets an email and the courts are freed."
+            : "A free rental: nothing to pay. Cancel it here if needed: the renter gets an email and the courts are freed."
+        }
         action={<Status value={r.status === "confirmed" && past ? "completed" : r.status} />}
       />
 
@@ -86,7 +90,11 @@ export default async function CourtRentalPage({ params }: { params: Promise<{ id
             </a>
           ) : (
             <p className="mt-3 text-[0.95rem] text-ink-mute">
-              {noCode ? "Sign in with the admin code to see the screenshot." : "The screenshot couldn't be loaded. Refresh the page to try again."}
+              {!r.payment_proof
+                ? "None: this rental was free, so nothing was paid."
+                : noCode
+                  ? "Sign in with the admin code to see the screenshot."
+                  : "The screenshot couldn't be loaded. Refresh the page to try again."}
             </p>
           )}
         </figure>
@@ -94,7 +102,7 @@ export default async function CourtRentalPage({ params }: { params: Promise<{ id
 
       {readOnly || r.status !== "confirmed" || past ? null : (
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-[0.95rem] font-semibold text-ink">Payment not there?</span>
+          <span className="text-[0.95rem] font-semibold text-ink">{r.payment_proof ? "Payment not there?" : "Need to cancel it?"}</span>
           <QueueActions
             id={r.id}
             current={r.status}
