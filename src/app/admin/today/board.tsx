@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { AdminHeader, AdminNote, AdminPanel, Stat } from "../admin-ui";
 import { QueueActions } from "../queue-actions";
-import { PrintButton } from "./print-button";
 import { FloorPlanDrawing } from "@/components/floor-plan";
 import { cx } from "@/components/ui";
 import { setReservationStatus } from "@/app/actions/admin";
@@ -83,7 +82,20 @@ export function TodayBoard({
       <AdminHeader
         title="Today"
         lead="Everything on one day: events, Dgroup tables on the floor plans, and room bookings on each room's timeline. Tap a booking to see or change it."
-        action={<PrintButton />}
+        action={
+          // The day poster for the TV by the guard's desk replaces the printed day sheet (Adrian, 2026-11-15).
+          <a
+            href={`/admin/today/poster?d=${date}`}
+            download={`ccf-centris-${date}.png`}
+            className="btn-press inline-flex min-h-10 items-center gap-2 rounded-lg border border-edge bg-paper-bright px-4 text-[0.92rem] font-semibold text-ink transition-colors hover:border-clay hover:text-clay print:hidden"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <rect x="6" y="2" width="12" height="20" rx="2" />
+              <path d="M10 18h4" />
+            </svg>
+            TV poster (PNG)
+          </a>
+        }
       />
 
       {!connected ? (
