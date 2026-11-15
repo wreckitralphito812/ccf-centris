@@ -56,7 +56,7 @@ export function SectionNav({
     <nav
       ref={navRef}
       aria-label="Guide sections"
-      className="sticky top-[3.75rem] z-30 -mx-5 flex min-w-0 gap-1 self-start overflow-x-auto border-b border-hairline bg-paper/95 px-5 py-2 sm:-mx-8 sm:px-8 backdrop-blur [scrollbar-width:none] lg:top-24 lg:z-auto lg:mx-0 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:border-b-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none"
+      className="sticky top-[calc(var(--chrome,4.875rem)-2px)] z-30 -mx-5 flex min-w-0 gap-1 self-start overflow-x-auto border-b border-hairline bg-paper/95 px-5 py-2 sm:-mx-8 sm:px-8 backdrop-blur [scrollbar-width:none] lg:top-24 lg:z-auto lg:mx-0 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:border-b-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none"
     >
       {items.map((i) => (
         <a
