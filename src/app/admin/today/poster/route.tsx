@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import type { NextRequest } from "next/server";
 import { isAdmin, isAdminConfigured } from "@/lib/admin-auth";
 import { isDateKey } from "@/lib/admin-day";
-import { POSTER_LIST_HEIGHT, posterItems, posterScale, posterTimeLines } from "@/lib/day-poster";
+import { fitLine, POSTER_LIST_HEIGHT, posterItems, posterScale, posterTimeLines } from "@/lib/day-poster";
 import { WEEKDAY_NAMES } from "@/lib/dgroup-tables";
 import { manilaDateKey } from "@/lib/format";
 import { getAdminEvents, getCourtRentals, getDgroupTableBookings, getReservations } from "@/lib/queries";
@@ -17,8 +17,6 @@ const MUTE = "#4d6878";
 const TEAL = "#007a87";
 const PAPER = "#f8fafb";
 
-/** Keep a line to one row on the poster. */
-const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);
 
 /**
  * The day poster as a 1080 × 1920 PNG (9:16, portrait), for the TV by the
@@ -46,7 +44,9 @@ export async function GET(req: NextRequest) {
   const weekday = WEEKDAY_NAMES[day.getUTCDay()];
   const longDate = `${day.getUTCDate()} ${MONTHS[day.getUTCMonth()]} ${day.getUTCFullYear()}`;
   const logo = new URL("/logos/ccf-centris-horizontal.png", req.url).toString();
-  const chars = Math.round(1450 / s.title);
+  // The width left for a row's text: the poster less the page margins, the row's padding and border, and the time column.
+  const timeWidth = s.time * 5.6;
+  const textWidth = 1080 - 56 * 2 - 28 * 2 - 4 - timeWidth - 20;
 
   return new ImageResponse(
     (
@@ -63,6 +63,8 @@ export async function GET(req: NextRequest) {
           {shown.length ? (
             shown.map((i) => {
               const [start, end] = posterTimeLines(i);
+              const title = fitLine(i.title, s.title, textWidth, Math.round(s.title * 0.68));
+              const sub = fitLine([i.where, i.who].filter(Boolean).join(" · "), s.sub, textWidth, Math.round(s.sub * 0.75));
               return (
                 <div
                   key={i.key}
@@ -78,15 +80,13 @@ export async function GET(req: NextRequest) {
                     border: "2px solid #dbe5ea",
                   }}
                 >
-                  <div style={{ display: "flex", flexDirection: "column", width: s.time * 5.6, flexShrink: 0 }}>
+                  <div style={{ display: "flex", flexDirection: "column", width: timeWidth, flexShrink: 0 }}>
                     <div style={{ display: "flex", fontSize: s.time, fontWeight: 700, color: TEAL }}>{start}</div>
                     {end ? <div style={{ display: "flex", fontSize: Math.round(s.time * 0.72), color: MUTE }}>{end}</div> : null}
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", marginLeft: 20, flexGrow: 1 }}>
-                    <div style={{ display: "flex", fontSize: s.title, fontWeight: 700, color: INK }}>{clip(i.title, chars)}</div>
-                    <div style={{ display: "flex", marginTop: 2, fontSize: s.sub, color: MUTE }}>
-                      {clip([i.where, i.who].filter(Boolean).join(" · "), Math.round(chars * 1.3))}
-                    </div>
+                  <div style={{ display: "flex", flexDirection: "column", marginLeft: 20, width: textWidth, overflow: "hidden" }}>
+                    <div style={{ display: "flex", fontSize: title.size, fontWeight: 700, color: INK, whiteSpace: "nowrap", overflow: "hidden" }}>{title.text}</div>
+                    <div style={{ display: "flex", marginTop: 2, fontSize: sub.size, color: MUTE, whiteSpace: "nowrap", overflow: "hidden" }}>{sub.text}</div>
                   </div>
                 </div>
               );
