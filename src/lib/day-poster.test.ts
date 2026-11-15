@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { POSTER_LIST_HEIGHT, posterItems, posterScale, posterTime } from "./day-poster";
+import { fitLine, POSTER_LIST_HEIGHT, posterItems, posterScale, posterTime } from "./day-poster";
 
 // Wednesday 2026-11-18. Manila is UTC+8, so 19:00 Manila is 11:00Z.
 const D = "2026-11-18";
@@ -70,4 +70,15 @@ test("rows shrink to fit the day, and a very busy day stops at a line limit", ()
   assert.equal(posterScale(3).title, 44);
   assert.ok(posterScale(14).title < posterScale(6).title);
   assert.ok(posterScale(40).row >= 72);
+});
+
+test("long lines shrink to fit one line, then end with an ellipsis", () => {
+  const short = fitLine("Midweek Prayer", 44, 700, 30);
+  assert.deepEqual(short, { size: 44, text: "Midweek Prayer" });
+  const longer = fitLine("Leaders Planning Meeting and Dinner", 44, 700, 30);
+  assert.ok(longer.size < 44 && longer.size >= 30);
+  assert.equal(longer.text, "Leaders Planning Meeting and Dinner");
+  const huge = fitLine("A".repeat(120), 44, 700, 30);
+  assert.equal(huge.size, 30);
+  assert.ok(huge.text.endsWith("…") && huge.text.length * 30 * 0.56 <= 700);
 });

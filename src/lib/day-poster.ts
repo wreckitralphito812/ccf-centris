@@ -137,3 +137,18 @@ export function posterScale(n: number): { row: number; gap: number; title: numbe
     max,
   };
 }
+
+/** Average letter width as a share of the font size, for the poster's bold sans-serif. Measured, with a little to spare. */
+const LETTER = 0.56;
+
+/**
+ * One line of poster text that fits `width` pixels without wrapping
+ * (Adrian, 2026-11-15: long titles spilled onto a second line). A long line
+ * gets a smaller font, down to `min`; past that it's shortened with "…".
+ */
+export function fitLine(text: string, size: number, width: number, min: number): { size: number; text: string } {
+  const fits = Math.floor(Math.min(size, width / (Math.max(text.length, 1) * LETTER)));
+  if (fits >= min) return { size: fits, text };
+  const n = Math.max(4, Math.floor(width / (min * LETTER)));
+  return { size: min, text: text.length > n ? `${text.slice(0, n - 1).trimEnd()}…` : text };
+}
