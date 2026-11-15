@@ -1,12 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cx } from "@/components/ui";
 
 /**
  * Sticky section nav for a 4Ws guide. Highlights the section currently in
  * view. Plain anchor links, so it works with JS off — the active state is
  * the only thing that needs the client.
+ *
+ * On phones it is a row of chips that stays under the header while you read
+ * (2026-11-15), so a Dgroup leader can jump between Welcome, Word and Works
+ * without scrolling back to the top. The row scrolls sideways, and keeps the
+ * current section's chip in view.
  */
 export function SectionNav({
   items,
@@ -14,6 +19,19 @@ export function SectionNav({
   items: { id: string; label: string }[];
 }) {
   const [active, setActive] = useState(items[0]?.id ?? "");
+  const navRef = useRef<HTMLElement>(null);
+
+  // Slide the chip row so the current chip is visible. Sets scrollLeft on the
+  // row itself; scrollIntoView would also move the page.
+  useEffect(() => {
+    const nav = navRef.current;
+    const chip = nav?.querySelector<HTMLElement>('[aria-current="true"]');
+    if (!nav || !chip || nav.scrollWidth <= nav.clientWidth) return;
+    nav.scrollTo({
+      left: chip.offsetLeft - (nav.clientWidth - chip.offsetWidth) / 2,
+      behavior: "smooth",
+    });
+  }, [active]);
 
   useEffect(() => {
     const els = items
@@ -36,8 +54,9 @@ export function SectionNav({
 
   return (
     <nav
+      ref={navRef}
       aria-label="Guide sections"
-      className="flex gap-1 overflow-x-auto lg:sticky lg:top-24 lg:flex-col lg:gap-0.5 lg:overflow-visible"
+      className="sticky top-[3.75rem] z-30 -mx-5 flex min-w-0 gap-1 self-start overflow-x-auto border-b border-hairline bg-paper/95 px-5 py-2 sm:-mx-8 sm:px-8 backdrop-blur [scrollbar-width:none] lg:top-24 lg:z-auto lg:mx-0 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:border-b-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none"
     >
       {items.map((i) => (
         <a

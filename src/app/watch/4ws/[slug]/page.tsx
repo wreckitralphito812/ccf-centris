@@ -105,7 +105,10 @@ export default async function FourWsGuidePage({ params }: { params: Params }) {
             ) : null}
           </div>
 
-          <div className="mt-10 grid gap-10 lg:grid-cols-[13rem_minmax(0,42rem)] lg:gap-14">
+          {/* grid-cols-1 (2026-11-15): without it the single phone column grew
+              to fit the section chips on one line, and every card ran off the
+              right edge of the screen. */}
+          <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-[13rem_minmax(0,42rem)] lg:gap-14">
             <SectionNav items={nav} />
 
             <div className="space-y-6">
@@ -113,7 +116,7 @@ export default async function FourWsGuidePage({ params }: { params: Params }) {
               {guide.welcome ? (
                 <section
                   id="welcome"
-                  className="scroll-mt-24 surface p-6 sm:p-8"
+                  className="scroll-mt-10 surface p-6 sm:p-8 lg:scroll-mt-24"
                 >
                   <div className="flex items-center gap-3">
                     {step(1)}
@@ -132,7 +135,7 @@ export default async function FourWsGuidePage({ params }: { params: Params }) {
               {guide.worshipSongs.length ? (
                 <section
                   id="worship"
-                  className="scroll-mt-24 surface p-6 sm:p-8"
+                  className="scroll-mt-10 surface p-6 sm:p-8 lg:scroll-mt-24"
                 >
                   <div className="flex items-center gap-3">
                     {step(2)}
@@ -159,7 +162,7 @@ export default async function FourWsGuidePage({ params }: { params: Params }) {
               {guide.word ? (
                 <section
                   id="word"
-                  className="scroll-mt-24 surface p-6 sm:p-8"
+                  className="scroll-mt-10 surface p-6 sm:p-8 lg:scroll-mt-24"
                 >
                   <div className="flex items-center gap-3">
                     {step(3)}
@@ -247,7 +250,7 @@ export default async function FourWsGuidePage({ params }: { params: Params }) {
               {guide.works ? (
                 <section
                   id="works"
-                  className="scroll-mt-24 surface p-6 sm:p-8"
+                  className="scroll-mt-10 surface p-6 sm:p-8 lg:scroll-mt-24"
                 >
                   <div className="flex items-center gap-3">
                     {step(4)}
@@ -305,7 +308,7 @@ export default async function FourWsGuidePage({ params }: { params: Params }) {
               {guide.prayCareShare ? (
                 <section
                   id="pray-care-share"
-                  className="scroll-mt-24 surface p-6 sm:p-8"
+                  className="scroll-mt-10 surface p-6 sm:p-8 lg:scroll-mt-24"
                 >
                   <h2 className="font-display text-2xl">Pray · Care · Share</h2>
                   <p className="mt-2 text-[0.85rem] text-ink-mute">
@@ -342,7 +345,7 @@ export default async function FourWsGuidePage({ params }: { params: Params }) {
               {guide.prayerPoints.length ? (
                 <section
                   id="prayer-points"
-                  className="scroll-mt-24 surface p-6 sm:p-8"
+                  className="scroll-mt-10 surface p-6 sm:p-8 lg:scroll-mt-24"
                 >
                   <h2 className="font-display text-2xl">Weekly Prayer Points</h2>
                   <div className="mt-5 space-y-2">
