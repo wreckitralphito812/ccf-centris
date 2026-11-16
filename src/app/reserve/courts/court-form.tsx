@@ -22,6 +22,7 @@ import { PICTURE_ACCEPT, prepareReceipt } from "@/lib/upload-image";
 import { SITE } from "@/lib/site";
 import {
   COURT_POLICIES,
+  changeNote,
   COURTS_FREE,
   FREE_NOTE,
   rateLabel,
@@ -212,7 +213,7 @@ function CourtAttempt({
             details: `${r.sport}, ${r.courts.toLowerCase()}, in the Gym at ${SITE.name}. Move it at ${SITE.url}/my/reservations`,
           }}
         />
-        <p className="text-[0.98rem] text-ink-mute">Rentals can’t be cancelled, but you can move yours to another open time.</p>
+        <p className="text-[0.98rem] text-ink-mute">{changeNote(COURTS_FREE ? 0 : 1)}</p>
         <p className="flex flex-wrap gap-x-6 gap-y-2 text-[0.98rem]">
           <button type="button" onClick={onAnother} className="min-h-11 font-semibold text-clay hover:underline">
             Book another time

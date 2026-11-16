@@ -7,6 +7,7 @@ import { isAdmin, isAdminConfigured } from "@/lib/admin-auth";
 import { currentUser } from "@/lib/auth/session";
 import {
   amountLabel,
+  cancelError,
   COURTS_FREE,
   COURTS_OPEN,
   courtsLabel,
@@ -187,8 +188,8 @@ export interface CourtMoveResult {
 
 /**
  * Move one of the member's rentals to another day or start time, same sport,
- * hours and courts. Renters can't cancel (Adrian, 2026-10-20), so this is how
- * plans change, even on the day itself.
+ * hours and courts, even on the day itself. Paid rentals can't be cancelled
+ * (Adrian, 2026-10-20), so for them this is how plans change.
  */
 export async function moveCourtRental(_prev: CourtMoveResult | null, formData: FormData): Promise<CourtMoveResult> {
   if (!hasSupabase()) return { ok: false, formError: GENERIC };
@@ -241,6 +242,65 @@ export async function moveCourtRental(_prev: CourtMoveResult | null, formData: F
   });
   refresh();
   return { ok: true, summary: `${courtsLabel(rental.sport, courtNumbers)} · ${dayLabel(date)}, ${timeRange(start, rental.hours)}` };
+}
+
+/**
+ * A member cancels one of their own free rentals before it starts (Ralph,
+ * 2026-11-16). The courts are freed at once and the renter is emailed. The
+ * `user_id` filter is what makes it theirs: this runs with the service role.
+ * Paid rentals can't be cancelled (no refunds), only moved.
+ */
+export async function cancelMyCourtRental(id: string): Promise<CourtMoveResult> {
+  if (!hasSupabase()) return { ok: false, formError: GENERIC };
+  const user = await currentUser();
+  if (!user) return { ok: false, formError: "Sign in again to cancel this rental." };
+
+  const db = supabaseAdmin();
+  const { data: r, error: readError } = await db
+    .from("court_rentals")
+    .select("sport, booked_on, start_hour, hours, court_numbers, renter_name, renter_email, amount_php")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .eq("status", "confirmed")
+    .maybeSingle();
+  if (readError || !r) return { ok: false, formError: "That rental can't be cancelled any more." };
+
+  const rental = r as {
+    sport: string;
+    booked_on: string;
+    start_hour: number;
+    hours: number;
+    court_numbers: number[] | null;
+    renter_name: string;
+    renter_email: string;
+    amount_php: number;
+  };
+  const problem = cancelError(rental, manilaDateKey(), manilaHour());
+  if (problem) return { ok: false, formError: problem };
+
+  const { data: done, error } = await db.rpc("cancel_court_rental", { p_id: id });
+  if (error) {
+    console.error("cancelMyCourtRental failed", error);
+    return { ok: false, formError: GENERIC };
+  }
+  if (!done) return { ok: false, formError: "That rental can't be cancelled any more." };
+
+  await sendEmail({
+    to: rental.renter_email,
+    ...rentalEmail("withdrawn", {
+      origin: siteOrigin(),
+      id,
+      renterName: rental.renter_name,
+      sport: rental.sport,
+      date: rental.booked_on,
+      start: rental.start_hour,
+      hours: rental.hours,
+      courtNumbers: rental.court_numbers ?? [],
+      amount: rental.amount_php,
+    }),
+  });
+  refresh();
+  return { ok: true };
 }
 
 /**
