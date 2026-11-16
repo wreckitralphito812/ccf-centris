@@ -5,7 +5,9 @@ import { cx } from "@/components/ui";
 import { requireAdmin } from "@/lib/admin-auth";
 import { hasSupabase } from "@/lib/supabase/server";
 import { getAdminEvents, getCourtRentals, getDgroupTableBookings, getReservations, getRoomBlocks } from "@/lib/queries";
-import { courtsLabel, sportName, timeRange } from "@/lib/court-rentals";
+import { courtsLabel, rentalsAsGymBookings, sportName, timeRange } from "@/lib/court-rentals";
+import { clashesIn } from "@/lib/clashes";
+import { ClashesPanel } from "../clashes-panel";
 import { manilaDateKey } from "@/lib/format";
 import { BOARD_ROOMS, manilaDay, manilaMinutesOf, roomFor } from "@/lib/admin-day";
 import { daysCovered, venueRooms } from "@/lib/announcements";
@@ -173,6 +175,16 @@ export default async function AdminRooms({ searchParams }: PageProps<"/admin/roo
           </Link>
         ))}
       </nav>
+
+      {/* This room's clashes this month (Adrian, 2026-11-16). */}
+      <ClashesPanel
+        clashes={clashesIn(
+          cells.filter((d): d is string => Boolean(d)),
+          events,
+          [...rooms, ...rentalsAsGymBookings(rentals)],
+        ).filter((c) => c.room === room.slug)}
+        showDate
+      />
 
       <div className="flex flex-wrap items-center gap-2">
         <Link href={href({ m: shiftMonth(-1) })} className={nav} aria-label="Previous month">

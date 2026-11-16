@@ -23,6 +23,8 @@ import {
   manilaMinutesOf,
 } from "@/lib/admin-day";
 import { blockedLabels, describeBlock, type TableBlock } from "@/lib/dgroup-blocks";
+import { clashesOn } from "@/lib/clashes";
+import { ClashesPanel } from "../clashes-panel";
 import type { RoomBlock } from "@/lib/queries";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -146,6 +148,9 @@ export function TodayBoard({
           })}
         </div>
       </div>
+
+      {/* Two bookings in one room at once (Adrian, 2026-11-16). */}
+      <ClashesPanel clashes={clashesOn(date, events, rooms)} />
 
       {/* Printed heading */}
       <p className="hidden text-[1.4rem] font-bold print:block">CCF Centris · {longDate(date)}</p>

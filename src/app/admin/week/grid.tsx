@@ -16,6 +16,8 @@ import {
 import { DGROUP_NIGHTS, DGROUP_SLOTS, WEEKDAY_NAMES } from "@/lib/dgroup-tables";
 import { EventTags, eventTime } from "../today/board";
 import { timeLabel } from "@/lib/ministry-rooms";
+import { clashesIn } from "@/lib/clashes";
+import { ClashesPanel } from "../clashes-panel";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const short = (d: string) => {
@@ -79,6 +81,9 @@ export function WeekGrid({
           </Link>
         ) : null}
       </div>
+
+      {/* Two bookings in one room at once (Adrian, 2026-11-16). */}
+      <ClashesPanel clashes={clashesIn(days, events, rooms)} showDate />
 
       <div className="overflow-x-auto rounded-xl border border-hairline bg-paper-bright">
         <table className="w-full min-w-[68rem] table-fixed border-collapse text-[0.85rem]">
