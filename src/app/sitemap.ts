@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { SITE } from "@/lib/site";
+import { getFourWsWeeks, getUpcomingEvents } from "@/lib/queries";
 
 /**
  * The public pages worth finding from a search engine. Parked demo pages (see
@@ -26,10 +27,29 @@ const PAGES: { path: string; priority: number }[] = [
   { path: "/accessibility", priority: 0.2 },
 ];
 
-export default function sitemap(): MetadataRoute.Sitemap {
+/** Events come and go, so the list is rebuilt hourly rather than at deploy. */
+export const revalidate = 3600;
+
+/**
+ * The fixed pages, plus every upcoming event and every 4Ws guide (2026-11-14).
+ * Those two were only reachable by following links, and the live sitemap
+ * listed 18 of about 80 indexable pages. Both lookups fail soft to an empty
+ * list, so a database hiccup still returns the fixed pages.
+ */
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = SITE.url.replace(/\/$/, "");
-  return PAGES.map(({ path, priority }) => ({
-    url: `${base}${path === "/" ? "" : path}`,
-    priority,
-  }));
+  const [events, weeks] = await Promise.all([
+    getUpcomingEvents().catch(() => []),
+    getFourWsWeeks().catch(() => []),
+  ]);
+  return [
+    ...PAGES.map(({ path, priority }) => ({
+      url: `${base}${path === "/" ? "" : path}`,
+      priority,
+    })),
+    ...events.map((e) => ({ url: `${base}/events/${e.slug}`, priority: 0.5 })),
+    ...weeks
+      .filter((w) => w.hasGuide)
+      .map((w) => ({ url: `${base}/watch/4ws/${w.slug}`, priority: 0.4 })),
+  ];
 }

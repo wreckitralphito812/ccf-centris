@@ -35,12 +35,10 @@ export const metadata: Metadata = {
     locale: "en_PH",
     url: SITE.url,
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "CCF Centris",
-    description:
-      "A satellite of Christ's Commission Fellowship at Eton Centris, Quezon City. Sundays at 10:00 AM and 3:00 PM.",
-  },
+  /* No title or description here (2026-11-14): a fixed pair made every
+     page's X/Twitter card say "CCF Centris" with the homepage blurb. Left
+     unset, each page's own title and description are used. */
+  twitter: { card: "summary_large_image" },
   robots: { index: true, follow: true },
   /* Every page names its ccfcentris.org.ph address as the real one
      (2026-10-10). Search results still listed ccf-centris.vercel.app a week

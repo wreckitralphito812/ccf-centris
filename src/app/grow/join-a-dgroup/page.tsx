@@ -16,6 +16,29 @@ export const metadata: Metadata = {
     "A Dgroup is a small group that meets every week to study the Bible, pray and grow together. See what happens at one and how to join through CCF Centris.",
 };
 
+/**
+ * The first-Dgroup questions, shown on the page and repeated as FAQPage
+ * structured data (2026-11-14) so search engines and AI assistants can quote
+ * the answers word for word.
+ */
+const FAQS: [string, string][] = [
+  ["Do I have to pray out loud?", "No. Plenty of people stay quiet for months, and nobody will put you on the spot."],
+  ["What if I don't know the Bible?", "That's fine. Groups explain as they go."],
+  ["Do I have to share personal things?", "Only what you want to. Most people open up slowly, over months."],
+  ["What if I can't come every week?", "Come when you can. Everyone misses a week now and then because of work or family."],
+  ["Is it a commitment?", "Try it for a few weeks before you decide. There's no fee."],
+];
+
+const FAQ_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQS.map(([q, a]) => ({
+    "@type": "Question",
+    name: q,
+    acceptedAnswer: { "@type": "Answer", text: a },
+  })),
+};
+
 export default function JoinDgroupPage() {
   return (
     <>
@@ -72,14 +95,13 @@ export default function JoinDgroupPage() {
                 Nearly everyone is a bit nervous the first time.
               </p>
             </div>
+            <script
+              type="application/ld+json"
+              // Structured data: self-authored JSON with no user input.
+              dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSON_LD) }}
+            />
             <dl className="divide-y divide-hairline border-y border-hairline">
-              {[
-                ["Do I have to pray out loud?", "No. Plenty of people stay quiet for months, and nobody will put you on the spot."],
-                ["What if I don't know the Bible?", "That's fine. Groups explain as they go."],
-                ["Do I have to share personal things?", "Only what you want to. Most people open up slowly, over months."],
-                ["What if I can't come every week?", "Come when you can. Everyone misses a week now and then because of work or family."],
-                ["Is it a commitment?", "Try it for a few weeks before you decide. There's no fee."],
-              ].map(([q, a]) => (
+              {FAQS.map(([q, a]) => (
                 <div key={q} className="py-5">
                   <dt className="font-display text-lg">{q}</dt>
                   <dd className="mt-1.5 leading-relaxed text-ink-soft">{a}</dd>
