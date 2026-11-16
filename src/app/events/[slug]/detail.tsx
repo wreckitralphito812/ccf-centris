@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ButtonLink, Container, Section, SectionHead } from "@/components/ui";
 import { EventCard, MessageArt } from "@/components/cards";
 import { Breadcrumbs } from "@/components/breadcrumbs";
@@ -37,6 +38,9 @@ export function EventDetail({ e, others }: { e: CcfEvent; others: CcfEvent[] }) 
   const wide = e.cover_image_url ?? e.artwork?.main_tv ?? null;
   const tall = wide && wide === e.artwork?.main_tv ? e.artwork?.social : undefined;
   const fee = e.fee_note ?? (e.price_cents ? fmtPeso(e.price_cents) : "Free");
+  // Every date is behind us: say so on the page (2026-11-16), so nobody
+  // arriving from an old link or search result plans around it.
+  const ended = (next.ends_at ?? next.starts_at) < now;
   // Off-site events (a retreat in Batangas) get their own map link and
   // address, not Centris's (2026-10-08).
   const where = venueKind(e.location_note);
@@ -73,7 +77,13 @@ export function EventDetail({ e, others }: { e: CcfEvent; others: CcfEvent[] }) 
                 addressCountry: "PH",
               },
             },
-    organizer: { "@type": "Organization", name: e.ministry ?? e.organizer ?? "CCF Centris" },
+    // The ministry runs it under CCF Centris (2026-11-16): a bare "FAM" told
+    // search engines nothing about who that is.
+    organizer: organizerLd(e.ministry ?? e.organizer),
+    // Free events say so, which Google shows in event results.
+    ...(!e.price_cents && !e.fee_note
+      ? { isAccessibleForFree: true, offers: { "@type": "Offer", price: 0, priceCurrency: "PHP", availability: "https://schema.org/InStock", url: `${SITE.url.replace(/\/$/, "")}/events/${e.slug}` } }
+      : {}),
   };
 
   return (
@@ -83,6 +93,14 @@ export function EventDetail({ e, others }: { e: CcfEvent; others: CcfEvent[] }) 
       <Section tone="mist" className="pt-8! sm:pt-12!">
         <Container className="max-w-6xl">
           <Breadcrumbs className="mb-6" items={[{ label: "What's Happening", href: "/events" }, { label: e.title }]} />
+          {ended ? (
+            <p role="status" className="mb-6 rounded-2xl bg-mist px-5 py-4 text-[1rem] font-semibold text-ink">
+              This event has ended.{" "}
+              <Link href="/events" className="text-clay underline underline-offset-4">
+                See what’s coming up
+              </Link>
+            </p>
+          ) : null}
 
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
             <div className="overflow-hidden rounded-2xl bg-paper-bright shadow-[0_0_0_1px_var(--hairline),0_30px_50px_-20px_rgb(13_43_58/0.25)]">
@@ -228,4 +246,10 @@ function DateLine({ d, now }: { d: { starts_at: string; ends_at: string | null; 
       <span className={(d.ends_at ?? d.starts_at) < now ? "text-ink-mute line-through" : undefined}>{dateText(d)}</span>
     </IconLine>
   );
+}
+
+/** The organizer for search engines: a ministry, under CCF Centris; or CCF Centris itself. */
+function organizerLd(name: string | null | undefined) {
+  if (!name || name === SITE.name) return { "@type": "Organization", name: SITE.name, url: SITE.url };
+  return { "@type": "Organization", name, parentOrganization: { "@type": "Organization", name: SITE.name, url: SITE.url } };
 }

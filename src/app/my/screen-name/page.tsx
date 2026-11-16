@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/page-header";
 import { Container, Section } from "@/components/ui";
 import { safeNext } from "@/lib/prayer-wall";
-import { currentUser } from "@/lib/auth/session";
+import { requireMember } from "@/lib/auth/session";
 import { getMemberProfile } from "@/lib/auth/profile";
 import { ScreenNameForm } from "./screen-name-form";
 
@@ -16,8 +16,8 @@ export const metadata: Metadata = { title: "Your screen name" };
 export default async function ScreenNamePage({ searchParams }: PageProps<"/my/screen-name">) {
   const sp = await searchParams;
   const next = safeNext(Array.isArray(sp.next) ? sp.next[0] : sp.next, "/prayer-wall");
-  const user = await currentUser();
-  const name = (user && (await getMemberProfile(user.id))?.screen_name) || "";
+  const user = await requireMember(`/my/screen-name?next=${encodeURIComponent(next)}`);
+  const name = (await getMemberProfile(user.id))?.screen_name || "";
 
   return (
     <>

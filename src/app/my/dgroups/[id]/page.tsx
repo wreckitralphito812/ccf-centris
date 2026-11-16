@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
 import { Container, Section } from "@/components/ui";
-import { currentUser } from "@/lib/auth/session";
+import { requireMember } from "@/lib/auth/session";
 import { getMyDgroup } from "@/lib/queries";
 import { DgroupForm } from "../dgroup-form";
 import { initialFrom } from "../initial";
@@ -14,8 +14,8 @@ export const dynamic = "force-dynamic";
 /** Edit one of this member's Dgroups (2026-10-08). */
 export default async function EditDgroupPage({ params }: PageProps<"/my/dgroups/[id]">) {
   const { id } = await params;
-  const user = await currentUser();
-  const d = user ? await getMyDgroup(user.id, id) : null;
+  const user = await requireMember(`/my/dgroups/${id}`);
+  const d = await getMyDgroup(user.id, id);
   if (!d) notFound();
   return (
     <>

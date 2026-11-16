@@ -12,7 +12,7 @@ import { manilaDateKey } from "@/lib/format";
 import { getMyUpcoming } from "@/lib/queries";
 
 export const metadata: Metadata = {
-  title: "Reserve",
+  title: "Reserve a Dgroup Table, Room or Court",
   description:
     "Book a table for your Dgroup, rent a court in the Gym, or request a room for a ministry gathering at CCF Centris.",
 };

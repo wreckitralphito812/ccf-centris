@@ -65,6 +65,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: ACCOUNT_HINT }} />
+        {/* The homepage's scroll-in sections start hidden (opacity 0) until
+            JavaScript animates them. Without JavaScript they would stay
+            blank, so show them as they are (2026-11-16). */}
+        <noscript>
+          <style>{`main [style*="opacity:0"]{opacity:1!important;transform:none!important}`}</style>
+        </noscript>
       </head>
       <body className="min-h-svh flex flex-col bg-paper text-ink">
         <a

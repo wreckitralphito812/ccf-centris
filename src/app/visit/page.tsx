@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Eyebrow, Section } from "@/components/ui";
 import {
@@ -9,9 +10,31 @@ import {
   PARKING_DIRECTIONS,
   PARKING_EMBED,
   PARKING_WAZE,
+  SERVICE_TIMES_TEXT,
   SITE,
   WAZE_LINK,
 } from "@/lib/site";
+
+/**
+ * What people ask before their first Sunday (2026-11-16), answered only with
+ * facts the site already states elsewhere. Shown on the page and repeated as
+ * FAQPage structured data, which is what search engines and AI assistants
+ * quote when someone asks "what time is the service at CCF Centris?".
+ */
+const FAQS: [string, string][] = [
+  ["What time are the Sunday services?", `Every Sunday at ${SERVICE_TIMES_TEXT}, in the Main Worship Hall on the second floor of Centris Station, Eton Centris, Quezon City.`],
+  ["Do I need to register before coming?", "No. Just come. Everyone is welcome, and there's no dress code."],
+  ["Where do I park?", `At ${PARKING.name}, inside Eton Centris. Parking rates are set by the mall.`],
+  ["How do I get there by train?", "Take MRT-3 to Quezon Avenue station, walk through the connecting concourse into Eton Centris, then up to the second floor of Centris Station."],
+  ["Can I watch online if I can't come?", "Yes. Last Sunday's message is on the Watch page, with that week's 4Ws guide for your Dgroup."],
+  ["How do I join a small group?", "Sign up for a Dgroup, a small group that meets every week to read the Bible and pray. The Dgroup team will match you with one."],
+];
+
+const FAQ_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQS.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
+};
 
 /* Written for search (2026-10-11): what people type (church, Quezon City, service times, Eton Centris) and why to come. */
 export const metadata: Metadata = {
@@ -208,6 +231,33 @@ export default function VisitPage() {
             Mall parking rates and entrances can change. The Welcome Center can always point you
             the right way.
           </p>
+        </Container>
+      </Section>
+
+      <Section>
+        <Container>
+          <script
+            type="application/ld+json"
+            // Structured data: self-authored JSON with no user input.
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSON_LD) }}
+          />
+          <div className="grid gap-12 lg:grid-cols-[1fr_1.1fr]">
+            <div>
+              <Eyebrow>Before you come</Eyebrow>
+              <h2 className="display-md mt-5">Questions people ask.</h2>
+              <p className="mt-5 leading-relaxed text-ink-soft">
+                Anything else? The <Link href="/contact" className="text-clay underline underline-offset-4">team is a message away</Link>.
+              </p>
+            </div>
+            <dl className="divide-y divide-hairline border-y border-hairline">
+              {FAQS.map(([q, a]) => (
+                <div key={q} className="py-5">
+                  <dt className="font-display text-lg">{q}</dt>
+                  <dd className="mt-1.5 leading-relaxed text-ink-soft">{a}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
         </Container>
       </Section>
     </>

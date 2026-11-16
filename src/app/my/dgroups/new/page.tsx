@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { Container, Section } from "@/components/ui";
+import { requireMember } from "@/lib/auth/session";
 import { getMyContact } from "@/lib/queries";
 import { DgroupForm } from "../dgroup-form";
 
@@ -10,6 +11,7 @@ export const dynamic = "force-dynamic";
 
 /** Register a Dgroup (2026-10-08). The /my layout already requires a session. */
 export default async function NewDgroupPage() {
+  await requireMember("/my/dgroups/new");
   const contact = await getMyContact();
   return (
     <>

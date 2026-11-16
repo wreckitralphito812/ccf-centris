@@ -8,7 +8,7 @@ import {
   getCurrentFourWsGuide,
   type FourWsCurrent,
 } from "@/lib/content/public-queries";
-import { CCF_NET, youtubeEmbed } from "@/lib/site";
+import { CCF_NET, SITE, youtubeEmbed } from "@/lib/site";
 import { CopyLink } from "./copy-link";
 
 export const metadata: Metadata = {
@@ -35,6 +35,13 @@ export default async function WatchPage() {
 
   return (
     <>
+      {replay?.date ? (
+        <script
+          type="application/ld+json"
+          // Structured data from CCF Net's replay, no user input.
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(videoJsonLd(replay)) }}
+        />
+      ) : null}
       <PageHeader
         eyebrow="Watch"
         eyebrowAside={
@@ -206,4 +213,25 @@ function titleCase(text: string): string {
   return text
     .toLowerCase()
     .replace(/(^|[\s(“"-])([a-z])/g, (_m, pre: string, c: string) => pre + c.toUpperCase());
+}
+
+/**
+ * Last Sunday's message as a VideoObject (2026-11-16), so search engines and
+ * AI assistants can name the sermon, speaker and date. Google requires an
+ * upload date, so it is only sent when CCF Net's date could be read.
+ */
+function videoJsonLd(r: Replay) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    name: r.title,
+    description: `${r.title}${r.speaker ? `, preached by ${r.speaker}` : ""} at ${SITE.parent}${r.dateLabel ? ` on ${r.dateLabel}` : ""}.`,
+    uploadDate: `${r.date}T00:00:00+08:00`,
+    thumbnailUrl: `https://i.ytimg.com/vi/${r.videoId}/hqdefault.jpg`,
+    embedUrl: `https://www.youtube.com/embed/${r.videoId}`,
+    contentUrl: `https://www.youtube.com/watch?v=${r.videoId}`,
+    inLanguage: "en-PH",
+    ...(r.speaker ? { actor: { "@type": "Person", name: r.speaker } } : {}),
+    publisher: { "@type": "Organization", name: SITE.parent, url: "https://www.ccf.org.ph" },
+  };
 }
