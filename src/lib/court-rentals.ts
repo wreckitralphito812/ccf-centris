@@ -13,8 +13,10 @@
  * - Whole hours, 1 to 3. From tomorrow to a week ahead.
  * - Confirmed once the renter uploads a screenshot of their payment to
  *   CCF Centris's QR code. Staff check it and cancel any that wasn't paid.
- * - No cancellations or refunds. A renter can move a rental to another open
- *   time for the same sport, up to a week ahead, even on the day itself.
+ * - A renter can move a rental to another open time for the same sport, up
+ *   to a week ahead, even on the day itself. A free rental can also be
+ *   cancelled until it starts (Ralph, 2026-11-16); a paid one can't, since
+ *   there are no refunds.
  *
  * The page, the form, the server actions, the emails and the admin pages all
  * read from here, so changing a value here changes it everywhere.
@@ -143,9 +145,24 @@ const ALL_COURT_POLICIES = [
     title: "No cancellations",
     body: "Rentals can't be cancelled or refunded. If plans change, move yours to another open time for the same sport, even on the day itself.",
   },
+  {
+    id: "cancel",
+    title: "Cancel if plans change",
+    body: "Can't make it? Cancel from your reservations page before your time starts, so the courts free up for another group. You can also move it to another open time.",
+  },
 ] as const;
 
-export const COURT_POLICIES = ALL_COURT_POLICIES.filter((p) => !(COURTS_FREE && p.id === "payment"));
+/** While the Gym is free, rentals can be cancelled, so the no-cancel rule gives way (2026-11-16). */
+export const COURT_POLICIES = ALL_COURT_POLICIES.filter((p) =>
+  COURTS_FREE ? p.id !== "payment" && p.id !== "no-cancel" : p.id !== "cancel",
+);
+
+/** What a renter can do when plans change, for a rental of this amount. */
+export function changeNote(amount: number): string {
+  return amount
+    ? "Rentals can’t be cancelled, but you can move yours to another open time."
+    : "Can’t make it? Cancel or move your rental from your reservations page until it starts.";
+}
 
 // --- Dates -------------------------------------------------------------------
 
@@ -369,6 +386,23 @@ export function moveError(
   if (!Number.isInteger(to.start) || !fits) return `${sportName(r.sport)} isn't open then. Pick one of the times listed.`;
   if (to.date === today && to.start <= nowHour) return "That time has started. Pick a later one.";
   if (to.date === r.booked_on && to.start === r.start_hour) return "That's the time you have. Pick a different one.";
+  return null;
+}
+
+/**
+ * Why a member can't cancel this rental, or null if they can (2026-11-16).
+ * Only free rentals, and only before they start: a paid one has no refund, so
+ * it can only be moved.
+ */
+export function cancelError(
+  r: { booked_on: string; start_hour: number; amount_php: number },
+  today: string,
+  nowHour: number,
+): string | null {
+  if (r.booked_on < today || (r.booked_on === today && r.start_hour <= nowHour)) {
+    return "This rental has already started, so it can't be cancelled.";
+  }
+  if (r.amount_php > 0) return "Paid rentals can't be cancelled. Move yours to another open time instead.";
   return null;
 }
 

@@ -3,6 +3,8 @@ import test from "node:test";
 
 import {
   amountLabel,
+  cancelError,
+  changeNote,
   COURT_POLICIES,
   COURTS_FREE,
   SPORTS,
@@ -189,4 +191,21 @@ test("a Gym block or a Gym event closes every court for the hours it touches", a
   assert.deepEqual(hours(closed), [18, 19]);
   assert.ok(closed.every((h) => h.court === 0));
   assert.equal(freeCourts("pickleball", "2026-11-19", 18, closed), 0);
+});
+
+test("a free rental can be cancelled until it starts; a paid one never can (2026-11-16)", () => {
+  const r = { booked_on: "2026-11-18", start_hour: 15, amount_php: 0 };
+  assert.equal(cancelError(r, TUE, 9), null);
+  assert.equal(cancelError(r, "2026-11-18", 14), null, "an hour before, on the day");
+  assert.ok(cancelError(r, "2026-11-18", 15), "once it starts");
+  assert.ok(cancelError(r, "2026-11-19", 9), "the day after");
+  assert.ok(cancelError({ ...r, amount_php: 900 }, TUE, 9), "paid: no refunds, move only");
+});
+
+test("while the Gym is free the rules say rentals can be cancelled, and never both ways", () => {
+  const ids = COURT_POLICIES.map((p) => p.id as string);
+  assert.equal(ids.includes("cancel"), COURTS_FREE);
+  assert.equal(ids.includes("no-cancel"), !COURTS_FREE);
+  assert.match(changeNote(0), /Cancel/);
+  assert.doesNotMatch(changeNote(900), /Cancel or move/);
 });

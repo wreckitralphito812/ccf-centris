@@ -1,10 +1,11 @@
 import { noticeLayout } from "@/lib/emails/announcement";
-import { courtsLabel, dayLabel, FREE_NOTE, peso, sportName, timeRange } from "@/lib/court-rentals";
+import { changeNote, courtsLabel, dayLabel, FREE_NOTE, peso, sportName, timeRange } from "@/lib/court-rentals";
 
 /**
  * Court rental emails (2026-10-20): to the renter when a rental is booked,
- * moved, or cancelled by the team, and to the team for each new one. Same
- * plain layout as the announcement and Dgroup registry emails.
+ * moved, cancelled by the team, or cancelled by the renter (2026-11-16), and
+ * to the team for each new one. Same plain layout as the announcement and
+ * Dgroup registry emails.
  */
 
 export interface RentalEmailData {
@@ -22,7 +23,7 @@ export interface RentalEmailData {
 const summary = (d: RentalEmailData) =>
   `${sportName(d.sport)} · ${courtsLabel(d.sport, d.courtNumbers)} · ${dayLabel(d.date)}, ${timeRange(d.start, d.hours)}`;
 
-export type RentalEmailKind = "confirmed" | "moved" | "cancelled";
+export type RentalEmailKind = "confirmed" | "moved" | "cancelled" | "withdrawn";
 
 export function rentalEmail(kind: RentalEmailKind, d: RentalEmailData) {
   const first = d.renterName.split(" ")[0];
@@ -37,7 +38,7 @@ export function rentalEmail(kind: RentalEmailKind, d: RentalEmailData) {
         d.amount
           ? `You paid ${peso(d.amount)}. The team checks every payment screenshot; if something's wrong with yours, we'll be in touch.`
           : FREE_NOTE,
-        "Rentals can't be cancelled, but you can move yours to another open time from your reservations page, even on the day itself.",
+        changeNote(d.amount).replace(/’/g, "'"),
       ],
     },
     moved: {
@@ -45,6 +46,14 @@ export function rentalEmail(kind: RentalEmailKind, d: RentalEmailData) {
       headline: `Your rental is moved, ${first}.`,
       paragraphs: [
         `${sportName(d.sport)} in the Gym: ${courtsLabel(d.sport, d.courtNumbers).toLowerCase()}, ${when}. Your old time is free for someone else.`,
+      ],
+    },
+    withdrawn: {
+      subject: `Cancelled: your Gym rental on ${dayLabel(d.date)}`,
+      headline: `Your rental is cancelled, ${first}.`,
+      paragraphs: [
+        `You cancelled your ${sportName(d.sport).toLowerCase()} rental on ${when}. The courts are free for another group now.`,
+        "Want another time? Book again from the Gym page.",
       ],
     },
     cancelled: {
@@ -67,7 +76,12 @@ export function rentalEmail(kind: RentalEmailKind, d: RentalEmailData) {
       eyebrow: "Gym rental",
       headline: copy.headline,
       paragraphs: copy.paragraphs,
-      button: kind === "cancelled" ? undefined : { label: "See my reservations", href: `${d.origin}/my/reservations` },
+      button:
+        kind === "cancelled"
+          ? undefined
+          : kind === "withdrawn"
+            ? { label: "Book a court", href: `${d.origin}/reserve/courts` }
+            : { label: "See my reservations", href: `${d.origin}/my/reservations` },
     }),
   };
 }

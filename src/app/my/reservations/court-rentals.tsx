@@ -1,10 +1,11 @@
 "use client";
 
-import { startTransition, useActionState, useState } from "react";
-import { moveCourtRental, type CourtMoveResult } from "@/app/actions/court-rentals";
+import { startTransition, useActionState, useState, useTransition } from "react";
+import { cancelMyCourtRental, moveCourtRental, type CourtMoveResult } from "@/app/actions/court-rentals";
 import { IconLine, StatusBadge, calmChipClass, choiceClass } from "@/components/booking";
 import { cx } from "@/components/ui";
 import {
+  changeNote,
   courtsLabel,
   dayLabel,
   freeThrough,
@@ -29,9 +30,9 @@ export interface MyRental {
 }
 
 /**
- * The member's Gym rentals (2026-10-20), each with a way to move it. Rentals
- * can't be cancelled (Adrian), so moving is the one action, up to the start,
- * even on the day itself.
+ * The member's Gym rentals (2026-10-20), each with a way to move it up to the
+ * start, even on the day itself. A free rental can also be cancelled before
+ * it starts (2026-11-16); a paid one can't (no refunds, Adrian).
  */
 export function CourtRentals({
   rentals,
@@ -63,6 +64,11 @@ export function CourtRentals({
 function RentalCard({ r, holds, today, nowHour }: { r: MyRental; holds: CourtHold[] | null; today: string; nowHour: number }) {
   const [moving, setMoving] = useState(false);
   const [done, setDone] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [cancelled, setCancelled] = useState(false);
+  const [cancelErr, setCancelErr] = useState<string | null>(null);
+  const [cancelling, startCancel] = useTransition();
+  const canCancel = !r.amount_php;
   const started = r.booked_on < today || (r.booked_on === today && r.start_hour <= nowHour);
   return (
     <article className="calm-card p-6 sm:p-8">
@@ -70,7 +76,7 @@ function RentalCard({ r, holds, today, nowHour }: { r: MyRental; holds: CourtHol
         <p className="text-[1.2rem] font-semibold text-ink">
           {sportName(r.sport)} · {courtsLabel(r.sport, r.court_numbers)}
         </p>
-        <StatusBadge tone="ok">Booked</StatusBadge>
+        {cancelled ? <StatusBadge tone="grey">Cancelled</StatusBadge> : <StatusBadge tone="ok">Booked</StatusBadge>}
       </div>
       <div className="mt-4 space-y-2.5">
         <IconLine icon="calendar">{dayLabel(r.booked_on)}</IconLine>
@@ -83,18 +89,74 @@ function RentalCard({ r, holds, today, nowHour }: { r: MyRental; holds: CourtHol
           Moved: {done}. We’ve emailed you the new time.
         </p>
       ) : null}
-      {started ? null : moving ? (
+      {cancelled ? (
+        <p role="status" className="mt-5 rounded-2xl bg-clay-wash px-5 py-4 text-[1rem] font-semibold text-clay-deep">
+          Cancelled. The courts are free for another group, and we’ve emailed you.
+        </p>
+      ) : started ? null : moving ? (
         <MoveForm r={r} holds={holds} today={today} nowHour={nowHour} onDone={(s) => { setDone(s); setMoving(false); }} onClose={() => setMoving(false)} />
       ) : (
         <div className="mt-6 border-t border-rule pt-5">
-          <button
-            type="button"
-            onClick={() => setMoving(true)}
-            className="btn-press inline-flex min-h-12 items-center rounded-lg border border-clay px-5 text-[1rem] font-semibold text-clay hover:bg-clay-wash"
-          >
-            Move to another time
-          </button>
-          <p className="mt-3 text-[0.92rem] text-ink-mute">Rentals can’t be cancelled, but you can move yours until it starts.</p>
+          {confirming ? (
+            // Same confirm step as room bookings: the question, then both answers.
+            <div className="rounded-2xl bg-mist p-4 sm:p-5">
+              <p className="text-[1rem] font-semibold text-ink">Cancel this rental?</p>
+              <p className="mt-1 text-[0.92rem] text-ink-mute">The courts go back on the schedule for another group.</p>
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:max-w-sm">
+                <button
+                  type="button"
+                  disabled={cancelling}
+                  onClick={() =>
+                    startCancel(async () => {
+                      const res = await cancelMyCourtRental(r.id);
+                      setConfirming(false);
+                      if (res.ok) setCancelled(true);
+                      else setCancelErr(res.formError ?? "Could not cancel. Try again in a moment.");
+                    })
+                  }
+                  className="btn-press inline-flex min-h-11 items-center justify-center rounded-lg bg-sky-wash px-4 text-[0.95rem] font-semibold text-sky hover:bg-sky/15 disabled:opacity-50"
+                >
+                  {cancelling ? "Cancelling…" : "Yes, cancel"}
+                </button>
+                <button
+                  type="button"
+                  disabled={cancelling}
+                  onClick={() => setConfirming(false)}
+                  className="btn-press inline-flex min-h-11 items-center justify-center rounded-lg border border-edge bg-paper-bright px-4 text-[0.95rem] font-semibold text-ink hover:border-clay disabled:opacity-50"
+                >
+                  Keep it
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setMoving(true)}
+                className="btn-press inline-flex min-h-12 items-center rounded-lg border border-clay px-5 text-[1rem] font-semibold text-clay hover:bg-clay-wash"
+              >
+                Move to another time
+              </button>
+              {canCancel ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCancelErr(null);
+                    setConfirming(true);
+                  }}
+                  className="btn-press inline-flex min-h-12 items-center rounded-lg px-4 text-[1rem] font-semibold text-ink-mute hover:bg-rule hover:text-ink"
+                >
+                  Cancel rental
+                </button>
+              ) : null}
+            </div>
+          )}
+          {cancelErr ? (
+            <p role="alert" className="mt-3 text-[0.92rem] font-semibold text-clay-deep">
+              {cancelErr}
+            </p>
+          ) : null}
+          <p className="mt-3 text-[0.92rem] text-ink-mute">{changeNote(r.amount_php)}</p>
         </div>
       )}
     </article>
