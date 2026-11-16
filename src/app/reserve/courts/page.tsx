@@ -85,7 +85,7 @@ async function Booking() {
   if (!user) {
     return (
       <Notice label="Sign in to book">
-        <p>Court rentals are for leaders of a registered Dgroup. Sign in, and you can move your rental later if plans change.</p>
+        <p>Court rentals are for leaders of a registered Dgroup. Sign in, and you can {COURTS_FREE ? "cancel or move" : "move"} your rental later if plans change.</p>
         <ButtonLink href="/sign-in?next=/reserve/courts">Sign in to rent a court</ButtonLink>
       </Notice>
     );
