@@ -40,6 +40,7 @@ test("bodies must say something, briefly", () => {
 test("return paths stay on this site", () => {
   assert.equal(safeNext("/prayer-wall"), "/prayer-wall");
   assert.equal(safeNext("//evil.example"), "/prayer-wall");
+  assert.equal(safeNext("/\\evil.example"), "/prayer-wall", "a backslash leaves the site too");
   assert.equal(safeNext("https://evil.example"), "/prayer-wall");
   assert.equal(safeNext(null, "/"), "/");
 });

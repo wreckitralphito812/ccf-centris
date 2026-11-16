@@ -69,7 +69,9 @@ export function visibleReplies<T extends { author_id: string; hidden_at: string 
 /** A same-origin path to return to, or the fallback. */
 export function safeNext(raw: unknown, fallback = "/prayer-wall"): string {
   const next = String(raw ?? "");
-  return next.startsWith("/") && !next.startsWith("//") ? next : fallback;
+  // "/\\host" counts too: browsers read a backslash as a slash there, so it
+  // would leave the site (2026-11-16).
+  return next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : fallback;
 }
 
 /** Topics a request can carry (0014_prayer_wall_interactive.sql), in chip order. */

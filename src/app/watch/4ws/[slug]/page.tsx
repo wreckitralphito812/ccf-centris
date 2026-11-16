@@ -10,6 +10,7 @@ import {
   getFourWsWeeks,
 } from "@/lib/queries";
 import { SectionNav } from "./section-nav";
+import { SITE } from "@/lib/site";
 
 /** Synced from the CCF 4Ws pages every content-sync run. */
 export const revalidate = 3600;
@@ -28,13 +29,17 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const guide = await getFourWsGuide(slug);
+  if (!guide) return { title: "4Ws guide" };
+  // Say what the guide is about (2026-11-16): the passage and the opening
+  // question are what people search for, not just the title.
+  const passage = guide.word?.passageRef?.split("·")[0].trim();
+  const description = [
+    `CCF's 4Ws Dgroup discussion guide for "${guide.title}"${passage ? ` (${passage})` : ""}${guide.dateLabel ? `, ${guide.dateLabel}` : ""}.`,
+    guide.welcome ? `Opening question: ${guide.welcome}` : "Welcome, Worship, Word and Works, with prayer points.",
+  ].join(" ");
   return {
-    title: guide ? `4Ws: ${guide.title}` : "4Ws guide",
-    description: guide
-      ? `The 4Ws discussion guide for "${guide.title}"${
-          guide.dateLabel ? `, ${guide.dateLabel}` : ""
-        }.`
-      : undefined,
+    title: `4Ws: ${guide.title}${passage ? ` (${passage})` : ""}`,
+    description: description.length > 160 ? `${description.slice(0, 157).trimEnd()}…` : description,
   };
 }
 
@@ -86,6 +91,11 @@ export default async function FourWsGuidePage({ params }: { params: Params }) {
 
       <Section>
         <Container>
+          <script
+            type="application/ld+json"
+            // Structured data: built from the synced guide, no user input.
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(guideJsonLd(guide, slug)) }}
+          />
           <Breadcrumbs
             className="mb-8"
             items={[
@@ -426,4 +436,25 @@ export default async function FourWsGuidePage({ params }: { params: Params }) {
       </Section>
     </>
   );
+}
+
+/**
+ * The guide as an Article (2026-11-16), so search engines and AI assistants
+ * read it as CCF's study guide on a passage, published by CCF.
+ */
+function guideJsonLd(guide: NonNullable<Awaited<ReturnType<typeof getFourWsGuide>>>, slug: string) {
+  const base = SITE.url.replace(/\/$/, "");
+  const passage = guide.word?.passageRef?.split("·")[0].trim();
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: `4Ws: ${guide.title}`,
+    description: guide.welcome ?? undefined,
+    url: `${base}/watch/4ws/${slug}`,
+    ...(guide.date ? { datePublished: guide.date } : {}),
+    ...(passage ? { about: { "@type": "CreativeWork", name: passage } } : {}),
+    inLanguage: "en-PH",
+    author: { "@type": "Organization", name: SITE.parent, url: "https://www.ccf.org.ph" },
+    publisher: { "@id": `${base}/#organization` },
+  };
 }

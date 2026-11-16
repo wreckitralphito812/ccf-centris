@@ -4,9 +4,9 @@ import { Container, Section } from "@/components/ui";
 import { GIVE_HELP, GIVE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Give",
+  title: "Give Online | Tithes and Offerings",
   description:
-    "Give your tithes and offerings to CCF: debit or credit card, bank transfer, bills payment, or PH QR Pay.",
+    "Give your tithes and offerings to Christ's Commission Fellowship online: debit or credit card, bank transfer, bills payment, GCash or PH QR Pay.",
 };
 
 /**

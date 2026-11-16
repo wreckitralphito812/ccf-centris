@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Section } from "@/components/ui";
 import { manilaMinutes, nightOptions, rebookDate } from "@/lib/dgroup-tables";
 import { manilaDateKey } from "@/lib/format";
+import { requireMember } from "@/lib/auth/session";
 import { mergeUpcoming, type Upcoming } from "@/lib/my-bookings";
 import { getCourtHolds, getMyBookings, getMyCourtRentals, getMyDgroupBookings } from "@/lib/queries";
 import { COURTS_OPEN, manilaHour, rentalDays } from "@/lib/court-rentals";
@@ -23,6 +24,7 @@ export const dynamic = "force-dynamic";
  * as rows that open to Manage, and past bookings folded away.
  */
 export default async function MyReservationsPage() {
+  await requireMember("/my/reservations");
   const today = manilaDateKey();
   const now = manilaMinutes();
   const [tables, rooms, rentals] = await Promise.all([getMyDgroupBookings(today), getMyBookings(), getMyCourtRentals(today)]);

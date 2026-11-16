@@ -55,6 +55,8 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "i.ytimg.com" },
       { protocol: "https", hostname: "yt3.ggpht.com" },
+      // Uploaded event posters (Vercel Blob), resized instead of sent whole.
+      { protocol: "https", hostname: "**.public.blob.vercel-storage.com" },
     ],
   },
   /* Baseline security headers on every response (2026-11-14); the live site

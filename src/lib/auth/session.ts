@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { cache } from "react";
 
 import { firebaseAdminAuth, hasFirebase } from "@/lib/firebase/admin";
@@ -86,4 +87,16 @@ export async function memberHasRole(
   return (data ?? []).some(
     (r) => r.role === "super_admin" || r.satellite_id === null || r.satellite_id === satelliteId,
   );
+}
+
+/**
+ * The signed-in member, or a trip to sign-in that comes back to `path`
+ * (2026-11-16). Each /my page names its own path: the shared layout can't see
+ * which page was asked for, so it used to send everyone back to
+ * /my/reservations, even from a My Dgroups link.
+ */
+export async function requireMember(path: string): Promise<Member> {
+  const user = await currentUser();
+  if (!user) redirect(`/sign-in?next=${encodeURIComponent(path)}`);
+  return user;
 }

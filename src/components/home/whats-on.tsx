@@ -44,7 +44,7 @@ export function FeaturedEvent({ featured }: { featured: Featured }) {
       <Reveal className="mx-auto max-w-[110rem]">
         <article className="grid overflow-hidden rounded-[1.5rem] border border-hairline bg-paper-bright md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
           <Link href={`/events/${e.slug}`} className="relative block aspect-video bg-mist md:aspect-auto md:min-h-[20rem]" aria-label={e.title}>
-            <PosterImage src={e.cover_image_url!} alt={`${e.title} poster`} />
+            <PosterImage src={e.cover_image_url!} alt={`${e.title} poster`} sizes="(min-width: 768px) 55vw, 100vw" />
           </Link>
           <div className="flex flex-col p-6 sm:p-9">
             <p className="flex flex-wrap items-center gap-2 text-[0.95rem] font-semibold">

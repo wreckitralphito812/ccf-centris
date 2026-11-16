@@ -15,7 +15,15 @@ export async function generateMetadata({ params }: PageProps<"/events/[slug]">):
   const e = await getEvent(slug);
   if (!e) return { title: "Event not found" };
   const image = e.artwork?.main_tv ?? e.cover_image_url ?? undefined;
+  // A finished event drops out of search results (2026-11-16); its page stays
+  // up for old links, with an "ended" note.
+  const last = [...(e.dates ?? []), { starts_at: e.starts_at, ends_at: e.ends_at }]
+    .map((d) => d.ends_at ?? d.starts_at)
+    .sort()
+    .at(-1)!;
+  const ended = last < new Date().toISOString();
   return {
+    ...(ended ? { robots: { index: false, follow: true } } : {}),
     title: e.title,
     description: e.summary ?? undefined,
     openGraph: { title: `${e.title} | CCF Centris`, type: "website", ...(image ? { images: [image] } : {}) },

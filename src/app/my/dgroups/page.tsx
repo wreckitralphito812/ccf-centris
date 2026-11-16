@@ -3,7 +3,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink, Container, Section, cx } from "@/components/ui";
 import { archiveMyDgroup } from "@/app/actions/dgroups";
-import { currentUser } from "@/lib/auth/session";
+import { requireMember } from "@/lib/auth/session";
 import { AUDIENCES, DGROUP_STATUS, WHERE, labelOf, scheduleText } from "@/lib/dgroup-registry";
 import { getMyDgroups } from "@/lib/queries";
 import { CONNECT_LINKS } from "@/lib/site";
@@ -25,8 +25,8 @@ const TONE = {
  */
 export default async function MyDgroupsPage({ searchParams }: PageProps<"/my/dgroups">) {
   const sp = await searchParams;
-  const user = await currentUser();
-  const mine = user ? await getMyDgroups(user.id) : [];
+  const user = await requireMember("/my/dgroups");
+  const mine = await getMyDgroups(user.id);
   const current = mine.filter((d) => d.status !== "archived");
   const stopped = mine.filter((d) => d.status === "archived");
   const saved = typeof sp.saved === "string" ? mine.find((d) => d.id === sp.saved) : undefined;

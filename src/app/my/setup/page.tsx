@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AuthLayout } from "@/components/auth-layout";
 import { safeNext } from "@/lib/prayer-wall";
 import { splitName } from "@/lib/member";
-import { currentUser } from "@/lib/auth/session";
+import { requireMember } from "@/lib/auth/session";
 import { getMemberProfile } from "@/lib/auth/profile";
 import { SetupForm } from "./setup-form";
 
@@ -17,8 +17,8 @@ export const metadata: Metadata = { title: "Finish setting up", robots: { index:
 export default async function SetupPage({ searchParams }: PageProps<"/my/setup">) {
   const sp = await searchParams;
   const next = safeNext(Array.isArray(sp.next) ? sp.next[0] : sp.next, "/my/reservations");
-  const user = await currentUser();
-  const profile = user ? await getMemberProfile(user.id) : null;
+  const user = await requireMember(`/my/setup?next=${encodeURIComponent(next)}`);
+  const profile = await getMemberProfile(user.id);
   const guess = splitName(profile?.full_name);
 
   return (
