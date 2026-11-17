@@ -1,15 +1,16 @@
 /**
- * The day poster for the TV by the guard's desk (Adrian, 2026-11-15): one
- * line for everything on at Centris that day, soonest first. Events (shown,
- * hidden or calendar-only), approved room requests, Gym court rentals and the
- * Dgroup tables, per room and slot. Names and groups only: the poster hangs
- * in a public place, so no phone numbers or emails. Pure, so it's tested
- * without a database; the route reads the rows and draws the picture.
+ * The day poster for the TV by the guard's desk (Adrian, 2026-11-15): what's
+ * on at Centris that day, room by room (2026-11-17), each room's bookings by
+ * start time. Events (shown, hidden or calendar-only) under every room they
+ * use, approved room requests, Gym court rentals, and each Dgroup table
+ * booking with its group and table numbers. Names and groups only: the
+ * poster hangs in a public place, so no phone numbers or emails. Pure, so
+ * it's tested without a database; the route reads the rows and draws it.
  */
-import { eventsOn, manilaDay, manilaMinutesOf, roomLabel, type BoardEvent, type DayRoomBooking } from "@/lib/admin-day";
+import { BOARD_ROOMS, eventsOn, manilaDay, manilaMinutesOf, roomFor, type BoardEvent, type DayRoomBooking } from "@/lib/admin-day";
 import { venueLabel } from "@/lib/announcements";
 import { courtsLabel, sportName } from "@/lib/court-rentals";
-import { DGROUP_SLOTS, roomName } from "@/lib/dgroup-tables";
+import { DGROUP_SLOTS, tablesLabel } from "@/lib/dgroup-tables";
 import { timeLabel, toMinutes } from "@/lib/ministry-rooms";
 
 export interface PosterItem {
@@ -18,14 +19,20 @@ export interface PosterItem {
   from: number | null;
   to: number | null;
   title: string;
-  where: string;
-  who: string | null;
+  /** Who it's for, or the tables: one short line under the title. */
+  detail: string | null;
+}
+
+export interface PosterRoom {
+  key: string;
+  name: string;
+  items: PosterItem[];
 }
 
 export interface PosterInput {
   date: string;
   events: BoardEvent[];
-  rooms: (DayRoomBooking & { request_group?: string | null })[];
+  rooms: DayRoomBooking[];
   rentals: {
     id: string;
     sport: string;
@@ -37,68 +44,85 @@ export interface PosterInput {
     dgroup_name?: string | null;
     status: string;
   }[];
-  tables: { id: string; booked_on: string; slot_id: string; room_slug: string; status: string }[];
+  tables: {
+    id: string;
+    booked_on: string;
+    slot_id: string;
+    room_slug: string;
+    table_labels: string[];
+    leader_name: string;
+    dgroup_name?: string | null;
+    status: string;
+  }[];
 }
 
-export function posterItems({ date, events, rooms, rentals, tables }: PosterInput): PosterItem[] {
-  const items: PosterItem[] = [];
+/** The day's bookings, room by room in the boards' order, each room's by start time. */
+export function posterRooms({ date, events, rooms, rentals, tables }: PosterInput): PosterRoom[] {
+  const byRoom = new Map<string, { name: string; items: PosterItem[] }>();
+  const add = (key: string, name: string, item: PosterItem) => {
+    if (!byRoom.has(key)) byRoom.set(key, { name, items: [] });
+    byRoom.get(key)!.items.push(item);
+  };
+  const boardName = (slug: string) => BOARD_ROOMS.find((r) => r.slug === slug)?.name ?? slug;
 
+  // Events go under every room they use; one held elsewhere gets its own heading.
   for (const e of eventsOn(events, date)) {
-    items.push({ key: e.key, from: e.from, to: e.to, title: e.title, where: venueLabel(e.venue), who: null });
+    const item = { key: e.key, from: e.from, to: e.to, title: e.title, detail: null };
+    if (e.rooms.length) for (const slug of e.rooms) add(slug, boardName(slug), { ...item, key: `${item.key}-${slug}` });
+    else add(`other:${venueLabel(e.venue)}`, venueLabel(e.venue), item);
   }
 
-  // Approved room requests; a request for several rooms is one line.
-  const groups = new Map<string, DayRoomBooking[]>();
+  // Approved room requests; a request for several rooms shows under each.
   for (const r of rooms) {
     if (r.status !== "approved" || manilaDay(r.starts_at) !== date || r.href) continue;
-    const k = r.request_group ?? r.id;
-    groups.set(k, [...(groups.get(k) ?? []), r]);
-  }
-  for (const [k, rs] of groups) {
-    const r = rs[0];
-    items.push({
-      key: `room-${k}`,
+    const slug = roomFor(r)?.slug;
+    const item = {
+      key: `room-${r.id}`,
       from: manilaMinutesOf(r.starts_at),
       to: manilaMinutesOf(r.ends_at),
       title: r.activity_name || "Room booking",
-      where: [...new Set(rs.map(roomLabel))].join(", "),
-      who: r.organization || r.contact_name,
-    });
+      detail: r.organization || r.contact_name,
+    };
+    if (slug) add(slug, boardName(slug), item);
+    else add(`other:${r.facility_name ?? "Room"}`, r.facility_name ?? "Room", item);
   }
 
   for (const r of rentals) {
     if (r.status !== "confirmed" || r.booked_on !== date) continue;
-    items.push({
+    add("sports-hall", boardName("sports-hall"), {
       key: `court-${r.id}`,
       from: r.start_hour * 60,
       to: (r.start_hour + r.hours) * 60,
       title: `${sportName(r.sport)} · ${courtsLabel(r.sport, r.court_numbers)}`,
-      where: "Gym",
-      who: r.dgroup_name ? `${r.renter_name} (${r.dgroup_name})` : r.renter_name,
+      detail: r.dgroup_name ? `${r.renter_name} (${r.dgroup_name})` : r.renter_name,
     });
   }
 
-  // Dgroup tables: one line per room and slot, with how many groups.
-  const count = new Map<string, number>();
+  // Each Dgroup table booking: the group (or its leader) and its tables (Adrian, 2026-11-17).
   for (const t of tables) {
     if (t.booked_on !== date || !["pending", "confirmed"].includes(t.status)) continue;
-    count.set(`${t.slot_id}|${t.room_slug}`, (count.get(`${t.slot_id}|${t.room_slug}`) ?? 0) + 1);
-  }
-  for (const [k, n] of count) {
-    const [slotId, room] = k.split("|");
-    const slot = DGROUP_SLOTS.find((s) => s.id === slotId);
+    const slot = DGROUP_SLOTS.find((s) => s.id === t.slot_id);
     if (!slot) continue;
-    items.push({
-      key: `tables-${k}`,
+    add(t.room_slug, boardName(t.room_slug), {
+      key: `table-${t.id}`,
       from: toMinutes(slot.start),
       to: toMinutes(slot.end),
-      title: "Dgroup tables",
-      where: roomName(room),
-      who: `${n} ${n === 1 ? "Dgroup" : "Dgroups"}`,
+      title: t.dgroup_name || t.leader_name,
+      detail: `Dgroup · ${tablesLabel(t.table_labels)}`,
     });
   }
 
-  return items.sort((a, b) => (a.from ?? -1) - (b.from ?? -1) || a.title.localeCompare(b.title));
+  const order = (key: string) => {
+    const i = BOARD_ROOMS.findIndex((r) => r.slug === key);
+    return i < 0 ? BOARD_ROOMS.length : i;
+  };
+  return [...byRoom.entries()]
+    .map(([key, v]) => ({
+      key,
+      name: v.name,
+      items: v.items.sort((a, b) => (a.from ?? -1) - (b.from ?? -1) || a.title.localeCompare(b.title)),
+    }))
+    .sort((a, b) => order(a.key) - order(b.key) || a.name.localeCompare(b.name));
 }
 
 /** "7:00 PM – 9:30 PM", "From 7:00 PM", or "All day". */
@@ -107,34 +131,67 @@ export function posterTime(i: Pick<PosterItem, "from" | "to">): string {
   return i.to === null ? `From ${timeLabel(i.from)}` : `${timeLabel(i.from)} – ${timeLabel(i.to)}`;
 }
 
-/** The time as two lines for the poster's time column: "7:00 PM" over "to 9:30 PM". */
-export function posterTimeLines(i: Pick<PosterItem, "from" | "to">): [string, string] {
-  if (i.from === null) return ["All day", ""];
-  return [timeLabel(i.from), i.to === null ? "onwards" : `to ${timeLabel(i.to)}`];
+/** Height on the 1920-pixel poster left for the rooms, under the compact heading and above the footer. */
+export const POSTER_LIST_HEIGHT = 1560;
+const GAP = 8;
+const MIN_ROW = 52;
+const MAX_ROW = 112;
+/** A room's heading, as a share of a row's height. */
+const HEADING = 0.62;
+
+export interface PosterLayout {
+  row: number;
+  heading: number;
+  gap: number;
+  title: number;
+  detail: number;
+  time: number;
+  /** The rooms as they fit, with how many lines were left out. */
+  rooms: PosterRoom[];
+  more: number;
 }
 
-/** Height on the 1920-pixel poster left for the list, under the heading and above the footer. */
-export const POSTER_LIST_HEIGHT = 1290;
-const GAP = 12;
-const MIN_ROW = 72;
-const MAX_ROW = 160;
-
 /**
- * Row height and text sizes that fit `n` lines on one poster. A quiet day gets
- * big, roomy rows; a busy one shrinks them, down to MIN_ROW, after which the
- * last line says how many more there are.
+ * Row height and text sizes that fit the day's rooms on one poster. A quiet
+ * day gets roomy rows; a busy one shrinks them, down to MIN_ROW, after which
+ * the last rooms are cut short and the poster says how many more there are.
  */
-export function posterScale(n: number): { row: number; gap: number; title: number; sub: number; time: number; max: number } {
-  const max = Math.floor((POSTER_LIST_HEIGHT + GAP) / (MIN_ROW + GAP));
-  const k = Math.max(1, Math.min(n, max));
-  const row = Math.floor(Math.min(MAX_ROW, (POSTER_LIST_HEIGHT - GAP * (k - 1)) / k));
+export function posterLayout(rooms: PosterRoom[]): PosterLayout {
+  const lines = rooms.reduce((n, r) => n + r.items.length, 0);
+  const space = (row: number, items: number, heads: number) =>
+    items * (row + GAP) + heads * (Math.round(row * HEADING) + GAP);
+  let row = rooms.length ? Math.floor((POSTER_LIST_HEIGHT + 0) / (lines + rooms.length * HEADING) - GAP) : MAX_ROW;
+  row = Math.max(MIN_ROW, Math.min(MAX_ROW, row));
+  while (row > MIN_ROW && space(row, lines, rooms.length) > POSTER_LIST_HEIGHT) row--;
+
+  // Still too much at the smallest size: keep what fits, leaving a line for "And N more".
+  let fitted = rooms;
+  let more = 0;
+  if (space(row, lines, rooms.length) > POSTER_LIST_HEIGHT) {
+    const budget = POSTER_LIST_HEIGHT - (row + GAP);
+    let used = 0;
+    fitted = [];
+    for (const r of rooms) {
+      const head = Math.round(row * HEADING) + GAP;
+      const room = Math.floor((budget - used - head) / (row + GAP));
+      if (room <= 0) break;
+      const items = r.items.slice(0, room);
+      fitted.push({ ...r, items });
+      used += head + items.length * (row + GAP);
+      if (items.length < r.items.length) break;
+    }
+    more = lines - fitted.reduce((n, r) => n + r.items.length, 0);
+  }
+
   return {
     row,
+    heading: Math.round(row * HEADING),
     gap: GAP,
-    title: Math.round(Math.min(44, row * 0.3)),
-    sub: Math.round(Math.min(30, row * 0.21)),
-    time: Math.round(Math.min(34, row * 0.25)),
-    max,
+    title: Math.round(Math.min(40, row * 0.36)),
+    detail: Math.round(Math.min(27, row * 0.25)),
+    time: Math.round(Math.min(30, row * 0.27)),
+    rooms: fitted,
+    more,
   };
 }
 
