@@ -40,7 +40,7 @@ export default function CourtsPage() {
         <Container className="max-w-2xl lg:max-w-6xl">
           <div className="grid gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
             <IconLine icon="calendar">Every day, at set hours</IconLine>
-            <IconLine icon="clock">1 to {MAX_HOURS} hours, up to a week ahead</IconLine>
+            <IconLine icon="clock">1 to {MAX_HOURS} hours, up to two weeks ahead</IconLine>
             <IconLine icon="people">
               {perCourt.map((s) => s.name).join(" or ")}: {COURTS_FREE ? "up to 3 courts" : `${peso(perCourt[0].rate)} a court an hour`}
             </IconLine>

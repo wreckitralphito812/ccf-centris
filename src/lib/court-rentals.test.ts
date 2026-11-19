@@ -53,7 +53,9 @@ test("free for now: nothing to pay, though the rates stay ready for when fees st
 });
 
 test("rentals open Nov 15 to Dec 20 only", () => {
-  assert.deepEqual(rentalDays("2026-11-12"), ["2026-11-15", "2026-11-16", "2026-11-17", "2026-11-18", "2026-11-19"]);
+  const first = rentalDays("2026-11-12");
+  assert.equal(first[0], "2026-11-15", "nothing before Nov 15");
+  assert.equal(first.at(-1), "2026-11-26", "two weeks after Nov 12");
   assert.deepEqual(rentalDays("2026-12-17"), ["2026-12-18", "2026-12-19", "2026-12-20"]);
   assert.deepEqual(rentalDays("2026-12-20"), []);
 });
@@ -74,8 +76,11 @@ test("the schedule follows Adrian's sheet of 2026-11-14: pickleball and basketba
   assert.deepEqual(openStarts("pickleball", "2026-11-21", 1, 1, [])[0], 16);
 });
 
-test("new rentals are for tomorrow to a week ahead; moves may use today", () => {
-  assert.deepEqual(rentalDays(TUE), ["2026-11-18", "2026-11-19", "2026-11-20", "2026-11-21", "2026-11-22", "2026-11-23", "2026-11-24"]);
+test("new rentals are for tomorrow to two weeks ahead; moves may use today", () => {
+  const days = rentalDays(TUE);
+  assert.equal(days[0], "2026-11-18");
+  assert.equal(days.at(-1), "2026-12-01");
+  assert.equal(days.length, 14);
   assert.equal(rentalDays(TUE, true)[0], TUE);
 });
 
@@ -125,7 +130,8 @@ test("bookings outside the schedule, too long, for today, or without the rules t
     return r.ok ? {} : r.fieldErrors;
   };
   assert.ok(bad({ date: TUE }).date, "not today");
-  assert.ok(bad({ date: "2026-11-26" }).date, "more than a week ahead");
+  assert.ok(bad({ date: "2026-12-02" }).date, "more than two weeks ahead");
+  assert.equal(bad({ date: "2026-11-25" }).date, undefined, "a week and a day ahead is fine now");
   assert.ok(bad({ sport: "basketball" }).sport, "Wednesday is pickleball only");
   assert.ok(bad({ sport: "badminton" }).sport, "badminton isn't rented any more");
   assert.ok(bad({ hours: "4" }).hours);
@@ -138,7 +144,7 @@ test("bookings outside the schedule, too long, for today, or without the rules t
   assert.equal(v.ok && v.value.courts, 1);
 });
 
-test("a rental moves within a week, for its own sport, until it starts", () => {
+test("a rental moves within two weeks, for its own sport, until it starts", () => {
   const r = { sport: "pickleball", booked_on: "2026-11-18", start_hour: 15, hours: 2 };
   assert.equal(moveError(r, { date: "2026-11-18", start: 14 }, TUE, 9), null);
   assert.equal(moveError(r, { date: "2026-11-22", start: 12 }, TUE, 9), null, "Sunday pickleball");

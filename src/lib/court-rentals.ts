@@ -10,11 +10,12 @@
  * - Pickleball and badminton: 3 courts at once, ₱450 a court an hour.
  *   Volleyball and basketball: 1 court (the whole floor), ₱1,800 an hour.
  * - Leaders of a registered Dgroup book, like Dgroup tables.
- * - Whole hours, 1 to 3. From tomorrow to a week ahead.
+ * - Whole hours, 1 to 3. From tomorrow to two weeks ahead (a week until
+ *   2026-11-19, when Adrian lengthened it).
  * - Confirmed once the renter uploads a screenshot of their payment to
  *   CCF Centris's QR code. Staff check it and cancel any that wasn't paid.
  * - A renter can move a rental to another open time for the same sport, up
- *   to a week ahead, even on the day itself. A free rental can also be
+ *   to two weeks ahead, even on the day itself. A free rental can also be
  *   cancelled until it starts (Ralph, 2026-11-16); a paid one can't, since
  *   there are no refunds.
  *
@@ -96,8 +97,8 @@ export const RENTAL_SCHEDULE: Record<number, RentalWindow[]> = {
 export const RENTED_SPORTS = SPORTS.filter((s) => Object.values(RENTAL_SCHEDULE).some((ws) => ws.some((w) => w.sport === s.id)));
 
 export const MAX_HOURS = 3;
-/** New rentals open this many days ahead, and not for today. */
-export const DAYS_AHEAD = 7;
+/** New rentals open this many days ahead, and not for today: two weeks (Adrian, 2026-11-19). */
+export const DAYS_AHEAD = 14;
 
 /**
  * What the renter accepts with one tick. The first six are Adrian's rules for
@@ -381,7 +382,7 @@ export function moveError(
   if (r.booked_on < today || (r.booked_on === today && r.start_hour <= nowHour)) {
     return "This rental has already started, so it can't be moved.";
   }
-  if (!rentalDays(today, true).includes(to.date)) return "Pick a day within the next week.";
+  if (!rentalDays(today, true).includes(to.date)) return "Pick a day within the next two weeks.";
   const fits = windowsFor(to.date, r.sport).some((w) => to.start >= w.from && to.start + r.hours <= w.to);
   if (!Number.isInteger(to.start) || !fits) return `${sportName(r.sport)} isn't open then. Pick one of the times listed.`;
   if (to.date === today && to.start <= nowHour) return "That time has started. Pick a later one.";

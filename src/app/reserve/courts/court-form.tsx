@@ -227,7 +227,7 @@ function CourtAttempt({
   }
 
   if (!days.length) {
-    return <p className="calm-card px-8 py-10 text-center text-[1.05rem] text-ink-mute">No days are open right now. Days open a week ahead.</p>;
+    return <p className="calm-card px-8 py-10 text-center text-[1.05rem] text-ink-mute">No days are open right now. Days open two weeks ahead.</p>;
   }
 
   return (
@@ -268,7 +268,7 @@ function CourtAttempt({
             </Question>
           ) : null}
 
-          <Question id="q-day" title="Which day?" note="From tomorrow, up to a week ahead." error={e.date}>
+          <Question id="q-day" title="Which day?" note="From tomorrow, up to two weeks ahead." error={e.date}>
             <div
               role="radiogroup"
               aria-labelledby="q-day"
